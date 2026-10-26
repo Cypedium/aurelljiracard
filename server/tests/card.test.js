@@ -65,7 +65,21 @@ describe("POST /card", () => {
     expect(save).toHaveBeenCalled();
   });
 
+  it("creates the card in the given column", async () => {
+    Card.mockImplementation((doc) => ({ ...doc, save: jest.fn().mockResolvedValue({}) }));
+
+    const res = await request(app)
+      .post("/card")
+      .set("Authorization", authHeader())
+      .send({ ...validCard, status: "test" });
+
+    expect(res.status).toBe(201);
+    expect(Card.mock.calls[0][0].status).toBe("test");
+  });
+
   it.each([
+    [{ ...validCard, status: "archived" }],
+    [{ ...validCard, status: { $ne: null } }],
     [{ ...validCard, rating: 0 }],
     [{ ...validCard, rating: "5" }],
     [{ ...validCard, comment: "" }],

@@ -34,16 +34,20 @@ const validateCardFields = ({ rating, comment, productId, submittedAt }) => {
 };
 
 exports.create = async (req, res) => {
-  const { rating, comment, productId, submittedAt } = req.body;
+  const { rating, comment, productId, submittedAt, status } = req.body;
 
   const invalid = validateCardFields(req.body);
   if (invalid) {
     return res.status(400).json({ message: invalid });
   }
+  // Optional: lets the board create a card directly in a column
+  if (status !== undefined && (typeof status !== "string" || !CARD_STATUSES.includes(status))) {
+    return res.status(400).json({ message: `Status must be one of: ${CARD_STATUSES.join(", ")}.` });
+  }
 
   try {
     // Author always comes from the verified token, never from the request body
-    const newCard = new Card({ rating, comment, productId, username: req.user.username, submittedAt });
+    const newCard = new Card({ rating, comment, productId, username: req.user.username, submittedAt, status });
     await newCard.save();
     res.status(201).json({ message: "Card saved successfully!" });
   } catch (error) {

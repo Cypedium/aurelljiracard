@@ -19,5 +19,10 @@ export default function CardPage() {
 
   if (!allowed) return null; // visa inget innan redirect/allow
 
-  return <Card />;
+  // Samma bakgrund som boarden; pt eftersom navbaren är fixed
+  return (
+    <div className="min-h-screen bg-linear-135 from-board-from via-board-via to-board-to px-4 pt-20 pb-6">
+      <Card />
+    </div>
+  );
 }

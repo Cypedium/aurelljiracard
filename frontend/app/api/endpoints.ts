@@ -15,7 +15,8 @@ export type Card = {
 };
 
 // The backend sets the author from the access token; new cards start in "todo"
-export type NewCard = Omit<Card, "_id" | "username" | "status">;
+// unless a status (board column) is given
+export type NewCard = Omit<Card, "_id" | "username">;
 
 export type User = {
   username: string;
