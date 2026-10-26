@@ -71,7 +71,7 @@ Pushes to `main` deploy both Fly apps after CI passes (`fly.server.toml`, `fly.a
 ## Data model
 
 - `User`: `username` (unique), `passwordHash`, `pictureUrl` (base64 data URL or http(s), ≤1.5 MB), `tokenVersion`, embedded `layout { cols, headers[], cards[] }` — the board only reads `layout.cards`, and only for the order of cards within a column; `cols`/`headers` are written as the fixed four columns
-- `Card`: `rating` 1–5 (form: "Priority", board: estimate pill), `comment` ("Summary"), `productId` ("Issue key"), `username` (author), `submittedAt`, `status` (board column: `todo` | `in-progress` | `test` | `done`, shared by all users; set via `PATCH /card/:id/status`, which any logged-in user may call). Statuses live in `server/utils/cardStatus.js` and must match `DEFAULT_HEADERS` keys in `frontend/app/utils/boardLayout.ts`
+- `Card`: `rating` 1–5 (form: "Priority", board: estimate pill), `comment` ("Summary"), `productId` ("Issue key"), `username` (author), `submittedAt` (set by the server on create, never changed), `type` (`task` | `bug` | `doc`, default `task`; lives in `server/utils/cardType.js` and must match `frontend/app/utils/cardType.ts`), `status` (board column: `todo` | `in-progress` | `test` | `done`, shared by all users; set via `PATCH /card/:id/status`, which any logged-in user may call). Statuses live in `server/utils/cardStatus.js` and must match `DEFAULT_HEADERS` keys in `frontend/app/utils/boardLayout.ts`
 
 Schema changes need the user's approval.
 

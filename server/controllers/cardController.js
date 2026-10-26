@@ -1,7 +1,8 @@
 // server/controllers/cardController.js
 const Card = require("../models/Card");
-const { isNonEmptyString, isObjectId, isValidDate } = require("../utils/validate");
+const { isNonEmptyString, isObjectId } = require("../utils/validate");
 const { CARD_STATUSES } = require("../utils/cardStatus");
+const { CARD_TYPES } = require("../utils/cardType");
 
 const COMMENT_MAX_LENGTH = 2000;
 const PRODUCT_ID_MAX_LENGTH = 200;
@@ -17,7 +18,7 @@ exports.getAll = async (req, res) => {
 };
 
 // Returns an error message, or null when the card fields are valid
-const validateCardFields = ({ rating, comment, productId, submittedAt }) => {
+const validateCardFields = ({ rating, comment, productId, type }) => {
   if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
     return "Rating must be an integer between 1 and 5.";
   }
@@ -27,14 +28,14 @@ const validateCardFields = ({ rating, comment, productId, submittedAt }) => {
   if (!isNonEmptyString(productId, PRODUCT_ID_MAX_LENGTH)) {
     return `Issue key is required (max ${PRODUCT_ID_MAX_LENGTH} characters).`;
   }
-  if (submittedAt !== undefined && !isValidDate(submittedAt)) {
-    return "Invalid date.";
+  if (type !== undefined && (typeof type !== "string" || !CARD_TYPES.includes(type))) {
+    return `Type must be one of: ${CARD_TYPES.join(", ")}.`;
   }
   return null;
 };
 
 exports.create = async (req, res) => {
-  const { rating, comment, productId, submittedAt, status } = req.body;
+  const { rating, comment, productId, status, type } = req.body;
 
   const invalid = validateCardFields(req.body);
   if (invalid) {
@@ -46,8 +47,9 @@ exports.create = async (req, res) => {
   }
 
   try {
-    // Author always comes from the verified token, never from the request body
-    const newCard = new Card({ rating, comment, productId, username: req.user.username, submittedAt, status });
+    // Author always comes from the verified token, never from the request body.
+    // submittedAt is always today (schema default), never from the body.
+    const newCard = new Card({ rating, comment, productId, username: req.user.username, status, type });
     await newCard.save();
     res.status(201).json({ message: "Card saved successfully!" });
   } catch (error) {
@@ -58,7 +60,7 @@ exports.create = async (req, res) => {
 
 exports.update = async (req, res) => {
   const { id } = req.params;
-  const { rating, comment, productId, submittedAt } = req.body;
+  const { rating, comment, productId, type } = req.body;
 
   if (!isObjectId(id)) {
     return res.status(400).json({ message: "Invalid card id." });
@@ -77,11 +79,11 @@ exports.update = async (req, res) => {
       return res.status(403).json({ message: "You can only edit your own card." });
     }
 
-    // Author is never changed by an edit
+    // Author and creation date are never changed by an edit
     card.rating = rating;
     card.comment = comment;
     card.productId = productId;
-    if (submittedAt !== undefined) card.submittedAt = submittedAt;
+    if (type !== undefined) card.type = type;
     await card.save();
     res.status(200).json(card);
   } catch (error) {

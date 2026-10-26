@@ -13,7 +13,7 @@ const Card = require("../models/Card");
 const { authHeader, query } = require("./helpers");
 
 const CARD_ID = "64c000000000000000000001";
-const validCard = { rating: 4, comment: "Looks good", productId: "AUR-1", submittedAt: "2026-10-01T00:00:00.000Z" };
+const validCard = { rating: 4, comment: "Looks good", productId: "AUR-1" };
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -77,6 +77,20 @@ describe("POST /card", () => {
     expect(Card.mock.calls[0][0].status).toBe("test");
   });
 
+  it("saves the issue type and always uses today's date", async () => {
+    Card.mockImplementation((doc) => ({ ...doc, save: jest.fn().mockResolvedValue({}) }));
+
+    const res = await request(app)
+      .post("/card")
+      .set("Authorization", authHeader())
+      .send({ ...validCard, type: "bug", submittedAt: "2020-01-01T00:00:00.000Z" });
+
+    expect(res.status).toBe(201);
+    expect(Card.mock.calls[0][0].type).toBe("bug");
+    // Left out so the schema default (Date.now) applies
+    expect(Card.mock.calls[0][0]).not.toHaveProperty("submittedAt");
+  });
+
   it.each([
     [{ ...validCard, status: "archived" }],
     [{ ...validCard, status: { $ne: null } }],
@@ -84,7 +98,8 @@ describe("POST /card", () => {
     [{ ...validCard, rating: "5" }],
     [{ ...validCard, comment: "" }],
     [{ ...validCard, productId: { $ne: null } }],
-    [{ ...validCard, submittedAt: "not-a-date" }]
+    [{ ...validCard, type: "epic" }],
+    [{ ...validCard, type: { $ne: null } }]
   ])("rejects invalid card %j with 400", async (body) => {
     const res = await request(app).post("/card").set("Authorization", authHeader()).send(body);
 
@@ -106,6 +121,19 @@ describe("PUT /card/:id", () => {
     expect(res.status).toBe(200);
     expect(save).toHaveBeenCalled();
     expect(res.body).toMatchObject({ comment: "Edited", rating: 2, username: "alice" });
+  });
+
+  it("changes the issue type but never the creation date", async () => {
+    const submittedAt = "2026-10-01T00:00:00.000Z";
+    Card.findById.mockResolvedValue({ _id: CARD_ID, username: "alice", ...validCard, type: "task", submittedAt, save: jest.fn() });
+
+    const res = await request(app)
+      .put(`/card/${CARD_ID}`)
+      .set("Authorization", authHeader("alice"))
+      .send({ ...validCard, type: "doc", submittedAt: "2020-01-01T00:00:00.000Z" });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ type: "doc", submittedAt });
   });
 
   it("refuses to edit another user's card with 403", async () => {
@@ -136,7 +164,7 @@ describe("PUT /card/:id", () => {
     [{ ...validCard, rating: 6 }],
     [{ ...validCard, comment: "   " }],
     [{ ...validCard, productId: { $ne: null } }],
-    [{ ...validCard, submittedAt: "not-a-date" }]
+    [{ ...validCard, type: "epic" }]
   ])("rejects invalid card %j with 400", async (body) => {
     const res = await request(app).put(`/card/${CARD_ID}`).set("Authorization", authHeader()).send(body);
 
