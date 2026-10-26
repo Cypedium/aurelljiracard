@@ -3,12 +3,11 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { submitCard, updateCard, type Card as CardData } from '..//../api/endpoints';
 import { isAxiosError } from 'axios';
-import { ChevronDownIcon } from '@heroicons/react/16/solid';
 import { PRIORITIES, validateCardForm } from '../../utils/cardForm';
-import { CARD_TYPES, cardTypeOf, type CardType } from '../../utils/cardType';
+import { cardTypeOf, type CardType } from '../../utils/cardType';
 import { FIELD_CLASS, FIELD_FOCUS_CLASS, LABEL_CLASS, SECTION_PADDING } from '../../utils/styles';
 import type { CardStatus } from '../../utils/boardLayout';
-import IssueTypeIcon from '../../components/IssueTypeIcon';
+import IssueTypeSelect from '../../components/IssueTypeSelect';
 
 type CardProps = {
   // Set when editing an existing card; omitted on the create page
@@ -99,25 +98,7 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
         <label className={LABEL_CLASS} htmlFor="issueType">
           Issue type <span className="text-jira-danger">*</span>
         </label>
-        {/* Native select (tangentbord och mobil fungerar), ikonen visar vald typ */}
-        <div className="relative inline-flex items-center self-start rounded-lg bg-list-test text-list-test-text hover:bg-[#b3d2ff] focus-within:shadow-[0_0_0_2px_var(--color-jira-focus)]">
-          <span className="pointer-events-none absolute left-2">
-            <IssueTypeIcon type={type} />
-          </span>
-          <select
-            id="issueType"
-            className="cursor-pointer appearance-none bg-transparent py-1 pr-8 pl-8 font-medium outline-none"
-            value={type}
-            onChange={(e) => setType(cardTypeOf(e.target.value))}
-          >
-            {CARD_TYPES.map((t) => (
-              <option key={t.key} value={t.key}>
-                {t.label}
-              </option>
-            ))}
-          </select>
-          <ChevronDownIcon className="pointer-events-none absolute right-2 size-4" aria-hidden />
-        </div>
+        <IssueTypeSelect id="issueType" value={type} onChange={setType} />
 
         <label className={LABEL_CLASS} htmlFor="summary">
           Summary <span className="text-jira-danger">*</span>
