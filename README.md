@@ -7,6 +7,9 @@ A small issue/feedback board. Logged-in users create cards (issue key, summary, 
 | Frontend | Next.js 15 (App Router), React 19, TypeScript, Tailwind 4 | [`frontend/`](frontend) | `aurelljiraboard` |
 | Backend | Node 22, Express 5, Mongoose 9 (CommonJS) | [`server/`](server) | `aurelljiraboard-backend` |
 | Database | MongoDB | — | external (`MONGO_URI`) |
+| Backend (alternative) | Java 25, Spring Boot 4, Spring Data JPA, PostgreSQL, Flyway | [`server-java/`](server-java) | not deployed |
+
+`server/` and `server-java/` implement the same API, so the frontend runs against either one; pick it with `NEXT_PUBLIC_API_URL`. See [`server-java/README.md`](server-java/README.md) for the Spring Boot version.
 
 ## Getting started
 
@@ -53,6 +56,8 @@ npm run dev
 | `frontend` | `npm run dev` | Next dev server |
 | `frontend` | `npm run build` | Production build (includes type check) |
 | `frontend` | `npm test` | Jest unit tests |
+| `server-java` | `./mvnw spring-boot:test-run` | Start the Spring Boot API on :8080 with a throwaway Postgres container (Docker) |
+| `server-java` | `./mvnw test` | API tests against real Postgres via Testcontainers (Docker) |
 
 `PythonTests/` holds manual smoke scripts that call a running API: `API_URL=http://localhost:4000 python PythonTests/backend/test_backend_prod.py`. They create real users and cards.
 

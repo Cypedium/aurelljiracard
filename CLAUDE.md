@@ -20,7 +20,7 @@ Before changing any file for a new **feature**, **bug** or **fix** request (in E
 
 ## Layout
 
-Two independent npm projects — always `cd` into one before running npm. There is no root `package.json`.
+Two independent npm projects plus a Maven project — always `cd` into one before running npm or `./mvnw`. There is no root `package.json`.
 
 - `server/` — Express 5 + Mongoose 9, **CommonJS** (`require`/`module.exports`), entry `server.js` (DB connect + listen), `app.js` (Express app, exported for tests)
   - `routes/` → `controllers/` → `models/`; `middleware/authMiddleware.js`; `utils/jwt.js`, `utils/validate.js`
@@ -33,6 +33,10 @@ Two independent npm projects — always `cd` into one before running npm. There 
   - `app/utils/boardLayout.ts` — board columns and card placement (pure, unit-tested)
   - `app/components/` — `Layout`, `Navbar`, `Footer`, login/register forms
   - `tests/unit/` — Jest via `next/jest`; import test globals from `@jest/globals`
+- `server-java/` — Spring Boot 4 + PostgreSQL port of `server/`, Java 25, Maven. Layered: `controller/` → `service/` → `repository/` → `entity/`, plus `dto/`, `security/`, `config/`, `exception/`
+  - Must stay API-compatible with `server/` (paths, `_id`, `{ message }` errors, token rules); change both together
+  - Schema only via Flyway (`src/main/resources/db/migration/V<n>__*.sql`); Hibernate runs `ddl-auto: validate`. Never edit an applied migration
+  - Tests use Testcontainers — Docker must be running. Dev-only secrets live in `src/test/resources/application-dev.yml`
 - `PythonTests/` — manual smoke scripts against a running API (create real data; not run in CI)
 
 `frontend/app/node_modules/` is a stray install — exclude it (and every `node_modules`) from searches.
@@ -42,9 +46,10 @@ Two independent npm projects — always `cd` into one before running npm. There 
 ```bash
 cd server   && npm test                                  # API tests
 cd frontend && npx tsc --noEmit && npm test && npm run build
+cd server-java && ./mvnw test                            # Spring Boot API tests (needs Docker)
 ```
 
-CI (`.github/workflows/ci.yml`) runs exactly these on pushes and PRs to `main`; run them before committing. There is no ESLint/Prettier config yet — `next lint` is not set up.
+CI (`.github/workflows/ci.yml`) runs the npm commands above (not `server-java` yet) on pushes and PRs to `main`; run them before committing. There is no ESLint/Prettier config yet — `next lint` is not set up.
 
 ## Conventions
 
