@@ -6,7 +6,7 @@ export default function CardsPage() {
   return (
     <Layout>
       {/* pt: navbaren är fixed och ligger annars över boardens rubrik */}
-      <div className="min-h-screen bg-linear-135 from-board-from via-board-via to-board-to p-6 pt-24 max-[480px]:p-3 max-[480px]:pt-20">
+      <div className="min-h-screen bg-linear-135 from-board-from via-board-via to-board-to p-6 pt-16 max-[480px]:p-3 max-[480px]:pt-20">
         <Cards />
       </div>
     </Layout>
