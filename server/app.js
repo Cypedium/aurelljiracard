@@ -10,7 +10,7 @@ const authRoutes = require('./routes/auth');
 const cardRoutes = require('./routes/card');
 const userRoutes = require('./routes/user');
 
-const DEFAULT_CLIENT_URLS = 'http://localhost:3000,https://aurellgiracard.fly.dev';
+const DEFAULT_CLIENT_URLS = 'http://localhost:3000,https://aurelljiraboard.fly.dev';
 const allowedOrigins = (process.env.CLIENT_URL || DEFAULT_CLIENT_URLS)
   .split(',')
   .map((url) => url.trim())

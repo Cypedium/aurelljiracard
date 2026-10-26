@@ -1,4 +1,4 @@
-app = "aurellgiracard-backend"
+app = "aurelljiraboard-backend"
 primary_region = "arn"
 
 [build]

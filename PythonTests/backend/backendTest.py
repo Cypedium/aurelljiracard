@@ -3,7 +3,7 @@ import json
 import os
 
 
-# Set API_URL to target another environment, e.g. https://aurellgiracard-backend.fly.dev
+# Set API_URL to target another environment, e.g. https://aurelljiraboard-backend.fly.dev
 BASE_URL = os.environ.get("API_URL", "http://localhost:4000")
 
 # Globala tokens

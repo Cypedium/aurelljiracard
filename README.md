@@ -1,11 +1,11 @@
-# Aurell Gira Board
+# Aurell Jira Board
 
 A small issue/feedback board. Logged-in users create cards (issue key, summary, priority 1–5, date), see everyone's cards on a drag-and-drop grid, and edit or delete their own. Each user's grid layout is saved server-side.
 
 | Part | Stack | Folder | Fly app |
 |---|---|---|---|
-| Frontend | Next.js 15 (App Router), React 19, TypeScript, Tailwind 4 | [`frontend/`](frontend) | `aurellgiracard` |
-| Backend | Node 22, Express 5, Mongoose 9 (CommonJS) | [`server/`](server) | `aurellgiracard-backend` |
+| Frontend | Next.js 15 (App Router), React 19, TypeScript, Tailwind 4 | [`frontend/`](frontend) | `aurelljiraboard` |
+| Backend | Node 22, Express 5, Mongoose 9 (CommonJS) | [`server/`](server) | `aurelljiraboard-backend` |
 | Database | MongoDB | — | external (`MONGO_URI`) |
 
 ## Getting started
@@ -36,7 +36,7 @@ npm run dev
 | `JWT_SECRET` | Secret for 15-minute access tokens |
 | `REFRESH_SECRET` | Secret for 7-day refresh tokens (must differ from `JWT_SECRET`) |
 | `PORT` | Port to listen on (`4000`) |
-| `CLIENT_URL` | Comma-separated allowed CORS origins. Default: `http://localhost:3000,https://aurellgiracard.fly.dev` |
+| `CLIENT_URL` | Comma-separated allowed CORS origins. Default: `http://localhost:3000,https://aurelljiraboard.fly.dev` |
 
 **Frontend**
 
@@ -88,5 +88,5 @@ Manual deploy: `fly deploy -c fly.server.toml` in `server/`, `fly deploy -c fly.
 Backend secrets must be set on Fly once:
 
 ```bash
-fly secrets set -a aurellgiracard-backend MONGO_URI=... JWT_SECRET=... REFRESH_SECRET=... CLIENT_URL=https://aurellgiracard.fly.dev
+fly secrets set -a aurelljiraboard-backend MONGO_URI=... JWT_SECRET=... REFRESH_SECRET=... CLIENT_URL=https://aurelljiraboard.fly.dev
 ```

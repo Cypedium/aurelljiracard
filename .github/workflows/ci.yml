@@ -30,7 +30,7 @@ jobs:
       run:
         working-directory: frontend
     env:
-      NEXT_PUBLIC_API_URL: https://aurellgiracard-backend.fly.dev
+      NEXT_PUBLIC_API_URL: https://aurelljiraboard-backend.fly.dev
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Project-specific instructions for Aurell Gira Board. Where this file is more specific than a parent CLAUDE.md (folder layout, module system, response shape, branch names), this file wins.
+Project-specific instructions for Aurell Jira Board. Where this file is more specific than a parent CLAUDE.md (folder layout, module system, response shape, branch names), this file wins.
 
 ## Branch check — do this first
 
@@ -59,7 +59,7 @@ CI (`.github/workflows/ci.yml`) runs exactly these on pushes and PRs to `main`; 
 
 ## Config and secrets
 
-- `server/.env` is listed for ignore but **is still tracked in git** — never stage or commit it, and don't print its contents. Template: `server/.env.example`. Production secrets live in `fly secrets` for `aurellgiracard-backend`.
+- `server/.env` is listed for ignore but **is still tracked in git** — never stage or commit it, and don't print its contents. Template: `server/.env.example`. Production secrets live in `fly secrets` for `aurelljiraboard-backend`.
 - `NEXT_PUBLIC_API_URL` is inlined at build time: `.env.local` locally, `[build.args]` in `frontend/fly.app.toml` for production.
 - CORS origins: `CLIENT_URL` (comma-separated) in `server/app.js`.
 - Never commit `.env*` files, credentials, tokens, or curl snippets containing them. Stage files by name, never `git add -A` / `git add .`.
