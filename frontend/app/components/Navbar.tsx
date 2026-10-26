@@ -19,7 +19,7 @@ const Navbar = () => {
   }, [pathname]);
 
   return (
-    <nav className="fixed z-[1000] flex w-full items-center justify-between border border-brand-border bg-brand py-[0.5%] pr-[2%] pl-[3%] font-brand">
+    <nav className="fixed z-[1000] flex w-full items-center justify-between border bg-gray-600 py-[0.5%] pr-[2%] pl-[3%] font-brand">
       <button
         className="block text-white md:hidden"
         onClick={() => setMenuOpen(!menuOpen)}
@@ -36,24 +36,24 @@ const Navbar = () => {
         {isLoggedIn && (
           <>
             <li onClick={() => setMenuOpen(false)}>
-              <Link href="/cards/card">Create Card</Link>
+              <Link href="/cards">Aurell Jira Board</Link>
             </li>
             <li onClick={() => setMenuOpen(false)}>
-              <Link href="/cards">Jira Board</Link>
+              <Link href="/cards/card">Create Card</Link>
             </li>
           </>
         )}
 
         {isLoggedIn ? (
           <>
-            <li key="logout">
-              <button onClick={handleLogout}>Logout</button>
-            </li>
             {userName && (
               <li key="profile">
                 <span>{userName}</span>
               </li>
             )}
+            <li key="logout">
+              <button onClick={handleLogout}>Logout</button>
+            </li>
           </>
         ) : (
           <>

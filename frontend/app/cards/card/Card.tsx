@@ -141,7 +141,7 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
         />
 
         <span className={LABEL_CLASS} id="priority-label">
-          Priority <span className="text-jira-danger">*</span>
+          Time tracking <span className="text-jira-danger">*</span>
         </span>
         <div className="flex gap-2" role="group" aria-labelledby="priority-label">
           {PRIORITIES.map((p) => (

@@ -175,9 +175,9 @@ export default function Home() {
 
   return (
     <div id="cards-container" className="font-jira">
-      <div className="mb-4 rounded-xl bg-black/25 px-5 py-3 backdrop-blur-sm">
+      {/* <div className="mb-4 rounded-xl bg-black/25 px-5 py-3 backdrop-blur-sm">
         <h1 className="text-xl font-bold text-white">Jira Board</h1>
-      </div>
+      </div> */}
       <div className="overflow-x-auto">
         <div
           ref={containerRef}
