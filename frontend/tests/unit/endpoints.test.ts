@@ -22,8 +22,8 @@ describe("API endpoints", () => {
     ["logoutUser", () => endpoints.logoutUser("rt"), "post", "/auth/logout"],
     ["refreshToken", () => endpoints.refreshToken("rt"), "post", "/auth/refresh"],
     ["getCards", () => endpoints.getCards(), "get", "/card"],
-    ["submitCard", () => endpoints.submitCard({ rating: 3, comment: "c", productId: "p", submittedAt: "2026-01-01" }), "post", "/card"],
-    ["updateCard", () => endpoints.updateCard("abc", { rating: 3, comment: "c", productId: "p", submittedAt: "2026-01-01" }), "put", "/card/abc"],
+    ["submitCard", () => endpoints.submitCard({ rating: 3, comment: "c", productId: "p" }), "post", "/card"],
+    ["updateCard", () => endpoints.updateCard("abc", { rating: 3, comment: "c", productId: "p" }), "put", "/card/abc"],
     ["updateCardStatus", () => endpoints.updateCardStatus("abc", "done"), "patch", "/card/abc/status"],
     ["deleteCard", () => endpoints.deleteCard("abc"), "delete", "/card/abc"],
     ["getUsers", () => endpoints.getUsers(), "get", "/user"],
@@ -34,19 +34,19 @@ describe("API endpoints", () => {
   });
 
   it("submitCard never sends a username", async () => {
-    await endpoints.submitCard({ rating: 3, comment: "c", productId: "p", submittedAt: "2026-01-01" });
+    await endpoints.submitCard({ rating: 3, comment: "c", productId: "p" });
 
     expect(spies.post.mock.calls[0][1]).not.toHaveProperty("username");
   });
 
   it("submitCard sends the board column when given", async () => {
-    await endpoints.submitCard({ rating: 3, comment: "c", productId: "p", submittedAt: "2026-01-01", status: "test" });
+    await endpoints.submitCard({ rating: 3, comment: "c", productId: "p", status: "test" });
 
     expect(spies.post.mock.calls[0][1]).toHaveProperty("status", "test");
   });
 
   it("updateCard never sends a username", async () => {
-    await endpoints.updateCard("abc", { rating: 3, comment: "c", productId: "p", submittedAt: "2026-01-01" });
+    await endpoints.updateCard("abc", { rating: 3, comment: "c", productId: "p" });
 
     expect(spies.put.mock.calls[0][1]).not.toHaveProperty("username");
   });
