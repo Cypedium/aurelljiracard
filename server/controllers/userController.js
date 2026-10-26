@@ -1,8 +1,18 @@
 // server/controllers/userController.js
 const User = require("../models/User");
+const { isNonEmptyString } = require("../utils/validate");
+const { CARD_STATUSES } = require("../utils/cardStatus");
 
 const MIN_COLS = 1;
 const MAX_COLS = 12;
+const HEADER_TITLE_MAX_LENGTH = 50;
+
+// Column names are per user; each header must name a board column
+const isValidHeader = (h) =>
+  h !== null &&
+  typeof h === "object" &&
+  CARD_STATUSES.includes(h.key) &&
+  isNonEmptyString(h.title, HEADER_TITLE_MAX_LENGTH);
 
 // GET ALL USERS
 exports.getAll = async (req, res) => {
@@ -53,6 +63,11 @@ exports.updateLayout = async (req, res) => {
   if ((headers !== undefined && !Array.isArray(headers)) || (cards !== undefined && !Array.isArray(cards))) {
     return res.status(400).json({ message: "headers and cards must be arrays." });
   }
+  if (headers !== undefined && !headers.every(isValidHeader)) {
+    return res.status(400).json({
+      message: `Each header needs a valid key and a title (max ${HEADER_TITLE_MAX_LENGTH} characters).`
+    });
+  }
 
   try {
     const user = await User.findById(req.user.id);
@@ -63,7 +78,7 @@ exports.updateLayout = async (req, res) => {
 
     user.layout = {
       cols: cols ?? user.layout.cols,
-      headers: headers ?? user.layout.headers,
+      headers: headers ? headers.map(({ key, title }) => ({ key, title: title.trim() })) : user.layout.headers,
       cards: cards ?? user.layout.cards
     };
 
