@@ -1,0 +1,5 @@
+# Local/test profile only: throwaway secrets, never used in production
+app:
+  jwt:
+    access-secret: dev-only-access-secret-0123456789abcdef
+    refresh-secret: dev-only-refresh-secret-0123456789abcdef
