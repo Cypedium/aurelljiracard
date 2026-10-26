@@ -3,8 +3,13 @@ import {
   BOARD_COLS,
   DEFAULT_HEADERS,
   DEFAULT_LAYOUT,
+  FOOTER_HEIGHT,
+  GRID_MARGIN,
+  HEADER_HEIGHT,
+  ROW_HEIGHT,
   buildCardLayout,
   cardKey,
+  listHeight,
   columnForStatus,
   normalizeLayout,
   statusForColumn,
@@ -107,5 +112,12 @@ describe("buildCardLayout", () => {
       w: 1,
       h: 1,
     });
+  });
+});
+
+describe("listHeight", () => {
+  it("fits the header, one row per card and the add button", () => {
+    expect(listHeight(0)).toBe(HEADER_HEIGHT + FOOTER_HEIGHT);
+    expect(listHeight(2)).toBe(listHeight(0) + 2 * (ROW_HEIGHT + GRID_MARGIN));
   });
 });

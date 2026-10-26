@@ -39,6 +39,12 @@ describe("API endpoints", () => {
     expect(spies.post.mock.calls[0][1]).not.toHaveProperty("username");
   });
 
+  it("submitCard sends the board column when given", async () => {
+    await endpoints.submitCard({ rating: 3, comment: "c", productId: "p", submittedAt: "2026-01-01", status: "test" });
+
+    expect(spies.post.mock.calls[0][1]).toHaveProperty("status", "test");
+  });
+
   it("updateCard never sends a username", async () => {
     await endpoints.updateCard("abc", { rating: 3, comment: "c", productId: "p", submittedAt: "2026-01-01" });
 

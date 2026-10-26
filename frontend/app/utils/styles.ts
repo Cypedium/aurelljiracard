@@ -1,9 +1,18 @@
 // Delade Tailwind-klasser för board och kortformulär
+import type { CardStatus } from "./boardLayout";
 
 // Board: datum, edit- och delete-knappen syns bara när man hovrar över kortet
 export const CARD_HOVER_CLASS =
   "opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100";
-export const CARD_ACTION_CLASS = `no-drag rounded-[3px] px-1.5 py-1 text-jira-secondary hover:bg-jira-neutral ${CARD_HOVER_CLASS}`;
+// Trello-liknande färg per lista (bakgrund + text), nycklar = CardStatus
+export const LIST_COLOR_CLASS: Record<CardStatus, string> = {
+  todo: "bg-list-todo text-list-todo-text",
+  "in-progress": "bg-list-progress text-list-progress-text",
+  test: "bg-list-test text-list-test-text",
+  done: "bg-list-done text-list-done-text",
+};
+
+export const CARD_ACTION_CLASS =`no-drag rounded-[3px] px-1.5 py-1 text-jira-secondary hover:bg-jira-neutral ${CARD_HOVER_CLASS}`;
 
 // Formulär: gemensam stil för fälten
 export const FIELD_CLASS =

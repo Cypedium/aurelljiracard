@@ -8,6 +8,7 @@ import { isAxiosError } from 'axios';
 import { CalendarIcon, CheckIcon } from '@heroicons/react/16/solid';
 import { PRIORITIES, validateCardForm } from '../../utils/cardForm';
 import { FIELD_CLASS, FIELD_FOCUS_CLASS, LABEL_CLASS, SECTION_PADDING } from '../../utils/styles';
+import type { CardStatus } from '../../utils/boardLayout';
 
 
 registerLocale('sv', sv);
@@ -17,9 +18,13 @@ type CardProps = {
   card?: CardData;
   onSaved?: (card: CardData) => void;
   onCancel?: () => void;
+  // Board column for a new card ("Add a card" on the board); defaults to To Do
+  status?: CardStatus;
+  // Called after a new card is created; without it the page redirects home
+  onCreated?: () => void;
 };
 
-export default function Card({ card, onSaved, onCancel }: CardProps = {}) {
+export default function Card({ card, onSaved, onCancel, status, onCreated }: CardProps = {}) {
   const isEdit = Boolean(card?._id);
   const [selectedDate, setSelectedDate] = useState<Date | null>(
     card ? new Date(card.submittedAt) : null
@@ -61,7 +66,12 @@ export default function Card({ card, onSaved, onCancel }: CardProps = {}) {
 
     try {
       // Author is taken from the access token by the backend
-      const res = await submitCard(fields);
+      const res = await submitCard({ ...fields, status });
+
+      if (onCreated) {
+        onCreated();
+        return;
+      }
 
       setMessage(res.data.message || 'Card submitted!');
       setRating(0);

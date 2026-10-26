@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { ResponsiveGridLayout, useContainerWidth } from "react-grid-layout";
-import { CheckIcon, PencilIcon, TrashIcon } from "@heroicons/react/16/solid";
+import { CheckIcon, PencilIcon, PlusIcon, TrashIcon } from "@heroicons/react/16/solid";
 import debounce from "lodash.debounce";
 import api from "../api/api"; // ⭐ axios-instansen
 import { deleteCard, updateCardStatus, type Card } from "../api/endpoints";
@@ -17,13 +17,14 @@ import {
   ROW_HEIGHT,
   buildCardLayout,
   cardKey,
+  listHeight,
   normalizeLayout,
   statusForColumn,
   toSavedPositions,
 } from "../utils/boardLayout";
 import { avatarColor, avatarInitials } from "../utils/avatar";
 import { getUsername } from "../utils/session";
-import { CARD_ACTION_CLASS, CARD_HOVER_CLASS } from "../utils/styles";
+import { CARD_ACTION_CLASS, CARD_HOVER_CLASS, LIST_COLOR_CLASS } from "../utils/styles";
 
 export default function Home() {
   const [cards, setCards] = useState<Card[]>([]);
@@ -32,24 +33,26 @@ export default function Home() {
   const [layoutLoaded, setLayoutLoaded] = useState(false);
   const [userName, setUserName] = useState("");
   const [editingCard, setEditingCard] = useState<Card | null>(null);
+  // Kolumnen där ett nytt kort skapas ("Add a card")
+  const [creatingIn, setCreatingIn] = useState<CardStatus | null>(null);
   // Gridden följer boardens bredd så att den fyller skärmen
   const { width, containerRef, mounted } = useContainerWidth();
 
   // 🔥 Hämta card via api.ts (token-rotation ingår)
-  useEffect(() => {
-    const fetchCards = async () => {
-      try {
-        const res = await api.get("/card");
-        setCards(res.data || []);
-      } catch (err: any) {
-        console.error("Error fetching cards:", err);
-        setError("Error fetching cards: " + err.message);
-      }
-    };
+  const fetchCards = useCallback(async () => {
+    try {
+      const res = await api.get("/card");
+      setCards(res.data || []);
+    } catch (err: any) {
+      console.error("Error fetching cards:", err);
+      setError("Error fetching cards: " + err.message);
+    }
+  }, []);
 
+  useEffect(() => {
     setUserName(getUsername());
     fetchCards();
-  }, []);
+  }, [fetchCards]);
 
   // 🔥 Hämta layout från server eller localStorage
   useEffect(() => {
@@ -124,15 +127,26 @@ export default function Home() {
     }
   };
 
-  // Stäng redigeringsdialogen med Escape
+  const dialogOpen = Boolean(editingCard || creatingIn);
+  const closeDialog = () => {
+    setEditingCard(null);
+    setCreatingIn(null);
+  };
+
+  // Stäng dialogen med Escape
   useEffect(() => {
-    if (!editingCard) return;
+    if (!dialogOpen) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setEditingCard(null);
+      if (e.key === "Escape") closeDialog();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [editingCard]);
+  }, [dialogOpen]);
+
+  const handleCardCreated = () => {
+    closeDialog();
+    fetchCards();
+  };
 
   const handleCardSaved = (updated: Card) => {
     setCards((prev) => prev.map((fb) => (fb._id === updated._id ? updated : fb)));
@@ -149,39 +163,64 @@ export default function Home() {
     }
   };
 
+  // Antal kort per kolumn: visas i rubriken och styr listans höjd
+  const columnCounts = DEFAULT_HEADERS.map(
+    (_, i) => gridLayout.filter((l) => l.x === i).length,
+  );
+  const columnGrid = {
+    padding: `0 ${GRID_MARGIN}px`,
+    gap: GRID_MARGIN,
+    gridTemplateColumns: `repeat(${BOARD_COLS}, 1fr)`,
+  };
+
   return (
-    <div id="cards-container">
-      <br />
-      <h1 className="mb-5 text-center text-[40px] font-bold">Jira Board</h1>
+    <div id="cards-container" className="font-jira">
+      <div className="mb-4 rounded-xl bg-black/25 px-5 py-3 backdrop-blur-sm">
+        <h1 className="text-xl font-bold text-white">Jira Board</h1>
+      </div>
       <div className="overflow-x-auto">
         <div
           ref={containerRef}
-          className="relative my-4 min-h-[480px] w-full min-w-[720px]"
+          className="relative w-full min-w-[720px]"
+          style={{ minHeight: Math.max(...columnCounts.map(listHeight)) + GRID_MARGIN }}
         >
-          <div
-            className="pointer-events-none absolute inset-0 grid"
-            style={{
-              padding: `0 ${GRID_MARGIN}px`,
-              gap: GRID_MARGIN,
-              gridTemplateColumns: `repeat(${BOARD_COLS}, 1fr)`,
-            }}
-          >
+          {/* Listornas bakgrund och rubrik, under korten */}
+          <div className="pointer-events-none absolute inset-0 grid items-start" style={columnGrid}>
             {DEFAULT_HEADERS.map((h, i) => (
               <div
                 key={h.key}
-                className="flex items-start gap-2 rounded-md bg-jira-lane p-3"
+                className={`flex items-start gap-2 rounded-xl px-4 py-3 shadow-[0_1px_1px_rgba(9,30,66,0.25)] ${LIST_COLOR_CLASS[h.key]}`}
+                style={{ height: listHeight(columnCounts[i]) }}
               >
-                <span className="truncate text-xs font-semibold uppercase text-jira-secondary">
+                <span className="min-w-0 flex-1 truncate text-sm font-semibold">
                   {h.title}
                 </span>
-                <span className="text-xs text-jira-subtle">
-                  {gridLayout.filter((l) => l.x === i).length}
-                </span>
+                <span className="text-sm opacity-80">{columnCounts[i]}</span>
               </div>
             ))}
           </div>
 
-          {!layoutLoaded || !mounted ? null : cards.length > 0 ? (
+          {/* "Add a card" längst ner i varje lista, ovanför gridden så att den går att klicka */}
+          <div className="pointer-events-none absolute inset-0 z-[1] grid items-start" style={columnGrid}>
+            {DEFAULT_HEADERS.map((h, i) => (
+              <div
+                key={h.key}
+                className="flex flex-col justify-end px-2 pb-2"
+                style={{ height: listHeight(columnCounts[i]) }}
+              >
+                <button
+                  type="button"
+                  className={`pointer-events-auto flex h-8 items-center gap-2 rounded-lg px-2 text-sm font-medium hover:bg-black/10 ${LIST_COLOR_CLASS[h.key]}`}
+                  onClick={() => setCreatingIn(h.key)}
+                >
+                  <PlusIcon className="size-4" aria-hidden />
+                  Add a card
+                </button>
+              </div>
+            ))}
+          </div>
+
+          {!layoutLoaded || !mounted ? null : cards.length > 0 && (
             <ResponsiveGridLayout
               className="gridLayout"
               layouts={{ lg: gridLayout }}
@@ -210,7 +249,7 @@ export default function Home() {
                   className="px-2"
                 >
                   <div
-                    className="group relative flex h-full cursor-grab flex-col gap-2 overflow-hidden rounded-md bg-white p-3 font-jira text-sm text-jira-text shadow-[0_1px_1px_rgba(9,30,66,0.25),0_0_1px_rgba(9,30,66,0.31)] hover:bg-jira-hover"
+                    className="group relative flex h-full cursor-grab flex-col gap-2 overflow-hidden rounded-lg bg-white p-3 text-sm text-jira-text shadow-[0_1px_1px_rgba(9,30,66,0.25),0_0_1px_rgba(9,30,66,0.31)] hover:ring-2 hover:ring-jira-focus"
                   >
                     <div className="absolute top-2 right-2 flex flex-col items-end gap-0.5">
                       <div className="flex items-center gap-1">
@@ -292,19 +331,19 @@ export default function Home() {
                 </div>
               ))}
             </ResponsiveGridLayout>
-          ) : (
-            <p className="relative pt-14 text-center">No card found.</p>
           )}
         </div>
       </div>
 
-      {error && <div className="mt-3 text-[red]">{error}</div>}
+      {error && (
+        <div className="mt-3 rounded-lg bg-white px-3 py-2 text-sm text-jira-danger">{error}</div>
+      )}
 
-      {editingCard && (
+      {dialogOpen && (
         <div
           className="fixed inset-0 z-[1000] flex items-start justify-center overflow-y-auto bg-[rgba(9,30,66,0.54)] px-4 py-12"
           onMouseDown={(e) => {
-            if (e.target === e.currentTarget) setEditingCard(null);
+            if (e.target === e.currentTarget) closeDialog();
           }}
         >
           <div
@@ -314,9 +353,11 @@ export default function Home() {
             className="w-full max-w-[640px]"
           >
             <CardForm
-              card={editingCard}
+              card={editingCard ?? undefined}
+              status={creatingIn ?? undefined}
               onSaved={handleCardSaved}
-              onCancel={() => setEditingCard(null)}
+              onCreated={handleCardCreated}
+              onCancel={closeDialog}
             />
           </div>
         </div>

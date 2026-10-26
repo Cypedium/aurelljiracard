@@ -25,6 +25,19 @@
   --color-jira-task: #4bade8;
   --color-jira-danger: #c9372c;
   --color-jira-info: #e9f2ff;
+
+  /* Trello-liknande board: listfärger och bakgrund, t.ex. bg-list-todo */
+  --color-list-todo: #eed7fc;
+  --color-list-todo-text: #352c63;
+  --color-list-progress: #f5e989;
+  --color-list-progress-text: #533f04;
+  --color-list-test: #cce0ff;
+  --color-list-test-text: #09326c;
+  --color-list-done: #baf3db;
+  --color-list-done-text: #164b35;
+  --color-board-from: #5e4db2;
+  --color-board-via: #a259c4;
+  --color-board-to: #e774bb;
 }
 
 html,
