@@ -1,17 +1,13 @@
 'use client';
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { submitCard, updateCard, type Card as CardData } from '..//../api/endpoints';
-import DatePicker, { registerLocale } from 'react-datepicker';
-import { sv } from 'date-fns/locale/sv';
 import { isAxiosError } from 'axios';
-import { CalendarIcon, CheckIcon } from '@heroicons/react/16/solid';
 import { PRIORITIES, validateCardForm } from '../../utils/cardForm';
+import { cardTypeOf, type CardType } from '../../utils/cardType';
 import { FIELD_CLASS, FIELD_FOCUS_CLASS, LABEL_CLASS, SECTION_PADDING } from '../../utils/styles';
 import type { CardStatus } from '../../utils/boardLayout';
-
-
-registerLocale('sv', sv);
+import IssueTypeSelect from '../../components/IssueTypeSelect';
 
 type CardProps = {
   // Set when editing an existing card; omitted on the create page
@@ -26,15 +22,12 @@ type CardProps = {
 
 export default function Card({ card, onSaved, onCancel, status, onCreated }: CardProps = {}) {
   const isEdit = Boolean(card?._id);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(
-    card ? new Date(card.submittedAt) : null
-  );
+  const [type, setType] = useState<CardType>(cardTypeOf(card?.type));
   const [rating, setRating] = useState<number>(card?.rating ?? 0);
   const [comment, setComment] = useState<string>(card?.comment ?? '');
   const [message, setMessage] = useState<string | null>(null);
   const [productId, setProductId] = useState<string>(card?.productId ?? '');
   const router = useRouter();
-  const datePickerRef = useRef<any>(null);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -45,12 +38,8 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
       return;
     }
 
-    const fields = {
-      rating,
-      comment,
-      productId,
-      submittedAt: selectedDate?.toISOString() || new Date().toISOString()
-    };
+    // The backend sets the date (today) when the card is created
+    const fields = { type, rating, comment, productId };
 
     if (isEdit && card?._id) {
       try {
@@ -77,7 +66,7 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
       setRating(0);
       setComment('');
       setProductId('');
-      setSelectedDate(null);
+      setType(cardTypeOf());
 
       setTimeout(() => {
         router.push("/");
@@ -103,18 +92,13 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
       </header>
 
       <div className={`${SECTION_PADDING} flex flex-col pt-4 pb-4`}>
-        <p className="mb-3 text-xs text-jira-secondary">
+        <p className="text-xs text-jira-secondary">
           Required fields are marked with an asterisk <span className="text-jira-danger">*</span>
         </p>
-        <span className="inline-flex items-center gap-2 self-start rounded-lg bg-list-test px-2 py-1 font-medium text-list-test-text">
-          <span
-            className="inline-flex size-4 items-center justify-center rounded-[3px] bg-board-via text-white"
-            aria-hidden
-          >
-            <CheckIcon className="size-3" />
-          </span>
-          Task
-        </span>
+        <label className={LABEL_CLASS} htmlFor="issueType">
+          Issue type <span className="text-jira-danger">*</span>
+        </label>
+        <IssueTypeSelect id="issueType" value={type} onChange={setType} />
 
         <label className={LABEL_CLASS} htmlFor="summary">
           Summary <span className="text-jira-danger">*</span>
@@ -159,35 +143,6 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
               {p}
             </button>
           ))}
-        </div>
-
-        <label className={LABEL_CLASS} htmlFor="date">
-          Date <span className="text-jira-danger">*</span>
-        </label>
-        <div
-          className={`${FIELD_CLASS} flex items-center pr-1 pl-2 focus-within:border-jira-focus focus-within:bg-white focus-within:shadow-[inset_0_0_0_1px_var(--color-jira-focus)]`}
-        >
-          <DatePicker
-            ref={datePickerRef}
-            id="date"
-            selected={selectedDate}
-            onChange={(date: Date | null) => setSelectedDate(date)}
-            dateFormat="yyyy-MM-dd"
-            placeholderText="yyyy-mm-dd"
-            required
-            locale="sv"
-            className="w-full cursor-pointer bg-transparent py-2 outline-none"
-            wrapperClassName="flex-1"
-            maxDate={new Date()}
-          />
-          <button
-            type="button"
-            className="rounded-[3px] px-2 py-1.5 text-jira-secondary hover:bg-jira-neutral"
-            aria-label="Open calendar"
-            onClick={() => datePickerRef.current?.setOpen(true)}
-          >
-            <CalendarIcon className="size-4" aria-hidden />
-          </button>
         </div>
 
         {message && (

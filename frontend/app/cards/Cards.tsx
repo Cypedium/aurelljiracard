@@ -1,7 +1,8 @@
 "use client";
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { ResponsiveGridLayout, useContainerWidth } from "react-grid-layout";
-import { CheckIcon, PencilIcon, PlusIcon, TrashIcon } from "@heroicons/react/16/solid";
+import { PencilIcon, PlusIcon, TrashIcon } from "@heroicons/react/16/solid";
+import IssueTypeIcon from "../components/IssueTypeIcon";
 import debounce from "lodash.debounce";
 import api from "../api/api"; // ⭐ axios-instansen
 import { deleteCard, updateCardStatus, type Card } from "../api/endpoints";
@@ -346,12 +347,7 @@ export default function Home() {
                     </p>
 
                     <div className="mt-auto flex items-center gap-1.5">
-                      <span
-                        className="inline-flex size-4 shrink-0 items-center justify-center rounded-[3px] bg-jira-task text-white"
-                        title="Task"
-                      >
-                        <CheckIcon className="size-3" aria-hidden />
-                      </span>
+                      <IssueTypeIcon type={fb.type} />
                       <span className="min-w-0 flex-1 truncate text-xs font-semibold uppercase text-jira-secondary">
                         {fb.productId}
                       </span>

@@ -2,6 +2,7 @@
 // Paths must match the backend mounts in server/app.js: /auth, /card, /user
 import api from "./api";
 import type { CardStatus } from "../utils/boardLayout";
+import type { CardType } from "../utils/cardType";
 
 export type Card = {
   _id?: string;
@@ -12,11 +13,13 @@ export type Card = {
   submittedAt: string;
   // Missing on cards created before statuses existed → treated as "todo"
   status?: CardStatus;
+  // Missing on cards created before types existed → treated as "task"
+  type?: CardType;
 };
 
-// The backend sets the author from the access token; new cards start in "todo"
-// unless a status (board column) is given
-export type NewCard = Omit<Card, "_id" | "username">;
+// The backend sets the author from the access token and the date to today;
+// new cards start in "todo" unless a status (board column) is given
+export type NewCard = Omit<Card, "_id" | "username" | "submittedAt">;
 
 export type User = {
   username: string;
