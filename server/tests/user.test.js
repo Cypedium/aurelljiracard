@@ -71,7 +71,29 @@ describe("layout", () => {
     expect(user.save).toHaveBeenCalled();
   });
 
-  it.each([[{ cols: 99 }], [{ cols: "6" }], [{ cards: "nope" }]])("PUT rejects %j with 400", async (body) => {
+  it("PUT /user/layout saves renamed column headers, keeping only key and title", async () => {
+    const user = { layout: { cols: 4, headers: [], cards: [] }, save: jest.fn().mockResolvedValue({}) };
+    User.findById.mockResolvedValue(user);
+
+    const res = await request(app)
+      .put("/user/layout")
+      .set("Authorization", authHeader())
+      .send({ headers: [{ key: "todo", title: " Backlog ", extra: "x" }] });
+
+    expect(res.status).toBe(200);
+    expect(user.layout.headers).toEqual([{ key: "todo", title: "Backlog" }]);
+  });
+
+  it.each([
+    [{ cols: 99 }],
+    [{ cols: "6" }],
+    [{ cards: "nope" }],
+    [{ headers: [{ key: "archived", title: "Archive" }] }],
+    [{ headers: [{ key: "todo", title: "   " }] }],
+    [{ headers: [{ key: "todo", title: "x".repeat(51) }] }],
+    [{ headers: [{ key: "todo", title: { $ne: null } }] }],
+    [{ headers: [null] }]
+  ])("PUT rejects %j with 400", async (body) => {
     const res = await request(app).put("/user/layout").set("Authorization", authHeader()).send(body);
 
     expect(res.status).toBe(400);

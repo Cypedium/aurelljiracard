@@ -36,11 +36,34 @@ export const DEFAULT_LAYOUT: UserLayout = {
   headers: DEFAULT_HEADERS,
 };
 
-// Boarden har alltid de fyra fasta kolumnerna, bara kortpositioner sparas
+// Måste matcha HEADER_TITLE_MAX_LENGTH i server/controllers/userController.js
+export const HEADER_TITLE_MAX_LENGTH = 50;
+
+const sanitizeTitle = (title: unknown): string =>
+  typeof title === "string" ? title.trim().slice(0, HEADER_TITLE_MAX_LENGTH) : "";
+
+// Boarden har alltid de fyra fasta kolumnerna; användaren kan byta namn på
+// dem, och kortpositioner sparas
 export const normalizeLayout = (raw: Partial<UserLayout>): UserLayout => ({
   ...DEFAULT_LAYOUT,
+  headers: DEFAULT_HEADERS.map((h) => ({
+    key: h.key,
+    title: sanitizeTitle(raw.headers?.find((s) => s?.key === h.key)?.title) || h.title,
+  })),
   cards: raw.cards,
 });
+
+// Tomt eller oförändrat namn returnerar samma array, så inget sparas
+export const renameHeader = (
+  headers: BoardHeader[],
+  key: CardStatus,
+  title: string,
+): BoardHeader[] => {
+  const clean = sanitizeTitle(title);
+  const current = headers.find((h) => h.key === key);
+  if (!clean || !current || current.title === clean) return headers;
+  return headers.map((h) => (h.key === key ? { ...h, title: clean } : h));
+};
 
 export const cardKey = (card: { _id?: string }, index: number): string =>
   card._id || String(index);

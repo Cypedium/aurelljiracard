@@ -14,11 +14,13 @@ import {
   DEFAULT_LAYOUT,
   GRID_MARGIN,
   HEADER_HEIGHT,
+  HEADER_TITLE_MAX_LENGTH,
   ROW_HEIGHT,
   buildCardLayout,
   cardKey,
   listHeight,
   normalizeLayout,
+  renameHeader,
   statusForColumn,
   toSavedPositions,
 } from "../utils/boardLayout";
@@ -35,6 +37,8 @@ export default function Home() {
   const [editingCard, setEditingCard] = useState<Card | null>(null);
   // Kolumnen där ett nytt kort skapas ("Add a card")
   const [creatingIn, setCreatingIn] = useState<CardStatus | null>(null);
+  // Kolumnen vars rubrik redigeras
+  const [renamingKey, setRenamingKey] = useState<CardStatus | null>(null);
   // Gridden följer boardens bredd så att den fyller skärmen
   const { width, containerRef, mounted } = useContainerWidth();
 
@@ -163,6 +167,13 @@ export default function Home() {
     }
   };
 
+  // Byt namn på en kolumn (bara för den här användaren, sparas i layouten)
+  const renameColumn = (key: CardStatus, title: string) => {
+    setRenamingKey(null);
+    const headers = renameHeader(userLayout.headers, key, title);
+    if (headers !== userLayout.headers) persistLayout({ ...userLayout, headers });
+  };
+
   // Antal kort per kolumn: visas i rubriken och styr listans höjd
   const columnCounts = DEFAULT_HEADERS.map(
     (_, i) => gridLayout.filter((l) => l.x === i).length,
@@ -184,30 +195,59 @@ export default function Home() {
           className="relative w-full min-w-[720px]"
           style={{ minHeight: Math.max(...columnCounts.map(listHeight)) + GRID_MARGIN }}
         >
-          {/* Listornas bakgrund och rubrik, under korten */}
+          {/* Listornas bakgrund, under korten */}
           <div className="pointer-events-none absolute inset-0 grid items-start" style={columnGrid}>
             {DEFAULT_HEADERS.map((h, i) => (
               <div
                 key={h.key}
-                className={`flex items-start gap-2 rounded-xl px-4 py-3 shadow-[0_1px_1px_rgba(9,30,66,0.25)] ${LIST_COLOR_CLASS[h.key]}`}
+                className={`rounded-xl shadow-[0_1px_1px_rgba(9,30,66,0.25)] ${LIST_COLOR_CLASS[h.key]}`}
                 style={{ height: listHeight(columnCounts[i]) }}
-              >
-                <span className="min-w-0 flex-1 truncate text-sm font-semibold">
-                  {h.title}
-                </span>
-                <span className="text-sm opacity-80">{columnCounts[i]}</span>
-              </div>
+              />
             ))}
           </div>
 
-          {/* "Add a card" längst ner i varje lista, ovanför gridden så att den går att klicka */}
+          {/* Rubrik (klicka för att byta namn) och "Add a card", ovanför gridden så att de går att klicka */}
           <div className="pointer-events-none absolute inset-0 z-[1] grid items-start" style={columnGrid}>
-            {DEFAULT_HEADERS.map((h, i) => (
+            {userLayout.headers.map((h, i) => (
               <div
                 key={h.key}
-                className="flex flex-col justify-end px-2 pb-2"
+                className="flex flex-col justify-between px-2 pb-2"
                 style={{ height: listHeight(columnCounts[i]) }}
               >
+                <div
+                  className={`flex items-center gap-2 pr-2 ${LIST_COLOR_CLASS[h.key]}`}
+                  style={{ height: HEADER_HEIGHT }}
+                >
+                  {renamingKey === h.key ? (
+                    <input
+                      autoFocus
+                      aria-label="Column name"
+                      maxLength={HEADER_TITLE_MAX_LENGTH}
+                      defaultValue={h.title}
+                      onFocus={(e) => e.currentTarget.select()}
+                      onBlur={(e) => renameColumn(h.key, e.currentTarget.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") e.currentTarget.blur();
+                        if (e.key === "Escape") {
+                          // Ångra: blur sparar då samma namn, dvs ingenting
+                          e.currentTarget.value = h.title;
+                          e.currentTarget.blur();
+                        }
+                      }}
+                      className="pointer-events-auto min-w-0 flex-1 rounded-md bg-white px-2 py-1 text-sm font-semibold text-jira-text ring-2 ring-jira-focus outline-none"
+                    />
+                  ) : (
+                    <button
+                      type="button"
+                      title="Click to rename"
+                      className="pointer-events-auto min-w-0 flex-1 truncate rounded-md px-2 py-1 text-left text-sm font-semibold hover:bg-black/10"
+                      onClick={() => setRenamingKey(h.key)}
+                    >
+                      {h.title}
+                    </button>
+                  )}
+                  <span className="text-sm opacity-80">{columnCounts[i]}</span>
+                </div>
                 <button
                   type="button"
                   className={`pointer-events-auto flex h-8 items-center gap-2 rounded-lg px-2 text-sm font-medium hover:bg-black/10 ${LIST_COLOR_CLASS[h.key]}`}
@@ -231,6 +271,8 @@ export default function Home() {
               margin={[GRID_MARGIN, GRID_MARGIN]}
               containerPadding={[GRID_MARGIN, HEADER_HEIGHT]}
               dragConfig={{ cancel: ".no-drag" }}
+              // Korten har fast storlek (1x1), så inget resize-handtag
+              resizeConfig={{ enabled: false }}
               onLayoutChange={(currentLayout) => {
                 persistLayout({ ...userLayout, cards: toSavedPositions(currentLayout) });
               }}
@@ -249,7 +291,7 @@ export default function Home() {
                   className="px-2"
                 >
                   <div
-                    className="group relative flex h-full cursor-grab flex-col gap-2 overflow-hidden rounded-lg bg-white p-3 text-sm text-jira-text shadow-[0_1px_1px_rgba(9,30,66,0.25),0_0_1px_rgba(9,30,66,0.31)] hover:ring-2 hover:ring-jira-focus"
+                    className="group relative flex h-full cursor-grab flex-col gap-2 overflow-hidden rounded-lg bg-white p-3 text-sm text-jira-text shadow-[0_1px_1px_rgba(9,30,66,0.25),0_0_1px_rgba(9,30,66,0.31)] hover:ring-2 hover:ring-jira-focus hover:ring-inset"
                   >
                     <div className="absolute top-2 right-2 flex flex-col items-end gap-0.5">
                       <div className="flex items-center gap-1">
