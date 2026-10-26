@@ -271,6 +271,8 @@ export default function Home() {
               margin={[GRID_MARGIN, GRID_MARGIN]}
               containerPadding={[GRID_MARGIN, HEADER_HEIGHT]}
               dragConfig={{ cancel: ".no-drag" }}
+              // Korten har fast storlek (1x1), så inget resize-handtag
+              resizeConfig={{ enabled: false }}
               onLayoutChange={(currentLayout) => {
                 persistLayout({ ...userLayout, cards: toSavedPositions(currentLayout) });
               }}
@@ -289,7 +291,7 @@ export default function Home() {
                   className="px-2"
                 >
                   <div
-                    className="group relative flex h-full cursor-grab flex-col gap-2 overflow-hidden rounded-lg bg-white p-3 text-sm text-jira-text shadow-[0_1px_1px_rgba(9,30,66,0.25),0_0_1px_rgba(9,30,66,0.31)] hover:ring-2 hover:ring-jira-focus"
+                    className="group relative flex h-full cursor-grab flex-col gap-2 overflow-hidden rounded-lg bg-white p-3 text-sm text-jira-text shadow-[0_1px_1px_rgba(9,30,66,0.25),0_0_1px_rgba(9,30,66,0.31)] hover:ring-2 hover:ring-jira-focus hover:ring-inset"
                   >
                     <div className="absolute top-2 right-2 flex flex-col items-end gap-0.5">
                       <div className="flex items-center gap-1">
