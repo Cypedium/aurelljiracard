@@ -92,22 +92,23 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
 
   return (
     <form
-      className="mx-auto my-6 w-full max-w-[640px] rounded-lg bg-white font-jira text-sm text-jira-text shadow-[0_8px_12px_rgba(9,30,66,0.15),0_0_1px_rgba(9,30,66,0.31)] max-[480px]:my-3"
+      className="mx-auto my-6 w-full max-w-[640px] overflow-hidden rounded-xl bg-white font-jira text-sm text-jira-text shadow-[0_8px_12px_rgba(9,30,66,0.15),0_0_1px_rgba(9,30,66,0.31)] max-[480px]:my-3"
       onSubmit={handleSubmit}
     >
-      <header className={`${SECTION_PADDING} pt-6 pb-2`}>
-        <h2 className="mb-2 text-xl font-semibold" id="card-form-title">
+      {/* Samma gradient som boarden */}
+      <header className={`${SECTION_PADDING} bg-linear-135 from-board-from via-board-via to-board-to py-5`}>
+        <h2 className="text-xl font-semibold text-white" id="card-form-title">
           {isEdit ? 'Edit card' : 'Create card'}
         </h2>
-        <p className="text-xs text-jira-secondary">
-          Required fields are marked with an asterisk <span className="text-jira-danger">*</span>
-        </p>
       </header>
 
-      <div className={`${SECTION_PADDING} flex flex-col pt-2 pb-4`}>
-        <span className="inline-flex items-center gap-2 self-start rounded-[3px] bg-jira-lane px-2 py-1 font-medium">
+      <div className={`${SECTION_PADDING} flex flex-col pt-4 pb-4`}>
+        <p className="mb-3 text-xs text-jira-secondary">
+          Required fields are marked with an asterisk <span className="text-jira-danger">*</span>
+        </p>
+        <span className="inline-flex items-center gap-2 self-start rounded-lg bg-list-test px-2 py-1 font-medium text-list-test-text">
           <span
-            className="inline-flex size-4 items-center justify-center rounded-[3px] bg-jira-task text-white"
+            className="inline-flex size-4 items-center justify-center rounded-[3px] bg-board-via text-white"
             aria-hidden
           >
             <CheckIcon className="size-3" />
@@ -149,7 +150,7 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
               type="button"
               className={`h-8 min-w-9 rounded-full font-semibold ${
                 p === rating
-                  ? 'bg-jira-primary text-white'
+                  ? 'bg-board-via text-white'
                   : 'bg-jira-neutral text-jira-text hover:bg-jira-neutral-hover'
               }`}
               aria-pressed={p === rating}
@@ -197,13 +198,13 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
       <footer className={`${SECTION_PADDING} flex justify-end gap-2 pt-4 pb-6`}>
         <button
           type="button"
-          className="h-8 rounded-[3px] px-3 font-medium text-jira-secondary hover:bg-jira-lane"
+          className="h-8 rounded-lg px-3 font-medium text-jira-secondary hover:bg-jira-lane"
           onClick={() => (onCancel ? onCancel() : router.back())}
         >
           Cancel
         </button>
         <button
-          className="h-8 rounded-[3px] bg-jira-primary px-3 font-medium text-white hover:bg-jira-primary-hover"
+          className="h-8 rounded-lg bg-board-via px-4 font-medium text-white hover:bg-board-from"
           type="submit"
         >
           {isEdit ? 'Save' : 'Create'}
