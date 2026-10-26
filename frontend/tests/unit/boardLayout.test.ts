@@ -6,12 +6,14 @@ import {
   FOOTER_HEIGHT,
   GRID_MARGIN,
   HEADER_HEIGHT,
+  HEADER_TITLE_MAX_LENGTH,
   ROW_HEIGHT,
   buildCardLayout,
   cardKey,
   listHeight,
   columnForStatus,
   normalizeLayout,
+  renameHeader,
   statusForColumn,
   toSavedPositions,
 } from "../../app/utils/boardLayout";
@@ -21,6 +23,33 @@ describe("normalizeLayout", () => {
     const cards = [{ id: "a", x: 1, y: 0, w: 1, h: 1 }];
     expect(normalizeLayout({ cols: 12, headers: [], cards })).toEqual({ ...DEFAULT_LAYOUT, cards });
     expect(normalizeLayout({})).toEqual({ ...DEFAULT_LAYOUT, cards: undefined });
+  });
+
+  it("keeps renamed titles for known columns and ignores the rest", () => {
+    const headers = [
+      { key: "done", title: " Shipped " },
+      { key: "test", title: "   " },
+      { key: "archived", title: "Archive" },
+    ] as any;
+    expect(normalizeLayout({ headers }).headers).toEqual([
+      { key: "todo", title: "To Do" },
+      { key: "in-progress", title: "In Progress" },
+      { key: "test", title: "Test" },
+      { key: "done", title: "Shipped" },
+    ]);
+  });
+});
+
+describe("renameHeader", () => {
+  it("renames one column, trimmed and capped in length", () => {
+    const renamed = renameHeader(DEFAULT_HEADERS, "todo", `  ${"B".repeat(60)} `);
+    expect(renamed[0]).toEqual({ key: "todo", title: "B".repeat(HEADER_TITLE_MAX_LENGTH) });
+    expect(renamed.slice(1)).toEqual(DEFAULT_HEADERS.slice(1));
+  });
+
+  it("returns the same array for an empty or unchanged title", () => {
+    expect(renameHeader(DEFAULT_HEADERS, "todo", "  ")).toBe(DEFAULT_HEADERS);
+    expect(renameHeader(DEFAULT_HEADERS, "todo", "To Do")).toBe(DEFAULT_HEADERS);
   });
 });
 
