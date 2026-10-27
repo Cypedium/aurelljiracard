@@ -79,7 +79,7 @@ All routes except `/auth/*` and `/health` require `Authorization: Bearer <access
 | `GET` | `/user` | Users (`username`, `pictureUrl`) |
 | `GET` | `/user/usernames` | Usernames only |
 | `GET` | `/user/layout` | Current user's board layout |
-| `PUT` | `/user/layout` | `{ cols?, headers?, cards? }` — merge and save layout |
+| `PUT` | `/user/layout` | `{ cols?, headers?, cards? }` — merge and save layout. Each header is `{ key, title, color? }`; `color` is an optional `#rrggbb` list colour (omit or `null` for the default) |
 | `GET` | `/health` | `{ status: "ok" }` |
 
 Errors are returned as `{ message }`.
