@@ -32,6 +32,9 @@ Two independent npm projects plus a Maven project — always `cd` into one befor
   - `app/cards/card/Card.tsx` — create form (Jira "create issue" style)
   - `app/utils/boardLayout.ts` — board columns and card placement (pure, unit-tested)
   - `app/components/` — `Layout`, `Navbar`, `Footer`, login/register forms
+  - `app/components/ui/` — shadcn/ui components (`dialog`, `alert-dialog`, `button`, `sonner`), added with `npx shadcn@latest add <name>` (config: `components.json`). Owned code: edit freely, but keep `z-[1001]` on overlays (Navbar is `z-[1000]`). `cn()` lives in `app/lib/utils.ts` — check new components import it from there, not from an npm package
+  - Use `Dialog`/`AlertDialog` for modals and confirmations and `toast` from `sonner` for messages — never `alert`/`confirm`. `<Toaster />` is in `client-layout.tsx`
+  - Import alias `@/*` → `frontend/*` (used by `components/ui`; app code uses relative imports)
   - `tests/unit/` — Jest via `next/jest`; import test globals from `@jest/globals`
 - `server-java/` — Spring Boot 4.1 + PostgreSQL port of `server/`, Java 25, Maven wrapper. Package `se.aurell.jiraboard` under `src/main/java/`:
   - `controller/` — `AuthController` (`/auth`), `CardController` (`/card`), `UserController` (`/user`), `HealthController` (`/health`). Thin: `@Valid @RequestBody`, `@AuthenticationPrincipal AuthUser`, delegate to a service
@@ -72,7 +75,7 @@ CI (`.github/workflows/ci.yml`) runs the npm commands above (not `server-java` y
 - **Validation**: validate type and length of every body field in the controller (see `utils/validate.js`) before touching the DB. `mongoose.set('sanitizeFilter', true)` is on; still never pass raw objects from `req.body` into queries.
   - Java: Bean Validation annotations on the request record (`@NotBlank`, `@Size`, `@Min`/`@Max`) with the same messages as `server/`; checks that annotations can't express (password byte length, picture URL) go in the service as `ApiException.badRequest`. Unknown `status`/`type` values are rejected by the enum's `@JsonCreator`.
 - **Logging**: never log tokens, passwords, `MONGO_URI` or full request bodies. Log `err.message` in controllers. Java: only `GlobalExceptionHandler` logs unexpected errors (type + message); return expected errors by throwing `ApiException`, not by building `ResponseEntity`s in controllers.
-- **UI style**: board and forms follow Jira's look (colours `#172b4d` text, `#44546f` secondary, `#0c66e4` primary, `#f1f2f4` lanes). Reuse these in new UI.
+- **UI style**: board and forms follow Jira's look (colours `#172b4d` text, `#44546f` secondary, `#0c66e4` primary, `#f1f2f4` lanes). Reuse these in new UI. shadcn tokens (`--primary`, `--border`, `--ring` …) in `app/root.css` are mapped to these colours; there is no dark mode (`dark:` only applies under a `.dark` class). Portaled content (dialogs, toasts) needs `font-jira` itself.
 - Comments in the codebase mix Swedish and English; either is fine, keep new ones short.
 
 ## Config and secrets
