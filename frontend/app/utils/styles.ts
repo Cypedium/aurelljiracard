@@ -1,5 +1,5 @@
 // Delade Tailwind-klasser för board och kortformulär
-import type { CardStatus } from "./boardLayout";
+import { readableTextColor, type BoardHeader, type CardStatus } from "./boardLayout";
 
 // Board: datum, edit- och delete-knappen syns bara när man hovrar över kortet
 export const CARD_HOVER_CLASS =
@@ -11,6 +11,12 @@ export const LIST_COLOR_CLASS: Record<CardStatus, string> = {
   test: "bg-list-test text-list-test-text",
   done: "bg-list-done text-list-done-text",
 };
+
+// Listans färg: användarens egen (inline style, text med bäst kontrast) eller standardklassen
+export const listColor = (header: BoardHeader): { className: string; style?: React.CSSProperties } =>
+  header.color
+    ? { className: "", style: { backgroundColor: header.color, color: readableTextColor(header.color) } }
+    : { className: LIST_COLOR_CLASS[header.key] };
 
 export const CARD_ACTION_CLASS =`no-drag rounded-[3px] px-1.5 py-1 text-jira-secondary hover:bg-jira-neutral ${CARD_HOVER_CLASS}`;
 

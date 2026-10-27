@@ -3,6 +3,7 @@ import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { ResponsiveGridLayout, useContainerWidth } from "react-grid-layout";
 import { PencilIcon, PlusIcon, TrashIcon } from "@heroicons/react/16/solid";
 import IssueTypeIcon from "../components/IssueTypeIcon";
+import ColumnColorPicker from "../components/ColumnColorPicker";
 import debounce from "lodash.debounce";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogTitle } from "../components/ui/dialog";
@@ -23,6 +24,7 @@ import {
   CardStatus,
   UserLayout,
   BOARD_COLS,
+  DEFAULT_LIST_COLORS,
   DEFAULT_HEADERS,
   DEFAULT_LAYOUT,
   GRID_MARGIN,
@@ -33,6 +35,7 @@ import {
   cardKey,
   listHeight,
   normalizeLayout,
+  recolorHeader,
   renameHeader,
   statusForColumn,
   toSavedPositions,
@@ -40,7 +43,7 @@ import {
 import { avatarColor, avatarInitials } from "../utils/avatar";
 import { getUsername } from "../utils/session";
 import { apiErrorMessage } from "../utils/apiError";
-import { CARD_ACTION_CLASS, CARD_HOVER_CLASS, LIST_COLOR_CLASS } from "../utils/styles";
+import { CARD_ACTION_CLASS, CARD_HOVER_CLASS, listColor } from "../utils/styles";
 
 export default function Home() {
   const [cards, setCards] = useState<Card[]>([]);
@@ -181,6 +184,12 @@ export default function Home() {
     if (headers !== userLayout.headers) persistLayout({ ...userLayout, headers });
   };
 
+  // Byt listfärg (bara för den här användaren); null = standardfärgen
+  const recolorColumn = (key: CardStatus, color: string | null) => {
+    const headers = recolorHeader(userLayout.headers, key, color);
+    if (headers !== userLayout.headers) persistLayout({ ...userLayout, headers });
+  };
+
   // Antal kort per kolumn: visas i rubriken och styr listans höjd
   const columnCounts = DEFAULT_HEADERS.map(
     (_, i) => gridLayout.filter((l) => l.x === i).length,
@@ -204,11 +213,11 @@ export default function Home() {
         >
           {/* Listornas bakgrund, under korten */}
           <div className="pointer-events-none absolute inset-0 grid items-start" style={columnGrid}>
-            {DEFAULT_HEADERS.map((h, i) => (
+            {userLayout.headers.map((h, i) => (
               <div
                 key={h.key}
-                className={`rounded-xl shadow-[0_1px_1px_rgba(9,30,66,0.25)] ${LIST_COLOR_CLASS[h.key]}`}
-                style={{ height: listHeight(columnCounts[i]) }}
+                className={`rounded-xl shadow-[0_1px_1px_rgba(9,30,66,0.25)] ${listColor(h).className}`}
+                style={{ height: listHeight(columnCounts[i]), ...listColor(h).style }}
               />
             ))}
           </div>
@@ -222,8 +231,8 @@ export default function Home() {
                 style={{ height: listHeight(columnCounts[i]) }}
               >
                 <div
-                  className={`flex items-center gap-2 pr-2 ${LIST_COLOR_CLASS[h.key]}`}
-                  style={{ height: HEADER_HEIGHT }}
+                  className={`flex items-center gap-2 pr-1 ${listColor(h).className}`}
+                  style={{ height: HEADER_HEIGHT, ...listColor(h).style }}
                 >
                   {renamingKey === h.key ? (
                     <input
@@ -254,10 +263,17 @@ export default function Home() {
                     </button>
                   )}
                   <span className="text-sm opacity-80">{columnCounts[i]}</span>
+                  <ColumnColorPicker
+                    title={h.title}
+                    color={h.color}
+                    defaultColor={DEFAULT_LIST_COLORS[h.key]}
+                    onChange={(color) => recolorColumn(h.key, color)}
+                  />
                 </div>
                 <button
                   type="button"
-                  className={`pointer-events-auto flex h-8 items-center gap-2 rounded-lg px-2 text-sm font-medium hover:bg-black/10 ${LIST_COLOR_CLASS[h.key]}`}
+                  className={`pointer-events-auto flex h-8 items-center gap-2 rounded-lg px-2 text-sm font-medium hover:bg-black/10 ${listColor(h).className}`}
+                  style={listColor(h).style}
                   onClick={() => setCreatingIn(h.key)}
                 >
                   <PlusIcon className="size-4" aria-hidden />

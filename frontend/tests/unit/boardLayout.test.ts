@@ -7,12 +7,16 @@ import {
   GRID_MARGIN,
   HEADER_HEIGHT,
   HEADER_TITLE_MAX_LENGTH,
+  LIST_SWATCHES,
+  contrastRatio,
   ROW_HEIGHT,
   buildCardLayout,
   cardKey,
   listHeight,
   columnForStatus,
   normalizeLayout,
+  readableTextColor,
+  recolorHeader,
   renameHeader,
   statusForColumn,
   toSavedPositions,
@@ -37,6 +41,53 @@ describe("normalizeLayout", () => {
       { key: "test", title: "Test" },
       { key: "done", title: "Shipped" },
     ]);
+  });
+
+  it("keeps valid column colors, lowercased, and drops invalid ones", () => {
+    const headers = [
+      { key: "todo", title: "To Do", color: "#FDD0EC" },
+      { key: "test", title: "Test", color: "red" },
+      { key: "done", title: "Done", color: null },
+    ] as any;
+    const result = normalizeLayout({ headers }).headers;
+    expect(result[0]).toEqual({ key: "todo", title: "To Do", color: "#fdd0ec" });
+    expect(result[2]).not.toHaveProperty("color");
+    expect(result[3]).not.toHaveProperty("color");
+  });
+});
+
+describe("recolorHeader", () => {
+  it("sets one column's color, lowercased", () => {
+    const recolored = recolorHeader(DEFAULT_HEADERS, "test", "#1F845A");
+    expect(recolored[2]).toEqual({ key: "test", title: "Test", color: "#1f845a" });
+    expect(recolored.filter((h) => h.key !== "test")).toEqual(DEFAULT_HEADERS.filter((h) => h.key !== "test"));
+  });
+
+  it("removes the color on reset", () => {
+    const colored = recolorHeader(DEFAULT_HEADERS, "todo", "#fdd0ec");
+    expect(recolorHeader(colored, "todo", null)[0]).toEqual({ key: "todo", title: "To Do" });
+  });
+
+  it("returns the same array for an invalid, unchanged or no-op color", () => {
+    const colored = recolorHeader(DEFAULT_HEADERS, "todo", "#fdd0ec");
+    expect(recolorHeader(colored, "todo", "#FDD0EC")).toBe(colored);
+    expect(recolorHeader(colored, "todo", "pink")).toBe(colored);
+    expect(recolorHeader(DEFAULT_HEADERS, "todo", null)).toBe(DEFAULT_HEADERS);
+  });
+});
+
+describe("readableTextColor", () => {
+  it("uses dark text on light colors and white on dark ones", () => {
+    expect(readableTextColor("#eed7fc")).toBe("#172b4d");
+    expect(readableTextColor("#ffffff")).toBe("#172b4d");
+    expect(readableTextColor("#0c66e4")).toBe("#ffffff");
+    expect(readableTextColor("#000000")).toBe("#ffffff");
+  });
+
+  it("gives every swatch a readable text color (contrast at least 4.5:1)", () => {
+    for (const { color } of LIST_SWATCHES) {
+      expect(contrastRatio(color, readableTextColor(color))).toBeGreaterThanOrEqual(4.5);
+    }
   });
 });
 
