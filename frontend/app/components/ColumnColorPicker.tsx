@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { CheckIcon, PencilIcon } from '@heroicons/react/16/solid';
+import { CheckIcon, PaintBrushIcon } from '@heroicons/react/16/solid';
 import { LIST_SWATCHES, readableTextColor } from '../utils/boardLayout';
 import { Button } from './ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
@@ -15,7 +15,7 @@ type Props = {
   onChange: (color: string | null) => void;
 };
 
-// Pennan i listans hörn: färdiga färger, egen färg (webbläsarens färgväljare) och återställ
+// Penseln i listans hörn: färdiga färger, egen färg (webbläsarens färgväljare) och återställ
 export default function ColumnColorPicker({ title, color, defaultColor, onChange }: Props) {
   const current = color ?? defaultColor;
   const [open, setOpen] = useState(false);
@@ -35,7 +35,7 @@ export default function ColumnColorPicker({ title, color, defaultColor, onChange
           title="Change color"
           className="pointer-events-auto rounded-md p-1 opacity-70 hover:bg-black/10 hover:opacity-100"
         >
-          <PencilIcon className="size-4" aria-hidden />
+          <PaintBrushIcon className="size-4" aria-hidden />
         </button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-60 font-jira text-jira-text">
