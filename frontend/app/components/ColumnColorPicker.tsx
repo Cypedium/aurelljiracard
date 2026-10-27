@@ -1,4 +1,5 @@
 'use client';
+import { useState } from 'react';
 import { CheckIcon, PencilIcon } from '@heroicons/react/16/solid';
 import { LIST_SWATCHES, readableTextColor } from '../utils/boardLayout';
 import { Button } from './ui/button';
@@ -17,9 +18,16 @@ type Props = {
 // Pennan i listans hörn: färdiga färger, egen färg (webbläsarens färgväljare) och återställ
 export default function ColumnColorPicker({ title, color, defaultColor, onChange }: Props) {
   const current = color ?? defaultColor;
+  const [open, setOpen] = useState(false);
+
+  // Färdig färg eller återställ: spara och stäng
+  const choose = (next: string | null) => {
+    onChange(next);
+    setOpen(false);
+  };
 
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
           type="button"
@@ -44,7 +52,7 @@ export default function ColumnColorPicker({ title, color, defaultColor, onChange
                 title={s.name}
                 className="flex h-8 items-center justify-center rounded-md outline-none hover:ring-2 hover:ring-jira-border focus-visible:ring-2 focus-visible:ring-jira-focus"
                 style={{ backgroundColor: s.color, color: readableTextColor(s.color) }}
-                onClick={() => onChange(s.color)}
+                onClick={() => choose(s.color)}
               >
                 {selected && <CheckIcon className="size-4" aria-hidden />}
               </button>
@@ -53,6 +61,7 @@ export default function ColumnColorPicker({ title, color, defaultColor, onChange
         </div>
         <div className="mt-3 flex items-center justify-between gap-2">
           <label className="flex cursor-pointer items-center gap-2 text-sm">
+            {/* Stängs inte här: färgväljaren skickar ändringar medan man drar */}
             <input
               type="color"
               value={current}
@@ -61,7 +70,7 @@ export default function ColumnColorPicker({ title, color, defaultColor, onChange
             />
             Custom…
           </label>
-          <Button variant="ghost" size="sm" disabled={!color} onClick={() => onChange(null)}>
+          <Button variant="ghost" size="sm" disabled={!color} onClick={() => choose(null)}>
             Reset
           </Button>
         </div>
