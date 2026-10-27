@@ -39,11 +39,11 @@ import {
 } from "../utils/boardLayout";
 import { avatarColor, avatarInitials } from "../utils/avatar";
 import { getUsername } from "../utils/session";
+import { apiErrorMessage } from "../utils/apiError";
 import { CARD_ACTION_CLASS, CARD_HOVER_CLASS, LIST_COLOR_CLASS } from "../utils/styles";
 
 export default function Home() {
   const [cards, setCards] = useState<Card[]>([]);
-  const [error, setError] = useState<string | null>(null);
   const [userLayout, setUserLayout] = useState<UserLayout>(DEFAULT_LAYOUT);
   const [layoutLoaded, setLayoutLoaded] = useState(false);
   const [userName, setUserName] = useState("");
@@ -63,8 +63,8 @@ export default function Home() {
       const res = await api.get("/card");
       setCards(res.data || []);
     } catch (err: any) {
-      console.error("Error fetching cards:", err);
-      setError("Error fetching cards: " + err.message);
+      console.error("Error fetching cards:", err.message);
+      toast.error(apiErrorMessage(err, "Could not load cards."));
     }
   }, []);
 
@@ -117,8 +117,10 @@ export default function Home() {
     debounce(async (newLayout: UserLayout) => {
       try {
         await api.put("/user/layout", newLayout);
-      } catch (e) {
-        console.error("Failed to save layout to server", e);
+      } catch (e: any) {
+        console.error("Failed to save layout to server:", e.message);
+        // Fast id: upprepade fel ersätter samma toast i stället för att staplas
+        toast.error("Could not save the board layout. It is kept in this browser.", { id: "layout-save" });
       }
     }, 800),
     [],
@@ -142,7 +144,7 @@ export default function Home() {
     } catch (err: any) {
       console.error("Error moving card:", err.message);
       setStatus(previous);
-      setError(err.response?.data?.message || "Could not move card");
+      toast.error(apiErrorMessage(err, "Could not move card."));
     }
   };
 
@@ -167,8 +169,8 @@ export default function Home() {
       await deleteCard(id);
       setCards((prev) => prev.filter((fb) => fb._id !== id));
     } catch (err: any) {
-      console.error("Error deleting card:", err);
-      setError(err.response?.data?.message || err.message || "Error deleting card");
+      console.error("Error deleting card:", err.message);
+      toast.error(apiErrorMessage(err, "Could not delete card."));
     }
   };
 
@@ -370,10 +372,6 @@ export default function Home() {
           )}
         </div>
       </div>
-
-      {error && (
-        <div className="mt-3 rounded-lg bg-white px-3 py-2 text-sm text-jira-danger">{error}</div>
-      )}
 
       {/* Radix sköter fokus, Escape, klick utanför och scroll-lås */}
       <Dialog open={dialogOpen} onOpenChange={(open) => !open && closeDialog()}>

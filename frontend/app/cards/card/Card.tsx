@@ -1,12 +1,12 @@
 'use client';
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { submitCard, updateCard, type Card as CardData } from '..//../api/endpoints';
-import { isAxiosError } from 'axios';
+import { toast } from 'sonner';
 import { PRIORITIES, cardFormSchema, type CardFormValues } from '../../utils/cardForm';
 import { cardTypeOf } from '../../utils/cardType';
+import { apiErrorMessage } from '../../utils/apiError';
 import { FIELD_ERROR_CLASS, FORM_ITEM_CLASS, LABEL_CLASS, SECTION_PADDING } from '../../utils/styles';
 import type { CardStatus } from '../../utils/boardLayout';
 import IssueTypeSelect from '../../components/IssueTypeSelect';
@@ -32,8 +32,6 @@ const required = <span className="text-jira-danger">*</span>;
 
 export default function Card({ card, onSaved, onCancel, status, onCreated }: CardProps = {}) {
   const isEdit = Boolean(card?._id);
-  // Meddelanden från servern; fältfel visas under respektive fält
-  const [message, setMessage] = useState<string | null>(null);
   const router = useRouter();
   const form = useForm<CardFormValues>({
     resolver: zodResolver(cardFormSchema),
@@ -49,9 +47,8 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
         const res = await updateCard(card._id, fields);
         onSaved?.(res.data);
       } catch (error) {
-        console.error('Update error:', error);
-        const serverMessage = isAxiosError(error) ? error.response?.data?.message : null;
-        setMessage(serverMessage || 'Failed to save card.');
+        console.error('Update error:', (error as Error).message);
+        toast.error(apiErrorMessage(error, 'Failed to save card.'));
       }
       return;
     }
@@ -65,17 +62,14 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
         return;
       }
 
-      setMessage(res.data.message || 'Card submitted!');
+      // Toastern ligger i layouten, så den syns kvar efter navigeringen
+      toast.success(res.data.message || 'Card submitted!');
       form.reset(EMPTY_FORM);
-
-      setTimeout(() => {
-        router.push("/");
-      }, 5000);
+      router.push("/");
 
     } catch (error) {
-      console.error('Submission error:', error);
-      const serverMessage = isAxiosError(error) ? error.response?.data?.message : null;
-      setMessage(serverMessage || 'Failed to submit card.');
+      console.error('Submission error:', (error as Error).message);
+      toast.error(apiErrorMessage(error, 'Failed to submit card.'));
     }
   };
 
@@ -174,10 +168,6 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
               </FormItem>
             )}
           />
-
-          {message && (
-            <p className="mt-4 rounded-[3px] bg-jira-info px-3 py-2 text-jira-text">{message}</p>
-          )}
         </div>
 
         <footer className={`${SECTION_PADDING} flex justify-end gap-2 pt-4 pb-6`}>

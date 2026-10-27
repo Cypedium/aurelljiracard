@@ -34,7 +34,12 @@ export default function LoginForm() {
       window.location.href = "/cards";
 
     } catch (error: any) {
-      toast.error(error.message || "An unexpected error occurred");
+      // fetch kastar TypeError ("Failed to fetch") när servern inte svarar
+      toast.error(
+        error instanceof TypeError
+          ? "Could not reach the server. Please try again."
+          : error.message || "An unexpected error occurred",
+      );
     }
   };
 

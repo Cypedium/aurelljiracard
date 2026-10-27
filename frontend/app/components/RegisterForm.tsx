@@ -2,10 +2,10 @@
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { isAxiosError } from "axios";
 import { toast } from "sonner";
 import checkPasswordStrength from "../utils/checkPasswordStrength";
 import { registerUser } from "../api/endpoints";
+import { apiErrorMessage } from "../utils/apiError";
 import { readAsDataUrl, registerSchema, type RegisterValues } from "../utils/register";
 import { AUTH_FORM_CLASS, FIELD_ERROR_CLASS, FORM_ITEM_CLASS, LABEL_CLASS } from "../utils/styles";
 import { Button } from "./ui/button";
@@ -20,8 +20,6 @@ export default function RegisterForm() {
   });
   const password = form.watch("password");
   const strength = checkPasswordStrength(password);
-  // Fel från servern (t.ex. 409 "Username already taken.") gäller hela formuläret
-  const serverError = form.formState.errors.root?.server?.message;
 
   const handleRegister = async ({ username, password, picture }: RegisterValues) => {
     try {
@@ -33,8 +31,8 @@ export default function RegisterForm() {
       toast.success(res.data.message);
       router.push("/login");
     } catch (err) {
-      const message = isAxiosError(err) ? err.response?.data?.message : null;
-      form.setError("root.server", { message: message || "Registration failed. Please try again." });
+      // T.ex. 409 "Username already taken."
+      toast.error(apiErrorMessage(err, "Registration failed. Please try again."));
     }
   };
 
@@ -42,12 +40,6 @@ export default function RegisterForm() {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleRegister)} className={AUTH_FORM_CLASS} noValidate>
         <h2 className="text-xl font-semibold">Register</h2>
-
-        {serverError && (
-          <p role="alert" className="mt-4 rounded-[3px] bg-jira-info px-3 py-2 text-jira-danger">
-            {serverError}
-          </p>
-        )}
 
         <FormField
           control={form.control}
