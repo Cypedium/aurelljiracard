@@ -11,21 +11,45 @@
             "cwd": "${workspaceFolder}/server-java"
         },
         {
+            // Express på PORT från server/.env (dotenv läser från cwd)
+            "type": "node",
+            "name": "Backend (Express)",
+            "request": "launch",
+            "program": "${workspaceFolder}/server/server.js",
+            "cwd": "${workspaceFolder}/server",
+            "skipFiles": ["<node_internals>/**"]
+        },
+        {
             // Next.js på :3000; env här går före .env.local
             "type": "node-terminal",
-            "name": "Frontend (Next.js)",
+            "name": "Frontend → Java",
             "request": "launch",
             "command": "npm run dev",
             "cwd": "${workspaceFolder}/frontend",
             "env": {
                 "NEXT_PUBLIC_API_URL": "http://localhost:8080"
             }
+        },
+        {
+            "type": "node-terminal",
+            "name": "Frontend → Express",
+            "request": "launch",
+            "command": "npm run dev",
+            "cwd": "${workspaceFolder}/frontend",
+            "env": {
+                "NEXT_PUBLIC_API_URL": "http://localhost:4000"
+            }
         }
     ],
     "compounds": [
         {
             "name": "Full stack (Java)",
-            "configurations": ["Backend (Java)", "Frontend (Next.js)"],
+            "configurations": ["Backend (Java)", "Frontend → Java"],
+            "stopAll": true
+        },
+        {
+            "name": "Full stack (Express)",
+            "configurations": ["Backend (Express)", "Frontend → Express"],
             "stopAll": true
         }
     ]
