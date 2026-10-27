@@ -5,6 +5,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.util.List;
 import se.aurell.jiraboard.entity.CardStatus;
@@ -21,9 +22,12 @@ public record LayoutRequest(
         List<Layout.CardPosition> cards) {
 
     static final String HEADER_MESSAGE = "Each header needs a valid key and a title (max 50 characters).";
+    static final String COLOR_MESSAGE = "Header color must be a hex color like #eed7fc.";
 
     public record HeaderRequest(
             @NotNull(message = HEADER_MESSAGE) CardStatus key,
-            @NotBlank(message = HEADER_MESSAGE) @Size(max = 50, message = HEADER_MESSAGE) String title) {
+            @NotBlank(message = HEADER_MESSAGE) @Size(max = 50, message = HEADER_MESSAGE) String title,
+            // Optional; must match HEX_COLOR in server/controllers/userController.js
+            @Pattern(regexp = "^#[0-9a-fA-F]{6}$", message = COLOR_MESSAGE) String color) {
     }
 }

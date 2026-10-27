@@ -94,5 +94,28 @@ class UserApiTest extends ApiIntegrationTest {
         mvc.perform(bearer(json(put("/user/layout"), """
                 {"headers": [{"key": "backlog", "title": "Backlog"}]}"""), token))
                 .andExpect(status().isBadRequest());
+
+        for (String color : new String[] {"red", "#fff", "#eed7fc; x"}) {
+            mvc.perform(bearer(json(put("/user/layout"), """
+                    {"headers": [{"key": "todo", "title": "To Do", "color": "%s"}]}""".formatted(color)), token))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.message").value("Header color must be a hex color like #eed7fc."));
+        }
+    }
+
+    @Test
+    void headerColorIsOptionalAndLowercased() throws Exception {
+        String token = accessToken("alice");
+
+        mvc.perform(bearer(json(put("/user/layout"), """
+                {"headers": [{"key": "todo", "title": "To Do", "color": "#FDD0EC"},
+                             {"key": "done", "title": "Done"}]}"""), token))
+                .andExpect(status().isOk());
+
+        mvc.perform(bearer(get("/user/layout"), token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.headers[0].color").value("#fdd0ec"))
+                // No color: the field is left out, like in the Express API
+                .andExpect(jsonPath("$.headers[1].color").doesNotExist());
     }
 }

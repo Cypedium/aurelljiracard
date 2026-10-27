@@ -6,6 +6,9 @@ const { CARD_STATUSES } = require("../utils/cardStatus");
 const MIN_COLS = 1;
 const MAX_COLS = 12;
 const HEADER_TITLE_MAX_LENGTH = 50;
+// Must match HEX_COLOR in frontend/app/utils/boardLayout.ts and server-java LayoutRequest
+const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
+const HEADER_COLOR_MESSAGE = "Header color must be a hex color like #eed7fc.";
 
 // Column names are per user; each header must name a board column
 const isValidHeader = (h) =>
@@ -13,6 +16,16 @@ const isValidHeader = (h) =>
   typeof h === "object" &&
   CARD_STATUSES.includes(h.key) &&
   isNonEmptyString(h.title, HEADER_TITLE_MAX_LENGTH);
+
+// Color is optional; null or missing means the default list color
+const isValidHeaderColor = (h) =>
+  h.color === undefined || h.color === null || (typeof h.color === "string" && HEX_COLOR.test(h.color));
+
+const toHeader = ({ key, title, color }) => ({
+  key,
+  title: title.trim(),
+  ...(color ? { color: color.toLowerCase() } : {})
+});
 
 // GET ALL USERS
 exports.getAll = async (req, res) => {
@@ -68,6 +81,9 @@ exports.updateLayout = async (req, res) => {
       message: `Each header needs a valid key and a title (max ${HEADER_TITLE_MAX_LENGTH} characters).`
     });
   }
+  if (headers !== undefined && !headers.every(isValidHeaderColor)) {
+    return res.status(400).json({ message: HEADER_COLOR_MESSAGE });
+  }
 
   try {
     const user = await User.findById(req.user.id);
@@ -78,7 +94,7 @@ exports.updateLayout = async (req, res) => {
 
     user.layout = {
       cols: cols ?? user.layout.cols,
-      headers: headers ? headers.map(({ key, title }) => ({ key, title: title.trim() })) : user.layout.headers,
+      headers: headers ? headers.map(toHeader) : user.layout.headers,
       cards: cards ?? user.layout.cards
     };
 
