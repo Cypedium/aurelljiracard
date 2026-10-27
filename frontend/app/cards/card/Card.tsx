@@ -5,9 +5,13 @@ import { submitCard, updateCard, type Card as CardData } from '..//../api/endpoi
 import { isAxiosError } from 'axios';
 import { PRIORITIES, validateCardForm } from '../../utils/cardForm';
 import { cardTypeOf, type CardType } from '../../utils/cardType';
-import { FIELD_CLASS, FIELD_FOCUS_CLASS, LABEL_CLASS, SECTION_PADDING } from '../../utils/styles';
+import { LABEL_CLASS, SECTION_PADDING } from '../../utils/styles';
 import type { CardStatus } from '../../utils/boardLayout';
 import IssueTypeSelect from '../../components/IssueTypeSelect';
+import { Button } from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
+import { Label } from '../../components/ui/label';
+import { Textarea } from '../../components/ui/textarea';
 
 type CardProps = {
   // Set when editing an existing card; omitted on the create page
@@ -95,29 +99,29 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
         <p className="text-xs text-jira-secondary">
           Required fields are marked with an asterisk <span className="text-jira-danger">*</span>
         </p>
-        <label className={LABEL_CLASS} htmlFor="issueType">
+        <Label className={LABEL_CLASS} htmlFor="issueType">
           Issue type <span className="text-jira-danger">*</span>
-        </label>
+        </Label>
         <IssueTypeSelect id="issueType" value={type} onChange={setType} />
 
-        <label className={LABEL_CLASS} htmlFor="summary">
+        <Label className={LABEL_CLASS} htmlFor="summary">
           Summary <span className="text-jira-danger">*</span>
-        </label>
-        <textarea
+        </Label>
+        <Textarea
           id="summary"
-          className={`${FIELD_CLASS} ${FIELD_FOCUS_CLASS} min-h-[88px] resize-y p-2`}
+          className="min-h-[88px] resize-y bg-white text-jira-text"
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           placeholder="What needs to be done?"
           required
         />
 
-        <label className={LABEL_CLASS} htmlFor="issueKey">
+        <Label className={LABEL_CLASS} htmlFor="issueKey">
           Issue key <span className="text-jira-danger">*</span>
-        </label>
-        <input
+        </Label>
+        <Input
           id="issueKey"
-          className={`${FIELD_CLASS} ${FIELD_FOCUS_CLASS} p-2`}
+          className="bg-white text-jira-text"
           value={productId}
           onChange={(e) => setProductId(e.target.value)}
           placeholder="e.g. AGB-12"
@@ -129,19 +133,20 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
         </span>
         <div className="flex gap-2" role="group" aria-labelledby="priority-label">
           {PRIORITIES.map((p) => (
-            <button
+            <Button
               key={p}
               type="button"
-              className={`h-8 min-w-9 rounded-full font-semibold ${
+              size="sm"
+              className={`min-w-9 rounded-full font-semibold ${
                 p === rating
-                  ? 'bg-board-via text-white'
+                  ? 'bg-board-via text-white hover:bg-board-via'
                   : 'bg-jira-neutral text-jira-text hover:bg-jira-neutral-hover'
               }`}
               aria-pressed={p === rating}
               onClick={() => setRating(p)}
             >
               {p}
-            </button>
+            </Button>
           ))}
         </div>
 
@@ -151,19 +156,19 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
       </div>
 
       <footer className={`${SECTION_PADDING} flex justify-end gap-2 pt-4 pb-6`}>
-        <button
+        <Button
           type="button"
-          className="h-8 rounded-lg px-3 font-medium text-jira-secondary hover:bg-jira-lane"
+          variant="ghost"
+          size="sm"
+          className="text-jira-secondary"
           onClick={() => (onCancel ? onCancel() : router.back())}
         >
           Cancel
-        </button>
-        <button
-          className="h-8 rounded-lg bg-board-via px-4 font-medium text-white hover:bg-board-from"
-          type="submit"
-        >
+        </Button>
+        {/* Samma blå som headerns gradient */}
+        <Button type="submit" size="sm" className="bg-board-via px-4 hover:bg-board-from">
           {isEdit ? 'Save' : 'Create'}
-        </button>
+        </Button>
       </footer>
     </form>
   );

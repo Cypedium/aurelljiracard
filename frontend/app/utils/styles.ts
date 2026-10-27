@@ -14,10 +14,9 @@ export const LIST_COLOR_CLASS: Record<CardStatus, string> = {
 
 export const CARD_ACTION_CLASS =`no-drag rounded-[3px] px-1.5 py-1 text-jira-secondary hover:bg-jira-neutral ${CARD_HOVER_CLASS}`;
 
-// Formulär: gemensam stil för fälten
-export const FIELD_CLASS =
-  "w-full rounded-[3px] border border-jira-border bg-white text-jira-text transition-[border-color,box-shadow] duration-150 hover:bg-jira-hover";
-export const FIELD_FOCUS_CLASS =
-  "focus:border-jira-focus focus:bg-white focus:shadow-[inset_0_0_0_1px_var(--color-jira-focus)] focus:outline-none";
+// Formulär: fälten är components/ui (Input, Textarea, Select); etiketterna stylas här
 export const LABEL_CLASS = "mt-4 mb-1 block text-xs font-semibold text-jira-secondary";
 export const SECTION_PADDING = "px-6 max-[480px]:px-4";
+// Login och register: vitt kort i samma stil som kortformuläret
+export const AUTH_FORM_CLASS =
+  "mx-4 flex w-full max-w-md flex-col rounded-xl bg-white p-6 font-jira text-sm text-jira-text shadow-[0_8px_12px_rgba(9,30,66,0.15),0_0_1px_rgba(9,30,66,0.31)]";
