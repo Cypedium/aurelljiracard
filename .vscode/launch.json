@@ -1,0 +1,32 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            // Spring Boot på :8080 mot en tillfällig Postgres-container (kräver Docker)
+            "type": "java",
+            "name": "Backend (Java)",
+            "request": "launch",
+            "mainClass": "se.aurell.jiraboard.TestJiraboardApplication",
+            "projectName": "jiraboard",
+            "cwd": "${workspaceFolder}/server-java"
+        },
+        {
+            // Next.js på :3000; env här går före .env.local
+            "type": "node-terminal",
+            "name": "Frontend (Next.js)",
+            "request": "launch",
+            "command": "npm run dev",
+            "cwd": "${workspaceFolder}/frontend",
+            "env": {
+                "NEXT_PUBLIC_API_URL": "http://localhost:8080"
+            }
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Full stack (Java)",
+            "configurations": ["Backend (Java)", "Frontend (Next.js)"],
+            "stopAll": true
+        }
+    ]
+}
