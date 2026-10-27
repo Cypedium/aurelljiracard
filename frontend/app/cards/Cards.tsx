@@ -4,6 +4,18 @@ import { ResponsiveGridLayout, useContainerWidth } from "react-grid-layout";
 import { PencilIcon, PlusIcon, TrashIcon } from "@heroicons/react/16/solid";
 import IssueTypeIcon from "../components/IssueTypeIcon";
 import debounce from "lodash.debounce";
+import { toast } from "sonner";
+import { Dialog, DialogContent, DialogTitle } from "../components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "../components/ui/alert-dialog";
 import api from "../api/api"; // ⭐ axios-instansen
 import { deleteCard, updateCardStatus, type Card } from "../api/endpoints";
 import CardForm from "./card/Card";
@@ -36,6 +48,8 @@ export default function Home() {
   const [layoutLoaded, setLayoutLoaded] = useState(false);
   const [userName, setUserName] = useState("");
   const [editingCard, setEditingCard] = useState<Card | null>(null);
+  // Kortet som väntar på bekräftelse i delete-dialogen
+  const [deletingCard, setDeletingCard] = useState<Card | null>(null);
   // Kolumnen där ett nytt kort skapas ("Add a card")
   const [creatingIn, setCreatingIn] = useState<CardStatus | null>(null);
   // Kolumnen vars rubrik redigeras
@@ -137,16 +151,6 @@ export default function Home() {
     setEditingCard(null);
     setCreatingIn(null);
   };
-
-  // Stäng dialogen med Escape
-  useEffect(() => {
-    if (!dialogOpen) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeDialog();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [dialogOpen]);
 
   const handleCardCreated = () => {
     closeDialog();
@@ -312,18 +316,12 @@ export default function Home() {
                           aria-label="Delete card"
                           title="Delete"
                           onClick={() => {
-                            if (userName === fb.username) {
-                              if (
-                                confirm("Are you sure you want to delete this card?")
-                              ) {
-                                if (fb._id) {
-                                  deleteCardCard(fb._id);
-                                } else {
-                                  alert("Card ID is missing. Cannot delete.");
-                                }
-                              }
+                            if (userName !== fb.username) {
+                              toast.error("You can only delete your own card.");
+                            } else if (!fb._id) {
+                              toast.error("Card ID is missing. Cannot delete.");
                             } else {
-                              alert("You can only delete your own card.");
+                              setDeletingCard(fb);
                             }
                           }}
                         >
@@ -377,29 +375,49 @@ export default function Home() {
         <div className="mt-3 rounded-lg bg-white px-3 py-2 text-sm text-jira-danger">{error}</div>
       )}
 
-      {dialogOpen && (
-        <div
-          className="fixed inset-0 z-[1000] flex items-start justify-center overflow-y-auto bg-[rgba(9,30,66,0.54)] px-4 py-12"
-          onMouseDown={(e) => {
-            if (e.target === e.currentTarget) closeDialog();
+      {/* Radix sköter fokus, Escape, klick utanför och scroll-lås */}
+      <Dialog open={dialogOpen} onOpenChange={(open) => !open && closeDialog()}>
+        <DialogContent
+          showCloseButton={false}
+          aria-describedby={undefined}
+          // Formuläret har egen bakgrund och skugga
+          className="max-h-[calc(100dvh-2rem)] gap-0 overflow-y-auto border-0 bg-transparent p-0 font-jira shadow-none sm:max-w-[640px]"
+          onEscapeKeyDown={(e) => {
+            // Escape i en öppen dropdown stänger bara dropdownen
+            if ((e.target as HTMLElement | null)?.closest('[role="listbox"]')) e.preventDefault();
           }}
         >
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="card-form-title"
-            className="w-full max-w-[640px]"
-          >
-            <CardForm
-              card={editingCard ?? undefined}
-              status={creatingIn ?? undefined}
-              onSaved={handleCardSaved}
-              onCreated={handleCardCreated}
-              onCancel={closeDialog}
-            />
-          </div>
-        </div>
-      )}
+          {/* Formulärets synliga rubrik är en vanlig h2, så dialogen får en dold titel */}
+          <DialogTitle className="sr-only">{editingCard ? "Edit card" : "Create card"}</DialogTitle>
+          <CardForm
+            card={editingCard ?? undefined}
+            status={creatingIn ?? undefined}
+            onSaved={handleCardSaved}
+            onCreated={handleCardCreated}
+            onCancel={closeDialog}
+          />
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={Boolean(deletingCard)} onOpenChange={(open) => !open && setDeletingCard(null)}>
+        <AlertDialogContent className="font-jira text-jira-text">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this card?</AlertDialogTitle>
+            <AlertDialogDescription className="line-clamp-3 wrap-anywhere">
+              {deletingCard?.productId}: {deletingCard?.comment}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={() => deletingCard?._id && deleteCardCard(deletingCard._id)}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

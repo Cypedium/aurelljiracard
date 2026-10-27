@@ -1,6 +1,10 @@
 @import "tailwindcss";
 @import 'react-grid-layout/css/styles.css';
 @import 'react-resizable/css/styles.css';
+@import "tw-animate-css";
+
+/* Mörkt läge bara via .dark-klass (används inte), inte via OS-inställningen */
+@custom-variant dark (&:is(.dark *));
 
 /* Jira-färger och typsnitt för board och formulär, t.ex. text-jira-text, bg-jira-lane */
 @theme {
@@ -37,6 +41,61 @@
   --color-board-from: #1c2b41;
   --color-board-via: #1d4f91;
   --color-board-to: #2b7bb9;
+}
+
+/* shadcn/ui-tokens (components/ui), mappade till Jira-färgerna ovan */
+:root {
+  --radius: 0.5rem;
+  --background: #ffffff;
+  --foreground: #172b4d;
+  --card: #ffffff;
+  --card-foreground: #172b4d;
+  --popover: #ffffff;
+  --popover-foreground: #172b4d;
+  --primary: #0c66e4;
+  --primary-foreground: #ffffff;
+  --secondary: #f1f2f4;
+  --secondary-foreground: #44546f;
+  --muted: #f1f2f4;
+  --muted-foreground: #626f86;
+  --accent: #f1f2f4;
+  --accent-foreground: #172b4d;
+  --destructive: #c9372c;
+  --border: #dcdfe4;
+  --input: #8590a2;
+  --ring: #388bff;
+}
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+}
+
+/* Kantfärg bara för shadcn-komponenter (data-slot), så att befintliga `border` inte ändras */
+@layer base {
+  [data-slot] {
+    @apply border-border outline-ring/50;
+  }
 }
 
 html,

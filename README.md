@@ -4,7 +4,7 @@ A small issue/feedback board. Logged-in users create cards (issue key, summary, 
 
 | Part | Stack | Folder | Fly app |
 |---|---|---|---|
-| Frontend | Next.js 15 (App Router), React 19, TypeScript, Tailwind 4 | [`frontend/`](frontend) | `aurelljiraboard` |
+| Frontend | Next.js 15 (App Router), React 19, TypeScript, Tailwind 4, shadcn/ui | [`frontend/`](frontend) | `aurelljiraboard` |
 | Backend | Node 22, Express 5, Mongoose 9 (CommonJS) | [`server/`](server) | `aurelljiraboard-backend` |
 | Database | MongoDB | — | external (`MONGO_URI`) |
 | Backend (alternative) | Java 25, Spring Boot 4, Spring Data JPA, PostgreSQL, Flyway | [`server-java/`](server-java) | not deployed |
