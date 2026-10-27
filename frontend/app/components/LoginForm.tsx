@@ -2,6 +2,10 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { saveSession } from "../utils/session";
+import { AUTH_FORM_CLASS, LABEL_CLASS } from "../utils/styles";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
 
 export default function LoginForm() {
   const [username, setUsername] = useState("");
@@ -33,33 +37,38 @@ export default function LoginForm() {
   };
 
   return (
-    <form onSubmit={handleLogin} className="max-w-md mx-auto p-4 border rounded">
-      <h2 className="text-xl font-semibold mb-4">Login</h2>
+    <form onSubmit={handleLogin} className={AUTH_FORM_CLASS}>
+      <h2 className="text-xl font-semibold">Login</h2>
 
-      <input
+      <Label className={LABEL_CLASS} htmlFor="login-username">
+        Username
+      </Label>
+      <Input
+        id="login-username"
         type="text"
-        placeholder="Username"
-        className="w-full p-2 mb-3 border rounded"
+        autoComplete="username"
+        className="bg-white"
         value={username}
         onChange={(e) => setUsername(e.target.value)}
         required
       />
 
-      <input
+      <Label className={LABEL_CLASS} htmlFor="login-password">
+        Password
+      </Label>
+      <Input
+        id="login-password"
         type="password"
-        placeholder="Password"
-        className="w-full p-2 mb-4 border rounded"
+        autoComplete="current-password"
+        className="bg-white"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
         required
       />
 
-      <button
-        type="submit"
-        className="w-full bg-green-500 hover:bg-green-600 text-white py-2 rounded transition-colors"
-      >
+      <Button type="submit" className="mt-6 w-full">
         Login
-      </button>
+      </Button>
     </form>
   );
 }

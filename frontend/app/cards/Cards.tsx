@@ -382,10 +382,6 @@ export default function Home() {
           aria-describedby={undefined}
           // Formuläret har egen bakgrund och skugga
           className="max-h-[calc(100dvh-2rem)] gap-0 overflow-y-auto border-0 bg-transparent p-0 font-jira shadow-none sm:max-w-[640px]"
-          onEscapeKeyDown={(e) => {
-            // Escape i en öppen dropdown stänger bara dropdownen
-            if ((e.target as HTMLElement | null)?.closest('[role="listbox"]')) e.preventDefault();
-          }}
         >
           {/* Formulärets synliga rubrik är en vanlig h2, så dialogen får en dold titel */}
           <DialogTitle className="sr-only">{editingCard ? "Edit card" : "Create card"}</DialogTitle>

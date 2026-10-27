@@ -32,7 +32,8 @@ Two independent npm projects plus a Maven project — always `cd` into one befor
   - `app/cards/card/Card.tsx` — create form (Jira "create issue" style)
   - `app/utils/boardLayout.ts` — board columns and card placement (pure, unit-tested)
   - `app/components/` — `Layout`, `Navbar`, `Footer`, login/register forms
-  - `app/components/ui/` — shadcn/ui components (`dialog`, `alert-dialog`, `button`, `sonner`), added with `npx shadcn@latest add <name>` (config: `components.json`). Owned code: edit freely, but keep `z-[1001]` on overlays (Navbar is `z-[1000]`). `cn()` lives in `app/lib/utils.ts` — check new components import it from there, not from an npm package
+  - `app/components/ui/` — shadcn/ui components (`dialog`, `alert-dialog`, `button`, `sonner`, `select`, `input`, `label`, `textarea`), added with `npx shadcn@latest add <name>` (config: `components.json`). Owned code: edit freely, but keep `z-[1001]` on dialog overlays (Navbar is `z-[1000]`) and `z-[1002]` on `SelectContent` (it opens inside dialogs). `cn()` lives in `app/lib/utils.ts` — check new components import it from there, not from an npm package
+  - Form fields use `Input`/`Textarea`/`Select`/`Label`/`Button` from `components/ui`, with `LABEL_CLASS` / `AUTH_FORM_CLASS` from `app/utils/styles.ts`. No shadcn `Form` (would need react-hook-form + zod); validation stays in `app/utils/`
   - Use `Dialog`/`AlertDialog` for modals and confirmations and `toast` from `sonner` for messages — never `alert`/`confirm`. `<Toaster />` is in `client-layout.tsx`
   - Import alias `@/*` → `frontend/*` (used by `components/ui`; app code uses relative imports)
   - `tests/unit/` — Jest via `next/jest`; import test globals from `@jest/globals`

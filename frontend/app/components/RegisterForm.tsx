@@ -6,6 +6,10 @@ import { toast } from "sonner";
 import checkPasswordStrength from "../utils/checkPasswordStrength";
 import { registerUser } from "../api/endpoints";
 import { readAsDataUrl, validateRegistration } from "../utils/register";
+import { AUTH_FORM_CLASS, LABEL_CLASS } from "../utils/styles";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
 
 export default function RegisterForm() {
   const router = useRouter();
@@ -41,34 +45,49 @@ export default function RegisterForm() {
   };
 
   return (
-    <form onSubmit={handleRegister} className="max-w-md mx-auto p-4 border rounded">
-      <h2 className="text-xl font-semibold mb-4">Register</h2>
+    <form onSubmit={handleRegister} className={AUTH_FORM_CLASS}>
+      <h2 className="text-xl font-semibold">Register</h2>
 
-      {error && <p className="text-red-600 mb-2">{error}</p>}
+      {error && (
+        <p role="alert" className="mt-4 rounded-[3px] bg-jira-info px-3 py-2 text-jira-danger">
+          {error}
+        </p>
+      )}
 
-      <label className="block mb-2 font-medium">Profile Picture</label>
-      <input
+      <Label className={LABEL_CLASS} htmlFor="register-picture">
+        Profile picture
+      </Label>
+      <Input
+        id="register-picture"
         type="file"
         accept="image/*"
-        className="mb-4"
+        className="bg-white"
         onChange={(e) => {
           const file = e.target.files?.[0] || null;
           setPictureFile(file);
         }}
       />
 
-      <input
+      <Label className={LABEL_CLASS} htmlFor="register-username">
+        Username
+      </Label>
+      <Input
+        id="register-username"
         type="text"
-        placeholder="Username"
-        className="w-full p-2 mb-3 border"
+        autoComplete="username"
+        className="bg-white"
         value={username}
         onChange={(e) => setUsername(e.target.value)}
       />
 
-      <input
+      <Label className={LABEL_CLASS} htmlFor="register-password">
+        Password
+      </Label>
+      <Input
+        id="register-password"
         type="password"
-        placeholder="Password"
-        className="w-full p-2 mb-4 border"
+        autoComplete="new-password"
+        className="bg-white"
         value={password}
         onChange={(e) => {
           const pwd = e.target.value;
@@ -79,7 +98,7 @@ export default function RegisterForm() {
 
       {password && (
         <p
-          className={`mb-2 font-semibold ${
+          className={`mt-2 text-xs font-semibold ${
             strength === "Strong"
               ? "text-green-600"
               : strength === "Medium"
@@ -91,9 +110,9 @@ export default function RegisterForm() {
         </p>
       )}
 
-      <button type="submit" className="w-full bg-blue-500 text-white py-2 rounded">
+      <Button type="submit" className="mt-6 w-full">
         Register
-      </button>
+      </Button>
     </form>
   );
 }
