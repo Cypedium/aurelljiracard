@@ -10,7 +10,8 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
       <Navbar />
       <main>{children}</main>
       <Footer />
-      <Toaster />
+      {/* richColors: röda fel, gröna lyckade; closeButton för att stänga direkt */}
+      <Toaster richColors closeButton />
     </>
   );
 }
