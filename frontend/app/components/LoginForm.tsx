@@ -1,19 +1,21 @@
 'use client';
-import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { saveSession } from "../utils/session";
-import { AUTH_FORM_CLASS, LABEL_CLASS } from "../utils/styles";
+import { loginSchema, type LoginValues } from "../utils/register";
+import { AUTH_FORM_CLASS, FIELD_ERROR_CLASS, FORM_ITEM_CLASS, LABEL_CLASS } from "../utils/styles";
 import { Button } from "./ui/button";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "./ui/form";
 import { Input } from "./ui/input";
-import { Label } from "./ui/label";
 
 export default function LoginForm() {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const form = useForm<LoginValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { username: "", password: "" },
+  });
 
-  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
+  const handleLogin = async ({ username, password }: LoginValues) => {
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
         method: "POST",
@@ -37,38 +39,42 @@ export default function LoginForm() {
   };
 
   return (
-    <form onSubmit={handleLogin} className={AUTH_FORM_CLASS}>
-      <h2 className="text-xl font-semibold">Login</h2>
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(handleLogin)} className={AUTH_FORM_CLASS} noValidate>
+        <h2 className="text-xl font-semibold">Login</h2>
 
-      <Label className={LABEL_CLASS} htmlFor="login-username">
-        Username
-      </Label>
-      <Input
-        id="login-username"
-        type="text"
-        autoComplete="username"
-        className="bg-white"
-        value={username}
-        onChange={(e) => setUsername(e.target.value)}
-        required
-      />
+        <FormField
+          control={form.control}
+          name="username"
+          render={({ field }) => (
+            <FormItem className={FORM_ITEM_CLASS}>
+              <FormLabel className={LABEL_CLASS}>Username</FormLabel>
+              <FormControl>
+                <Input type="text" autoComplete="username" className="bg-white" {...field} />
+              </FormControl>
+              <FormMessage className={FIELD_ERROR_CLASS} />
+            </FormItem>
+          )}
+        />
 
-      <Label className={LABEL_CLASS} htmlFor="login-password">
-        Password
-      </Label>
-      <Input
-        id="login-password"
-        type="password"
-        autoComplete="current-password"
-        className="bg-white"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        required
-      />
+        <FormField
+          control={form.control}
+          name="password"
+          render={({ field }) => (
+            <FormItem className={FORM_ITEM_CLASS}>
+              <FormLabel className={LABEL_CLASS}>Password</FormLabel>
+              <FormControl>
+                <Input type="password" autoComplete="current-password" className="bg-white" {...field} />
+              </FormControl>
+              <FormMessage className={FIELD_ERROR_CLASS} />
+            </FormItem>
+          )}
+        />
 
-      <Button type="submit" className="mt-6 w-full">
-        Login
-      </Button>
-    </form>
+        <Button type="submit" className="mt-6 w-full" disabled={form.formState.isSubmitting}>
+          Login
+        </Button>
+      </form>
+    </Form>
   );
 }

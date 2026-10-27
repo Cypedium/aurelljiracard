@@ -1,22 +1,42 @@
 import { describe, expect, it } from "@jest/globals";
-import { PRIORITIES, validateCardForm } from "../../app/utils/cardForm";
+import { COMMENT_MAX_LENGTH, PRIORITIES, PRODUCT_ID_MAX_LENGTH, cardFormSchema } from "../../app/utils/cardForm";
 
-const valid = { comment: "Fix the login page", productId: "AGB-12", rating: 3 };
+const valid = { type: "task", comment: "Fix the login page", productId: "AGB-12", rating: 3 };
 
-describe("validateCardForm", () => {
-  it("accepts a valid form", () => {
-    expect(validateCardForm(valid)).toBeNull();
+// Första felmeddelandet, eller null om formuläret är giltigt
+const firstError = (form: object) => {
+  const result = cardFormSchema.safeParse(form);
+  return result.success ? null : result.error.issues[0].message;
+};
+
+describe("cardFormSchema", () => {
+  it("accepts a valid form and trims text", () => {
+    const result = cardFormSchema.safeParse({ ...valid, comment: "  Fix it  " });
+    expect(result.success && result.data.comment).toBe("Fix it");
   });
 
   it("requires a priority", () => {
-    expect(validateCardForm({ ...valid, rating: 0 })).toBe("Please select a priority.");
+    expect(firstError({ ...valid, rating: 0 })).toBe("Please select a priority.");
+  });
+
+  it.each([
+    ["summary", { ...valid, comment: "   " }, /Summary is required/],
+    ["summary", { ...valid, comment: "x".repeat(COMMENT_MAX_LENGTH + 1) }, /Summary is required/],
+    ["issue key", { ...valid, productId: "" }, /Issue key is required/],
+    ["issue key", { ...valid, productId: "x".repeat(PRODUCT_ID_MAX_LENGTH + 1) }, /Issue key is required/],
+  ])("rejects an empty or too long %s", (_field, form, message) => {
+    expect(firstError(form)).toMatch(message);
+  });
+
+  it("rejects an unknown issue type", () => {
+    expect(firstError({ ...valid, type: "epic" })).not.toBeNull();
   });
 
   it.each([
     ["summary", { ...valid, comment: "this is shit" }],
     ["issue key", { ...valid, productId: "fuck" }],
   ])("rejects profanity in the %s", (_field, form) => {
-    expect(validateCardForm(form)).toMatch(/inappropriate language/);
+    expect(firstError(form)).toMatch(/inappropriate language/);
   });
 });
 
