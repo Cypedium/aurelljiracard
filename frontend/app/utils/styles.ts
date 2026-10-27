@@ -16,6 +16,9 @@ export const CARD_ACTION_CLASS =`no-drag rounded-[3px] px-1.5 py-1 text-jira-sec
 
 // Formulär: fälten är components/ui (Input, Textarea, Select); etiketterna stylas här
 export const LABEL_CLASS = "mt-4 mb-1 block text-xs font-semibold text-jira-secondary";
+// FormItem (components/ui/form): etiketten ger avståndet, felet visas tätt under fältet
+export const FORM_ITEM_CLASS = "gap-0";
+export const FIELD_ERROR_CLASS = "mt-1 text-xs text-jira-danger";
 export const SECTION_PADDING = "px-6 max-[480px]:px-4";
 // Login och register: vitt kort i samma stil som kortformuläret
 export const AUTH_FORM_CLASS =
