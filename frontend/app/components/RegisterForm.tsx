@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { isAxiosError } from "axios";
+import { toast } from "sonner";
 import checkPasswordStrength from "../utils/checkPasswordStrength";
 import { registerUser } from "../api/endpoints";
 import { readAsDataUrl, validateRegistration } from "../utils/register";
@@ -30,7 +31,8 @@ export default function RegisterForm() {
 
       const res = await registerUser({ username, password, pictureUrl });
 
-      alert(res.data.message);
+      // Toastern ligger i layouten, så den syns kvar på /login
+      toast.success(res.data.message);
       router.push("/login");
     } catch (err) {
       const message = isAxiosError(err) ? err.response?.data?.message : null;

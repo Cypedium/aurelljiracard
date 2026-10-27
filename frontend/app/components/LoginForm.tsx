@@ -1,5 +1,6 @@
 'use client';
 import { useState } from "react";
+import { toast } from "sonner";
 import { saveSession } from "../utils/session";
 
 export default function LoginForm() {
@@ -27,7 +28,7 @@ export default function LoginForm() {
       window.location.href = "/cards";
 
     } catch (error: any) {
-      alert(error.message || "An unexpected error occurred");
+      toast.error(error.message || "An unexpected error occurred");
     }
   };
 
