@@ -83,7 +83,7 @@ CI (`.github/workflows/ci.yml`) runs the npm commands above (not `server-java` y
 
 ## Config and secrets
 
-- `server/.env` is listed for ignore but **is still tracked in git** — never stage or commit it, and don't print its contents. Template: `server/.env.example`. Production secrets live in `fly secrets` for `aurelljiraboard-backend`.
+- `server/.env` is listed for ignore but **is still tracked in git** — never stage or commit it, and don't print its contents. Template: `server/.env.example`. Production secrets live in `fly secrets` for `aurelljiraboardnode`.
 - `NEXT_PUBLIC_API_URL` is inlined at build time: `.env.local` locally, `[build.args]` in `frontend/fly.app.toml` for production.
 - CORS origins: `CLIENT_URL` (comma-separated) in `server/app.js` and `app.cors.allowed-origins` in `server-java/src/main/resources/application.yml`.
 - `server-java` reads env vars only (Spring does not load `.env`): `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `JWT_SECRET`, `REFRESH_SECRET` (each ≥32 bytes, app refuses to start otherwise), `PORT` (default 8080), `CLIENT_URL`. Template: `server-java/.env.example`. Never put real secrets in `application*.yml`.
@@ -91,7 +91,7 @@ CI (`.github/workflows/ci.yml`) runs the npm commands above (not `server-java` y
 
 ## Deployment
 
-Pushes to `main` deploy both Fly apps after CI passes (`fly.server.toml`, `fly.app.toml`, region `arn`). Changing Dockerfiles, Fly configs or workflows affects production — call it out in the PR. `server-java` has no Dockerfile, Fly config or CI job yet — it is not deployed.
+Pushes to `main` deploy both Fly apps after CI passes (`fly.server.toml`, `fly.app.toml`, region `arn`). Changing Dockerfiles, Fly configs or workflows affects production — call it out in the PR. `server-java` has `Dockerfile.java` + `fly.java.toml` (app `aurelljiraboardjava`) but no CI job — deploy it manually with `fly deploy -c fly.java.toml`; CI never deploys it.
 
 ## Data model
 

@@ -1,0 +1,7 @@
+target
+.env
+.env.*
+HELP.md
+docker-compose.yml
+Dockerfile.java
+fly.java.toml

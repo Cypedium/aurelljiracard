@@ -88,6 +88,28 @@ The app refuses to start if a JWT secret is missing or too short.
 
 Docker must be running: the API tests start a real PostgreSQL container, run the Flyway migrations and call every endpoint through the full security filter chain.
 
+## Deployment (Fly.io)
+
+Fly app `aurelljiraboardjava` ([`fly.java.toml`](fly.java.toml), [`Dockerfile.java`](Dockerfile.java)). Not deployed by CI — deploy manually from `server-java/`. Flyway runs the migrations on startup; if the schema doesn't match the entities, the app doesn't start and Fly keeps the previous release.
+
+One-time setup:
+
+```bash
+fly apps create aurelljiraboardjava
+fly postgres create --name aurelljiraboardjava-db --region arn
+fly postgres attach aurelljiraboardjava-db -a aurelljiraboardjava   # prints the connection string
+fly secrets set -a aurelljiraboardjava   DB_URL=jdbc:postgresql://<host>:5432/<db> DB_USERNAME=... DB_PASSWORD=...   JWT_SECRET=... REFRESH_SECRET=... CLIENT_URL=https://aurelljiraboard.fly.dev
+```
+
+`attach` sets a `DATABASE_URL` in `postgres://` form; Spring needs `DB_URL` in `jdbc:postgresql://` form plus separate user/password. Use different JWT secrets than the Node app.
+
+Deploy and check:
+
+```bash
+fly deploy -c fly.java.toml
+curl https://aurelljiraboardjava.fly.dev/health   # { "status": "ok" }
+```
+
 ## API
 
 Same as the Express API; see the [root README](../README.md#api). Differences that a client can notice:
