@@ -2,6 +2,8 @@
 
 A second implementation of the board API, next to the Express + MongoDB one in [`../server`](../server). It exposes the **same endpoints, JSON shapes, status codes and token rules**, so the Next.js frontend works against either backend by changing `NEXT_PUBLIC_API_URL`.
 
+How the code is organised (request flow, security, data model, with diagrams): [ARCHITECTURE.md](ARCHITECTURE.md).
+
 | | |
 |---|---|
 | Language | Java 25 |
