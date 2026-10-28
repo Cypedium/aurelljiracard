@@ -5,7 +5,7 @@ primary_region = "arn"
   dockerfile = "Dockerfile.app"
 
 [build.args]
-  NEXT_PUBLIC_API_URL = "https://aurelljiraboard-backend.fly.dev"
+  NEXT_PUBLIC_API_URL = "https://aurelljiraboardnode.fly.dev"
 
 [http_service]
   internal_port = 3000

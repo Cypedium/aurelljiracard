@@ -1,4 +1,4 @@
-app = "aurelljiraboard-backend"
+app = "aurelljiraboardnode"
 primary_region = "arn"
 
 [build]

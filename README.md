@@ -5,9 +5,9 @@ A small issue/feedback board. Logged-in users create cards (issue key, summary, 
 | Part | Stack | Folder | Fly app |
 |---|---|---|---|
 | Frontend | Next.js 15 (App Router), React 19, TypeScript, Tailwind 4, shadcn/ui | [`frontend/`](frontend) | `aurelljiraboard` |
-| Backend | Node 22, Express 5, Mongoose 9 (CommonJS) | [`server/`](server) | `aurelljiraboard-backend` |
+| Backend | Node 22, Express 5, Mongoose 9 (CommonJS) | [`server/`](server) | `aurelljiraboardnode` |
 | Database | MongoDB | — | external (`MONGO_URI`) |
-| Backend (alternative) | Java 25, Spring Boot 4, Spring Data JPA, PostgreSQL, Flyway | [`server-java/`](server-java) | not deployed |
+| Backend (alternative) | Java 25, Spring Boot 4, Spring Data JPA, PostgreSQL, Flyway | [`server-java/`](server-java) | `aurelljiraboardjava` (manual deploy only) |
 
 `server/` and `server-java/` implement the same API, so the frontend runs against either one; pick it with `NEXT_PUBLIC_API_URL`. See [`server-java/README.md`](server-java/README.md) for the Spring Boot version.
 
@@ -93,5 +93,5 @@ Manual deploy: `fly deploy -c fly.server.toml` in `server/`, `fly deploy -c fly.
 Backend secrets must be set on Fly once:
 
 ```bash
-fly secrets set -a aurelljiraboard-backend MONGO_URI=... JWT_SECRET=... REFRESH_SECRET=... CLIENT_URL=https://aurelljiraboard.fly.dev
+fly secrets set -a aurelljiraboardnode MONGO_URI=... JWT_SECRET=... REFRESH_SECRET=... CLIENT_URL=https://aurelljiraboard.fly.dev
 ```
