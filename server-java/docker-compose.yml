@@ -1,0 +1,24 @@
+# Local PostgreSQL for `./mvnw spring-boot:run`. Dev only — not used in production.
+# Credentials default to jiraboard/jiraboard; override via DB_USERNAME / DB_PASSWORD / DB_PORT
+# in the shell or in server-java/.env (read by Compose, gitignored).
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: jiraboard-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: jiraboard
+      POSTGRES_USER: ${DB_USERNAME:-jiraboard}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-jiraboard}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - jiraboard-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d jiraboard"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  jiraboard-pgdata:
