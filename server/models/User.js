@@ -5,7 +5,9 @@ const LayoutSchema = new mongoose.Schema({
   headers: [
     {
       key: String,
-      title: String
+      title: String,
+      // Valfri listfärg (#rrggbb); saknas = standardfärgen
+      color: String
     }
   ],
   cards: [

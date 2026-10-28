@@ -15,7 +15,9 @@ public record Layout(int cols, List<Header> headers, List<CardPosition> cards) {
         return new Layout(DEFAULT_COLS, List.of(), List.of());
     }
 
-    public record Header(CardStatus key, String title) {
+    /** {@code color} is an optional list colour (#rrggbb); null means the default. */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record Header(CardStatus key, String title, String color) {
     }
 
     /** A react-grid-layout item; {@code content} is opaque client data. */

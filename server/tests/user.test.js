@@ -84,6 +84,19 @@ describe("layout", () => {
     expect(user.layout.headers).toEqual([{ key: "todo", title: "Backlog" }]);
   });
 
+  it("PUT /user/layout saves an optional column color, lowercased", async () => {
+    const user = { layout: { cols: 4, headers: [], cards: [] }, save: jest.fn().mockResolvedValue({}) };
+    User.findById.mockResolvedValue(user);
+
+    const res = await request(app)
+      .put("/user/layout")
+      .set("Authorization", authHeader())
+      .send({ headers: [{ key: "todo", title: "To Do", color: "#FDD0EC" }, { key: "done", title: "Done", color: null }] });
+
+    expect(res.status).toBe(200);
+    expect(user.layout.headers).toEqual([{ key: "todo", title: "To Do", color: "#fdd0ec" }, { key: "done", title: "Done" }]);
+  });
+
   it.each([
     [{ cols: 99 }],
     [{ cols: "6" }],
@@ -92,7 +105,11 @@ describe("layout", () => {
     [{ headers: [{ key: "todo", title: "   " }] }],
     [{ headers: [{ key: "todo", title: "x".repeat(51) }] }],
     [{ headers: [{ key: "todo", title: { $ne: null } }] }],
-    [{ headers: [null] }]
+    [{ headers: [null] }],
+    [{ headers: [{ key: "todo", title: "To Do", color: "red" }] }],
+    [{ headers: [{ key: "todo", title: "To Do", color: "#fff" }] }],
+    [{ headers: [{ key: "todo", title: "To Do", color: "#eed7fc; x" }] }],
+    [{ headers: [{ key: "todo", title: "To Do", color: { $ne: null } }] }]
   ])("PUT rejects %j with 400", async (body) => {
     const res = await request(app).put("/user/layout").set("Authorization", authHeader()).send(body);
 

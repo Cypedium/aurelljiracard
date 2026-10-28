@@ -1,6 +1,7 @@
 package se.aurell.jiraboard.service;
 
 import java.util.List;
+import java.util.Locale;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import se.aurell.jiraboard.dto.LayoutRequest;
@@ -43,12 +44,17 @@ public class UserService {
 
         List<Layout.Header> headers = request.headers() == null
                 ? saved.headers()
-                : request.headers().stream().map(h -> new Layout.Header(h.key(), h.title().trim())).toList();
+                : request.headers().stream().map(UserService::toHeader).toList();
 
         user.setLayout(new Layout(
                 request.cols() != null ? request.cols() : saved.cols(),
                 headers,
                 request.cards() != null ? request.cards() : saved.cards()));
+    }
+
+    private static Layout.Header toHeader(LayoutRequest.HeaderRequest h) {
+        String color = h.color() == null ? null : h.color().toLowerCase(Locale.ROOT);
+        return new Layout.Header(h.key(), h.title().trim(), color);
     }
 
     private User findUser(AuthUser authUser) {
