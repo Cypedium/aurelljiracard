@@ -48,6 +48,15 @@ Requires JDK 25 and Docker.
 ./mvnw spring-boot:test-run
 ```
 
+**Persistent database in Docker:** [`docker-compose.yml`](docker-compose.yml) runs `postgres:17-alpine` on port 5432 with a named volume (user/password default to `jiraboard`):
+
+```bash
+docker compose up -d --wait   # start (data survives restarts)
+docker compose down           # stop; add -v to wipe the data
+```
+
+Then set `DB_URL=jdbc:postgresql://localhost:5432/jiraboard`, `DB_USERNAME=jiraboard`, `DB_PASSWORD=jiraboard` plus the JWT secrets and run the API as below.
+
 **Against your own Postgres:** set the environment variables below, then:
 
 ```bash
