@@ -82,6 +82,28 @@ See [`.env.example`](.env.example). Spring does not read `.env` files; export th
 
 The app refuses to start if a JWT secret is missing or too short.
 
+## Deployment (Fly.io)
+
+Fly app `aurelljiraboardjava` (region `arn`), built from [`Dockerfile.java`](Dockerfile.java) with [`fly.java.toml`](fly.java.toml). The database is an external PostgreSQL (e.g. Neon or Supabase free tier). Flyway creates the tables on first start.
+
+One-time setup, from `server-java/`:
+
+```bash
+fly apps create aurelljiraboardjava
+# Pick your own values; never commit them. Hosted Postgres needs SSL:
+#   DB_URL=jdbc:postgresql://<host>:5432/<db>?sslmode=require
+fly secrets set -a aurelljiraboardjava DB_URL=... DB_USERNAME=... DB_PASSWORD=... \
+  JWT_SECRET=... REFRESH_SECRET=... CLIENT_URL=https://aurelljiraboard.fly.dev
+```
+
+Deploy (not done by CI yet):
+
+```bash
+fly deploy -c fly.java.toml
+```
+
+Tests are skipped in the Docker build (they need Docker); run `./mvnw test` before deploying. Machines stop when idle, so the first request after a pause waits for the JVM to start (~15–20 s).
+
 ## Tests
 
 ```bash
