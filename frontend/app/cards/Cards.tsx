@@ -323,16 +323,21 @@ export default function Home() {
                       {fb.comment}
                     </p>
 
-                    {/* Datum, edit och delete längst ner (syns vid hover) */}
-                    <div className="mt-auto flex items-center justify-between gap-1">
+                    <div className="mt-auto flex items-center gap-1.5">
+                      <IssueTypeIcon type={fb.type} />
+                      <span className="min-w-0 flex-1 truncate text-xs font-semibold uppercase text-jira-secondary">
+                        {fb.productId}
+                      </span>
+
+                      {/* Datum, edit och delete (syns vid hover) */}
                       <span
-                        className={`rounded-[3px] bg-jira-hover px-1.5 text-xs/5 font-bold text-jira-secondary ${CARD_HOVER_CLASS}`}
+                        className={`shrink-0 rounded-[3px] bg-jira-hover px-1.5 text-xs/5 font-bold text-jira-secondary ${CARD_HOVER_CLASS}`}
                       >
                         {/* yy-mm-dd, t.ex. 26-10-19 */}
                         {fb.submittedAt.substring(2, 10)}
                       </span>
 
-                      <div className="flex items-center gap-1">
+                      <div className="flex shrink-0 items-center">
                         {userName === fb.username && fb._id && (
                           <button
                             className={CARD_ACTION_CLASS}
@@ -361,13 +366,7 @@ export default function Home() {
                           <TrashIcon className="size-4" aria-hidden />
                         </button>
                       </div>
-                    </div>
 
-                    <div className="flex items-center gap-1.5">
-                      <IssueTypeIcon type={fb.type} />
-                      <span className="min-w-0 flex-1 truncate text-xs font-semibold uppercase text-jira-secondary">
-                        {fb.productId}
-                      </span>
                       <span
                         className="min-w-5 shrink-0 rounded-full bg-jira-neutral px-1.5 text-center text-xs/4"
                         title={`Time tracking: ${fb.rating}/5`}
