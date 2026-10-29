@@ -2,8 +2,9 @@
 import { readableTextColor, type BoardHeader, type CardStatus } from "./boardLayout";
 
 // Board: datum, edit- och delete-knappen syns bara när man hovrar över kortet
+// (alltid på pekskärmar, där det inte finns hover)
 export const CARD_HOVER_CLASS =
-  "opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100";
+  "opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100";
 // Trello-liknande färg per lista (bakgrund + text), nycklar = CardStatus
 export const LIST_COLOR_CLASS: Record<CardStatus, string> = {
   todo: "bg-list-todo text-list-todo-text",

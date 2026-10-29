@@ -237,10 +237,16 @@ export default function Home() {
       {/* <div className="mb-4 rounded-xl bg-black/25 px-5 py-3 backdrop-blur-sm">
         <h1 className="text-xl font-bold text-white">Jira Board</h1>
       </div> */}
-      <div className="overflow-x-auto">
+      {/* Mobil: varje lista är en skärm bred och man sveper mellan dem (snap).
+          md och uppåt: alla listor får plats i skärmens bredd */}
+      <div
+        className="snap-x snap-mandatory overflow-x-auto overscroll-x-contain md:snap-none"
+        style={{ scrollPaddingInline: GRID_MARGIN }}
+      >
         <div
           ref={containerRef}
-          className="relative w-full min-w-[720px]"
+          // 400% = BOARD_COLS skärmbredder; gridden läser bredden via useContainerWidth
+          className="relative w-[400%] md:w-full"
           style={{ minHeight: Math.max(...columnRows.map(listHeight)) + GRID_MARGIN }}
         >
           {/* Listornas bakgrund, under korten */}
@@ -248,7 +254,7 @@ export default function Home() {
             {userLayout.headers.map((h, i) => (
               <div
                 key={h.key}
-                className={`rounded-xl shadow-[0_1px_1px_rgba(9,30,66,0.25)] ${listColor(h).className}`}
+                className={`snap-start rounded-xl shadow-[0_1px_1px_rgba(9,30,66,0.25)] ${listColor(h).className}`}
                 style={{ height: listHeight(columnRows[i]), ...listColor(h).style }}
               />
             ))}
