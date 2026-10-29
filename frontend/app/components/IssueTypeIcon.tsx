@@ -15,7 +15,8 @@ export default function IssueTypeIcon({ type }: { type?: string }) {
       className={`inline-flex size-4 shrink-0 items-center justify-center rounded-[3px] text-white ${className}`}
       title={cardTypeLabel(type)}
     >
-      <Icon className="size-3" aria-hidden />
+      {/* text-white på svg:n: annars gör SelectItem ikonen grå (text-muted-foreground) */}
+      <Icon className="size-3 text-white" aria-hidden />
     </span>
   );
 }
