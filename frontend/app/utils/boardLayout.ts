@@ -151,6 +151,16 @@ export const columnForStatus = (status?: string): number =>
 export const statusForColumn = (x: number): CardStatus =>
   DEFAULT_HEADERS[Math.min(Math.max(0, x), BOARD_COLS - 1)].key;
 
+// Ihopfällda listor (sparas per webbläsare); okända värden och dubbletter tas bort
+export const normalizeCollapsed = (raw: unknown): CardStatus[] =>
+  Array.isArray(raw) ? DEFAULT_HEADERS.map((h) => h.key).filter((k) => raw.includes(k)) : [];
+
+export const toggleCollapsed = (collapsed: CardStatus[], key: CardStatus): CardStatus[] =>
+  collapsed.includes(key) ? collapsed.filter((k) => k !== key) : [...collapsed, key];
+
+export const isColumnCollapsed = (collapsed: CardStatus[], x: number): boolean =>
+  collapsed.includes(statusForColumn(x));
+
 // Varje kort är en kolumn brett och en rad högt. Kolumnen kommer från kortets
 // status (delad av alla). Ordningen inom kolumnen kommer från användarens
 // sparade positioner; kort utan sparad position i sin kolumn hamnar sist.

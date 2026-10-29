@@ -14,7 +14,10 @@ import {
   cardKey,
   listHeight,
   columnForStatus,
+  isColumnCollapsed,
+  normalizeCollapsed,
   normalizeLayout,
+  toggleCollapsed,
   readableTextColor,
   recolorHeader,
   renameHeader,
@@ -199,5 +202,23 @@ describe("listHeight", () => {
   it("fits the header, one row per card and the add button", () => {
     expect(listHeight(0)).toBe(HEADER_HEIGHT + FOOTER_HEIGHT);
     expect(listHeight(2)).toBe(listHeight(0) + 2 * (ROW_HEIGHT + GRID_MARGIN));
+  });
+});
+
+describe("collapsed columns", () => {
+  it("keeps only known statuses, in board order, without duplicates", () => {
+    expect(normalizeCollapsed(["done", "nope", "todo", "done", 3])).toEqual(["todo", "done"]);
+    expect(normalizeCollapsed("todo")).toEqual([]);
+    expect(normalizeCollapsed(null)).toEqual([]);
+  });
+
+  it("toggles a column in and out", () => {
+    expect(toggleCollapsed([], "test")).toEqual(["test"]);
+    expect(toggleCollapsed(["todo", "test"], "test")).toEqual(["todo"]);
+  });
+
+  it("checks a grid column against the collapsed statuses", () => {
+    expect(isColumnCollapsed(["test"], columnForStatus("test"))).toBe(true);
+    expect(isColumnCollapsed(["test"], columnForStatus("done"))).toBe(false);
   });
 });

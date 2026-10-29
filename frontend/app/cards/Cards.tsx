@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { ResponsiveGridLayout, useContainerWidth } from "react-grid-layout";
-import { PencilIcon, PlusIcon, TrashIcon } from "@heroicons/react/16/solid";
+import { MinusIcon, PencilIcon, PlusIcon, TrashIcon } from "@heroicons/react/16/solid";
 import IssueTypeIcon from "../components/IssueTypeIcon";
 import ColumnColorPicker from "../components/ColumnColorPicker";
 import debounce from "lodash.debounce";
@@ -33,13 +33,18 @@ import {
   ROW_HEIGHT,
   buildCardLayout,
   cardKey,
+  isColumnCollapsed,
   listHeight,
+  normalizeCollapsed,
   normalizeLayout,
   recolorHeader,
   renameHeader,
   statusForColumn,
   toSavedPositions,
+  toggleCollapsed,
 } from "../utils/boardLayout";
+
+const COLLAPSED_STORAGE_KEY = "collapsed_columns";
 import { avatarColor, avatarInitials } from "../utils/avatar";
 import { getUsername } from "../utils/session";
 import { apiErrorMessage } from "../utils/apiError";
@@ -57,6 +62,8 @@ export default function Home() {
   const [creatingIn, setCreatingIn] = useState<CardStatus | null>(null);
   // Kolumnen vars rubrik redigeras
   const [renamingKey, setRenamingKey] = useState<CardStatus | null>(null);
+  // Ihopfällda listor: visar bara rubrik och "Add a card"
+  const [collapsed, setCollapsed] = useState<CardStatus[]>([]);
   // Gridden följer boardens bredd så att den fyller skärmen
   const { width, containerRef, mounted } = useContainerWidth();
 
@@ -102,6 +109,24 @@ export default function Home() {
     loadLayout().finally(() => setLayoutLoaded(true));
   }, []);
 
+  useEffect(() => {
+    try {
+      setCollapsed(normalizeCollapsed(JSON.parse(localStorage.getItem(COLLAPSED_STORAGE_KEY) ?? "[]")));
+    } catch {
+      setCollapsed([]);
+    }
+  }, []);
+
+  const toggleColumn = (key: CardStatus) => {
+    const next = toggleCollapsed(collapsed, key);
+    setCollapsed(next);
+    try {
+      localStorage.setItem(COLLAPSED_STORAGE_KEY, JSON.stringify(next));
+    } catch {
+      // Sparas inte, men fungerar tills sidan laddas om
+    }
+  };
+
   // Räknas fram vid varje render, så gridden får aldrig en tom layout som
   // sedan sparas över den riktiga
   const gridLayout = useMemo(
@@ -114,6 +139,11 @@ export default function Home() {
         : [],
     [cards, userLayout.cards, layoutLoaded],
   );
+
+  // Kort i ihopfällda listor tas bort ur gridden; deras positioner sparas ändå
+  const visibleLayout = gridLayout.filter((l) => !isColumnCollapsed(collapsed, l.x));
+  const hiddenLayout = gridLayout.filter((l) => isColumnCollapsed(collapsed, l.x));
+  const visibleIds = new Set(visibleLayout.map((l) => l.i));
 
   // 🔥 Spara layout till server via api.ts
   const saveLayoutToServer = useCallback(
@@ -194,6 +224,8 @@ export default function Home() {
   const columnCounts = DEFAULT_HEADERS.map(
     (_, i) => gridLayout.filter((l) => l.x === i).length,
   );
+  // Ihopfälld lista: ingen plats för kort
+  const columnRows = columnCounts.map((count, i) => (isColumnCollapsed(collapsed, i) ? 0 : count));
   const columnGrid = {
     padding: `0 ${GRID_MARGIN}px`,
     gap: GRID_MARGIN,
@@ -209,7 +241,7 @@ export default function Home() {
         <div
           ref={containerRef}
           className="relative w-full min-w-[720px]"
-          style={{ minHeight: Math.max(...columnCounts.map(listHeight)) + GRID_MARGIN }}
+          style={{ minHeight: Math.max(...columnRows.map(listHeight)) + GRID_MARGIN }}
         >
           {/* Listornas bakgrund, under korten */}
           <div className="pointer-events-none absolute inset-0 grid items-start" style={columnGrid}>
@@ -217,7 +249,7 @@ export default function Home() {
               <div
                 key={h.key}
                 className={`rounded-xl shadow-[0_1px_1px_rgba(9,30,66,0.25)] ${listColor(h).className}`}
-                style={{ height: listHeight(columnCounts[i]), ...listColor(h).style }}
+                style={{ height: listHeight(columnRows[i]), ...listColor(h).style }}
               />
             ))}
           </div>
@@ -228,7 +260,7 @@ export default function Home() {
               <div
                 key={h.key}
                 className="flex flex-col justify-between px-2 pb-2"
-                style={{ height: listHeight(columnCounts[i]) }}
+                style={{ height: listHeight(columnRows[i]) }}
               >
                 <div
                   className={`flex items-center gap-2 pr-1 ${listColor(h).className}`}
@@ -269,6 +301,20 @@ export default function Home() {
                     defaultColor={DEFAULT_LIST_COLORS[h.key]}
                     onChange={(color) => recolorColumn(h.key, color)}
                   />
+                  <button
+                    type="button"
+                    aria-label={`${collapsed.includes(h.key) ? "Expand" : "Collapse"} ${h.title}`}
+                    aria-expanded={!collapsed.includes(h.key)}
+                    title={collapsed.includes(h.key) ? "Expand" : "Collapse"}
+                    className="pointer-events-auto rounded-md p-1 opacity-70 hover:bg-black/10 hover:opacity-100"
+                    onClick={() => toggleColumn(h.key)}
+                  >
+                    {collapsed.includes(h.key) ? (
+                      <PlusIcon className="size-4" aria-hidden />
+                    ) : (
+                      <MinusIcon className="size-4" aria-hidden />
+                    )}
+                  </button>
                 </div>
                 <button
                   type="button"
@@ -283,10 +329,10 @@ export default function Home() {
             ))}
           </div>
 
-          {!layoutLoaded || !mounted ? null : cards.length > 0 && (
+          {!layoutLoaded || !mounted ? null : visibleLayout.length > 0 && (
             <ResponsiveGridLayout
               className="gridLayout"
-              layouts={{ lg: gridLayout }}
+              layouts={{ lg: visibleLayout }}
               breakpoints={{ lg: 0 }}
               cols={{ lg: BOARD_COLS }}
               rowHeight={ROW_HEIGHT}
@@ -297,17 +343,17 @@ export default function Home() {
               // Korten har fast storlek (1x1), så inget resize-handtag
               resizeConfig={{ enabled: false }}
               onLayoutChange={(currentLayout) => {
-                persistLayout({ ...userLayout, cards: toSavedPositions(currentLayout) });
+                persistLayout({ ...userLayout, cards: toSavedPositions([...currentLayout, ...hiddenLayout]) });
               }}
               onDragStop={(currentLayout, oldItem, newItem) => {
                 if (!oldItem || !newItem || oldItem.x === newItem.x) return;
                 // Spara radordningen direkt så att kortet inte hoppar när statusen ändras
-                persistLayout({ ...userLayout, cards: toSavedPositions(currentLayout) });
+                persistLayout({ ...userLayout, cards: toSavedPositions([...currentLayout, ...hiddenLayout]) });
                 const card = cards.find((fb, i) => cardKey(fb, i) === newItem.i);
                 if (card?._id) moveCard(card._id, statusForColumn(newItem.x));
               }}
             >
-              {cards.map((fb) => (
+              {cards.filter((fb, i) => visibleIds.has(cardKey(fb, i))).map((fb) => (
                 <div
                   key={fb._id || fb.username + fb.submittedAt}
                   // Luft mellan kortet och kolumnens kanter
