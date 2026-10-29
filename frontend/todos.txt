@@ -1,9 +1,0 @@
-Finnish all enpoints
-Searchfunction for the list
-Icons from semanticUI
-Crud for the cards
-    Create
-    Remove
-    Update
-    Delete
-Datepicker for Update / Card

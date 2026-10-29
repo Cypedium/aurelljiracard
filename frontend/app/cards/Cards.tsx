@@ -331,7 +331,7 @@ export default function Home() {
 
                       {/* Datum, edit och delete (syns vid hover) */}
                       <span
-                        className={`shrink-0 rounded-[3px] bg-jira-hover px-1.5 text-xs/5 font-bold text-jira-secondary ${CARD_HOVER_CLASS}`}
+                        className={`shrink-0 rounded-[3px] text-xs/5 font-bold text-jira-secondary ${CARD_HOVER_CLASS}`}
                       >
                         {/* yy-mm-dd, t.ex. 26-10-19 */}
                         {fb.submittedAt.substring(2, 10)}
