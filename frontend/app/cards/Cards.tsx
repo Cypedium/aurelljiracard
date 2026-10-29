@@ -390,33 +390,28 @@ export default function Home() {
                       </span>
 
                       <div className="flex shrink-0 items-center">
+                        {/* Edit och delete visas bara på egna kort */}
                         {userName === fb.username && fb._id && (
-                          <button
-                            className={CARD_ACTION_CLASS}
-                            aria-label="Edit card"
-                            title="Edit"
-                            onClick={() => setEditingCard(fb)}
-                          >
-                            <PencilIcon className="size-4" aria-hidden />
-                          </button>
-                        )}
+                          <>
+                            <button
+                              className={CARD_ACTION_CLASS}
+                              aria-label="Edit card"
+                              title="Edit"
+                              onClick={() => setEditingCard(fb)}
+                            >
+                              <PencilIcon className="size-4" aria-hidden />
+                            </button>
 
-                        <button
-                          className={CARD_ACTION_CLASS}
-                          aria-label="Delete card"
-                          title="Delete"
-                          onClick={() => {
-                            if (userName !== fb.username) {
-                              toast.error("You can only delete your own card.");
-                            } else if (!fb._id) {
-                              toast.error("Card ID is missing. Cannot delete.");
-                            } else {
-                              setDeletingCard(fb);
-                            }
-                          }}
-                        >
-                          <TrashIcon className="size-4" aria-hidden />
-                        </button>
+                            <button
+                              className={CARD_ACTION_CLASS}
+                              aria-label="Delete card"
+                              title="Delete"
+                              onClick={() => setDeletingCard(fb)}
+                            >
+                              <TrashIcon className="size-4" aria-hidden />
+                            </button>
+                          </>
+                        )}
                       </div>
 
                       <span
