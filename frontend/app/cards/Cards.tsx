@@ -316,8 +316,28 @@ export default function Home() {
                   <div
                     className="group relative flex h-full cursor-grab flex-col gap-2 overflow-hidden rounded-lg bg-white p-3 text-sm text-jira-text shadow-[0_1px_1px_rgba(9,30,66,0.25),0_0_1px_rgba(9,30,66,0.31)] hover:ring-2 hover:ring-jira-focus hover:ring-inset"
                   >
-                    <div className="absolute top-2 right-2 flex flex-col items-end gap-0.5">
-                      <div className="flex items-center gap-1">
+                    <p
+                      className="line-clamp-3 leading-5 wrap-anywhere"
+                      title={fb.comment}
+                    >
+                      {fb.comment}
+                    </p>
+
+                    <div className="mt-auto flex items-center gap-1.5">
+                      <IssueTypeIcon type={fb.type} />
+                      <span className="min-w-0 flex-1 truncate text-xs font-semibold uppercase text-jira-secondary">
+                        {fb.productId}
+                      </span>
+
+                      {/* Datum, edit och delete (syns vid hover) */}
+                      <span
+                        className={`shrink-0 rounded-[3px] text-xs/5 font-bold text-jira-secondary ${CARD_HOVER_CLASS}`}
+                      >
+                        {/* yy-mm-dd, t.ex. 26-10-19 */}
+                        {fb.submittedAt.substring(2, 10)}
+                      </span>
+
+                      <div className="flex shrink-0 items-center">
                         {userName === fb.username && fb._id && (
                           <button
                             className={CARD_ACTION_CLASS}
@@ -347,26 +367,6 @@ export default function Home() {
                         </button>
                       </div>
 
-                      <span
-                        className={`rounded-[3px] bg-jira-hover px-1.5 text-xs/5 font-bold text-jira-secondary ${CARD_HOVER_CLASS}`}
-                      >
-                        {/* yy-mm-dd, t.ex. 26-10-19 */}
-                        {fb.submittedAt.substring(2, 10)}
-                      </span>
-                    </div>
-
-                    <p
-                      className="line-clamp-3 pr-12 leading-5 wrap-anywhere"
-                      title={fb.comment}
-                    >
-                      {fb.comment}
-                    </p>
-
-                    <div className="mt-auto flex items-center gap-1.5">
-                      <IssueTypeIcon type={fb.type} />
-                      <span className="min-w-0 flex-1 truncate text-xs font-semibold uppercase text-jira-secondary">
-                        {fb.productId}
-                      </span>
                       <span
                         className="min-w-5 shrink-0 rounded-full bg-jira-neutral px-1.5 text-center text-xs/4"
                         title={`Time tracking: ${fb.rating}/5`}
