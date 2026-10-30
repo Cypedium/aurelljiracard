@@ -71,9 +71,11 @@ public class CardService {
         return CardResponse.from(card);
     }
 
+    /** The author or an admin may delete. */
     @Transactional
     public void delete(UUID id, AuthUser user) {
-        cardRepository.delete(findOwnCard(id, user, "You can only delete your own card."));
+        Card card = user.isAdmin() ? findCard(id) : findOwnCard(id, user, "You can only delete your own card.");
+        cardRepository.delete(card);
     }
 
     private Card saveUnique(Card card) {

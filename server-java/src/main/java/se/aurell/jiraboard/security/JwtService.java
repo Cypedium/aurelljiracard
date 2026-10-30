@@ -22,13 +22,14 @@ import se.aurell.jiraboard.entity.User;
 
 /**
  * Issues HS256 tokens with the same payloads as server/utils/jwt.js:
- * access { id, username } and refresh { id, tokenVersion }.
+ * access { id, username, role } and refresh { id, tokenVersion }.
  */
 @Service
 public class JwtService {
 
     static final String CLAIM_ID = "id";
     static final String CLAIM_USERNAME = "username";
+    static final String CLAIM_ROLE = "role";
     static final String CLAIM_TOKEN_VERSION = "tokenVersion";
 
     private static final JwsHeader HEADER = JwsHeader.with(MacAlgorithm.HS256).build();
@@ -54,6 +55,7 @@ public class JwtService {
         JwtClaimsSet claims = baseClaims(properties.accessTtl().toSeconds())
                 .claim(CLAIM_ID, user.getId().toString())
                 .claim(CLAIM_USERNAME, user.getUsername())
+                .claim(CLAIM_ROLE, user.getRole().getValue())
                 .build();
         return accessEncoder.encode(JwtEncoderParameters.from(HEADER, claims)).getTokenValue();
     }
