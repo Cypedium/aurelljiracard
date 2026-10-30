@@ -1,11 +1,12 @@
 const jwt = require("jsonwebtoken");
+const { DEFAULT_ROLE } = require("./role");
 
 const ACCESS_TOKEN_TTL = "15m";
 const REFRESH_TOKEN_TTL = "7d";
 
 exports.generateAccessToken = (user) => {
   return jwt.sign(
-    { id: user._id, username: user.username },
+    { id: user._id, username: user.username, role: user.role ?? DEFAULT_ROLE },
     process.env.JWT_SECRET,
     { expiresIn: ACCESS_TOKEN_TTL }
   );

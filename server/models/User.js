@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { ROLES, DEFAULT_ROLE } = require('../utils/role');
 
 const LayoutSchema = new mongoose.Schema({
   cols: { type: Number, default: 12 },
@@ -26,6 +27,9 @@ const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   passwordHash: { type: String, required: true },
   pictureUrl: { type: String, default: 'https://example.com/default-profile.png' },
+
+  // "admin" may delete any card; set directly in the database
+  role: { type: String, enum: ROLES, default: DEFAULT_ROLE },
 
   // Incremented on logout to revoke all outstanding refresh tokens
   tokenVersion: { type: Number, default: 0 },

@@ -3,6 +3,7 @@ const Card = require("../models/Card");
 const { isNonEmptyString, isObjectId } = require("../utils/validate");
 const { CARD_STATUSES } = require("../utils/cardStatus");
 const { CARD_TYPES } = require("../utils/cardType");
+const { ADMIN_ROLE } = require("../utils/role");
 
 const COMMENT_MAX_LENGTH = 2000;
 const PRODUCT_ID_MAX_LENGTH = 200;
@@ -149,7 +150,8 @@ exports.remove = async (req, res) => {
     if (!card) {
       return res.status(404).json({ message: "Card not found." });
     }
-    if (card.username !== req.user.username) {
+    // Admins may delete any card
+    if (card.username !== req.user.username && req.user.role !== ADMIN_ROLE) {
       return res.status(403).json({ message: "You can only delete your own card." });
     }
 
