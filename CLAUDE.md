@@ -27,7 +27,7 @@ Two independent npm projects plus a Maven project — always `cd` into one befor
   - `tests/` — Jest + Supertest; models are `jest.mock`ed, no DB
   - `backupfiles/`, `scripts/` — one-off seed/maintenance scripts, not part of the app
 - `frontend/` — Next.js 15 App Router, React 19, TypeScript, Tailwind 4 + CSS modules
-  - `app/api/api.ts` — axios instance (attaches token, refreshes on 401); `app/api/endpoints.ts` — all API calls
+  - `app/api/api.ts` — axios instance (attaches token, refreshes on 401 — except for `/auth/*`, where 401 means bad credentials); `app/api/endpoints.ts` — all API calls
   - `app/cards/Cards.tsx` — board: `react-grid-layout` v2, fixed columns To Do / In Progress / Test / Done, width from `useContainerWidth`
   - `app/cards/card/Card.tsx` — create form (Jira "create issue" style)
   - `app/utils/boardLayout.ts` — board columns and card placement (pure, unit-tested)

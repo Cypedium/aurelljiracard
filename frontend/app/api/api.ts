@@ -36,8 +36,9 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // AccessToken expired → 401
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // AccessToken expired → 401. Inte för /auth/*: där betyder 401 t.ex. fel lösenord
+    const isAuthRequest = originalRequest?.url?.startsWith("/auth/");
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthRequest) {
       originalRequest._retry = true;
 
       const refreshToken = localStorage.getItem("refreshToken");
