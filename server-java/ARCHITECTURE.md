@@ -142,7 +142,7 @@ Two things worth noticing:
 | `POST` | `/card` | token | `CardService.create` | `201 { message }` |
 | `PUT` | `/card/{id}` | token, **author only** | `CardService.update` | `200 card` |
 | `PATCH` | `/card/{id}/status` | token, any user | `CardService.updateStatus` | `200 card` |
-| `DELETE` | `/card/{id}` | token, **author only** | `CardService.delete` | `200 { message }` |
+| `DELETE` | `/card/{id}` | token, **author or admin** | `CardService.delete` | `200 { message }` |
 | `GET` | `/user` | token | `UserService.getAll` | `200 [{ _id, username, pictureUrl }]` |
 | `GET` | `/user/usernames` | token | `UserService.getUsernames` | `200 ["alice", …]` |
 | `GET` | `/user/layout` | token | `UserService.getLayout` | `200 layout` |
@@ -196,7 +196,7 @@ Why each class exists:
 
 | Token | Secret | Lifetime | Claims | Used for |
 |---|---|---|---|---|
-| Access | `JWT_SECRET` | 15 min | `id`, `username` | `Authorization: Bearer` on every protected call |
+| Access | `JWT_SECRET` | 15 min | `id`, `username`, `role` | `Authorization: Bearer` on every protected call |
 | Refresh | `REFRESH_SECRET` | 7 days | `id`, `tokenVersion` | `POST /auth/refresh` to get a new pair |
 
 `JwtProperties` refuses to start the app if a secret is missing or shorter than 32 bytes, because HS256 needs a key of at least 256 bits.
@@ -274,7 +274,7 @@ flowchart LR
 - `create`: the author (`username`) comes from the token, and `submittedAt` is always *now*. `type` defaults to `task`. `status` is optional and lets the board create a card directly in a column.
 - `update`: author only. Changes `rating`, `comment`, `productId` and `type`; never the author, date or status.
 - `updateStatus`: any user may move any card, like in Jira. The board is shared.
-- `delete`: author only.
+- `delete`: author, or any card for an admin (`AuthUser.isAdmin()`, from the token's `role` claim).
 
 ### UserService
 

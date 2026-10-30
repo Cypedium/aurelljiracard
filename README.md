@@ -76,7 +76,7 @@ All routes except `/auth/*` and `/health` require `Authorization: Bearer <access
 | `POST` | `/card` | `{ rating (1–5), comment, productId, submittedAt? }` → `201`; `409` if the `productId` (issue key) already exists. Author is taken from the token |
 | `PUT` | `/card/:id` | Edit a card, same body as `POST` → updated card; `403` unless it is your own, `409` if another card has the issue key |
 | `PATCH` | `/card/:id/status` | `{ status }` (`todo`, `in-progress`, `test`, `done`) → updated card. Any logged-in user can move any card |
-| `DELETE` | `/card/:id` | Delete a card; `403` unless it is your own |
+| `DELETE` | `/card/:id` | Delete a card; `403` unless it is your own or you are an admin |
 | `GET` | `/user` | Users (`username`, `pictureUrl`) |
 | `GET` | `/user/usernames` | Usernames only |
 | `GET` | `/user/layout` | Current user's board layout |
@@ -84,6 +84,20 @@ All routes except `/auth/*` and `/health` require `Authorization: Bearer <access
 | `GET` | `/health` | `{ status: "ok" }` |
 
 Errors are returned as `{ message }`.
+
+### Roles
+
+Every user has a `role`: `user` (default) or `admin`. Admins can delete any card; editing is still author-only. The role is sent as a `role` claim in the access token, so a change takes effect at the next login or token refresh (max 15 min). There is no endpoint for roles — set them in the database:
+
+```sql
+-- server-java (PostgreSQL)
+UPDATE users SET role = 'admin' WHERE username = '<name>';
+```
+
+```js
+// server (MongoDB, mongosh)
+db.users.updateOne({ username: "<name>" }, { $set: { role: "admin" } })
+```
 
 ## Deployment
 
