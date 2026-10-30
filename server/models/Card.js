@@ -5,7 +5,8 @@ const { CARD_TYPES, DEFAULT_CARD_TYPE } = require('../utils/cardType');
 const cardSchema = new mongoose.Schema({
     rating: { type: Number, required: true },
     comment: { type: String, required: true },
-    productId: { type: String, required: true },
+    // Issue key, unique across all cards
+    productId: { type: String, required: true, unique: true },
     username: { type: String, required: true },
     submittedAt: { type: Date, default: Date.now },
     // Board column, shared by all users

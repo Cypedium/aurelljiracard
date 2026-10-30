@@ -8,3 +8,7 @@ export const apiErrorMessage = (error: unknown, fallback: string): string => {
   }
   return fallback;
 };
+
+// 409 = konflikt, t.ex. ett issue key som redan finns
+export const isConflictError = (error: unknown): boolean =>
+  isAxiosError(error) && error.response?.status === 409;
