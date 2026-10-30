@@ -1,5 +1,5 @@
 import { describe, expect, it } from "@jest/globals";
-import { COMMENT_MAX_LENGTH, PRIORITIES, PRODUCT_ID_MAX_LENGTH, cardFormSchema } from "../../app/utils/cardForm";
+import { COMMENT_MAX_LENGTH, PRIORITIES, PRODUCT_ID_MAX_LENGTH, cardFormSchema, cardToFormValues } from "../../app/utils/cardForm";
 
 const valid = { type: "task", comment: "Fix the login page", productId: "AGB-12", rating: 3 };
 
@@ -43,5 +43,17 @@ describe("cardFormSchema", () => {
 describe("PRIORITIES", () => {
   it("is 1 to 5", () => {
     expect(PRIORITIES).toEqual([1, 2, 3, 4, 5]);
+  });
+});
+
+describe("cardToFormValues", () => {
+  const card = { _id: "1", rating: 4, comment: "Crash", productId: "AGB-1", username: "alice", submittedAt: "2026-10-19T08:00:00.000Z" };
+
+  it("copies the editable fields", () => {
+    expect(cardToFormValues({ ...card, type: "bug" })).toEqual({ type: "bug", comment: "Crash", productId: "AGB-1", rating: 4 });
+  });
+
+  it("treats a card without type as a task", () => {
+    expect(cardToFormValues(card).type).toBe("task");
   });
 });

@@ -1,6 +1,7 @@
 import leoProfanity from "leo-profanity";
 import { z } from "zod";
-import { CARD_TYPES, DEFAULT_CARD_TYPE, type CardType } from "./cardType";
+import type { Card } from "../api/endpoints";
+import { CARD_TYPES, DEFAULT_CARD_TYPE, cardTypeOf, type CardType } from "./cardType";
 
 leoProfanity.loadDictionary();
 leoProfanity.loadDictionary("sv");
@@ -28,3 +29,11 @@ export type CardFormValues = z.infer<typeof cardFormSchema>;
 
 // Tomt formulär för ett nytt kort
 export const EMPTY_CARD_FORM: CardFormValues = { type: DEFAULT_CARD_TYPE, comment: "", productId: "", rating: 0 };
+
+// Formulärvärden för att redigera ett befintligt kort; kort utan typ blir "task"
+export const cardToFormValues = (card: Card): CardFormValues => ({
+  type: cardTypeOf(card.type),
+  comment: card.comment,
+  productId: card.productId,
+  rating: card.rating,
+});

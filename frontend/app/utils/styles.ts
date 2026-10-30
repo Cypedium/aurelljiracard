@@ -2,6 +2,7 @@
 import { BugAntIcon, CheckIcon, DocumentTextIcon } from "@heroicons/react/16/solid";
 import { readableTextColor, type BoardHeader, type CardStatus } from "./boardLayout";
 import type { CardType } from "./cardType";
+import type { PasswordStrength } from "./checkPasswordStrength";
 
 // Board: datum, edit- och delete-knappen syns bara när man hovrar över kortet
 // (alltid på pekskärmar, där det inte finns hover)
@@ -38,4 +39,11 @@ export const ISSUE_TYPE_STYLE: Record<CardType, { Icon: typeof CheckIcon; classN
   task: { Icon: CheckIcon, className: "bg-jira-task" },
   bug: { Icon: BugAntIcon, className: "bg-jira-danger" },
   doc: { Icon: DocumentTextIcon, className: "bg-[#8270db]" },
+};
+
+// Färg på "Password strength" i registreringsformuläret
+export const PASSWORD_STRENGTH_CLASS: Record<PasswordStrength, string> = {
+  Weak: "text-red-600",
+  Medium: "text-yellow-600",
+  Strong: "text-green-600",
 };

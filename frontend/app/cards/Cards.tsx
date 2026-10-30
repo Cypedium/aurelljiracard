@@ -17,15 +17,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "../components/ui/alert-dialog";
-import api from "../api/api"; // ⭐ axios-instansen
-import { deleteCard, updateCardStatus, type Card } from "../api/endpoints";
+import { deleteCard, getCards, getLayout, saveLayout, updateCardStatus, type Card } from "../api/endpoints";
 import CardForm from "./card/Card";
 import {
   CardStatus,
   UserLayout,
   BOARD_COLS,
   DEFAULT_LIST_COLORS,
-  DEFAULT_HEADERS,
   DEFAULT_LAYOUT,
   GRID_MARGIN,
   HEADER_HEIGHT,
@@ -33,12 +31,14 @@ import {
   ROW_HEIGHT,
   buildCardLayout,
   cardKey,
-  isColumnCollapsed,
+  countCardsPerColumn,
   listHeight,
   normalizeCollapsed,
   normalizeLayout,
   recolorHeader,
   renameHeader,
+  rowsPerColumn,
+  splitByCollapsed,
   statusForColumn,
   toSavedPositions,
   toggleCollapsed,
@@ -46,7 +46,8 @@ import {
 
 const COLLAPSED_STORAGE_KEY = "collapsed_columns";
 import { avatarColor, avatarInitials } from "../utils/avatar";
-import { getUsername, isAdmin } from "../utils/session";
+import { canDeleteCard, canEditCard, getUsername, isAdmin } from "../utils/session";
+import { formatShortDate } from "../utils/date";
 import { apiErrorMessage } from "../utils/apiError";
 import { CARD_ACTION_CLASS, CARD_HOVER_CLASS, listColor } from "../utils/styles";
 
@@ -71,7 +72,7 @@ export default function Home() {
   // 🔥 Hämta card via api.ts (token-rotation ingår)
   const fetchCards = useCallback(async () => {
     try {
-      const res = await api.get("/card");
+      const res = await getCards();
       setCards(res.data || []);
     } catch (err: any) {
       console.error("Error fetching cards:", err.message);
@@ -89,7 +90,7 @@ export default function Home() {
   useEffect(() => {
     const loadLayout = async () => {
       try {
-        const res = await api.get("/user/layout");
+        const res = await getLayout();
         if (res.status === 200) {
           setUserLayout(normalizeLayout(res.data || {}));
           return;
@@ -142,16 +143,14 @@ export default function Home() {
     [cards, userLayout.cards, layoutLoaded],
   );
 
-  // Kort i ihopfällda listor tas bort ur gridden; deras positioner sparas ändå
-  const visibleLayout = gridLayout.filter((l) => !isColumnCollapsed(collapsed, l.x));
-  const hiddenLayout = gridLayout.filter((l) => isColumnCollapsed(collapsed, l.x));
+  const { visible: visibleLayout, hidden: hiddenLayout } = splitByCollapsed(gridLayout, collapsed);
   const visibleIds = new Set(visibleLayout.map((l) => l.i));
 
   // 🔥 Spara layout till server via api.ts
   const saveLayoutToServer = useCallback(
     debounce(async (newLayout: UserLayout) => {
       try {
-        await api.put("/user/layout", newLayout);
+        await saveLayout(newLayout);
       } catch (e: any) {
         console.error("Failed to save layout to server:", e.message);
         // Fast id: upprepade fel ersätter samma toast i stället för att staplas
@@ -223,11 +222,8 @@ export default function Home() {
   };
 
   // Antal kort per kolumn: visas i rubriken och styr listans höjd
-  const columnCounts = DEFAULT_HEADERS.map(
-    (_, i) => gridLayout.filter((l) => l.x === i).length,
-  );
-  // Ihopfälld lista: ingen plats för kort
-  const columnRows = columnCounts.map((count, i) => (isColumnCollapsed(collapsed, i) ? 0 : count));
+  const columnCounts = countCardsPerColumn(gridLayout);
+  const columnRows = rowsPerColumn(columnCounts, collapsed);
   const columnGrid = {
     padding: `0 ${GRID_MARGIN}px`,
     gap: GRID_MARGIN,
@@ -387,13 +383,12 @@ export default function Home() {
                       <span
                         className={`shrink-0 rounded-[3px] text-xs/5 font-bold text-jira-secondary ${CARD_HOVER_CLASS}`}
                       >
-                        {/* yy-mm-dd, t.ex. 26-10-19 */}
-                        {fb.submittedAt.substring(2, 10)}
+                        {formatShortDate(fb.submittedAt)}
                       </span>
 
                       <div className="flex shrink-0 items-center">
                         {/* Edit bara på egna kort; delete på egna, eller alla för admin */}
-                        {userName === fb.username && fb._id && (
+                        {canEditCard(fb, userName) && (
                           <button
                             className={CARD_ACTION_CLASS}
                             aria-label="Edit card"
@@ -403,7 +398,7 @@ export default function Home() {
                             <PencilIcon className="size-4" aria-hidden />
                           </button>
                         )}
-                        {(userName === fb.username || admin) && fb._id && (
+                        {canDeleteCard(fb, userName, admin) && (
                           <button
                             className={CARD_ACTION_CLASS}
                             aria-label="Delete card"
