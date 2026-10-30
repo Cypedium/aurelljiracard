@@ -2,6 +2,7 @@ jest.mock("../models/Card", () => {
   const Card = jest.fn();
   Card.find = jest.fn();
   Card.findById = jest.fn();
+  Card.exists = jest.fn();
   Card.findByIdAndUpdate = jest.fn();
   Card.deleteOne = jest.fn();
   return Card;
@@ -17,6 +18,7 @@ const validCard = { rating: 4, comment: "Looks good", productId: "AUR-1" };
 
 beforeEach(() => {
   jest.clearAllMocks();
+  Card.exists.mockResolvedValue(null);
 });
 
 describe("auth guard", () => {
@@ -91,6 +93,27 @@ describe("POST /card", () => {
     expect(Card.mock.calls[0][0]).not.toHaveProperty("submittedAt");
   });
 
+  it("rejects a duplicate issue key with 409", async () => {
+    Card.exists.mockResolvedValue({ _id: CARD_ID });
+
+    const res = await request(app).post("/card").set("Authorization", authHeader()).send(validCard);
+
+    expect(res.status).toBe(409);
+    expect(res.body.message).toBe("Issue key already exists.");
+    expect(Card.exists).toHaveBeenCalledWith({ productId: validCard.productId });
+    expect(Card).not.toHaveBeenCalled();
+  });
+
+  it("returns 409 when the unique index catches a concurrent duplicate", async () => {
+    const save = jest.fn().mockRejectedValue(Object.assign(new Error("E11000 duplicate key"), { code: 11000 }));
+    Card.mockImplementation((doc) => ({ ...doc, save }));
+
+    const res = await request(app).post("/card").set("Authorization", authHeader()).send(validCard);
+
+    expect(res.status).toBe(409);
+    expect(res.body.message).toBe("Issue key already exists.");
+  });
+
   it.each([
     [{ ...validCard, status: "archived" }],
     [{ ...validCard, status: { $ne: null } }],
@@ -134,6 +157,30 @@ describe("PUT /card/:id", () => {
 
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({ type: "doc", submittedAt });
+  });
+
+  it("lets a card keep its own issue key", async () => {
+    Card.findById.mockResolvedValue({ _id: CARD_ID, username: "alice", ...validCard, save: jest.fn() });
+    Card.exists.mockResolvedValue({ _id: CARD_ID });
+
+    const res = await request(app).put(`/card/${CARD_ID}`).set("Authorization", authHeader("alice")).send(validCard);
+
+    expect(res.status).toBe(200);
+  });
+
+  it("rejects an issue key used by another card with 409", async () => {
+    const save = jest.fn();
+    Card.findById.mockResolvedValue({ _id: CARD_ID, username: "alice", ...validCard, save });
+    Card.exists.mockResolvedValue({ _id: "64c000000000000000000002" });
+
+    const res = await request(app)
+      .put(`/card/${CARD_ID}`)
+      .set("Authorization", authHeader("alice"))
+      .send({ ...validCard, productId: "AUR-2" });
+
+    expect(res.status).toBe(409);
+    expect(res.body.message).toBe("Issue key already exists.");
+    expect(save).not.toHaveBeenCalled();
   });
 
   it("refuses to edit another user's card with 403", async () => {

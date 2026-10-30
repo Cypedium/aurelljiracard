@@ -6,6 +6,8 @@ const { CARD_TYPES } = require("../utils/cardType");
 
 const COMMENT_MAX_LENGTH = 2000;
 const PRODUCT_ID_MAX_LENGTH = 200;
+const DUPLICATE_KEY_MESSAGE = "Issue key already exists.";
+const DUPLICATE_KEY_ERROR = 11000;
 
 exports.getAll = async (req, res) => {
   try {
@@ -47,12 +49,19 @@ exports.create = async (req, res) => {
   }
 
   try {
+    if (await Card.exists({ productId })) {
+      return res.status(409).json({ message: DUPLICATE_KEY_MESSAGE });
+    }
     // Author always comes from the verified token, never from the request body.
     // submittedAt is always today (schema default), never from the body.
     const newCard = new Card({ rating, comment, productId, username: req.user.username, status, type });
     await newCard.save();
     res.status(201).json({ message: "Card saved successfully!" });
   } catch (error) {
+    // Another request saved the same issue key in between
+    if (error.code === DUPLICATE_KEY_ERROR) {
+      return res.status(409).json({ message: DUPLICATE_KEY_MESSAGE });
+    }
     console.error("Save card error:", error.message);
     res.status(500).json({ message: "Failed to save card." });
   }
@@ -78,6 +87,11 @@ exports.update = async (req, res) => {
     if (card.username !== req.user.username) {
       return res.status(403).json({ message: "You can only edit your own card." });
     }
+    // Keeping the card's own key is fine (no $ne: sanitizeFilter would neutralise it)
+    const duplicate = await Card.exists({ productId });
+    if (duplicate && String(duplicate._id) !== id) {
+      return res.status(409).json({ message: DUPLICATE_KEY_MESSAGE });
+    }
 
     // Author and creation date are never changed by an edit
     card.rating = rating;
@@ -87,6 +101,9 @@ exports.update = async (req, res) => {
     await card.save();
     res.status(200).json(card);
   } catch (error) {
+    if (error.code === DUPLICATE_KEY_ERROR) {
+      return res.status(409).json({ message: DUPLICATE_KEY_MESSAGE });
+    }
     console.error("Update card error:", error.message);
     res.status(500).json({ message: "Could not update card." });
   }
