@@ -1,6 +1,6 @@
 import leoProfanity from "leo-profanity";
 import { z } from "zod";
-import { CARD_TYPES, type CardType } from "./cardType";
+import { CARD_TYPES, DEFAULT_CARD_TYPE, type CardType } from "./cardType";
 
 leoProfanity.loadDictionary();
 leoProfanity.loadDictionary("sv");
@@ -25,3 +25,6 @@ export const cardFormSchema = z.object({
 });
 
 export type CardFormValues = z.infer<typeof cardFormSchema>;
+
+// Tomt formulär för ett nytt kort
+export const EMPTY_CARD_FORM: CardFormValues = { type: DEFAULT_CARD_TYPE, comment: "", productId: "", rating: 0 };
