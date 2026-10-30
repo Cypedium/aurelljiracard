@@ -3,6 +3,7 @@ package se.aurell.jiraboard.service;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import se.aurell.jiraboard.dto.CardRequest;
@@ -15,6 +16,8 @@ import se.aurell.jiraboard.security.AuthUser;
 
 @Service
 public class CardService {
+
+    private static final String DUPLICATE_KEY_MESSAGE = "Issue key already exists.";
 
     private final CardRepository cardRepository;
 
@@ -30,6 +33,9 @@ public class CardService {
     /** Author comes from the token and the date is always now, never from the request body. */
     @Transactional
     public void create(CardRequest request, AuthUser user) {
+        if (cardRepository.existsByProductId(request.productId())) {
+            throw ApiException.conflict(DUPLICATE_KEY_MESSAGE);
+        }
         Card card = new Card(request.rating(), request.comment(), request.productId(), user.username(), Instant.now());
         if (request.type() != null) {
             card.setType(request.type());
@@ -38,20 +44,23 @@ public class CardService {
         if (request.status() != null) {
             card.setStatus(request.status());
         }
-        cardRepository.save(card);
+        saveUnique(card);
     }
 
     /** Only the author may edit; author, date and status are never changed by an edit. */
     @Transactional
     public CardResponse update(UUID id, CardRequest request, AuthUser user) {
         Card card = findOwnCard(id, user, "You can only edit your own card.");
+        if (cardRepository.existsByProductIdAndIdNot(request.productId(), id)) {
+            throw ApiException.conflict(DUPLICATE_KEY_MESSAGE);
+        }
         card.setRating(request.rating());
         card.setComment(request.comment());
         card.setProductId(request.productId());
         if (request.type() != null) {
             card.setType(request.type());
         }
-        return CardResponse.from(card);
+        return CardResponse.from(saveUnique(card));
     }
 
     /** Any logged-in user may move a card between columns, like in Jira. */
@@ -65,6 +74,15 @@ public class CardService {
     @Transactional
     public void delete(UUID id, AuthUser user) {
         cardRepository.delete(findOwnCard(id, user, "You can only delete your own card."));
+    }
+
+    private Card saveUnique(Card card) {
+        try {
+            return cardRepository.saveAndFlush(card);
+        } catch (DataIntegrityViolationException e) {
+            // Another request saved the same issue key in between
+            throw ApiException.conflict(DUPLICATE_KEY_MESSAGE);
+        }
     }
 
     private Card findCard(UUID id) {

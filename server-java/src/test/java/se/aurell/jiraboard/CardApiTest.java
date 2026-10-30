@@ -99,6 +99,28 @@ class CardApiTest extends ApiIntegrationTest {
     }
 
     @Test
+    void issueKeyMustBeUnique() throws Exception {
+        String token = accessToken("alice");
+        String id = createCard(token, VALID_CARD);
+
+        // Also across users
+        mvc.perform(bearer(json(post("/card"), VALID_CARD), accessToken("bob")))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("Issue key already exists."));
+
+        // Keeping its own key is fine
+        mvc.perform(bearer(json(put("/card/" + id), VALID_CARD), token))
+                .andExpect(status().isOk());
+
+        createCard(token, """
+                {"rating": 2, "comment": "Other", "productId": "AJB-2"}""");
+        mvc.perform(bearer(json(put("/card/" + id), """
+                {"rating": 3, "comment": "Login button broken", "productId": "AJB-2"}"""), token))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("Issue key already exists."));
+    }
+
+    @Test
     void otherUsersCannotUpdateOrDeleteCard() throws Exception {
         String id = createCard(accessToken("alice"), VALID_CARD);
         String bobToken = accessToken("bob");

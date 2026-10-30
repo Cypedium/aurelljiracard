@@ -26,8 +26,8 @@ public class Card {
     @Column(nullable = false, length = 2000)
     private String comment;
 
-    // "Issue key"
-    @Column(name = "product_id", nullable = false, length = 200)
+    // "Issue key", unique across all cards
+    @Column(name = "product_id", nullable = false, unique = true, length = 200)
     private String productId;
 
     // Author, always taken from the access token

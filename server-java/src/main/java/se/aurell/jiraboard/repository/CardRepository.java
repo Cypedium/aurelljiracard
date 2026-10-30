@@ -8,4 +8,8 @@ import se.aurell.jiraboard.entity.Card;
 public interface CardRepository extends JpaRepository<Card, UUID> {
 
     List<Card> findAllByOrderBySubmittedAtDesc();
+
+    boolean existsByProductId(String productId);
+
+    boolean existsByProductIdAndIdNot(String productId, UUID id);
 }
