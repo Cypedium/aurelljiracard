@@ -1,13 +1,14 @@
 import { logoutUser } from "../api/endpoints";
+import { STORAGE_KEYS } from "./constants";
 
 export const clearSession = () => {
-  localStorage.removeItem("accessToken");
-  localStorage.removeItem("refreshToken");
-  localStorage.removeItem("username");
+  localStorage.removeItem(STORAGE_KEYS.accessToken);
+  localStorage.removeItem(STORAGE_KEYS.refreshToken);
+  localStorage.removeItem(STORAGE_KEYS.username);
 };
 
 export const handleLogout = async () => {
-  const refreshToken = localStorage.getItem("refreshToken");
+  const refreshToken = localStorage.getItem(STORAGE_KEYS.refreshToken);
 
   try {
     // Revokes the refresh token server-side

@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { STORAGE_KEYS } from "../../utils/constants";
 import Card from "./Card";
 
 export default function CardPage() {
@@ -8,7 +9,7 @@ export default function CardPage() {
   const [allowed, setAllowed] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem("accessToken");
+    const token = localStorage.getItem(STORAGE_KEYS.accessToken);
 
     if (!token) {
       router.replace("/"); // root tar hand om redirect till login

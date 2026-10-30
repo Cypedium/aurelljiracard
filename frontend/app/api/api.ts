@@ -1,6 +1,5 @@
 import axios from "axios";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+import { API_URL, STORAGE_KEYS } from "../utils/constants";
 
 const api = axios.create({
   baseURL: API_URL,
@@ -9,7 +8,7 @@ const api = axios.create({
 // ⭐ REQUEST INTERCEPTOR — lägg till accessToken automatiskt
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("accessToken");
+    const token = localStorage.getItem(STORAGE_KEYS.accessToken);
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -40,7 +39,7 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
-      const refreshToken = localStorage.getItem("refreshToken");
+      const refreshToken = localStorage.getItem(STORAGE_KEYS.refreshToken);
       if (!refreshToken) {
         //console.warn("No refresh token — redirecting to login");
         window.location.href = "/login";
@@ -68,8 +67,8 @@ api.interceptors.response.use(
         const newRefreshToken = res.data.refreshToken;
 
         // ⭐ Uppdatera båda tokens
-        localStorage.setItem("accessToken", newAccessToken);
-        localStorage.setItem("refreshToken", newRefreshToken);
+        localStorage.setItem(STORAGE_KEYS.accessToken, newAccessToken);
+        localStorage.setItem(STORAGE_KEYS.refreshToken, newRefreshToken);
 
         // Uppdatera default header
         api.defaults.headers.common.Authorization = `Bearer ${newAccessToken}`;
@@ -86,8 +85,8 @@ api.interceptors.response.use(
         processQueue(refreshError, null);
 
         // Tokens ogiltiga → logga ut
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
+        localStorage.removeItem(STORAGE_KEYS.accessToken);
+        localStorage.removeItem(STORAGE_KEYS.refreshToken);
         window.location.href = "/login";
 
         return Promise.reject(refreshError);

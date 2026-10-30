@@ -44,10 +44,10 @@ import {
   toggleCollapsed,
 } from "../utils/boardLayout";
 
-const COLLAPSED_STORAGE_KEY = "collapsed_columns";
 import { avatarColor, avatarInitials } from "../utils/avatar";
 import { getUsername, isAdmin } from "../utils/session";
 import { apiErrorMessage } from "../utils/apiError";
+import { STORAGE_KEYS } from "../utils/constants";
 import { CARD_ACTION_CLASS, CARD_HOVER_CLASS, listColor } from "../utils/styles";
 
 export default function Home() {
@@ -101,7 +101,7 @@ export default function Home() {
       }
 
       try {
-        const saved = localStorage.getItem("user_layout");
+        const saved = localStorage.getItem(STORAGE_KEYS.userLayout);
         setUserLayout(saved ? normalizeLayout(JSON.parse(saved)) : DEFAULT_LAYOUT);
       } catch {
         setUserLayout(DEFAULT_LAYOUT);
@@ -113,7 +113,7 @@ export default function Home() {
 
   useEffect(() => {
     try {
-      setCollapsed(normalizeCollapsed(JSON.parse(localStorage.getItem(COLLAPSED_STORAGE_KEY) ?? "[]")));
+      setCollapsed(normalizeCollapsed(JSON.parse(localStorage.getItem(STORAGE_KEYS.collapsedColumns) ?? "[]")));
     } catch {
       setCollapsed([]);
     }
@@ -123,7 +123,7 @@ export default function Home() {
     const next = toggleCollapsed(collapsed, key);
     setCollapsed(next);
     try {
-      localStorage.setItem(COLLAPSED_STORAGE_KEY, JSON.stringify(next));
+      localStorage.setItem(STORAGE_KEYS.collapsedColumns, JSON.stringify(next));
     } catch {
       // Sparas inte, men fungerar tills sidan laddas om
     }
@@ -163,7 +163,7 @@ export default function Home() {
 
   const persistLayout = (next: UserLayout) => {
     setUserLayout(next);
-    localStorage.setItem("user_layout", JSON.stringify(next));
+    localStorage.setItem(STORAGE_KEYS.userLayout, JSON.stringify(next));
     saveLayoutToServer(next);
   };
 
