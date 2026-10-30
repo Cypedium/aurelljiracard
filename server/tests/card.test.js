@@ -11,7 +11,8 @@ jest.mock("../models/Card", () => {
 const request = require("supertest");
 const app = require("../app");
 const Card = require("../models/Card");
-const { authHeader, query } = require("./helpers");
+const jwt = require("jsonwebtoken");
+const { authHeader, query, USER_ID } = require("./helpers");
 
 const CARD_ID = "64c000000000000000000001";
 const validCard = { rating: 4, comment: "Looks good", productId: "AUR-1" };
@@ -281,6 +282,41 @@ describe("DELETE /card/:id", () => {
     Card.findById.mockResolvedValue({ _id: CARD_ID, username: "bob" });
 
     const res = await request(app).delete(`/card/${CARD_ID}`).set("Authorization", authHeader("alice"));
+
+    expect(res.status).toBe(403);
+    expect(Card.deleteOne).not.toHaveBeenCalled();
+  });
+
+  it("lets an admin delete another user's card", async () => {
+    Card.findById.mockResolvedValue({ _id: CARD_ID, username: "bob" });
+    Card.deleteOne.mockResolvedValue({});
+
+    const res = await request(app)
+      .delete(`/card/${CARD_ID}`)
+      .set("Authorization", authHeader("alice", undefined, "admin"));
+
+    expect(res.status).toBe(200);
+    expect(Card.deleteOne).toHaveBeenCalledWith({ _id: CARD_ID });
+  });
+
+  it("does not let an admin edit another user's card", async () => {
+    const save = jest.fn();
+    Card.findById.mockResolvedValue({ _id: CARD_ID, username: "bob", save });
+
+    const res = await request(app)
+      .put(`/card/${CARD_ID}`)
+      .set("Authorization", authHeader("alice", undefined, "admin"))
+      .send(validCard);
+
+    expect(res.status).toBe(403);
+    expect(save).not.toHaveBeenCalled();
+  });
+
+  it("treats a token without a role claim as a normal user", async () => {
+    Card.findById.mockResolvedValue({ _id: CARD_ID, username: "bob" });
+    const legacyToken = jwt.sign({ id: USER_ID, username: "alice" }, process.env.JWT_SECRET, { expiresIn: "15m" });
+
+    const res = await request(app).delete(`/card/${CARD_ID}`).set("Authorization", `Bearer ${legacyToken}`);
 
     expect(res.status).toBe(403);
     expect(Card.deleteOne).not.toHaveBeenCalled();

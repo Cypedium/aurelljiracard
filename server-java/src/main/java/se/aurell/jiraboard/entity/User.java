@@ -1,6 +1,7 @@
 package se.aurell.jiraboard.entity;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -31,6 +32,11 @@ public class User {
 
     @Column(name = "picture_url", nullable = false)
     private String pictureUrl = DEFAULT_PICTURE_URL;
+
+    // "admin" may delete any card; set directly in the database
+    @Convert(converter = EnumConverters.RoleConverter.class)
+    @Column(nullable = false, length = 10)
+    private Role role = Role.DEFAULT;
 
     // Incremented on logout to revoke all outstanding refresh tokens
     @Column(name = "token_version", nullable = false)
@@ -73,6 +79,10 @@ public class User {
 
     public String getPictureUrl() {
         return pictureUrl;
+    }
+
+    public Role getRole() {
+        return role;
     }
 
     public int getTokenVersion() {

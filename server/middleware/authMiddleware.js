@@ -1,5 +1,6 @@
 // server/middleware/authMiddleware.js
 const jwt = require("jsonwebtoken");
+const { DEFAULT_ROLE } = require("../utils/role");
 
 module.exports = (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -16,7 +17,8 @@ module.exports = (req, res, next) => {
       return res.status(401).json({ message: "Invalid or expired token" });
     }
 
-    req.user = { id: decoded.id, username: decoded.username };
+    // Tokens issued before roles existed have no role claim
+    req.user = { id: decoded.id, username: decoded.username, role: decoded.role ?? DEFAULT_ROLE };
 
     next();
   });

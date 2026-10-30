@@ -13,8 +13,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.jayway.jsonpath.JsonPath;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 class CardApiTest extends ApiIntegrationTest {
+
+    @Autowired
+    JdbcTemplate jdbc;
 
     private static final String VALID_CARD = """
             {"rating": 3, "comment": "Login button broken", "productId": "AJB-1"}""";
@@ -132,6 +137,24 @@ class CardApiTest extends ApiIntegrationTest {
         mvc.perform(bearer(delete("/card/" + id), bobToken))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.message").value("You can only delete your own card."));
+    }
+
+    @Test
+    void adminCanDeleteButNotEditOtherUsersCards() throws Exception {
+        String id = createCard(accessToken("alice"), VALID_CARD);
+        register("admin");
+        // Admins are set directly in the database
+        jdbc.update("UPDATE users SET role = 'admin' WHERE username = 'admin'");
+        String adminToken = JsonPath.read(mvc.perform(json(post("/auth/login"), """
+                {"username": "admin", "password": "%s"}""".formatted(PASSWORD)))
+                .andReturn().getResponse().getContentAsString(), "$.accessToken");
+
+        mvc.perform(bearer(json(put("/card/" + id), VALID_CARD), adminToken))
+                .andExpect(status().isForbidden());
+
+        mvc.perform(bearer(delete("/card/" + id), adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Card deleted successfully."));
     }
 
     @Test

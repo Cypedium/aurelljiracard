@@ -34,4 +34,17 @@ final class EnumConverters {
             return value == null ? null : CardType.fromValue(value);
         }
     }
+
+    @Converter
+    static class RoleConverter implements AttributeConverter<Role, String> {
+        @Override
+        public String convertToDatabaseColumn(Role role) {
+            return role == null ? null : role.getValue();
+        }
+
+        @Override
+        public Role convertToEntityAttribute(String value) {
+            return value == null ? null : Role.fromValue(value);
+        }
+    }
 }

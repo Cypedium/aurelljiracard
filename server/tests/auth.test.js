@@ -62,8 +62,17 @@ describe("POST /auth/login", () => {
     const res = await request(app).post("/auth/login").send({ username: "alice", password: "secret123" });
 
     expect(res.status).toBe(200);
-    expect(jwt.verify(res.body.accessToken, process.env.JWT_SECRET)).toMatchObject({ id: USER_ID, username: "alice" });
+    expect(jwt.verify(res.body.accessToken, process.env.JWT_SECRET)).toMatchObject({ id: USER_ID, username: "alice", role: "user" });
     expect(jwt.verify(res.body.refreshToken, process.env.REFRESH_SECRET)).toMatchObject({ id: USER_ID, tokenVersion: 0 });
+  });
+
+  it("puts the admin role in the access token", async () => {
+    const passwordHash = await bcrypt.hash("secret123", 4);
+    User.findOne.mockResolvedValue({ _id: USER_ID, username: "alice", passwordHash, role: "admin" });
+
+    const res = await request(app).post("/auth/login").send({ username: "alice", password: "secret123" });
+
+    expect(jwt.verify(res.body.accessToken, process.env.JWT_SECRET)).toMatchObject({ role: "admin" });
   });
 
   it("returns 401 for a wrong password", async () => {

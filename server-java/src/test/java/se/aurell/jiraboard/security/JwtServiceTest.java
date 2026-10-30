@@ -11,6 +11,7 @@ import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.security.oauth2.server.resource.InvalidBearerTokenException;
 import org.springframework.test.util.ReflectionTestUtils;
 import se.aurell.jiraboard.config.JwtProperties;
+import se.aurell.jiraboard.entity.Role;
 import se.aurell.jiraboard.entity.User;
 
 class JwtServiceTest {
@@ -36,6 +37,7 @@ class JwtServiceTest {
 
         assertThat(jwt.getClaimAsString("id")).isEqualTo(userId.toString());
         assertThat(jwt.getClaimAsString("username")).isEqualTo("alice");
+        assertThat(jwt.getClaimAsString("role")).isEqualTo("user");
         assertThat(Duration.between(jwt.getIssuedAt(), jwt.getExpiresAt())).isEqualTo(Duration.ofMinutes(15));
     }
 
@@ -44,7 +46,25 @@ class JwtServiceTest {
         Jwt jwt = JwtService.decoder(ACCESS_SECRET).decode(jwtService.issueAccessToken(user()));
 
         assertThat(new AccessTokenConverter().convert(jwt).getPrincipal())
-                .isEqualTo(new AuthUser(userId, "alice"));
+                .isEqualTo(new AuthUser(userId, "alice", Role.USER));
+    }
+
+    @Test
+    void adminRoleRoundTrips() {
+        User admin = user();
+        ReflectionTestUtils.setField(admin, "role", Role.ADMIN);
+        Jwt jwt = JwtService.decoder(ACCESS_SECRET).decode(jwtService.issueAccessToken(admin));
+
+        assertThat(((AuthUser) new AccessTokenConverter().convert(jwt).getPrincipal()).isAdmin()).isTrue();
+    }
+
+    @Test
+    void tokenWithoutRoleClaimIsUser() {
+        Jwt jwt = Jwt.withTokenValue("t").header("alg", "HS256")
+                .claim("id", userId.toString()).claim("username", "alice").build();
+
+        assertThat(new AccessTokenConverter().convert(jwt).getPrincipal())
+                .isEqualTo(new AuthUser(userId, "alice", Role.USER));
     }
 
     @Test

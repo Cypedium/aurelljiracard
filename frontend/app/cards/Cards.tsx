@@ -46,7 +46,7 @@ import {
 
 const COLLAPSED_STORAGE_KEY = "collapsed_columns";
 import { avatarColor, avatarInitials } from "../utils/avatar";
-import { getUsername } from "../utils/session";
+import { getUsername, isAdmin } from "../utils/session";
 import { apiErrorMessage } from "../utils/apiError";
 import { CARD_ACTION_CLASS, CARD_HOVER_CLASS, listColor } from "../utils/styles";
 
@@ -55,6 +55,7 @@ export default function Home() {
   const [userLayout, setUserLayout] = useState<UserLayout>(DEFAULT_LAYOUT);
   const [layoutLoaded, setLayoutLoaded] = useState(false);
   const [userName, setUserName] = useState("");
+  const [admin, setAdmin] = useState(false);
   const [editingCard, setEditingCard] = useState<Card | null>(null);
   // Kortet som väntar på bekräftelse i delete-dialogen
   const [deletingCard, setDeletingCard] = useState<Card | null>(null);
@@ -80,6 +81,7 @@ export default function Home() {
 
   useEffect(() => {
     setUserName(getUsername());
+    setAdmin(isAdmin());
     fetchCards();
   }, [fetchCards]);
 
@@ -390,27 +392,26 @@ export default function Home() {
                       </span>
 
                       <div className="flex shrink-0 items-center">
-                        {/* Edit och delete visas bara på egna kort */}
+                        {/* Edit bara på egna kort; delete på egna, eller alla för admin */}
                         {userName === fb.username && fb._id && (
-                          <>
-                            <button
-                              className={CARD_ACTION_CLASS}
-                              aria-label="Edit card"
-                              title="Edit"
-                              onClick={() => setEditingCard(fb)}
-                            >
-                              <PencilIcon className="size-4" aria-hidden />
-                            </button>
-
-                            <button
-                              className={CARD_ACTION_CLASS}
-                              aria-label="Delete card"
-                              title="Delete"
-                              onClick={() => setDeletingCard(fb)}
-                            >
-                              <TrashIcon className="size-4" aria-hidden />
-                            </button>
-                          </>
+                          <button
+                            className={CARD_ACTION_CLASS}
+                            aria-label="Edit card"
+                            title="Edit"
+                            onClick={() => setEditingCard(fb)}
+                          >
+                            <PencilIcon className="size-4" aria-hidden />
+                          </button>
+                        )}
+                        {(userName === fb.username || admin) && fb._id && (
+                          <button
+                            className={CARD_ACTION_CLASS}
+                            aria-label="Delete card"
+                            title="Delete"
+                            onClick={() => setDeletingCard(fb)}
+                          >
+                            <TrashIcon className="size-4" aria-hidden />
+                          </button>
                         )}
                       </div>
 
