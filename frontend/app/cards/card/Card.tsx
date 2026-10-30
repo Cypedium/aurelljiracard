@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { submitCard, updateCard, type Card as CardData } from '..//../api/endpoints';
 import { toast } from 'sonner';
-import { PRIORITIES, cardFormSchema, type CardFormValues } from '../../utils/cardForm';
+import { EMPTY_CARD_FORM, PRIORITIES, cardFormSchema, type CardFormValues } from '../../utils/cardForm';
 import { cardTypeOf } from '../../utils/cardType';
 import { apiErrorMessage, isConflictError } from '../../utils/apiError';
 import { FIELD_ERROR_CLASS, FORM_ITEM_CLASS, LABEL_CLASS, SECTION_PADDING } from '../../utils/styles';
@@ -26,8 +26,6 @@ type CardProps = {
   onCreated?: () => void;
 };
 
-const EMPTY_FORM: CardFormValues = { type: cardTypeOf(), comment: '', productId: '', rating: 0 };
-
 const required = <span className="text-jira-danger">*</span>;
 
 export default function Card({ card, onSaved, onCancel, status, onCreated }: CardProps = {}) {
@@ -37,7 +35,7 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
     resolver: zodResolver(cardFormSchema),
     defaultValues: card
       ? { type: cardTypeOf(card.type), comment: card.comment, productId: card.productId, rating: card.rating }
-      : EMPTY_FORM,
+      : EMPTY_CARD_FORM,
   });
 
   // Duplicate issue key (409) is shown under the field instead of as a toast
@@ -73,7 +71,7 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
 
       // Toastern ligger i layouten, så den syns kvar efter navigeringen
       toast.success(res.data.message || 'Card submitted!');
-      form.reset(EMPTY_FORM);
+      form.reset(EMPTY_CARD_FORM);
       router.push("/");
 
     } catch (error) {

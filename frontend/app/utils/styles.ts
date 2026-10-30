@@ -1,5 +1,7 @@
 // Delade Tailwind-klasser för board och kortformulär
+import { BugAntIcon, CheckIcon, DocumentTextIcon } from "@heroicons/react/16/solid";
 import { readableTextColor, type BoardHeader, type CardStatus } from "./boardLayout";
+import type { CardType } from "./cardType";
 
 // Board: datum, edit- och delete-knappen syns bara när man hovrar över kortet
 // (alltid på pekskärmar, där det inte finns hover)
@@ -30,3 +32,10 @@ export const SECTION_PADDING = "px-6 max-[480px]:px-4";
 // Login och register: vitt kort i samma stil som kortformuläret
 export const AUTH_FORM_CLASS =
   "mx-4 flex w-full max-w-md flex-col rounded-xl bg-white p-6 font-jira text-sm text-jira-text shadow-[0_8px_12px_rgba(9,30,66,0.15),0_0_1px_rgba(9,30,66,0.31)]";
+
+// Jira-liknande ikon per ärendetyp: Task blå, Bug röd, Doc lila (IssueTypeIcon)
+export const ISSUE_TYPE_STYLE: Record<CardType, { Icon: typeof CheckIcon; className: string }> = {
+  task: { Icon: CheckIcon, className: "bg-jira-task" },
+  bug: { Icon: BugAntIcon, className: "bg-jira-danger" },
+  doc: { Icon: DocumentTextIcon, className: "bg-[#8270db]" },
+};
