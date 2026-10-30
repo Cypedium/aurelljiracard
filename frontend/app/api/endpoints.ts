@@ -1,7 +1,7 @@
 // app/api/endpoints.ts
 // Paths must match the backend mounts in server/app.js: /auth, /card, /user
 import api from "./api";
-import type { CardStatus } from "../utils/boardLayout";
+import type { CardStatus, UserLayout } from "../utils/boardLayout";
 import type { CardType } from "../utils/cardType";
 
 export type Card = {
@@ -27,6 +27,16 @@ export type User = {
   pictureUrl?: string;
 };
 
+export type Credentials = {
+  username: string;
+  password: string;
+};
+
+export type Tokens = {
+  accessToken: string;
+  refreshToken: string;
+};
+
 export type PublicUser = {
   username: string;
   pictureUrl?: string;
@@ -34,6 +44,9 @@ export type PublicUser = {
 
 // ⭐ AUTH
 export const registerUser = (user: User) => api.post("/auth/register", user);
+
+export const loginUser = (credentials: Credentials) =>
+  api.post<Tokens>("/auth/login", credentials);
 
 export const logoutUser = (refreshToken: string) =>
   api.post("/auth/logout", { refreshToken });
@@ -61,8 +74,14 @@ export const deleteCard = (id: string) =>
 // ⭐ USERS
 export const getUsers = () => api.get<PublicUser[]>("/user");
 
+// The logged-in user's board layout (column names/colours and card order)
+export const getLayout = () => api.get<Partial<UserLayout>>("/user/layout");
+
+export const saveLayout = (layout: UserLayout) => api.put("/user/layout", layout);
+
 export default {
   registerUser,
+  loginUser,
   logoutUser,
   refreshToken,
   submitCard,
@@ -70,5 +89,7 @@ export default {
   updateCard,
   updateCardStatus,
   getUsers,
+  getLayout,
+  saveLayout,
   deleteCard,
 };

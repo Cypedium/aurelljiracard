@@ -14,6 +14,7 @@ import {
   cardKey,
   listHeight,
   columnForStatus,
+  countCardsPerColumn,
   isColumnCollapsed,
   normalizeCollapsed,
   normalizeLayout,
@@ -21,6 +22,8 @@ import {
   readableTextColor,
   recolorHeader,
   renameHeader,
+  rowsPerColumn,
+  splitByCollapsed,
   statusForColumn,
   toSavedPositions,
 } from "../../app/utils/boardLayout";
@@ -220,5 +223,28 @@ describe("collapsed columns", () => {
   it("checks a grid column against the collapsed statuses", () => {
     expect(isColumnCollapsed(["test"], columnForStatus("test"))).toBe(true);
     expect(isColumnCollapsed(["test"], columnForStatus("done"))).toBe(false);
+  });
+});
+
+describe("column helpers", () => {
+  const layout = [
+    { i: "a", x: 0, y: 0, w: 1, h: 1 },
+    { i: "b", x: 0, y: 1, w: 1, h: 1 },
+    { i: "c", x: 2, y: 0, w: 1, h: 1 },
+  ];
+
+  it("counts cards per column", () => {
+    expect(countCardsPerColumn(layout)).toEqual([2, 0, 1, 0]);
+  });
+
+  it("gives a collapsed list no rows", () => {
+    expect(rowsPerColumn([2, 0, 1, 0], ["todo"])).toEqual([0, 0, 1, 0]);
+  });
+
+  it("splits out cards in collapsed lists", () => {
+    const { visible, hidden } = splitByCollapsed(layout, ["todo"]);
+
+    expect(visible.map((l) => l.i)).toEqual(["c"]);
+    expect(hidden.map((l) => l.i)).toEqual(["a", "b"]);
   });
 });

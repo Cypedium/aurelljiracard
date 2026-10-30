@@ -1,4 +1,6 @@
-export default function checkPasswordStrength(password: string): string {
+export type PasswordStrength = "Weak" | "Medium" | "Strong";
+
+export default function checkPasswordStrength(password: string): PasswordStrength {
   if (password.length < 6) return "Weak";
   const hasLetters = /[A-Za-z]/.test(password);
   const hasNumbers = /\d/.test(password);

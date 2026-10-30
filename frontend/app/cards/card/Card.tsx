@@ -4,8 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { submitCard, updateCard, type Card as CardData } from '..//../api/endpoints';
 import { toast } from 'sonner';
-import { EMPTY_CARD_FORM, PRIORITIES, cardFormSchema, type CardFormValues } from '../../utils/cardForm';
-import { cardTypeOf } from '../../utils/cardType';
+import { EMPTY_CARD_FORM, PRIORITIES, cardFormSchema, cardToFormValues, type CardFormValues } from '../../utils/cardForm';
 import { apiErrorMessage, isConflictError } from '../../utils/apiError';
 import { FIELD_ERROR_CLASS, FORM_ITEM_CLASS, LABEL_CLASS, SECTION_PADDING } from '../../utils/styles';
 import type { CardStatus } from '../../utils/boardLayout';
@@ -33,9 +32,7 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
   const router = useRouter();
   const form = useForm<CardFormValues>({
     resolver: zodResolver(cardFormSchema),
-    defaultValues: card
-      ? { type: cardTypeOf(card.type), comment: card.comment, productId: card.productId, rating: card.rating }
-      : EMPTY_CARD_FORM,
+    defaultValues: card ? cardToFormValues(card) : EMPTY_CARD_FORM,
   });
 
   // Duplicate issue key (409) is shown under the field instead of as a toast

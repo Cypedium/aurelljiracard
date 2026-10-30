@@ -2,15 +2,14 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Card from "./Card";
+import { hasSession } from "../../utils/session";
 
 export default function CardPage() {
   const router = useRouter();
   const [allowed, setAllowed] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem("accessToken");
-
-    if (!token) {
+    if (!hasSession()) {
       router.replace("/"); // root tar hand om redirect till login
     } else {
       setAllowed(true); // visa formuläret

@@ -19,6 +19,7 @@ describe("API endpoints", () => {
 
   it.each([
     ["registerUser", () => endpoints.registerUser({ username: "a", password: "secret1" }), "post", "/auth/register"],
+    ["loginUser", () => endpoints.loginUser({ username: "a", password: "secret1" }), "post", "/auth/login"],
     ["logoutUser", () => endpoints.logoutUser("rt"), "post", "/auth/logout"],
     ["refreshToken", () => endpoints.refreshToken("rt"), "post", "/auth/refresh"],
     ["getCards", () => endpoints.getCards(), "get", "/card"],
@@ -27,6 +28,8 @@ describe("API endpoints", () => {
     ["updateCardStatus", () => endpoints.updateCardStatus("abc", "done"), "patch", "/card/abc/status"],
     ["deleteCard", () => endpoints.deleteCard("abc"), "delete", "/card/abc"],
     ["getUsers", () => endpoints.getUsers(), "get", "/user"],
+    ["getLayout", () => endpoints.getLayout(), "get", "/user/layout"],
+    ["saveLayout", () => endpoints.saveLayout({ cols: 4, headers: [] }), "put", "/user/layout"],
   ] as const)("%s calls %s %s", async (_name, call, method, path) => {
     await call();
 

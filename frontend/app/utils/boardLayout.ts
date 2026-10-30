@@ -161,6 +161,20 @@ export const toggleCollapsed = (collapsed: CardStatus[], key: CardStatus): CardS
 export const isColumnCollapsed = (collapsed: CardStatus[], x: number): boolean =>
   collapsed.includes(statusForColumn(x));
 
+// Kort i ihopfällda listor tas bort ur gridden; deras positioner sparas ändå
+export const splitByCollapsed = <T extends { x: number }>(layout: readonly T[], collapsed: CardStatus[]) => ({
+  visible: layout.filter((l) => !isColumnCollapsed(collapsed, l.x)),
+  hidden: layout.filter((l) => isColumnCollapsed(collapsed, l.x)),
+});
+
+// Antal kort per kolumn: visas i rubriken
+export const countCardsPerColumn = (layout: readonly { x: number }[]): number[] =>
+  DEFAULT_HEADERS.map((_, i) => layout.filter((l) => l.x === i).length);
+
+// Rader per lista (styr höjden); en ihopfälld lista har ingen plats för kort
+export const rowsPerColumn = (counts: number[], collapsed: CardStatus[]): number[] =>
+  counts.map((count, i) => (isColumnCollapsed(collapsed, i) ? 0 : count));
+
 // Varje kort är en kolumn brett och en rad högt. Kolumnen kommer från kortets
 // status (delad av alla). Ordningen inom kolumnen kommer från användarens
 // sparade positioner; kort utan sparad position i sin kolumn hamnar sist.

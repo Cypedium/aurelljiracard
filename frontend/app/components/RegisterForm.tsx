@@ -7,7 +7,7 @@ import checkPasswordStrength from "../utils/checkPasswordStrength";
 import { registerUser } from "../api/endpoints";
 import { apiErrorMessage } from "../utils/apiError";
 import { readAsDataUrl, registerSchema, type RegisterValues } from "../utils/register";
-import { AUTH_FORM_CLASS, FIELD_ERROR_CLASS, FORM_ITEM_CLASS, LABEL_CLASS } from "../utils/styles";
+import { AUTH_FORM_CLASS, FIELD_ERROR_CLASS, FORM_ITEM_CLASS, LABEL_CLASS, PASSWORD_STRENGTH_CLASS } from "../utils/styles";
 import { Button } from "./ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "./ui/form";
 import { Input } from "./ui/input";
@@ -93,15 +93,7 @@ export default function RegisterForm() {
         />
 
         {password && (
-          <p
-            className={`mt-2 text-xs font-semibold ${
-              strength === "Strong"
-                ? "text-green-600"
-                : strength === "Medium"
-                ? "text-yellow-600"
-                : "text-red-600"
-            }`}
-          >
+          <p className={`mt-2 text-xs font-semibold ${PASSWORD_STRENGTH_CLASS[strength]}`}>
             Password strength: {strength}
           </p>
         )}

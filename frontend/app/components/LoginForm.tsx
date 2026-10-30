@@ -2,6 +2,8 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import { loginUser } from "../api/endpoints";
+import { apiErrorMessage } from "../utils/apiError";
 import { saveSession } from "../utils/session";
 import { loginSchema, type LoginValues } from "../utils/register";
 import { AUTH_FORM_CLASS, FIELD_ERROR_CLASS, FORM_ITEM_CLASS, LABEL_CLASS } from "../utils/styles";
@@ -17,29 +19,12 @@ export default function LoginForm() {
 
   const handleLogin = async ({ username, password }: LoginValues) => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || "Login failed");
-      }
-
+      const { data } = await loginUser({ username, password });
       saveSession(username, data.accessToken, data.refreshToken);
-
       window.location.href = "/cards";
-
-    } catch (error: any) {
-      // fetch kastar TypeError ("Failed to fetch") när servern inte svarar
-      toast.error(
-        error instanceof TypeError
-          ? "Could not reach the server. Please try again."
-          : error.message || "An unexpected error occurred",
-      );
+    } catch (error) {
+      // Backendens meddelande (t.ex. 401 "Invalid credentials."), annars nådde vi inte servern
+      toast.error(apiErrorMessage(error, "Could not reach the server. Please try again."));
     }
   };
 
