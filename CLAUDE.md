@@ -31,6 +31,7 @@ Two independent npm projects plus a Maven project — always `cd` into one befor
   - `app/cards/Cards.tsx` — board: `react-grid-layout` v2, fixed columns To Do / In Progress / Test / Done, width from `useContainerWidth`
   - `app/cards/card/Card.tsx` — create form (Jira "create issue" style)
   - `app/utils/boardLayout.ts` — board columns and card placement (pure, unit-tested)
+  - `app/utils/constants.ts` — `API_URL` and `STORAGE_KEYS` (every localStorage key; never write the raw string). Module-level constants belong in `app/utils/` (domain file, e.g. `cardForm.ts`, `styles.ts`), not in components
   - `app/components/` — `Layout`, `Navbar`, `Footer`, login/register forms
   - `app/components/ui/` — shadcn/ui components (`dialog`, `alert-dialog`, `button`, `sonner`, `select`, `input`, `label`, `textarea`, `form`), added with `npx shadcn@latest add <name>` (config: `components.json`). Owned code: edit freely, but keep `z-[1001]` on dialog overlays (Navbar is `z-[1000]`) and `z-[1002]` on `SelectContent` (it opens inside dialogs). `cn()` lives in `app/lib/utils.ts` — check new components import it from there, not from an npm package
   - Forms use react-hook-form + zod via shadcn `Form` (`FormField` → `FormItem` → `FormLabel`/`FormControl`/`FormMessage`), with `zodResolver` and `noValidate` on the `<form>`. Schemas live in `app/utils/` (`cardForm.ts`, `register.ts`) and are unit-tested; keep their limits and messages in sync with the backend controllers. Don't trim usernames (the backend stores them as typed). Field errors stay inline (`FormMessage`)
