@@ -6,7 +6,7 @@ import { submitCard, updateCard, type Card as CardData } from '..//../api/endpoi
 import { toast } from 'sonner';
 import { PRIORITIES, cardFormSchema, type CardFormValues } from '../../utils/cardForm';
 import { cardTypeOf } from '../../utils/cardType';
-import { apiErrorMessage } from '../../utils/apiError';
+import { apiErrorMessage, isConflictError } from '../../utils/apiError';
 import { FIELD_ERROR_CLASS, FORM_ITEM_CLASS, LABEL_CLASS, SECTION_PADDING } from '../../utils/styles';
 import type { CardStatus } from '../../utils/boardLayout';
 import IssueTypeSelect from '../../components/IssueTypeSelect';
@@ -40,6 +40,15 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
       : EMPTY_FORM,
   });
 
+  // Duplicate issue key (409) is shown under the field instead of as a toast
+  const showError = (error: unknown, fallback: string) => {
+    if (isConflictError(error)) {
+      form.setError('productId', { message: apiErrorMessage(error, 'Issue key already exists.') }, { shouldFocus: true });
+      return;
+    }
+    toast.error(apiErrorMessage(error, fallback));
+  };
+
   // The backend sets the date (today) when the card is created
   const onSubmit = async (fields: CardFormValues) => {
     if (isEdit && card?._id) {
@@ -48,7 +57,7 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
         onSaved?.(res.data);
       } catch (error) {
         console.error('Update error:', (error as Error).message);
-        toast.error(apiErrorMessage(error, 'Failed to save card.'));
+        showError(error, 'Failed to save card.');
       }
       return;
     }
@@ -69,7 +78,7 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
 
     } catch (error) {
       console.error('Submission error:', (error as Error).message);
-      toast.error(apiErrorMessage(error, 'Failed to submit card.'));
+      showError(error, 'Failed to submit card.');
     }
   };
 
