@@ -1,7 +1,14 @@
 // server/controllers/userController.js
 const User = require("../models/User");
-const { isNonEmptyString } = require("../utils/validate");
+const Card = require("../models/Card");
+const { isNonEmptyString, isObjectId } = require("../utils/validate");
 const { BOARD_STATUSES } = require("../utils/cardStatus");
+const { ADMIN_ROLE, ROLES } = require("../utils/role");
+
+// Same limit and message as register (authController.js)
+const USERNAME_MAX_LENGTH = 32;
+const USERNAME_MESSAGE = `Username is required (max ${USERNAME_MAX_LENGTH} characters).`;
+const DUPLICATE_KEY_ERROR = 11000;
 
 const MIN_COLS = 1;
 const MAX_COLS = 12;
@@ -30,7 +37,7 @@ const toHeader = ({ key, title, color }) => ({
 // GET ALL USERS
 exports.getAll = async (req, res) => {
   try {
-    const users = await User.find({}, "username pictureUrl").lean();
+    const users = await User.find({}, "username pictureUrl role").lean();
     res.status(200).json(users);
   } catch (error) {
     console.error("Fetch users error:", error.message);
@@ -104,5 +111,108 @@ exports.updateLayout = async (req, res) => {
   } catch (error) {
     console.error("Update layout error:", error.message);
     res.status(500).json({ message: "Failed to update layout." });
+  }
+};
+
+// ⭐ ADMIN: rename and/or change role. Either change logs the user out everywhere
+// (their tokens carry the old name and role); their cards follow the new name.
+exports.update = async (req, res) => {
+  const { id } = req.params;
+  const { username, role } = req.body;
+
+  if (!isObjectId(id)) {
+    return res.status(400).json({ message: "Invalid user id." });
+  }
+  if (username !== undefined && !isNonEmptyString(username, USERNAME_MAX_LENGTH)) {
+    return res.status(400).json({ message: USERNAME_MESSAGE });
+  }
+  if (role !== undefined && (typeof role !== "string" || !ROLES.includes(role))) {
+    return res.status(400).json({ message: `Role must be one of: ${ROLES.join(", ")}.` });
+  }
+  // Keeps at least one admin: the caller is always an admin
+  if (id === req.user.id && role !== undefined && role !== ADMIN_ROLE) {
+    return res.status(400).json({ message: "You cannot remove your own admin role." });
+  }
+
+  try {
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    const oldUsername = user.username;
+    const renamed = username !== undefined && username !== oldUsername;
+    const roleChanged = role !== undefined && role !== user.role;
+
+    if (renamed && (await User.exists({ username }))) {
+      return res.status(409).json({ message: "Username already taken." });
+    }
+    if (renamed) user.username = username;
+    if (roleChanged) user.role = role;
+    if (renamed || roleChanged) {
+      user.tokenVersion = (user.tokenVersion ?? 0) + 1;
+      await user.save();
+    }
+    if (renamed) {
+      await Card.updateMany({ username: oldUsername }, { username });
+      await Card.updateMany({ assignee: oldUsername }, { assignee: username });
+    }
+
+    res.status(200).json({ _id: user._id, username: user.username, pictureUrl: user.pictureUrl, role: user.role });
+  } catch (error) {
+    // Another request took the name in between
+    if (error.code === DUPLICATE_KEY_ERROR) {
+      return res.status(409).json({ message: "Username already taken." });
+    }
+    console.error("Update user error:", error.message);
+    res.status(500).json({ message: "Could not update user." });
+  }
+};
+
+// ⭐ ADMIN: delete a user without cards; cards assigned to them become unassigned
+exports.remove = async (req, res) => {
+  const { id } = req.params;
+
+  if (!isObjectId(id)) {
+    return res.status(400).json({ message: "Invalid user id." });
+  }
+  if (id === req.user.id) {
+    return res.status(400).json({ message: "You cannot delete yourself." });
+  }
+
+  try {
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+    if (await Card.exists({ username: user.username })) {
+      return res.status(409).json({ message: "This user still has cards. Delete them first." });
+    }
+    await Card.updateMany({ assignee: user.username }, { assignee: null });
+    await User.deleteOne({ _id: id });
+    res.status(200).json({ message: "User deleted successfully." });
+  } catch (error) {
+    console.error("Delete user error:", error.message);
+    res.status(500).json({ message: "Could not delete user." });
+  }
+};
+
+// ⭐ ADMIN: revoke all refresh tokens; the user must log in again within 15 min
+exports.revokeSessions = async (req, res) => {
+  const { id } = req.params;
+
+  if (!isObjectId(id)) {
+    return res.status(400).json({ message: "Invalid user id." });
+  }
+
+  try {
+    const result = await User.updateOne({ _id: id }, { $inc: { tokenVersion: 1 } });
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ message: "User not found." });
+    }
+    res.status(200).json({ message: "User logged out from all sessions." });
+  } catch (error) {
+    console.error("Revoke sessions error:", error.message);
+    res.status(500).json({ message: "Could not log out user." });
   }
 };
