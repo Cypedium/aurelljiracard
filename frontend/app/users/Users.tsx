@@ -8,6 +8,7 @@ import { apiErrorMessage } from '../utils/apiError';
 import { avatarColor, avatarInitials } from '../utils/avatar';
 import { handleLogout } from '../utils/logout';
 import { getUsername } from '../utils/session';
+import { TABLE_CELL_CLASS as TD_CLASS, TABLE_HEAD_CLASS as TH_CLASS, TABLE_ROW_CLASS, TABLE_WRAPPER_CLASS } from '../utils/styles';
 import { countCardsByAuthor } from '../utils/userForm';
 import EditUserForm from './EditUserForm';
 import { Dialog, DialogContent, DialogTitle } from '../components/ui/dialog';
@@ -21,10 +22,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '../components/ui/alert-dialog';
-
-// Rubrikrad i Jira-stil: små grå versaler
-const TH_CLASS = 'px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-jira-secondary';
-const TD_CLASS = 'px-4 py-3';
 
 const ACTION_CLASS =
   'rounded-[3px] p-1.5 text-jira-secondary hover:bg-jira-neutral disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent';
@@ -90,7 +87,7 @@ export default function Users() {
 
   return (
     <>
-      <div className="overflow-hidden rounded-lg bg-white shadow-[0_1px_1px_rgba(9,30,66,0.25),0_0_1px_rgba(9,30,66,0.31)]">
+      <div className={TABLE_WRAPPER_CLASS}>
         <table className="w-full text-sm text-jira-text">
           <thead className="border-b-2 border-jira-neutral">
             <tr>
@@ -111,7 +108,7 @@ export default function Users() {
                   : null;
 
               return (
-                <tr key={user._id} className="border-b border-jira-neutral last:border-b-0 hover:bg-[#f7f8f9]">
+                <tr key={user._id} className={TABLE_ROW_CLASS}>
                   <td className={TD_CLASS}>
                     <div className="flex min-w-0 items-center gap-3">
                       <span

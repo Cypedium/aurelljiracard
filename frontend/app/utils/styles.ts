@@ -47,3 +47,10 @@ export const PASSWORD_STRENGTH_CLASS: Record<PasswordStrength, string> = {
   Medium: "text-yellow-600",
   Strong: "text-green-600",
 };
+
+// Tabeller (Users, Backlog): vit ruta, rubrikrad med små grå versaler
+export const TABLE_WRAPPER_CLASS =
+  "overflow-hidden rounded-lg bg-white shadow-[0_1px_1px_rgba(9,30,66,0.25),0_0_1px_rgba(9,30,66,0.31)]";
+export const TABLE_HEAD_CLASS = "px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-jira-secondary";
+export const TABLE_CELL_CLASS = "px-4 py-3";
+export const TABLE_ROW_CLASS = "border-b border-jira-neutral last:border-b-0 hover:bg-[#f7f8f9]";
