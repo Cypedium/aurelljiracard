@@ -2,6 +2,7 @@ import leoProfanity from "leo-profanity";
 import { z } from "zod";
 import type { Card } from "../api/endpoints";
 import { CARD_TYPES, DEFAULT_CARD_TYPE, cardTypeOf, type CardType } from "./cardType";
+import { CARD_DESTINATIONS, type AnyCardStatus } from "./backlog";
 
 leoProfanity.loadDictionary();
 leoProfanity.loadDictionary("sv");
@@ -26,6 +27,8 @@ export const cardFormSchema = z.object({
   productId: requiredText(PRODUCT_ID_MAX_LENGTH, PRODUCT_ID_MESSAGE).regex(PRODUCT_ID_PATTERN, PRODUCT_ID_MESSAGE),
   // 0 = inget valt än
   rating: z.number().int().min(1, "Please select a priority.").max(5, "Please select a priority."),
+  // "Add to": kolumn eller backlog; bara när ett kort skapas
+  status: z.enum(CARD_DESTINATIONS.map((d) => d.key) as [AnyCardStatus, ...AnyCardStatus[]]).optional(),
 });
 
 export type CardFormValues = z.infer<typeof cardFormSchema>;

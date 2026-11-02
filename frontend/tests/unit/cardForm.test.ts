@@ -40,6 +40,11 @@ describe("cardFormSchema", () => {
     expect(PRODUCT_ID_MAX_LENGTH).toBe(6);
   });
 
+  it("accepts a backlog destination and rejects an unknown one", () => {
+    expect(firstError({ ...valid, status: "backlog" })).toBeNull();
+    expect(firstError({ ...valid, status: "archived" })).not.toBeNull();
+  });
+
   it("rejects an unknown issue type", () => {
     expect(firstError({ ...valid, type: "epic" })).not.toBeNull();
   });

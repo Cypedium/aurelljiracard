@@ -7,8 +7,9 @@ import { toast } from 'sonner';
 import { EMPTY_CARD_FORM, PRIORITIES, PRODUCT_ID_MAX_LENGTH, cardFormSchema, cardToFormValues, type CardFormValues } from '../../utils/cardForm';
 import { apiErrorMessage, isConflictError } from '../../utils/apiError';
 import { FIELD_ERROR_CLASS, FORM_ITEM_CLASS, LABEL_CLASS, SECTION_PADDING } from '../../utils/styles';
-import type { AnyCardStatus } from '../../utils/backlog';
+import { BACKLOG_STATUS, DEFAULT_DESTINATION, type AnyCardStatus } from '../../utils/backlog';
 import IssueTypeSelect from '../../components/IssueTypeSelect';
+import CardDestinationSelect from '../../components/CardDestinationSelect';
 import { Button } from '../../components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../../components/ui/form';
 import { Input } from '../../components/ui/input';
@@ -32,7 +33,8 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
   const router = useRouter();
   const form = useForm<CardFormValues>({
     resolver: zodResolver(cardFormSchema),
-    defaultValues: card ? cardToFormValues(card) : EMPTY_CARD_FORM,
+    // Nya kort: "Add to" börjar på kolumnen man klickade i (eller To Do)
+    defaultValues: card ? cardToFormValues(card) : { ...EMPTY_CARD_FORM, status: status ?? DEFAULT_DESTINATION },
   });
 
   // Duplicate issue key (409) is shown under the field instead of as a toast
@@ -48,7 +50,9 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
   const onSubmit = async (fields: CardFormValues) => {
     if (isEdit && card?._id) {
       try {
-        const res = await updateCard(card._id, fields);
+        // Status ändras bara genom att flytta kortet, inte via edit
+        const { type, comment, productId, rating } = fields;
+        const res = await updateCard(card._id, { type, comment, productId, rating });
         onSaved?.(res.data);
         toast.success('Card updated.');
       } catch (error) {
@@ -60,8 +64,10 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
 
     try {
       // Author is taken from the access token by the backend
-      const res = await submitCard({ ...fields, status });
+      const res = await submitCard(fields);
 
+      // Backlog-kort syns inte på boarden, så bekräfta var det hamnade
+      if (fields.status === BACKLOG_STATUS) toast.success('Card added to the backlog.');
       if (onCreated) {
         onCreated();
         return;
@@ -110,6 +116,22 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
               </FormItem>
             )}
           />
+
+          {!isEdit && (
+            <FormField
+              control={form.control}
+              name="status"
+              render={({ field }) => (
+                <FormItem className={FORM_ITEM_CLASS}>
+                  <FormLabel className={LABEL_CLASS}>Add to</FormLabel>
+                  <FormControl>
+                    <CardDestinationSelect value={field.value ?? DEFAULT_DESTINATION} onChange={field.onChange} />
+                  </FormControl>
+                  <FormMessage className={FIELD_ERROR_CLASS} />
+                </FormItem>
+              )}
+            />
+          )}
 
           <FormField
             control={form.control}

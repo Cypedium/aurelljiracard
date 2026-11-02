@@ -1,5 +1,5 @@
 import { describe, expect, it } from "@jest/globals";
-import { BACKLOG_STATUS, assigneeOf, backlogCards, boardCards, isBacklogCard } from "../../app/utils/backlog";
+import { BACKLOG_STATUS, CARD_DESTINATIONS, DEFAULT_DESTINATION, assigneeOf, backlogCards, boardCards, isBacklogCard } from "../../app/utils/backlog";
 
 const cards = [
   { id: "1", status: "todo" },
@@ -17,6 +17,12 @@ describe("backlog", () => {
     expect(boardCards(cards).map((c) => c.id)).toEqual(["1", "3", "4"]);
     expect(backlogCards(cards).map((c) => c.id)).toEqual(["2"]);
     expect(isBacklogCard({ status: "in-progress" })).toBe(false);
+  });
+
+  it("offers the board columns and then the backlog as destinations, defaulting to To Do", () => {
+    expect(CARD_DESTINATIONS.map((d) => d.key)).toEqual(["todo", "in-progress", "test", "done", "backlog"]);
+    expect(CARD_DESTINATIONS.at(-1)?.label).toBe("Backlog");
+    expect(DEFAULT_DESTINATION).toBe("todo");
   });
 
   it("shows the assignee, falling back to the author for older cards", () => {
