@@ -1,5 +1,6 @@
 'use client';
 import { useState } from "react";
+import { toast } from "sonner";
 import Layout from "../components/Layout";
 import BacklogList from "../components/BacklogList";
 import CardForm from "../cards/card/Card";
@@ -15,6 +16,7 @@ export default function BacklogPage() {
   const handleCreated = () => {
     setCreating(false);
     setRefreshKey((k) => k + 1);
+    toast.success("Card added to the backlog.");
   };
 
   return (
