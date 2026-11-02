@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { handleLogout } from '../utils/logout';
 import { getUsername, hasSession } from '../utils/session';
-import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
+import { ArrowRightStartOnRectangleIcon, Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 
 const Navbar = () => {
   const pathname = usePathname();
@@ -31,7 +31,7 @@ const Navbar = () => {
 
       {/* Mobil: dold tills menyn öppnas. Desktop: alltid synlig på en rad */}
       <ul
-        className={`${menuOpen ? 'flex' : 'hidden'} absolute top-[50px] w-full flex-col gap-4 rounded-lg bg-brand p-8 text-2xl text-white md:static md:flex md:flex-row md:gap-10 md:bg-transparent md:p-0`}
+        className={`${menuOpen ? 'flex' : 'hidden'} absolute top-[50px] w-full flex-col gap-4 rounded-lg bg-brand p-8 text-2xl text-white md:static md:flex md:flex-1 md:flex-row md:items-center md:gap-10 md:bg-transparent md:p-0`}
       >
         {isLoggedIn && (
           <>
@@ -46,13 +46,17 @@ const Navbar = () => {
 
         {isLoggedIn ? (
           <>
+            {/* Desktop: användare och logout längst till höger */}
             {userName && (
-              <li key="profile">
+              <li key="profile" className="md:ml-auto">
                 <span>{userName}</span>
               </li>
             )}
-            <li key="logout">
-              <button onClick={handleLogout}>Logout</button>
+            <li key="logout" className={userName ? undefined : 'md:ml-auto'}>
+              <button onClick={handleLogout} className="flex items-center gap-2">
+                <ArrowRightStartOnRectangleIcon className="size-7" aria-hidden />
+                Logout
+              </button>
             </li>
           </>
         ) : (
