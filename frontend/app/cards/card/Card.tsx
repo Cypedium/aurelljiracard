@@ -50,6 +50,7 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
       try {
         const res = await updateCard(card._id, fields);
         onSaved?.(res.data);
+        toast.success('Card updated.');
       } catch (error) {
         console.error('Update error:', (error as Error).message);
         showError(error, 'Failed to save card.');
