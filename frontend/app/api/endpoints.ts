@@ -1,8 +1,9 @@
 // app/api/endpoints.ts
 // Paths must match the backend mounts in server/app.js: /auth, /card, /user
 import api from "./api";
-import type { CardStatus, UserLayout } from "../utils/boardLayout";
+import type { UserLayout } from "../utils/boardLayout";
 import type { CardType } from "../utils/cardType";
+import type { AnyCardStatus } from "../utils/backlog";
 
 export type Card = {
   _id?: string;
@@ -10,16 +11,18 @@ export type Card = {
   comment: string;
   productId: string;
   username: string;
+  // Who works on the card; null in the backlog, missing on older cards (→ the author)
+  assignee?: string | null;
   submittedAt: string;
   // Missing on cards created before statuses existed → treated as "todo"
-  status?: CardStatus;
+  status?: AnyCardStatus;
   // Missing on cards created before types existed → treated as "task"
   type?: CardType;
 };
 
 // The backend sets the author from the access token and the date to today;
-// new cards start in "todo" unless a status (board column) is given
-export type NewCard = Omit<Card, "_id" | "username" | "submittedAt">;
+// new cards start in "todo" unless a status (board column or "backlog") is given
+export type NewCard = Omit<Card, "_id" | "username" | "assignee" | "submittedAt">;
 
 export type User = {
   username: string;
@@ -64,8 +67,8 @@ export const getCards = () => api.get<Card[]>("/card");
 export const updateCard = (id: string, card: NewCard) =>
   api.put<Card>(`/card/${id}`, card);
 
-// Any logged-in user may move a card to another column
-export const updateCardStatus = (id: string, status: CardStatus) =>
+// Any logged-in user may move a card to another column; taking one from the backlog assigns it to you
+export const updateCardStatus = (id: string, status: AnyCardStatus) =>
   api.patch<Card>(`/card/${id}/status`, { status });
 
 export const deleteCard = (id: string) =>

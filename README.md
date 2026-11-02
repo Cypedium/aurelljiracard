@@ -73,9 +73,9 @@ All routes except `/auth/*` and `/health` require `Authorization: Bearer <access
 | `POST` | `/auth/refresh` | `{ refreshToken }` → new `{ accessToken, refreshToken }` |
 | `POST` | `/auth/logout` | `{ refreshToken }` → revokes all of the user's refresh tokens |
 | `GET` | `/card` | All cards, newest first |
-| `POST` | `/card` | `{ rating (1–5), comment, productId, submittedAt? }` → `201`; `productId` (issue key) must look like `MA-100` (letters, hyphen, digits; max 6 characters), `409` if it already exists. Author is taken from the token |
+| `POST` | `/card` | `{ rating (1–5), comment, productId, type?, status? }` → `201`; `status: "backlog"` creates an unassigned backlog card, otherwise the author is the assignee; `productId` (issue key) must look like `MA-100` (letters, hyphen, digits; max 6 characters), `409` if it already exists. Author is taken from the token |
 | `PUT` | `/card/:id` | Edit a card, same body as `POST` → updated card; `403` unless it is your own, `409` if another card has the issue key |
-| `PATCH` | `/card/:id/status` | `{ status }` (`todo`, `in-progress`, `test`, `done`) → updated card. Any logged-in user can move any card |
+| `PATCH` | `/card/:id/status` | `{ status }` (`todo`, `in-progress`, `test`, `done`, `backlog`) → updated card. Any logged-in user can move any card; taking a card from the backlog assigns it to the caller, moving it to `backlog` unassigns it |
 | `DELETE` | `/card/:id` | Delete a card; `403` unless it is your own or you are an admin |
 | `GET` | `/user` | Users (`username`, `pictureUrl`) |
 | `GET` | `/user/usernames` | Usernames only |

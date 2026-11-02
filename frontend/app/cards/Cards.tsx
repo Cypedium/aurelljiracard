@@ -49,6 +49,7 @@ import { avatarColor, avatarInitials } from "../utils/avatar";
 import { canDeleteCard, canEditCard, getUsername, isAdmin } from "../utils/session";
 import { formatShortDate } from "../utils/date";
 import { apiErrorMessage } from "../utils/apiError";
+import { assigneeOf, boardCards, type AnyCardStatus } from "../utils/backlog";
 import { CARD_ACTION_CLASS, CARD_HOVER_CLASS, listColor } from "../utils/styles";
 
 export default function Home() {
@@ -73,7 +74,8 @@ export default function Home() {
   const fetchCards = useCallback(async () => {
     try {
       const res = await getCards();
-      setCards(res.data || []);
+      // Backloggen visas på /backlog, inte på boarden
+      setCards(boardCards(res.data || []));
     } catch (err: any) {
       console.error("Error fetching cards:", err.message);
       toast.error(apiErrorMessage(err, "Could not load cards."));
@@ -169,7 +171,7 @@ export default function Home() {
   // Flytta kortet direkt och spara statusen; vid fel flyttas det tillbaka
   const moveCard = async (id: string, status: CardStatus) => {
     const previous = cards.find((fb) => fb._id === id)?.status;
-    const setStatus = (s?: CardStatus) =>
+    const setStatus = (s?: AnyCardStatus) =>
       setCards((prev) => prev.map((fb) => (fb._id === id ? { ...fb, status: s } : fb)));
 
     setStatus(status);
@@ -418,10 +420,10 @@ export default function Home() {
                       </span>
                       <span
                         className="inline-flex size-6 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white"
-                        style={{ background: avatarColor(fb.username) }}
-                        title={fb.username}
+                        style={{ background: avatarColor(assigneeOf(fb)) }}
+                        title={`Assignee: ${assigneeOf(fb)}`}
                       >
-                        {avatarInitials(fb.username)}
+                        {avatarInitials(assigneeOf(fb))}
                       </span>
                     </div>
                   </div>

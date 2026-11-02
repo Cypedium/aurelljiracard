@@ -41,6 +41,9 @@ const Navbar = () => {
             <li onClick={() => setMenuOpen(false)}>
               <Link href="/cards/card">Create Card</Link>
             </li>
+            <li onClick={() => setMenuOpen(false)}>
+              <Link href="/backlog">Backlog</Link>
+            </li>
           </>
         )}
 
