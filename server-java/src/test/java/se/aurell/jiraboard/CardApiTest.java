@@ -81,6 +81,14 @@ class CardApiTest extends ApiIntegrationTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Summary is required (max 2000 characters)."));
 
+        for (String productId : new String[] {"1MA-10", "MA-1000", "MA100", ""}) {
+            mvc.perform(bearer(json(post("/card"), """
+                    {"rating": 3, "comment": "x", "productId": "%s"}""".formatted(productId)), token))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.message").value(
+                            "Issue key must look like MA-100: letters, a hyphen and digits (max 6 characters)."));
+        }
+
         mvc.perform(bearer(json(post("/card"), """
                 {"rating": 3, "comment": "x", "productId": "AJB-1", "type": "epic"}"""), token))
                 .andExpect(status().isBadRequest())

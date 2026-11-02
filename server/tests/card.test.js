@@ -122,6 +122,9 @@ describe("POST /card", () => {
     [{ ...validCard, rating: "5" }],
     [{ ...validCard, comment: "" }],
     [{ ...validCard, productId: { $ne: null } }],
+    [{ ...validCard, productId: "1MA-10" }],
+    [{ ...validCard, productId: "MA-1000" }],
+    [{ ...validCard, productId: "MA100" }],
     [{ ...validCard, type: "epic" }],
     [{ ...validCard, type: { $ne: null } }]
   ])("rejects invalid card %j with 400", async (body) => {

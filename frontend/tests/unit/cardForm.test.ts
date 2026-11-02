@@ -22,10 +22,22 @@ describe("cardFormSchema", () => {
   it.each([
     ["summary", { ...valid, comment: "   " }, /Summary is required/],
     ["summary", { ...valid, comment: "x".repeat(COMMENT_MAX_LENGTH + 1) }, /Summary is required/],
-    ["issue key", { ...valid, productId: "" }, /Issue key is required/],
-    ["issue key", { ...valid, productId: "x".repeat(PRODUCT_ID_MAX_LENGTH + 1) }, /Issue key is required/],
+    ["issue key", { ...valid, productId: "" }, /Issue key must look like MA-100/],
+    ["issue key", { ...valid, productId: "MA-1000" }, /Issue key must look like MA-100/],
   ])("rejects an empty or too long %s", (_field, form, message) => {
     expect(firstError(form)).toMatch(message);
+  });
+
+  it.each(["MA-100", "abc-12", "A-1"])("accepts the issue key %s", (productId) => {
+    expect(firstError({ ...valid, productId })).toBeNull();
+  });
+
+  it.each(["1MA-10", "MA100", "MA-", "-100", "MA-AB", "MA 10", "MA_10"])("rejects the issue key %s", (productId) => {
+    expect(firstError({ ...valid, productId })).toMatch(/Issue key must look like MA-100/);
+  });
+
+  it("limits the issue key to 6 characters", () => {
+    expect(PRODUCT_ID_MAX_LENGTH).toBe(6);
   });
 
   it("rejects an unknown issue type", () => {
@@ -34,7 +46,6 @@ describe("cardFormSchema", () => {
 
   it.each([
     ["summary", { ...valid, comment: "this is shit" }],
-    ["issue key", { ...valid, productId: "fuck" }],
   ])("rejects profanity in the %s", (_field, form) => {
     expect(firstError(form)).toMatch(/inappropriate language/);
   });
