@@ -6,6 +6,8 @@ import { apiErrorMessage } from '../utils/apiError';
 import { avatarColor, avatarInitials } from '../utils/avatar';
 import { backlogCards } from '../utils/backlog';
 import { DEFAULT_HEADERS } from '../utils/boardLayout';
+import { formatShortDate } from '../utils/date';
+import { TABLE_CELL_CLASS as TD_CLASS, TABLE_HEAD_CLASS as TH_CLASS, TABLE_ROW_CLASS, TABLE_WRAPPER_CLASS } from '../utils/styles';
 import IssueTypeIcon from './IssueTypeIcon';
 import { Button } from './ui/button';
 
@@ -60,36 +62,64 @@ export default function BacklogList({ refreshKey = 0, onMoved }: BacklogListProp
     return <p className="rounded-lg bg-white p-6 text-center text-sm text-jira-secondary">The backlog is empty.</p>;
   }
 
+  // Mobil: Created och Reporter döljs så att tabellen får plats
   return (
-    <ul className="overflow-hidden rounded-lg bg-white shadow-[0_1px_1px_rgba(9,30,66,0.25),0_0_1px_rgba(9,30,66,0.31)]">
-      {cards.map((card) => (
-        <li
-          key={card._id}
-          className="flex items-center gap-3 border-b border-jira-neutral px-4 py-3 text-sm text-jira-text last:border-b-0 max-[480px]:flex-wrap"
-        >
-          <IssueTypeIcon type={card.type} />
-          <span className="w-16 shrink-0 text-xs font-semibold uppercase text-jira-secondary">{card.productId}</span>
-          <span className="min-w-0 flex-1 truncate" title={card.comment}>
-            {card.comment}
-          </span>
-          <span
-            className="min-w-5 shrink-0 rounded-full bg-jira-neutral px-1.5 text-center text-xs/4"
-            title={`Priority: ${card.rating}/5`}
-          >
-            {card.rating}
-          </span>
-          <span
-            className="inline-flex size-6 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white"
-            style={{ background: avatarColor(card.username) }}
-            title={`Created by ${card.username}`}
-          >
-            {avatarInitials(card.username)}
-          </span>
-          <Button size="sm" disabled={movingId === card._id} onClick={() => moveToBoard(card)}>
-            Move to board
-          </Button>
-        </li>
-      ))}
-    </ul>
+    <div className={TABLE_WRAPPER_CLASS}>
+      {/* Små kolumner får sin innehållsbredd; Summary tar resten och kortas med … */}
+      <table className="w-full text-sm text-jira-text [&_td]:whitespace-nowrap [&_th]:whitespace-nowrap">
+        <thead className="border-b-2 border-jira-neutral">
+          <tr>
+            <th scope="col" className={TH_CLASS}>Key</th>
+            <th scope="col" className={TH_CLASS}>Summary</th>
+            <th scope="col" className={`${TH_CLASS} text-center`}>Priority</th>
+            <th scope="col" className={`${TH_CLASS} max-[480px]:hidden`}>Created</th>
+            <th scope="col" className={`${TH_CLASS} text-center max-[480px]:hidden`}>Reporter</th>
+            <th scope="col" className={TH_CLASS}>
+              <span className="sr-only">Actions</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {cards.map((card) => (
+            <tr key={card._id} className={TABLE_ROW_CLASS}>
+              <td className={TD_CLASS}>
+                <div className="flex items-center gap-2">
+                  <IssueTypeIcon type={card.type} />
+                  <span className="text-xs font-semibold uppercase text-jira-secondary">{card.productId}</span>
+                </div>
+              </td>
+              <td className={`${TD_CLASS} w-full max-w-0 truncate`} title={card.comment}>
+                {card.comment}
+              </td>
+              <td className={`${TD_CLASS} text-center`}>
+                <span
+                  className="inline-block min-w-5 rounded-full bg-jira-neutral px-1.5 text-center text-xs/4"
+                  title={`Priority: ${card.rating}/5`}
+                >
+                  {card.rating}
+                </span>
+              </td>
+              <td className={`${TD_CLASS} text-xs text-jira-secondary tabular-nums max-[480px]:hidden`}>
+                <time dateTime={card.submittedAt}>{formatShortDate(card.submittedAt)}</time>
+              </td>
+              <td className={`${TD_CLASS} text-center max-[480px]:hidden`}>
+                <span
+                  className="inline-flex size-6 items-center justify-center rounded-full text-[10px] font-semibold text-white"
+                  style={{ background: avatarColor(card.username) }}
+                  title={`Created by ${card.username}`}
+                >
+                  {avatarInitials(card.username)}
+                </span>
+              </td>
+              <td className={`${TD_CLASS} text-right`}>
+                <Button size="sm" disabled={movingId === card._id} onClick={() => moveToBoard(card)}>
+                  Move to board
+                </Button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
