@@ -167,6 +167,53 @@ export const splitByCollapsed = <T extends { x: number }>(layout: readonly T[], 
   hidden: layout.filter((l) => isColumnCollapsed(collapsed, l.x)),
 });
 
+// Gridden delas i enheter: en utfälld lista är flera enheter bred, en dold
+// lista en enhet (en smal remsa, som i Trello). Utfällda listor delar på resten
+export const BOARD_UNITS = 16;
+// Remsans högsta höjd; långa namn kortas av
+export const COLLAPSED_LIST_MAX_HEIGHT = 280;
+
+export type ColumnSpan = { start: number; span: number; collapsed: boolean };
+export type BoardColumns = { spans: ColumnSpan[]; units: number; expandedSpan: number };
+
+export const boardColumns = (collapsed: CardStatus[]): BoardColumns => {
+  const hiddenCount = DEFAULT_HEADERS.filter((h) => collapsed.includes(h.key)).length;
+  const expandedCount = BOARD_COLS - hiddenCount;
+  const expandedSpan = expandedCount ? Math.floor((BOARD_UNITS - hiddenCount) / expandedCount) : 0;
+  let start = 0;
+  const spans = DEFAULT_HEADERS.map((h) => {
+    const isCollapsed = collapsed.includes(h.key);
+    const span = isCollapsed ? 1 : expandedSpan;
+    const col = { start, span, collapsed: isCollapsed };
+    start += span;
+    return col;
+  });
+  // Alla dolda: remsorna behåller sin bredd, resten av boarden är tom
+  return { spans, units: expandedCount ? start : BOARD_UNITS, expandedSpan };
+};
+
+// Närmaste utfällda lista för en x-position i gridden; kort kan inte släppas på en remsa
+export const columnAtGridX = ({ spans }: BoardColumns, x: number): number =>
+  spans.reduce(
+    (best, s, i) =>
+      !s.collapsed && (best < 0 || Math.abs(s.start - x) < Math.abs(spans[best].start - x)) ? i : best,
+    -1,
+  );
+
+export const snapGridX = (columns: BoardColumns, x: number): number =>
+  columns.spans[Math.max(0, columnAtGridX(columns, x))].start;
+
+// Kolumnindex (0–3) → grid-enheter och tillbaka
+export const toGridLayout = <T extends { x: number; w: number }>(layout: readonly T[], columns: BoardColumns): T[] =>
+  layout.map((l) => ({ ...l, x: columns.spans[l.x].start, w: columns.expandedSpan }));
+
+export const fromGridLayout = <T extends { x: number; w: number }>(layout: readonly T[], columns: BoardColumns): T[] =>
+  layout.map((l) => ({ ...l, x: Math.max(0, columnAtGridX(columns, l.x)), w: 1 }));
+
+// Mobil: en utfälld lista är en skärm bred, en remsa lika många enheter som annars
+export const mobileBoardWidth = ({ units, expandedSpan }: BoardColumns): string =>
+  `${expandedSpan ? (units / expandedSpan) * 100 : 100}%`;
+
 // Antal kort per kolumn: visas i rubriken
 export const countCardsPerColumn = (layout: readonly { x: number }[]): number[] =>
   DEFAULT_HEADERS.map((_, i) => layout.filter((l) => l.x === i).length);
