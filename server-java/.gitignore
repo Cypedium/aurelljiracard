@@ -34,3 +34,6 @@ build/
 
 ### Local env ###
 .env
+
+### Local helper: Neon connection string -> Fly DB secrets ###
+neon-to-fly.bat
