@@ -22,6 +22,10 @@ import {
   AlertDialogTitle,
 } from '../components/ui/alert-dialog';
 
+// Rubrikrad i Jira-stil: små grå versaler
+const TH_CLASS = 'px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-jira-secondary';
+const TD_CLASS = 'px-4 py-3';
+
 const ACTION_CLASS =
   'rounded-[3px] p-1.5 text-jira-secondary hover:bg-jira-neutral disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent';
 
@@ -86,75 +90,89 @@ export default function Users() {
 
   return (
     <>
-      <ul className="overflow-hidden rounded-lg bg-white shadow-[0_1px_1px_rgba(9,30,66,0.25),0_0_1px_rgba(9,30,66,0.31)]">
-        {users.map((user) => {
-          const isSelf = user.username === me;
-          const cards = cardCounts[user.username] ?? 0;
-          const deleteBlocked = isSelf
-            ? 'You cannot delete yourself'
-            : cards > 0
-              ? `Delete their ${cards} card${cards === 1 ? '' : 's'} first`
-              : null;
+      <div className="overflow-hidden rounded-lg bg-white shadow-[0_1px_1px_rgba(9,30,66,0.25),0_0_1px_rgba(9,30,66,0.31)]">
+        <table className="w-full text-sm text-jira-text">
+          <thead className="border-b-2 border-jira-neutral">
+            <tr>
+              <th scope="col" className={TH_CLASS}>User</th>
+              <th scope="col" className={TH_CLASS}>Role</th>
+              <th scope="col" className={`${TH_CLASS} text-right max-[480px]:hidden`}>Cards</th>
+              <th scope="col" className={`${TH_CLASS} text-right`}>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {users.map((user) => {
+              const isSelf = user.username === me;
+              const cards = cardCounts[user.username] ?? 0;
+              const deleteBlocked = isSelf
+                ? 'You cannot delete yourself'
+                : cards > 0
+                  ? `Delete their ${cards} card${cards === 1 ? '' : 's'} first`
+                  : null;
 
-          return (
-            <li
-              key={user._id}
-              className="flex items-center gap-3 border-b border-jira-neutral px-4 py-3 text-sm text-jira-text last:border-b-0"
-            >
-              <span
-                className="inline-flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white"
-                style={{ background: avatarColor(user.username) }}
-                aria-hidden
-              >
-                {avatarInitials(user.username)}
-              </span>
-              <span className="min-w-0 flex-1 truncate font-medium" title={user.username}>
-                {user.username}
-                {isSelf && <span className="ml-1 font-normal text-jira-secondary">(you)</span>}
-              </span>
-              <span
-                className={`shrink-0 rounded-[3px] px-1.5 text-xs/5 font-bold uppercase ${
-                  user.role === 'admin' ? 'bg-[#e9f2ff] text-[#0c66e4]' : 'bg-jira-neutral text-jira-secondary'
-                }`}
-              >
-                {user.role}
-              </span>
-              <span className="w-16 shrink-0 text-right text-xs text-jira-secondary max-[480px]:hidden">
-                {cards} card{cards === 1 ? '' : 's'}
-              </span>
-
-              <div className="flex shrink-0 items-center">
-                <button
-                  className={ACTION_CLASS}
-                  aria-label={`Edit ${user.username}`}
-                  title="Edit name and role"
-                  onClick={() => setEditingUser(user)}
-                >
-                  <PencilIcon className="size-4" aria-hidden />
-                </button>
-                <button
-                  className={ACTION_CLASS}
-                  aria-label={`Log out ${user.username}`}
-                  title={isSelf ? 'Use Logout in the menu' : 'Log out from all sessions'}
-                  disabled={isSelf}
-                  onClick={() => logOutUser(user)}
-                >
-                  <ArrowRightStartOnRectangleIcon className="size-4" aria-hidden />
-                </button>
-                <button
-                  className={ACTION_CLASS}
-                  aria-label={`Delete ${user.username}`}
-                  title={deleteBlocked ?? 'Delete user'}
-                  disabled={Boolean(deleteBlocked)}
-                  onClick={() => setDeletingUser(user)}
-                >
-                  <TrashIcon className="size-4" aria-hidden />
-                </button>
-              </div>
-            </li>
-          );
-        })}
-      </ul>
+              return (
+                <tr key={user._id} className="border-b border-jira-neutral last:border-b-0 hover:bg-[#f7f8f9]">
+                  <td className={TD_CLASS}>
+                    <div className="flex min-w-0 items-center gap-3">
+                      <span
+                        className="inline-flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white"
+                        style={{ background: avatarColor(user.username) }}
+                        aria-hidden
+                      >
+                        {avatarInitials(user.username)}
+                      </span>
+                      <span className="min-w-0 truncate font-medium" title={user.username}>
+                        {user.username}
+                        {isSelf && <span className="ml-1 font-normal text-jira-secondary">(you)</span>}
+                      </span>
+                    </div>
+                  </td>
+                  <td className={TD_CLASS}>
+                    <span
+                      className={`rounded-[3px] px-1.5 text-xs/5 font-bold uppercase ${
+                        user.role === 'admin' ? 'bg-[#e9f2ff] text-[#0c66e4]' : 'bg-jira-neutral text-jira-secondary'
+                      }`}
+                    >
+                      {user.role}
+                    </span>
+                  </td>
+                  <td className={`${TD_CLASS} text-right text-jira-secondary tabular-nums max-[480px]:hidden`}>{cards}</td>
+                  <td className={`${TD_CLASS} w-px whitespace-nowrap`}>
+                    <div className="flex items-center justify-end">
+                      <button
+                        className={ACTION_CLASS}
+                        aria-label={`Edit ${user.username}`}
+                        title="Edit name and role"
+                        onClick={() => setEditingUser(user)}
+                      >
+                        <PencilIcon className="size-4" aria-hidden />
+                      </button>
+                      <button
+                        className={ACTION_CLASS}
+                        aria-label={`Log out ${user.username}`}
+                        title={isSelf ? 'Use Logout in the menu' : 'Log out from all sessions'}
+                        disabled={isSelf}
+                        onClick={() => logOutUser(user)}
+                      >
+                        <ArrowRightStartOnRectangleIcon className="size-4" aria-hidden />
+                      </button>
+                      <button
+                        className={ACTION_CLASS}
+                        aria-label={`Delete ${user.username}`}
+                        title={deleteBlocked ?? 'Delete user'}
+                        disabled={Boolean(deleteBlocked)}
+                        onClick={() => setDeletingUser(user)}
+                      >
+                        <TrashIcon className="size-4" aria-hidden />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
 
       {/* Radix sköter fokus, Escape, klick utanför och scroll-lås */}
       <Dialog open={Boolean(editingUser)} onOpenChange={(open) => !open && setEditingUser(null)}>
