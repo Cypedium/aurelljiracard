@@ -35,8 +35,8 @@ export const saveSession = (username: string, accessToken: string, refreshToken:
 // Kort utan _id (inte sparade) kan inte ändras
 type OwnedCard = { _id?: string; username: string };
 
-export const canEditCard = (card: OwnedCard, username: string): boolean =>
-  Boolean(card._id) && card.username === username;
+export const canEditCard = (card: OwnedCard, username: string, admin: boolean): boolean =>
+  Boolean(card._id) && (card.username === username || admin);
 
 export const canDeleteCard = (card: OwnedCard, username: string, admin: boolean): boolean =>
   Boolean(card._id) && (card.username === username || admin);

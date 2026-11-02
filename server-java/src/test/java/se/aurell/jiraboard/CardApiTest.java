@@ -148,7 +148,7 @@ class CardApiTest extends ApiIntegrationTest {
     }
 
     @Test
-    void adminCanDeleteButNotEditOtherUsersCards() throws Exception {
+    void adminCanEditAndDeleteOtherUsersCards() throws Exception {
         String id = createCard(accessToken("alice"), VALID_CARD);
         register("admin");
         // Admins are set directly in the database
@@ -157,8 +157,11 @@ class CardApiTest extends ApiIntegrationTest {
                 {"username": "admin", "password": "%s"}""".formatted(PASSWORD)))
                 .andReturn().getResponse().getContentAsString(), "$.accessToken");
 
-        mvc.perform(bearer(json(put("/card/" + id), VALID_CARD), adminToken))
-                .andExpect(status().isForbidden());
+        mvc.perform(bearer(json(put("/card/" + id), """
+                {"rating": 1, "comment": "Fixed by admin", "productId": "AJB-1"}"""), adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.comment").value("Fixed by admin"))
+                .andExpect(jsonPath("$.username").value("alice"));
 
         mvc.perform(bearer(delete("/card/" + id), adminToken))
                 .andExpect(status().isOk())

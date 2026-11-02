@@ -49,10 +49,10 @@ public class CardService {
         saveUnique(card);
     }
 
-    /** Only the author may edit; author, date and status are never changed by an edit. */
+    /** The author or an admin may edit; author, date and status are never changed by an edit. */
     @Transactional
     public CardResponse update(UUID id, CardRequest request, AuthUser user) {
-        Card card = findOwnCard(id, user, "You can only edit your own card.");
+        Card card = user.isAdmin() ? findCard(id) : findOwnCard(id, user, "You can only edit your own card.");
         if (cardRepository.existsByProductIdAndIdNot(request.productId(), id)) {
             throw ApiException.conflict(DUPLICATE_KEY_MESSAGE);
         }

@@ -341,17 +341,18 @@ describe("DELETE /card/:id", () => {
     expect(Card.deleteOne).toHaveBeenCalledWith({ _id: CARD_ID });
   });
 
-  it("does not let an admin edit another user's card", async () => {
-    const save = jest.fn();
-    Card.findById.mockResolvedValue({ _id: CARD_ID, username: "bob", save });
+  it("lets an admin edit another user's card without changing the author", async () => {
+    const save = jest.fn().mockResolvedValue({});
+    Card.findById.mockResolvedValue({ _id: CARD_ID, username: "bob", ...validCard, save });
 
     const res = await request(app)
       .put(`/card/${CARD_ID}`)
       .set("Authorization", authHeader("alice", undefined, "admin"))
-      .send(validCard);
+      .send({ ...validCard, comment: "Fixed by admin" });
 
-    expect(res.status).toBe(403);
-    expect(save).not.toHaveBeenCalled();
+    expect(res.status).toBe(200);
+    expect(save).toHaveBeenCalled();
+    expect(res.body).toMatchObject({ comment: "Fixed by admin", username: "bob" });
   });
 
   it("treats a token without a role claim as a normal user", async () => {
