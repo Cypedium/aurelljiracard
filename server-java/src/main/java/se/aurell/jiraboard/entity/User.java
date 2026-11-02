@@ -33,7 +33,7 @@ public class User {
     @Column(name = "picture_url", nullable = false)
     private String pictureUrl = DEFAULT_PICTURE_URL;
 
-    // "admin" may delete any card; set directly in the database
+    // "admin" may edit and delete any card and manage users
     @Convert(converter = EnumConverters.RoleConverter.class)
     @Column(nullable = false, length = 10)
     private Role role = Role.DEFAULT;
@@ -81,8 +81,21 @@ public class User {
         return pictureUrl;
     }
 
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
     public Role getRole() {
         return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
+    }
+
+    /** Revokes every refresh token issued so far, like logout. */
+    public void revokeTokens() {
+        tokenVersion++;
     }
 
     public int getTokenVersion() {

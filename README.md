@@ -77,17 +77,20 @@ All routes except `/auth/*` and `/health` require `Authorization: Bearer <access
 | `PUT` | `/card/:id` | Edit a card, same body as `POST` → updated card; `403` unless it is your own or you are an admin, `409` if another card has the issue key |
 | `PATCH` | `/card/:id/status` | `{ status }` (`todo`, `in-progress`, `test`, `done`, `backlog`) → updated card. Any logged-in user can move any card; taking a card from the backlog assigns it to the caller, moving it to `backlog` unassigns it |
 | `DELETE` | `/card/:id` | Delete a card; `403` unless it is your own or you are an admin |
-| `GET` | `/user` | Users (`username`, `pictureUrl`) |
+| `GET` | `/user` | Users (`_id`, `username`, `pictureUrl`, `role`) |
 | `GET` | `/user/usernames` | Usernames only |
 | `GET` | `/user/layout` | Current user's board layout |
 | `PUT` | `/user/layout` | `{ cols?, headers?, cards? }` — merge and save layout. Each header is `{ key, title, color? }`; `color` is an optional `#rrggbb` list colour (omit or `null` for the default) |
+| `PATCH` | `/user/:id` | **Admin.** `{ username?, role? }` → updated user. Either change revokes the user's refresh tokens; their cards follow a rename. `409` if the name is taken, `400` if you remove your own admin role |
+| `DELETE` | `/user/:id` | **Admin.** Delete a user; `409` while they still author cards, `400` for yourself. Cards assigned to them become unassigned |
+| `POST` | `/user/:id/logout` | **Admin.** Revoke all the user's refresh tokens (logged out within 15 min) |
 | `GET` | `/health` | `{ status: "ok" }` |
 
 Errors are returned as `{ message }`.
 
 ### Roles
 
-Every user has a `role`: `user` (default) or `admin`. Admins can edit and delete any card (the author never changes). The role is sent as a `role` claim in the access token, so a change takes effect at the next login or token refresh (max 15 min). There is no endpoint for roles — set them in the database:
+Every user has a `role`: `user` (default) or `admin`. Admins can edit and delete any card (the author never changes). The role is sent as a `role` claim in the access token, so a change takes effect at the next login or token refresh (max 15 min). Admins manage users (rename, change role, delete, log out) on the **Users** page (`/users`, shown in the navbar for admins only). The first admin has to be set in the database:
 
 ```sql
 -- server-java (PostgreSQL)

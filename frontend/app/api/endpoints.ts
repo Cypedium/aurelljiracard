@@ -4,6 +4,7 @@ import api from "./api";
 import type { UserLayout } from "../utils/boardLayout";
 import type { CardType } from "../utils/cardType";
 import type { AnyCardStatus } from "../utils/backlog";
+import type { Role } from "../utils/session";
 
 export type Card = {
   _id?: string;
@@ -41,9 +42,14 @@ export type Tokens = {
 };
 
 export type PublicUser = {
+  _id: string;
   username: string;
   pictureUrl?: string;
+  role: Role;
 };
+
+// Admin: fields left out keep their value
+export type UserChanges = { username?: string; role?: Role };
 
 // ⭐ AUTH
 export const registerUser = (user: User) => api.post("/auth/register", user);
@@ -82,6 +88,16 @@ export const getLayout = () => api.get<Partial<UserLayout>>("/user/layout");
 
 export const saveLayout = (layout: UserLayout) => api.put("/user/layout", layout);
 
+// ⭐ ADMIN (the backend returns 403 for other users)
+// Renaming or changing the role logs the user out; their cards follow the new name
+export const updateUser = (id: string, changes: UserChanges) => api.patch<PublicUser>(`/user/${id}`, changes);
+
+// Only users without cards can be deleted (409 otherwise)
+export const deleteUser = (id: string) => api.delete(`/user/${id}`);
+
+// Revokes all the user's refresh tokens
+export const revokeUserSessions = (id: string) => api.post(`/user/${id}/logout`);
+
 export default {
   registerUser,
   loginUser,
@@ -95,4 +111,7 @@ export default {
   getLayout,
   saveLayout,
   deleteCard,
+  updateUser,
+  deleteUser,
+  revokeUserSessions,
 };

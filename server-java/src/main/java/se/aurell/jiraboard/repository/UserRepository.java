@@ -15,7 +15,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     boolean existsByUsername(String username);
 
-    @Query("select new se.aurell.jiraboard.dto.UserResponse(u.id, u.username, u.pictureUrl) from User u")
+    @Query("select new se.aurell.jiraboard.dto.UserResponse(u.id, u.username, u.pictureUrl, u.role) from User u")
     List<UserResponse> findAllPublic();
 
     @Query("select u.username from User u")

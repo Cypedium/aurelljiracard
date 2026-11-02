@@ -3,19 +3,21 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { handleLogout } from '../utils/logout';
-import { getUsername, hasSession } from '../utils/session';
+import { getUsername, hasSession, isAdmin } from '../utils/session';
 import { ArrowRightStartOnRectangleIcon, Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 
 const Navbar = () => {
   const pathname = usePathname();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userName, setUserName] = useState('');
+  const [admin, setAdmin] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
   // Re-check on every navigation so login/logout is reflected immediately
   useEffect(() => {
     setIsLoggedIn(hasSession());
     setUserName(getUsername());
+    setAdmin(isAdmin());
   }, [pathname]);
 
   return (
@@ -44,6 +46,12 @@ const Navbar = () => {
             <li onClick={() => setMenuOpen(false)}>
               <Link href="/backlog">Backlog</Link>
             </li>
+            {/* Bara för admin; backend nekar andra (403) */}
+            {admin && (
+              <li onClick={() => setMenuOpen(false)}>
+                <Link href="/users">Users</Link>
+              </li>
+            )}
           </>
         )}
 
