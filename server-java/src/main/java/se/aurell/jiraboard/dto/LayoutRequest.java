@@ -1,6 +1,7 @@
 package se.aurell.jiraboard.dto;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -29,5 +30,11 @@ public record LayoutRequest(
             @NotBlank(message = HEADER_MESSAGE) @Size(max = 50, message = HEADER_MESSAGE) String title,
             // Optional; must match HEX_COLOR in server/controllers/userController.js
             @Pattern(regexp = "^#[0-9a-fA-F]{6}$", message = COLOR_MESSAGE) String color) {
+
+        // Backlog is not a board column, so it has no header
+        @AssertTrue(message = HEADER_MESSAGE)
+        boolean isBoardColumn() {
+            return key == null || key.isBoardColumn();
+        }
     }
 }

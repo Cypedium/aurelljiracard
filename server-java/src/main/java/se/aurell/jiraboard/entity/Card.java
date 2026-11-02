@@ -34,6 +34,10 @@ public class Card {
     @Column(nullable = false, length = 32)
     private String username;
 
+    // Who works on the card; null in the backlog
+    @Column(length = 32)
+    private String assignee;
+
     // Set on create, never changed
     @Column(name = "submitted_at", nullable = false, updatable = false)
     private Instant submittedAt;
@@ -87,6 +91,14 @@ public class Card {
 
     public String getUsername() {
         return username;
+    }
+
+    public String getAssignee() {
+        return assignee;
+    }
+
+    public void setAssignee(String assignee) {
+        this.assignee = assignee;
     }
 
     public Instant getSubmittedAt() {

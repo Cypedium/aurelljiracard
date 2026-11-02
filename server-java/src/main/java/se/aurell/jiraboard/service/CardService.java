@@ -40,10 +40,12 @@ public class CardService {
         if (request.type() != null) {
             card.setType(request.type());
         }
-        // Lets the board create a card directly in a column
+        // Lets the board create a card directly in a column, or in the backlog
         if (request.status() != null) {
             card.setStatus(request.status());
         }
+        // Cards on the board are assigned to their author; backlog cards to no one
+        card.setAssignee(card.getStatus().isBoardColumn() ? user.username() : null);
         saveUnique(card);
     }
 
@@ -63,10 +65,18 @@ public class CardService {
         return CardResponse.from(saveUnique(card));
     }
 
-    /** Any logged-in user may move a card between columns, like in Jira. */
+    /**
+     * Any logged-in user may move a card between columns, like in Jira. Taking a card from the
+     * backlog assigns it to the caller; moving it to the backlog unassigns it.
+     */
     @Transactional
-    public CardResponse updateStatus(UUID id, CardStatus status) {
+    public CardResponse updateStatus(UUID id, CardStatus status, AuthUser user) {
         Card card = findCard(id);
+        if (!status.isBoardColumn()) {
+            card.setAssignee(null);
+        } else if (!card.getStatus().isBoardColumn()) {
+            card.setAssignee(user.username());
+        }
         card.setStatus(status);
         return CardResponse.from(card);
     }

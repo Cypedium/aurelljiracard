@@ -6,12 +6,16 @@ import java.util.Arrays;
 import java.util.stream.Collectors;
 import se.aurell.jiraboard.exception.ApiException;
 
-/** Board column, shared by all users. Must match DEFAULT_HEADERS keys in frontend/app/utils/boardLayout.ts. */
+/**
+ * Board column, shared by all users. Must match DEFAULT_HEADERS keys in frontend/app/utils/boardLayout.ts.
+ * BACKLOG is not a board column: backlog cards are listed on /backlog and have no assignee.
+ */
 public enum CardStatus {
     TODO("todo"),
     IN_PROGRESS("in-progress"),
     TEST("test"),
-    DONE("done");
+    DONE("done"),
+    BACKLOG("backlog");
 
     public static final CardStatus DEFAULT = TODO;
 
@@ -28,6 +32,10 @@ public enum CardStatus {
     @JsonValue
     public String getValue() {
         return value;
+    }
+
+    public boolean isBoardColumn() {
+        return this != BACKLOG;
     }
 
     @JsonCreator
