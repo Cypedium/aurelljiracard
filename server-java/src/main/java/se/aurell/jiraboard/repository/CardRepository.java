@@ -12,4 +12,6 @@ public interface CardRepository extends JpaRepository<Card, UUID> {
     boolean existsByProductId(String productId);
 
     boolean existsByProductIdAndIdNot(String productId, UUID id);
+
+    boolean existsByUsername(String username);
 }

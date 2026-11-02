@@ -2,14 +2,18 @@ package se.aurell.jiraboard.entity;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 import java.util.Arrays;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 /** User role. Must match server/utils/role.js and frontend/app/utils/session.ts. */
 public enum Role {
     USER("user"),
-    // May delete any card
+    // May edit and delete any card and manage users
     ADMIN("admin");
 
     public static final Role DEFAULT = USER;
+
+    public static final String ALLOWED = Arrays.stream(values()).map(Role::getValue).collect(Collectors.joining(", "));
 
     private final String value;
 
@@ -20,6 +24,11 @@ public enum Role {
     @JsonValue
     public String getValue() {
         return value;
+    }
+
+    /** Strict lookup for request bodies; empty for unknown values. */
+    public static Optional<Role> parse(String value) {
+        return Arrays.stream(values()).filter(r -> r.value.equals(value)).findFirst();
     }
 
     /** Unknown or missing values (e.g. tokens issued before roles existed) read as {@link #DEFAULT}. */
