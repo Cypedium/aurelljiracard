@@ -10,7 +10,10 @@ export const PRIORITIES = [1, 2, 3, 4, 5];
 
 // Samma gränser och meddelanden som backend (server/controllers/cardController.js)
 export const COMMENT_MAX_LENGTH = 2000;
-export const PRODUCT_ID_MAX_LENGTH = 200;
+// Issue key i Jira-format, t.ex. MA-100: bokstäver, bindestreck, siffror
+export const PRODUCT_ID_MAX_LENGTH = 6;
+export const PRODUCT_ID_PATTERN = /^[A-Za-z]+-[0-9]+$/;
+export const PRODUCT_ID_MESSAGE = `Issue key must look like MA-100: letters, a hyphen and digits (max ${PRODUCT_ID_MAX_LENGTH} characters).`;
 const PROFANITY_MESSAGE = "Your text contains inappropriate language. Please remove it and try again.";
 const isClean = (text: string) => !leoProfanity.check(text);
 
@@ -20,7 +23,7 @@ const requiredText = (max: number, message: string) =>
 export const cardFormSchema = z.object({
   type: z.enum(CARD_TYPES.map((t) => t.key) as [CardType, ...CardType[]]),
   comment: requiredText(COMMENT_MAX_LENGTH, `Summary is required (max ${COMMENT_MAX_LENGTH} characters).`),
-  productId: requiredText(PRODUCT_ID_MAX_LENGTH, `Issue key is required (max ${PRODUCT_ID_MAX_LENGTH} characters).`),
+  productId: requiredText(PRODUCT_ID_MAX_LENGTH, PRODUCT_ID_MESSAGE).regex(PRODUCT_ID_PATTERN, PRODUCT_ID_MESSAGE),
   // 0 = inget valt än
   rating: z.number().int().min(1, "Please select a priority.").max(5, "Please select a priority."),
 });

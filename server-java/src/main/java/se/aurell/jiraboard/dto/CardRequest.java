@@ -4,6 +4,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import se.aurell.jiraboard.entity.CardStatus;
 import se.aurell.jiraboard.entity.CardType;
@@ -22,8 +23,9 @@ public record CardRequest(
         @Size(max = 2000, message = "Summary is required (max 2000 characters).")
         String comment,
 
-        @NotBlank(message = "Issue key is required (max 200 characters).")
-        @Size(max = 200, message = "Issue key is required (max 200 characters).")
+        @NotNull(message = PRODUCT_ID_MESSAGE)
+        @Size(max = 6, message = PRODUCT_ID_MESSAGE)
+        @Pattern(regexp = "^[A-Za-z]+-[0-9]+$", message = PRODUCT_ID_MESSAGE)
         String productId,
 
         CardType type,
@@ -31,4 +33,7 @@ public record CardRequest(
         CardStatus status) {
 
     static final String RATING_MESSAGE = "Rating must be an integer between 1 and 5.";
+    // Issue key in Jira format, e.g. MA-100 (same rule as server/ and the frontend)
+    static final String PRODUCT_ID_MESSAGE =
+            "Issue key must look like MA-100: letters, a hyphen and digits (max 6 characters).";
 }

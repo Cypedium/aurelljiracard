@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { submitCard, updateCard, type Card as CardData } from '..//../api/endpoints';
 import { toast } from 'sonner';
-import { EMPTY_CARD_FORM, PRIORITIES, cardFormSchema, cardToFormValues, type CardFormValues } from '../../utils/cardForm';
+import { EMPTY_CARD_FORM, PRIORITIES, PRODUCT_ID_MAX_LENGTH, cardFormSchema, cardToFormValues, type CardFormValues } from '../../utils/cardForm';
 import { apiErrorMessage, isConflictError } from '../../utils/apiError';
 import { FIELD_ERROR_CLASS, FORM_ITEM_CLASS, LABEL_CLASS, SECTION_PADDING } from '../../utils/styles';
 import type { CardStatus } from '../../utils/boardLayout';
@@ -136,7 +136,7 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
               <FormItem className={FORM_ITEM_CLASS}>
                 <FormLabel className={LABEL_CLASS}>Issue key {required}</FormLabel>
                 <FormControl>
-                  <Input className="bg-white text-jira-text" placeholder="e.g. AGB-12" {...field} />
+                  <Input className="bg-white text-jira-text" placeholder="e.g. MA-100" maxLength={PRODUCT_ID_MAX_LENGTH} {...field} />
                 </FormControl>
                 <FormMessage className={FIELD_ERROR_CLASS} />
               </FormItem>

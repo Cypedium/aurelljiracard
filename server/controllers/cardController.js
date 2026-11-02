@@ -6,7 +6,10 @@ const { CARD_TYPES } = require("../utils/cardType");
 const { ADMIN_ROLE } = require("../utils/role");
 
 const COMMENT_MAX_LENGTH = 2000;
-const PRODUCT_ID_MAX_LENGTH = 200;
+// Issue key in Jira format, e.g. MA-100 (same rule as frontend/app/utils/cardForm.ts)
+const PRODUCT_ID_MAX_LENGTH = 6;
+const PRODUCT_ID_PATTERN = /^[A-Za-z]+-[0-9]+$/;
+const PRODUCT_ID_MESSAGE = `Issue key must look like MA-100: letters, a hyphen and digits (max ${PRODUCT_ID_MAX_LENGTH} characters).`;
 const DUPLICATE_KEY_MESSAGE = "Issue key already exists.";
 const DUPLICATE_KEY_ERROR = 11000;
 
@@ -28,8 +31,8 @@ const validateCardFields = ({ rating, comment, productId, type }) => {
   if (!isNonEmptyString(comment, COMMENT_MAX_LENGTH)) {
     return `Summary is required (max ${COMMENT_MAX_LENGTH} characters).`;
   }
-  if (!isNonEmptyString(productId, PRODUCT_ID_MAX_LENGTH)) {
-    return `Issue key is required (max ${PRODUCT_ID_MAX_LENGTH} characters).`;
+  if (!isNonEmptyString(productId, PRODUCT_ID_MAX_LENGTH) || !PRODUCT_ID_PATTERN.test(productId)) {
+    return PRODUCT_ID_MESSAGE;
   }
   if (type !== undefined && (typeof type !== "string" || !CARD_TYPES.includes(type))) {
     return `Type must be one of: ${CARD_TYPES.join(", ")}.`;
