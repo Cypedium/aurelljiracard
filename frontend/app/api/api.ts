@@ -1,4 +1,11 @@
 import axios from "axios";
+import { toast } from "sonner";
+import {
+  LOADING_TOAST_DELAY_MS,
+  LOADING_TOAST_ID,
+  LOADING_TOAST_TEXT,
+  createLoadingTracker,
+} from "../utils/loadingToast";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -6,9 +13,17 @@ const api = axios.create({
   baseURL: API_URL,
 });
 
+// Långsamma anrop (t.ex. cold start i produktion) visar en loading-toast
+const loadingTracker = createLoadingTracker(
+  () => toast.loading(LOADING_TOAST_TEXT, { id: LOADING_TOAST_ID }),
+  () => toast.dismiss(LOADING_TOAST_ID),
+  LOADING_TOAST_DELAY_MS
+);
+
 // ⭐ REQUEST INTERCEPTOR — lägg till accessToken automatiskt
 api.interceptors.request.use(
   (config) => {
+    loadingTracker.start();
     const token = localStorage.getItem("accessToken");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -30,10 +45,7 @@ const processQueue = (error: any, token: string | null = null) => {
   failedQueue = [];
 };
 
-api.interceptors.response.use(
-  (response) => response,
-
-  async (error) => {
+const handleResponseError = async (error: any) => {
     const originalRequest = error.config;
 
     // AccessToken expired → 401. Inte för /auth/*: där betyder 401 t.ex. fel lösenord
@@ -99,7 +111,15 @@ api.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  }
+};
+
+api.interceptors.response.use(
+  (response) => {
+    loadingTracker.done();
+    return response;
+  },
+  // done() först när ev. refresh + omkörning är klar, så toasten inte blinkar
+  (error) => handleResponseError(error).finally(() => loadingTracker.done())
 );
 
 export default api;
