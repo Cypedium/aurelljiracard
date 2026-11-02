@@ -389,8 +389,8 @@ export default function Home() {
                       </span>
 
                       <div className="flex shrink-0 items-center">
-                        {/* Edit bara på egna kort; delete på egna, eller alla för admin */}
-                        {canEditCard(fb, userName) && (
+                        {/* Edit och delete på egna kort, eller alla för admin */}
+                        {canEditCard(fb, userName, admin) && (
                           <button
                             className={CARD_ACTION_CLASS}
                             aria-label="Edit card"

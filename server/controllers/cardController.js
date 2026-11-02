@@ -90,7 +90,8 @@ exports.update = async (req, res) => {
     if (!card) {
       return res.status(404).json({ message: "Card not found." });
     }
-    if (card.username !== req.user.username) {
+    // The author or an admin may edit; the author never changes
+    if (card.username !== req.user.username && req.user.role !== ADMIN_ROLE) {
       return res.status(403).json({ message: "You can only edit your own card." });
     }
     // Keeping the card's own key is fine (no $ne: sanitizeFilter would neutralise it)

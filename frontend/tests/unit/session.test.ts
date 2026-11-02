@@ -66,10 +66,11 @@ describe("card permissions", () => {
   const others = { _id: "2", username: "bob" };
   const unsaved = { username: "alice" };
 
-  it("only lets the author edit", () => {
-    expect(canEditCard(own, "alice")).toBe(true);
-    expect(canEditCard(others, "alice")).toBe(false);
-    expect(canEditCard(unsaved, "alice")).toBe(false);
+  it("lets the author or an admin edit", () => {
+    expect(canEditCard(own, "alice", false)).toBe(true);
+    expect(canEditCard(others, "alice", false)).toBe(false);
+    expect(canEditCard(others, "alice", true)).toBe(true);
+    expect(canEditCard(unsaved, "alice", true)).toBe(false);
   });
 
   it("lets the author or an admin delete", () => {

@@ -63,7 +63,7 @@ export const submitCard = (card: NewCard) =>
 
 export const getCards = () => api.get<Card[]>("/card");
 
-// Only the card's author may edit it; the backend returns the updated card
+// The author or an admin may edit a card; the backend returns the updated card
 export const updateCard = (id: string, card: NewCard) =>
   api.put<Card>(`/card/${id}`, card);
 
