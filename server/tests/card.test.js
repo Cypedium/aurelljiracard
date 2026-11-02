@@ -78,6 +78,19 @@ describe("POST /card", () => {
 
     expect(res.status).toBe(201);
     expect(Card.mock.calls[0][0].status).toBe("test");
+    expect(Card.mock.calls[0][0].assignee).toBe("alice");
+  });
+
+  it("creates a backlog card without an assignee", async () => {
+    Card.mockImplementation((doc) => ({ ...doc, save: jest.fn().mockResolvedValue({}) }));
+
+    const res = await request(app)
+      .post("/card")
+      .set("Authorization", authHeader("alice"))
+      .send({ ...validCard, status: "backlog" });
+
+    expect(res.status).toBe(201);
+    expect(Card.mock.calls[0][0]).toMatchObject({ status: "backlog", assignee: null, username: "alice" });
   });
 
   it("saves the issue type and always uses today's date", async () => {
@@ -225,8 +238,11 @@ describe("PUT /card/:id", () => {
 });
 
 describe("PATCH /card/:id/status", () => {
+  const storedCard = (fields) => ({ _id: CARD_ID, username: "bob", assignee: "bob", status: "todo", save: jest.fn(), ...fields });
+
   it("lets any logged-in user move a card and returns it", async () => {
-    Card.findByIdAndUpdate.mockReturnValue(query({ _id: CARD_ID, username: "bob", status: "done" }));
+    const card = storedCard();
+    Card.findById.mockResolvedValue(card);
 
     const res = await request(app)
       .patch(`/card/${CARD_ID}/status`)
@@ -234,23 +250,46 @@ describe("PATCH /card/:id/status", () => {
       .send({ status: "done" });
 
     expect(res.status).toBe(200);
-    expect(res.body.status).toBe("done");
-    expect(Card.findByIdAndUpdate).toHaveBeenCalledWith(CARD_ID, { status: "done" }, expect.any(Object));
+    expect(res.body).toMatchObject({ status: "done", assignee: "bob" });
+    expect(card.save).toHaveBeenCalled();
   });
 
   it("only updates the status, ignoring other fields in the body", async () => {
-    Card.findByIdAndUpdate.mockReturnValue(query({ _id: CARD_ID, status: "test" }));
+    Card.findById.mockResolvedValue(storedCard());
 
-    await request(app)
+    const res = await request(app)
       .patch(`/card/${CARD_ID}/status`)
       .set("Authorization", authHeader())
-      .send({ status: "test", comment: "hijack", username: "mallory" });
+      .send({ status: "test", comment: "hijack", username: "mallory", assignee: "mallory" });
 
-    expect(Card.findByIdAndUpdate.mock.calls[0][1]).toEqual({ status: "test" });
+    expect(res.body).toMatchObject({ status: "test", username: "bob", assignee: "bob" });
+    expect(res.body.comment).toBeUndefined();
+  });
+
+  it("assigns a card taken from the backlog to the caller", async () => {
+    Card.findById.mockResolvedValue(storedCard({ status: "backlog", assignee: null }));
+
+    const res = await request(app)
+      .patch(`/card/${CARD_ID}/status`)
+      .set("Authorization", authHeader("alice"))
+      .send({ status: "todo", assignee: "mallory" });
+
+    expect(res.body).toMatchObject({ status: "todo", assignee: "alice" });
+  });
+
+  it("unassigns a card moved to the backlog", async () => {
+    Card.findById.mockResolvedValue(storedCard({ status: "in-progress" }));
+
+    const res = await request(app)
+      .patch(`/card/${CARD_ID}/status`)
+      .set("Authorization", authHeader("alice"))
+      .send({ status: "backlog" });
+
+    expect(res.body).toMatchObject({ status: "backlog", assignee: null });
   });
 
   it("returns 404 for a missing card", async () => {
-    Card.findByIdAndUpdate.mockReturnValue(query(null));
+    Card.findById.mockResolvedValue(null);
 
     const res = await request(app).patch(`/card/${CARD_ID}/status`).set("Authorization", authHeader()).send({ status: "todo" });
 
@@ -266,7 +305,7 @@ describe("PATCH /card/:id/status", () => {
     const res = await request(app).patch(`/card/${id}/status`).set("Authorization", authHeader()).send(body);
 
     expect(res.status).toBe(400);
-    expect(Card.findByIdAndUpdate).not.toHaveBeenCalled();
+    expect(Card.findById).not.toHaveBeenCalled();
   });
 });
 

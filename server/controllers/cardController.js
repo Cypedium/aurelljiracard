@@ -1,7 +1,7 @@
 // server/controllers/cardController.js
 const Card = require("../models/Card");
 const { isNonEmptyString, isObjectId } = require("../utils/validate");
-const { CARD_STATUSES } = require("../utils/cardStatus");
+const { BACKLOG_STATUS, CARD_STATUSES } = require("../utils/cardStatus");
 const { CARD_TYPES } = require("../utils/cardType");
 const { ADMIN_ROLE } = require("../utils/role");
 
@@ -58,7 +58,9 @@ exports.create = async (req, res) => {
     }
     // Author always comes from the verified token, never from the request body.
     // submittedAt is always today (schema default), never from the body.
-    const newCard = new Card({ rating, comment, productId, username: req.user.username, status, type });
+    // Cards on the board are assigned to their author; backlog cards to no one
+    const assignee = status === BACKLOG_STATUS ? null : req.user.username;
+    const newCard = new Card({ rating, comment, productId, username: req.user.username, assignee, status, type });
     await newCard.save();
     res.status(201).json({ message: "Card saved successfully!" });
   } catch (error) {
@@ -113,7 +115,8 @@ exports.update = async (req, res) => {
   }
 };
 
-// Any logged-in user may move a card between columns, like in Jira
+// Any logged-in user may move a card between columns, like in Jira.
+// Taking a card from the backlog assigns it to the caller; moving it to the backlog unassigns it.
 exports.updateStatus = async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
@@ -126,14 +129,17 @@ exports.updateStatus = async (req, res) => {
   }
 
   try {
-    const card = await Card.findByIdAndUpdate(
-      id,
-      { status },
-      { returnDocument: "after", runValidators: true }
-    ).lean();
+    const card = await Card.findById(id);
     if (!card) {
       return res.status(404).json({ message: "Card not found." });
     }
+    if (status === BACKLOG_STATUS) {
+      card.assignee = null;
+    } else if (card.status === BACKLOG_STATUS) {
+      card.assignee = req.user.username;
+    }
+    card.status = status;
+    await card.save();
     res.status(200).json(card);
   } catch (error) {
     console.error("Update card status error:", error.message);

@@ -102,6 +102,7 @@ describe("layout", () => {
     [{ cols: "6" }],
     [{ cards: "nope" }],
     [{ headers: [{ key: "archived", title: "Archive" }] }],
+    [{ headers: [{ key: "backlog", title: "Backlog" }] }],
     [{ headers: [{ key: "todo", title: "   " }] }],
     [{ headers: [{ key: "todo", title: "x".repeat(51) }] }],
     [{ headers: [{ key: "todo", title: { $ne: null } }] }],

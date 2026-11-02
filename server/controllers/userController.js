@@ -1,7 +1,7 @@
 // server/controllers/userController.js
 const User = require("../models/User");
 const { isNonEmptyString } = require("../utils/validate");
-const { CARD_STATUSES } = require("../utils/cardStatus");
+const { BOARD_STATUSES } = require("../utils/cardStatus");
 
 const MIN_COLS = 1;
 const MAX_COLS = 12;
@@ -14,7 +14,7 @@ const HEADER_COLOR_MESSAGE = "Header color must be a hex color like #eed7fc.";
 const isValidHeader = (h) =>
   h !== null &&
   typeof h === "object" &&
-  CARD_STATUSES.includes(h.key) &&
+  BOARD_STATUSES.includes(h.key) &&
   isNonEmptyString(h.title, HEADER_TITLE_MAX_LENGTH);
 
 // Color is optional; null or missing means the default list color

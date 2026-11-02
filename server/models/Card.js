@@ -8,6 +8,8 @@ const cardSchema = new mongoose.Schema({
     // Issue key, unique across all cards
     productId: { type: String, required: true, unique: true },
     username: { type: String, required: true },
+    // Who works on the card; null in the backlog. Cards created before assignees existed read as the author
+    assignee: { type: String, default: null },
     submittedAt: { type: Date, default: Date.now },
     // Board column, shared by all users
     status: { type: String, enum: CARD_STATUSES, default: DEFAULT_CARD_STATUS },
