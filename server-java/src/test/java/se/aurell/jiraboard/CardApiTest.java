@@ -172,7 +172,31 @@ class CardApiTest extends ApiIntegrationTest {
         mvc.perform(bearer(json(patch("/card/" + id + "/status"), """
                 {"status": "done"}"""), accessToken("bob")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("done"));
+                .andExpect(jsonPath("$.status").value("done"))
+                .andExpect(jsonPath("$.assignee").value("alice"));
+    }
+
+    @Test
+    void backlogCardIsUnassignedUntilSomeoneTakesIt() throws Exception {
+        String alice = accessToken("alice");
+        String bob = accessToken("bob");
+        String id = createCard(alice, """
+                {"rating": 2, "comment": "Later", "productId": "AJB-3", "status": "backlog"}""");
+
+        mvc.perform(bearer(get("/card"), alice))
+                .andExpect(jsonPath("$[0].status").value("backlog"))
+                .andExpect(jsonPath("$[0].username").value("alice"))
+                .andExpect(jsonPath("$[0].assignee").doesNotExist());
+
+        mvc.perform(bearer(json(patch("/card/" + id + "/status"), """
+                {"status": "todo", "assignee": "mallory"}"""), bob))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("todo"))
+                .andExpect(jsonPath("$.assignee").value("bob"));
+
+        mvc.perform(bearer(json(patch("/card/" + id + "/status"), """
+                {"status": "backlog"}"""), bob))
+                .andExpect(jsonPath("$.assignee").doesNotExist());
     }
 
     @Test
@@ -183,7 +207,7 @@ class CardApiTest extends ApiIntegrationTest {
         mvc.perform(bearer(json(patch("/card/" + id + "/status"), """
                 {"status": "blocked"}"""), token))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Status must be one of: todo, in-progress, test, done."));
+                .andExpect(jsonPath("$.message").value("Status must be one of: todo, in-progress, test, done, backlog."));
     }
 
     @Test

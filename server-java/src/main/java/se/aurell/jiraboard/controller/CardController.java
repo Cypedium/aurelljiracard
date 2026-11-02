@@ -51,8 +51,9 @@ public class CardController {
     }
 
     @PatchMapping("/{id}/status")
-    public CardResponse updateStatus(@PathVariable UUID id, @Valid @RequestBody CardStatusRequest request) {
-        return cardService.updateStatus(id, request.status());
+    public CardResponse updateStatus(@PathVariable UUID id, @Valid @RequestBody CardStatusRequest request,
+            @AuthenticationPrincipal AuthUser user) {
+        return cardService.updateStatus(id, request.status(), user);
     }
 
     @DeleteMapping("/{id}")

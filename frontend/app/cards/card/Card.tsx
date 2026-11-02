@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { EMPTY_CARD_FORM, PRIORITIES, PRODUCT_ID_MAX_LENGTH, cardFormSchema, cardToFormValues, type CardFormValues } from '../../utils/cardForm';
 import { apiErrorMessage, isConflictError } from '../../utils/apiError';
 import { FIELD_ERROR_CLASS, FORM_ITEM_CLASS, LABEL_CLASS, SECTION_PADDING } from '../../utils/styles';
-import type { CardStatus } from '../../utils/boardLayout';
+import type { AnyCardStatus } from '../../utils/backlog';
 import IssueTypeSelect from '../../components/IssueTypeSelect';
 import { Button } from '../../components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../../components/ui/form';
@@ -19,8 +19,8 @@ type CardProps = {
   card?: CardData;
   onSaved?: (card: CardData) => void;
   onCancel?: () => void;
-  // Board column for a new card ("Add a card" on the board); defaults to To Do
-  status?: CardStatus;
+  // Board column for a new card ("Add a card" on the board) or "backlog"; defaults to To Do
+  status?: AnyCardStatus;
   // Called after a new card is created; without it the page redirects home
   onCreated?: () => void;
 };

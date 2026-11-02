@@ -14,12 +14,13 @@ public record CardResponse(
         String comment,
         String productId,
         String username,
+        String assignee,
         Instant submittedAt,
         CardStatus status,
         CardType type) {
 
     public static CardResponse from(Card card) {
         return new CardResponse(card.getId(), card.getRating(), card.getComment(), card.getProductId(),
-                card.getUsername(), card.getSubmittedAt(), card.getStatus(), card.getType());
+                card.getUsername(), card.getAssignee(), card.getSubmittedAt(), card.getStatus(), card.getType());
     }
 }
