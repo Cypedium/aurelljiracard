@@ -59,7 +59,7 @@ import { canDeleteCard, canEditCard, getUsername, isAdmin } from "../utils/sessi
 import { formatShortDate } from "../utils/date";
 import { apiErrorMessage } from "../utils/apiError";
 import { assigneeOf, boardCards, type AnyCardStatus } from "../utils/backlog";
-import { CARD_ACTION_CLASS, CARD_HOVER_CLASS, listColor } from "../utils/styles";
+import { CARD_ACTION_CLASS, CARD_HOVER_CLASS, LIST_BUTTON_HOVER_CLASS, listColor } from "../utils/styles";
 
 export default function Home() {
   const [cards, setCards] = useState<Card[]>([]);
@@ -375,7 +375,7 @@ export default function Home() {
                 </div>
                 <button
                   type="button"
-                  className={`pointer-events-auto flex h-8 shrink-0 items-center gap-2 rounded-lg px-2 text-sm font-medium hover:bg-black/10 ${listColor(h).className}`}
+                  className={`pointer-events-auto flex h-8 shrink-0 items-center gap-2 rounded-lg px-2 text-sm font-medium ${LIST_BUTTON_HOVER_CLASS} ${listColor(h).className}`}
                   style={listColor(h).style}
                   onClick={() => setCreatingIn(h.key)}
                 >

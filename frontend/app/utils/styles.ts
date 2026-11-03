@@ -16,6 +16,9 @@ export const LIST_COLOR_CLASS: Record<CardStatus, string> = {
   done: "bg-list-done text-list-done-text",
 };
 
+// Mörkare vid hover även när listfärgen är en inline style (som slår hover:bg-*)
+export const LIST_BUTTON_HOVER_CLASS = "hover:shadow-[inset_0_0_0_100vmax_rgba(0,0,0,0.1)]";
+
 // Listans färg: användarens egen (inline style, text med bäst kontrast) eller standardklassen
 export const listColor = (header: BoardHeader): { className: string; style?: React.CSSProperties } =>
   header.color
