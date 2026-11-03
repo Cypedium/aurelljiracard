@@ -1,13 +1,13 @@
 import { logoutUser } from "../api/endpoints";
+import { SESSION_KEYS, clearLegacySession } from "./session";
 
 export const clearSession = () => {
-  localStorage.removeItem("accessToken");
-  localStorage.removeItem("refreshToken");
-  localStorage.removeItem("username");
+  SESSION_KEYS.forEach((k) => sessionStorage.removeItem(k));
+  clearLegacySession();
 };
 
 export const handleLogout = async () => {
-  const refreshToken = localStorage.getItem("refreshToken");
+  const refreshToken = sessionStorage.getItem("refreshToken");
 
   try {
     // Revokes the refresh token server-side

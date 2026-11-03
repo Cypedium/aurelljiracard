@@ -1,18 +1,22 @@
 import { beforeEach, describe, expect, it } from "@jest/globals";
 import { canDeleteCard, canEditCard, getRole, getUsername, hasSession, isAdmin, saveSession } from "../../app/utils/session";
 
-// Tests run in Node, so provide a minimal in-memory localStorage
-const store = new Map<string, string>();
-Object.defineProperty(globalThis, "localStorage", {
-  value: {
-    getItem: (k: string) => store.get(k) ?? null,
-    setItem: (k: string, v: string) => store.set(k, v),
-    removeItem: (k: string) => store.delete(k),
-  },
+// Tests run in Node, so provide minimal in-memory sessionStorage and localStorage
+const memoryStorage = (map: Map<string, string>) => ({
+  getItem: (k: string) => map.get(k) ?? null,
+  setItem: (k: string, v: string) => map.set(k, v),
+  removeItem: (k: string) => map.delete(k),
 });
+const store = new Map<string, string>();
+const legacyStore = new Map<string, string>();
+Object.defineProperty(globalThis, "sessionStorage", { value: memoryStorage(store) });
+Object.defineProperty(globalThis, "localStorage", { value: memoryStorage(legacyStore) });
 
 describe("session", () => {
-  beforeEach(() => store.clear());
+  beforeEach(() => {
+    store.clear();
+    legacyStore.clear();
+  });
 
   it("has no session or username when nothing is stored", () => {
     expect(hasSession()).toBe(false);
@@ -27,6 +31,19 @@ describe("session", () => {
     expect(store.get("refreshToken")).toBe("rt");
     expect(hasSession()).toBe(true);
     expect(getUsername()).toBe("alice");
+  });
+
+  it("ignores and removes a login left in localStorage by older versions", () => {
+    legacyStore.set("accessToken", "old-at");
+    legacyStore.set("refreshToken", "old-rt");
+    legacyStore.set("username", "alice");
+    legacyStore.set("user_layout", "{}");
+
+    expect(hasSession()).toBe(false);
+
+    saveSession("alice", "at", "rt");
+
+    expect([...legacyStore.keys()]).toEqual(["user_layout"]);
   });
 
   it("counts a refresh token alone as a session", () => {

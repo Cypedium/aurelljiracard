@@ -3,8 +3,8 @@ import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios";
 import api from "../../app/api/api";
 import { loginUser } from "../../app/api/endpoints";
 
-// Tests run in Node: minimal localStorage with a stale refresh token
-Object.defineProperty(globalThis, "localStorage", {
+// Tests run in Node: minimal sessionStorage with a stale refresh token
+Object.defineProperty(globalThis, "sessionStorage", {
   value: { getItem: (k: string) => (k === "refreshToken" ? "rt" : null), setItem: () => {}, removeItem: () => {} },
 });
 
