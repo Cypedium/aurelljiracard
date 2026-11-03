@@ -19,12 +19,14 @@ export const BOARD_COLS = DEFAULT_HEADERS.length;
 export const GRID_MARGIN = 10;
 export const HEADER_HEIGHT = 44;
 export const ROW_HEIGHT = 150;
-// "Add a card"-knappen längst ner i varje lista
-export const FOOTER_HEIGHT = 44;
+// "Add a card"-knappen under rubriken, ovanför korten
+export const ADD_BUTTON_HEIGHT = 40;
+// Korten börjar under rubrik och knapp
+export const CARDS_TOP = HEADER_HEIGHT + ADD_BUTTON_HEIGHT;
 
-// Listan växer med korten, som i Trello: rubrik + kort + knapp
+// Listan växer med korten: rubrik + knapp + kort (GRID_MARGIN luft under sista kortet)
 export const listHeight = (rows: number): number =>
-  HEADER_HEIGHT + rows * (ROW_HEIGHT + GRID_MARGIN) + FOOTER_HEIGHT;
+  CARDS_TOP + rows * (ROW_HEIGHT + GRID_MARGIN);
 
 export type UserLayout = {
   cols: number;

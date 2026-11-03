@@ -24,6 +24,7 @@ import {
   CardPosition,
   CardStatus,
   UserLayout,
+  CARDS_TOP,
   COLLAPSED_LIST_MAX_HEIGHT,
   DEFAULT_LIST_COLORS,
   DEFAULT_LAYOUT,
@@ -58,7 +59,7 @@ import { canDeleteCard, canEditCard, getUsername, isAdmin } from "../utils/sessi
 import { formatShortDate } from "../utils/date";
 import { apiErrorMessage } from "../utils/apiError";
 import { assigneeOf, boardCards, type AnyCardStatus } from "../utils/backlog";
-import { CARD_ACTION_CLASS, CARD_HOVER_CLASS, listColor } from "../utils/styles";
+import { CARD_ACTION_CLASS, CARD_HOVER_CLASS, LIST_BUTTON_HOVER_CLASS, listColor } from "../utils/styles";
 
 export default function Home() {
   const [cards, setCards] = useState<Card[]>([]);
@@ -319,7 +320,7 @@ export default function Home() {
               ) : (
               <div
                 key={h.key}
-                className="flex flex-col justify-between px-2 pb-2"
+                className="flex flex-col px-2"
                 style={{ gridColumn: `span ${columns.spans[i].span}`, height: listHeight(columnRows[i]) }}
               >
                 <div
@@ -374,7 +375,7 @@ export default function Home() {
                 </div>
                 <button
                   type="button"
-                  className={`pointer-events-auto flex h-8 items-center gap-2 rounded-lg px-2 text-sm font-medium hover:bg-black/10 ${listColor(h).className}`}
+                  className={`pointer-events-auto flex h-8 shrink-0 items-center gap-2 rounded-lg px-2 text-sm font-medium ${LIST_BUTTON_HOVER_CLASS} ${listColor(h).className}`}
                   style={listColor(h).style}
                   onClick={() => setCreatingIn(h.key)}
                 >
@@ -396,7 +397,7 @@ export default function Home() {
               rowHeight={ROW_HEIGHT}
               width={width}
               margin={[GRID_MARGIN, GRID_MARGIN]}
-              containerPadding={[GRID_MARGIN, HEADER_HEIGHT]}
+              containerPadding={[GRID_MARGIN, CARDS_TOP]}
               dragConfig={{ cancel: ".no-drag" }}
               // Korten har fast storlek (1x1), så inget resize-handtag
               resizeConfig={{ enabled: false }}

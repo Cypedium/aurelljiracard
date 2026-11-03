@@ -10,7 +10,8 @@ import {
   snapGridX,
   toGridLayout,
   DEFAULT_LAYOUT,
-  FOOTER_HEIGHT,
+  ADD_BUTTON_HEIGHT,
+  CARDS_TOP,
   GRID_MARGIN,
   HEADER_HEIGHT,
   HEADER_TITLE_MAX_LENGTH,
@@ -209,8 +210,9 @@ describe("buildCardLayout", () => {
 });
 
 describe("listHeight", () => {
-  it("fits the header, one row per card and the add button", () => {
-    expect(listHeight(0)).toBe(HEADER_HEIGHT + FOOTER_HEIGHT);
+  it("fits the header, the add button and one row per card", () => {
+    expect(listHeight(0)).toBe(HEADER_HEIGHT + ADD_BUTTON_HEIGHT);
+    expect(listHeight(0)).toBe(CARDS_TOP);
     expect(listHeight(2)).toBe(listHeight(0) + 2 * (ROW_HEIGHT + GRID_MARGIN));
   });
 });
