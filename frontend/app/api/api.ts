@@ -24,7 +24,7 @@ const loadingTracker = createLoadingTracker(
 api.interceptors.request.use(
   (config) => {
     loadingTracker.start();
-    const token = localStorage.getItem("accessToken");
+    const token = sessionStorage.getItem("accessToken");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -53,7 +53,7 @@ const handleResponseError = async (error: any) => {
     if (error.response?.status === 401 && !originalRequest._retry && !isAuthRequest) {
       originalRequest._retry = true;
 
-      const refreshToken = localStorage.getItem("refreshToken");
+      const refreshToken = sessionStorage.getItem("refreshToken");
       if (!refreshToken) {
         //console.warn("No refresh token — redirecting to login");
         window.location.href = "/login";
@@ -81,8 +81,8 @@ const handleResponseError = async (error: any) => {
         const newRefreshToken = res.data.refreshToken;
 
         // ⭐ Uppdatera båda tokens
-        localStorage.setItem("accessToken", newAccessToken);
-        localStorage.setItem("refreshToken", newRefreshToken);
+        sessionStorage.setItem("accessToken", newAccessToken);
+        sessionStorage.setItem("refreshToken", newRefreshToken);
 
         // Uppdatera default header
         api.defaults.headers.common.Authorization = `Bearer ${newAccessToken}`;
@@ -99,8 +99,8 @@ const handleResponseError = async (error: any) => {
         processQueue(refreshError, null);
 
         // Tokens ogiltiga → logga ut
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
+        sessionStorage.removeItem("accessToken");
+        sessionStorage.removeItem("refreshToken");
         window.location.href = "/login";
 
         return Promise.reject(refreshError);
