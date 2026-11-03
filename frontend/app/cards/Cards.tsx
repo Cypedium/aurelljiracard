@@ -1,7 +1,8 @@
 "use client";
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { ResponsiveGridLayout, useContainerWidth } from "react-grid-layout";
-import { MinusIcon, PencilIcon, PlusIcon, TrashIcon } from "@heroicons/react/16/solid";
+import { gridBounds, type LayoutConstraint } from "react-grid-layout/core";
+import { EyeIcon, EyeSlashIcon, PencilIcon, PlusIcon, TrashIcon } from "@heroicons/react/16/solid";
 import IssueTypeIcon from "../components/IssueTypeIcon";
 import ColumnColorPicker from "../components/ColumnColorPicker";
 import debounce from "lodash.debounce";
@@ -20,26 +21,33 @@ import {
 import { deleteCard, getCards, getLayout, saveLayout, updateCardStatus, type Card } from "../api/endpoints";
 import CardForm from "./card/Card";
 import {
+  CardPosition,
   CardStatus,
   UserLayout,
-  BOARD_COLS,
+  COLLAPSED_LIST_MAX_HEIGHT,
   DEFAULT_LIST_COLORS,
   DEFAULT_LAYOUT,
   GRID_MARGIN,
   HEADER_HEIGHT,
   HEADER_TITLE_MAX_LENGTH,
   ROW_HEIGHT,
+  boardColumns,
   buildCardLayout,
   cardKey,
+  columnAtGridX,
   countCardsPerColumn,
+  fromGridLayout,
   listHeight,
+  mobileBoardWidth,
   normalizeCollapsed,
   normalizeLayout,
   recolorHeader,
   renameHeader,
   rowsPerColumn,
+  snapGridX,
   splitByCollapsed,
   statusForColumn,
+  toGridLayout,
   toSavedPositions,
   toggleCollapsed,
 } from "../utils/boardLayout";
@@ -148,6 +156,20 @@ export default function Home() {
   const { visible: visibleLayout, hidden: hiddenLayout } = splitByCollapsed(gridLayout, collapsed);
   const visibleIds = new Set(visibleLayout.map((l) => l.i));
 
+  // Dolda listor blir smala remsor; gridden räknar i enheter i stället för kolumner
+  const columns = useMemo(() => boardColumns(collapsed), [collapsed]);
+  // Kort snäpper till närmaste synliga lista medan de dras
+  const constraints = useMemo<LayoutConstraint[]>(
+    () => [
+      gridBounds,
+      { name: "boardColumn", constrainPosition: (_item, x, y) => ({ x: snapGridX(columns, x), y }) },
+    ],
+    [columns],
+  );
+  // Gridens positioner (enheter) → sparade positioner (kolumner), plus korten i dolda listor
+  const savedPositions = (currentLayout: readonly CardPosition[]) =>
+    toSavedPositions([...fromGridLayout(currentLayout, columns), ...hiddenLayout]);
+
   // 🔥 Spara layout till server via api.ts
   const saveLayoutToServer = useCallback(
     debounce(async (newLayout: UserLayout) => {
@@ -229,7 +251,7 @@ export default function Home() {
   const columnGrid = {
     padding: `0 ${GRID_MARGIN}px`,
     gap: GRID_MARGIN,
-    gridTemplateColumns: `repeat(${BOARD_COLS}, 1fr)`,
+    gridTemplateColumns: `repeat(${columns.units}, 1fr)`,
   };
 
   return (
@@ -245,28 +267,60 @@ export default function Home() {
       >
         <div
           ref={containerRef}
-          // 400% = BOARD_COLS skärmbredder; gridden läser bredden via useContainerWidth
-          className="relative w-[400%] md:w-full"
-          style={{ minHeight: Math.max(...columnRows.map(listHeight)) + GRID_MARGIN }}
+          // En skärmbredd per synlig lista; gridden läser bredden via useContainerWidth
+          className="relative w-(--board-width) md:w-full"
+          style={
+            {
+              "--board-width": mobileBoardWidth(columns),
+              minHeight:
+                Math.max(...columnRows.map(listHeight), collapsed.length ? COLLAPSED_LIST_MAX_HEIGHT : 0) + GRID_MARGIN,
+            } as React.CSSProperties
+          }
         >
           {/* Listornas bakgrund, under korten */}
           <div className="pointer-events-none absolute inset-0 grid items-start" style={columnGrid}>
-            {userLayout.headers.map((h, i) => (
-              <div
-                key={h.key}
-                className={`snap-start rounded-xl shadow-[0_1px_1px_rgba(9,30,66,0.25)] ${listColor(h).className}`}
-                style={{ height: listHeight(columnRows[i]), ...listColor(h).style }}
-              />
-            ))}
+            {userLayout.headers.map((h, i) =>
+              columns.spans[i].collapsed ? (
+                // Remsan ritas i rubriklagret
+                <div key={h.key} className="snap-start" />
+              ) : (
+                <div
+                  key={h.key}
+                  className={`snap-start rounded-xl shadow-[0_1px_1px_rgba(9,30,66,0.25)] ${listColor(h).className}`}
+                  style={{
+                    gridColumn: `span ${columns.spans[i].span}`,
+                    height: listHeight(columnRows[i]),
+                    ...listColor(h).style,
+                  }}
+                />
+              ),
+            )}
           </div>
 
           {/* Rubrik (klicka för att byta namn) och "Add a card", ovanför gridden så att de går att klicka */}
           <div className="pointer-events-none absolute inset-0 z-[1] grid items-start" style={columnGrid}>
-            {userLayout.headers.map((h, i) => (
+            {userLayout.headers.map((h, i) =>
+              columns.spans[i].collapsed ? (
+                <button
+                  key={h.key}
+                  type="button"
+                  aria-label={`Show ${h.title}`}
+                  aria-expanded={false}
+                  title="Show list"
+                  className={`pointer-events-auto flex min-w-0 flex-col items-center gap-3 overflow-hidden rounded-xl px-1 py-3 shadow-[0_1px_1px_rgba(9,30,66,0.25)] hover:brightness-95 ${listColor(h).className}`}
+                  style={{ maxHeight: COLLAPSED_LIST_MAX_HEIGHT, ...listColor(h).style }}
+                  onClick={() => toggleColumn(h.key)}
+                >
+                  <EyeIcon className="size-4 shrink-0 opacity-80" aria-hidden />
+                  {/* Rubriken läses uppifrån och ner, som i Trello */}
+                  <span className="min-h-0 truncate text-sm font-semibold [writing-mode:vertical-rl]">{h.title}</span>
+                  <span className="shrink-0 text-sm opacity-80">{columnCounts[i]}</span>
+                </button>
+              ) : (
               <div
                 key={h.key}
                 className="flex flex-col justify-between px-2 pb-2"
-                style={{ height: listHeight(columnRows[i]) }}
+                style={{ gridColumn: `span ${columns.spans[i].span}`, height: listHeight(columnRows[i]) }}
               >
                 <div
                   className={`flex items-center gap-2 pr-1 ${listColor(h).className}`}
@@ -309,17 +363,13 @@ export default function Home() {
                   />
                   <button
                     type="button"
-                    aria-label={`${collapsed.includes(h.key) ? "Expand" : "Collapse"} ${h.title}`}
-                    aria-expanded={!collapsed.includes(h.key)}
-                    title={collapsed.includes(h.key) ? "Expand" : "Collapse"}
+                    aria-label={`Hide ${h.title}`}
+                    aria-expanded
+                    title="Hide list"
                     className="pointer-events-auto rounded-md p-1 opacity-70 hover:bg-black/10 hover:opacity-100"
                     onClick={() => toggleColumn(h.key)}
                   >
-                    {collapsed.includes(h.key) ? (
-                      <PlusIcon className="size-4" aria-hidden />
-                    ) : (
-                      <MinusIcon className="size-4" aria-hidden />
-                    )}
+                    <EyeSlashIcon className="size-4" aria-hidden />
                   </button>
                 </div>
                 <button
@@ -332,15 +382,17 @@ export default function Home() {
                   Add a card
                 </button>
               </div>
-            ))}
+              ),
+            )}
           </div>
 
           {!layoutLoaded || !mounted ? null : visibleLayout.length > 0 && (
             <ResponsiveGridLayout
               className="gridLayout"
-              layouts={{ lg: visibleLayout }}
+              layouts={{ lg: toGridLayout(visibleLayout, columns) }}
               breakpoints={{ lg: 0 }}
-              cols={{ lg: BOARD_COLS }}
+              cols={{ lg: columns.units }}
+              constraints={constraints}
               rowHeight={ROW_HEIGHT}
               width={width}
               margin={[GRID_MARGIN, GRID_MARGIN]}
@@ -349,14 +401,17 @@ export default function Home() {
               // Korten har fast storlek (1x1), så inget resize-handtag
               resizeConfig={{ enabled: false }}
               onLayoutChange={(currentLayout) => {
-                persistLayout({ ...userLayout, cards: toSavedPositions([...currentLayout, ...hiddenLayout]) });
+                persistLayout({ ...userLayout, cards: savedPositions(currentLayout) });
               }}
               onDragStop={(currentLayout, oldItem, newItem) => {
-                if (!oldItem || !newItem || oldItem.x === newItem.x) return;
+                if (!oldItem || !newItem) return;
+                const from = columnAtGridX(columns, oldItem.x);
+                const to = columnAtGridX(columns, newItem.x);
+                if (from === to) return;
                 // Spara radordningen direkt så att kortet inte hoppar när statusen ändras
-                persistLayout({ ...userLayout, cards: toSavedPositions([...currentLayout, ...hiddenLayout]) });
+                persistLayout({ ...userLayout, cards: savedPositions(currentLayout) });
                 const card = cards.find((fb, i) => cardKey(fb, i) === newItem.i);
-                if (card?._id) moveCard(card._id, statusForColumn(newItem.x));
+                if (card?._id) moveCard(card._id, statusForColumn(to));
               }}
             >
               {cards.filter((fb, i) => visibleIds.has(cardKey(fb, i))).map((fb) => (
