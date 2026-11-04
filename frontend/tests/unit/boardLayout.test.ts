@@ -223,15 +223,20 @@ describe("buildCardLayout", () => {
     ]);
   });
 
-  it("places cards without a saved row below the saved ones in their column", () => {
-    const saved = [{ id: "a", x: 0, y: 2, w: 1, h: 1 }];
-    expect(buildCardLayout(H, [{ id: "new" }, { id: "a" }], saved)[0]).toEqual({
-      i: "new",
-      x: 0,
-      y: 3,
-      w: 1,
-      h: 1,
-    });
+  it("places cards without a saved row (new cards) on top of their column", () => {
+    const saved = [
+      { id: "a", x: 0, y: 0, w: 1, h: 1 },
+      { id: "b", x: 0, y: 1, w: 1, h: 1 },
+      { id: "c", x: 2, y: 0, w: 1, h: 1 },
+    ];
+    const cards = [{ id: "new" }, { id: "newer" }, { id: "a" }, { id: "b" }, { id: "c", status: "test" }];
+    expect(buildCardLayout(H, cards, saved)).toEqual([
+      { i: "new", x: 0, y: 0, w: 1, h: 1 },
+      { i: "newer", x: 0, y: 1, w: 1, h: 1 },
+      { i: "a", x: 0, y: 2, w: 1, h: 1 },
+      { i: "b", x: 0, y: 3, w: 1, h: 1 },
+      { i: "c", x: 2, y: 0, w: 1, h: 1 },
+    ]);
   });
 });
 
