@@ -2,7 +2,7 @@
 const User = require("../models/User");
 const Card = require("../models/Card");
 const { isNonEmptyString, isObjectId } = require("../utils/validate");
-const { BOARD_STATUSES } = require("../utils/cardStatus");
+const { isColumnKey } = require("../utils/cardStatus");
 const { ADMIN_ROLE, ROLES } = require("../utils/role");
 
 // Same limit and message as register (authController.js)
@@ -17,11 +17,12 @@ const HEADER_TITLE_MAX_LENGTH = 50;
 const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
 const HEADER_COLOR_MESSAGE = "Header color must be a hex color like #eed7fc.";
 
-// Column names are per user; each header must name a board column
+// Legacy: column names and colours are shared now (controllers/columnController.js);
+// the frontend no longer sends headers, but older clients may
 const isValidHeader = (h) =>
   h !== null &&
   typeof h === "object" &&
-  BOARD_STATUSES.includes(h.key) &&
+  isColumnKey(h.key) &&
   isNonEmptyString(h.title, HEADER_TITLE_MAX_LENGTH);
 
 // Color is optional; null or missing means the default list color

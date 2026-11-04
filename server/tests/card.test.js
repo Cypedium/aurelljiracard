@@ -7,10 +7,13 @@ jest.mock("../models/Card", () => {
   Card.deleteOne = jest.fn();
   return Card;
 });
+jest.mock("../models/Column", () => ({ listAll: jest.fn() }));
 
 const request = require("supertest");
 const app = require("../app");
 const Card = require("../models/Card");
+const Column = require("../models/Column");
+const { DEFAULT_COLUMNS } = require("../utils/cardStatus");
 const jwt = require("jsonwebtoken");
 const { authHeader, query, USER_ID } = require("./helpers");
 
@@ -20,6 +23,8 @@ const validCard = { rating: 4, comment: "Looks good", productId: "AUR-1" };
 beforeEach(() => {
   jest.clearAllMocks();
   Card.exists.mockResolvedValue(null);
+  // The four default lists plus one an admin added
+  Column.listAll.mockResolvedValue([...DEFAULT_COLUMNS, { key: "review", title: "Review" }]);
 });
 
 describe("auth guard", () => {
@@ -294,6 +299,21 @@ describe("PATCH /card/:id/status", () => {
     const res = await request(app).patch(`/card/${CARD_ID}/status`).set("Authorization", authHeader()).send({ status: "todo" });
 
     expect(res.status).toBe(404);
+  });
+
+  it("accepts a list an admin added", async () => {
+    Card.findById.mockResolvedValue(storedCard());
+
+    const res = await request(app).patch(`/card/${CARD_ID}/status`).set("Authorization", authHeader()).send({ status: "review" });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ status: "review" });
+  });
+
+  it("lists the current lists in the error message", async () => {
+    const res = await request(app).patch(`/card/${CARD_ID}/status`).set("Authorization", authHeader()).send({ status: "archived" });
+
+    expect(res.body.message).toBe("Status must be one of: todo, in-progress, test, done, review, backlog.");
   });
 
   it.each([
