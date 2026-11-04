@@ -28,6 +28,7 @@ import {
   saveLayout,
   updateCardStatus,
   updateColumn,
+  reorderColumns,
   type Card,
 } from "../api/endpoints";
 import CardForm from "./card/Card";
@@ -70,6 +71,8 @@ import {
   statusForColumn,
   toGridLayout,
   toSavedPositions,
+  moveHeader,
+  withListKeys,
   toggleCollapsed,
 } from "../utils/boardLayout";
 
@@ -222,7 +225,7 @@ export default function Home() {
   };
   // Gridens positioner (enheter) → sparade positioner (kolumner), plus korten i dolda listor
   const savedPositions = (currentLayout: readonly CardPosition[]) =>
-    toSavedPositions([...fromGridLayout(currentLayout, columns), ...hiddenLayout]);
+    toSavedPositions(headers, [...fromGridLayout(currentLayout, columns), ...hiddenLayout]);
 
   // 🔥 Spara layout till server via api.ts
   const saveLayoutToServer = useCallback(
@@ -308,6 +311,53 @@ export default function Home() {
 
   // null = standardfärgen
   const recolorColumn = (key: CardStatus, color: string | null) => saveColumn(recolorHeader(headers, key, color), key);
+
+  // Admin: listan som dras i sin rubrik och listan den är över (markeras)
+  const [draggingList, setDraggingList] = useState<CardStatus | null>(null);
+  const [listDropTarget, setListDropTarget] = useState<CardStatus | null>(null);
+  const endListDrag = () => {
+    setDraggingList(null);
+    setListDropTarget(null);
+  };
+
+  // Admin: flyttar en lista för alla; korten följer med (de hör till listan via status).
+  // Visas direkt; vid fel flyttas listan tillbaka
+  const moveList = async (from: CardStatus, to: CardStatus) => {
+    endListDrag();
+    const next = moveHeader(headers, from, to);
+    if (next === headers) return;
+    // Äldre sparade positioner har bara listans index: spara listans key innan ordningen ändras
+    if (userLayout.cards?.some((c) => c.status === undefined)) {
+      persistLayout({ ...userLayout, cards: withListKeys(headers, userLayout.cards) });
+    }
+    const previous = headers;
+    setHeaders(next);
+    try {
+      await reorderColumns(next.map((h) => h.key));
+    } catch (err: any) {
+      console.error("Error moving list:", err.message);
+      setHeaders(previous);
+      toast.error(apiErrorMessage(err, "Could not move the list."));
+    }
+  };
+
+  // Mål för en lista som dras: hela listan (eller remsan för en dold lista)
+  const listDropProps = (key: CardStatus) =>
+    draggingList
+      ? {
+          onDragOver: (e: React.DragEvent) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "move";
+            setListDropTarget(key);
+          },
+          onDrop: (e: React.DragEvent) => {
+            e.preventDefault();
+            moveList(draggingList, key);
+          },
+        }
+      : {};
+  const listDropClass = (key: CardStatus) =>
+    draggingList && listDropTarget === key && draggingList !== key ? "rounded-xl ring-2 ring-white" : "";
 
   // Admin: ny lista sist på boarden, för alla. Tomt namn stänger formuläret
   const addList = async (title: string) => {
@@ -395,9 +445,10 @@ export default function Home() {
                   aria-expanded={false}
                   title="Show list"
                   {...{ [HIDDEN_LIST_ATTR]: h.key }}
+                  {...listDropProps(h.key)}
                   className={`pointer-events-auto flex min-w-0 flex-col items-center gap-3 overflow-hidden rounded-xl px-1 py-3 shadow-[0_1px_1px_rgba(9,30,66,0.25)] hover:brightness-95 ${
                     dropTarget === h.key ? "ring-2 ring-white brightness-95" : ""
-                  } ${listColor(h).className}`}
+                  } ${listDropClass(h.key)} ${listColor(h).className}`}
                   style={{ maxHeight: COLLAPSED_LIST_MAX_HEIGHT, ...listColor(h).style }}
                   onClick={() => toggleColumn(h.key)}
                 >
@@ -409,11 +460,26 @@ export default function Home() {
               ) : (
               <div
                 key={h.key}
-                className="flex flex-col px-2"
+                // Medan en lista dras tar hela listan emot den
+                className={`flex flex-col px-2 ${draggingList ? "pointer-events-auto" : ""} ${listDropClass(h.key)} ${
+                  draggingList === h.key ? "opacity-60" : ""
+                }`}
                 style={{ gridColumn: `span ${columns.spans[i].span}`, height: listHeight(columnRows[i]) }}
+                {...listDropProps(h.key)}
               >
                 <div
-                  className={`flex items-center gap-2 pr-1 ${listColor(h).className}`}
+                  // Admin: dra i rubriken för att flytta listan (för alla)
+                  draggable={admin && renamingKey !== h.key}
+                  onDragStart={(e) => {
+                    e.dataTransfer.effectAllowed = "move";
+                    // Firefox startar bara en drag med data
+                    e.dataTransfer.setData("text/plain", h.key);
+                    // Efter dragstart: att ändra DOM:en i dragstart avbryter dragningen i Chrome
+                    setTimeout(() => setDraggingList(h.key));
+                  }}
+                  onDragEnd={endListDrag}
+                  title={admin ? "Drag to move the list (for everyone)" : undefined}
+                  className={`flex items-center gap-2 pr-1 ${admin ? "pointer-events-auto cursor-grab" : ""} ${listColor(h).className}`}
                   style={{ height: HEADER_HEIGHT, ...listColor(h).style }}
                 >
                   {renamingKey === h.key ? (
@@ -558,9 +624,9 @@ export default function Home() {
 
           {!layoutLoaded || !mounted ? null : visibleLayout.length > 0 && (
             <ResponsiveGridLayout
-              // Ny gridd när antalet enheter ändras (lista döljs/visas): annars räknar
+              // Ny gridd när antalet enheter eller listornas ordning ändras (lista döljs, visas eller flyttas): annars räknar
               // react-grid-layout om de gamla positionerna och korten hamnar fel
-              key={columns.units}
+              key={`${columns.units}:${headers.map((h) => h.key).join()}`}
               className="gridLayout"
               layouts={{ lg: toGridLayout(visibleLayout, columns) }}
               breakpoints={{ lg: 0 }}

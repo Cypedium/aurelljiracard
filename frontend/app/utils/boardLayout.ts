@@ -3,7 +3,8 @@
 export type CardStatus = string;
 // color: valfri listfärg (#rrggbb), delad; saknas = standardfärgen
 export type BoardHeader = { key: CardStatus; title: string; color?: string };
-export type SavedCardPosition = { id: string; x: number; y: number; w: number; h: number };
+// status: listans key (x är listans index, som ändras när en admin flyttar listor); saknas i äldre layouter
+export type SavedCardPosition = { id: string; x: number; y: number; w: number; h: number; status?: CardStatus };
 export type CardPosition = { i: string; x: number; y: number; w: number; h: number };
 export type BoardCard = { id: string; status?: string };
 
@@ -153,8 +154,22 @@ export const recolorHeader = (
 export const cardKey = (card: { _id?: string }, index: number): string =>
   card._id || String(index);
 
-export const toSavedPositions = (layout: readonly CardPosition[]): SavedCardPosition[] =>
-  layout.map((l) => ({ id: l.i, x: l.x, y: l.y, w: l.w, h: l.h }));
+export const toSavedPositions = (headers: BoardHeader[], layout: readonly CardPosition[]): SavedCardPosition[] =>
+  layout.map((l) => ({ id: l.i, x: l.x, y: l.y, w: l.w, h: l.h, status: statusForColumn(headers, l.x) }));
+
+// Äldre sparade positioner har bara listans index: ge dem listans key innan listorna flyttas
+export const withListKeys = (headers: BoardHeader[], saved: SavedCardPosition[] = []): SavedCardPosition[] =>
+  saved.map((s) => (s.status === undefined ? { ...s, status: statusForColumn(headers, s.x) } : s));
+
+// Admin: flyttar listan from till listan to:s plats; de andra behåller sin ordning
+export const moveHeader = (headers: BoardHeader[], from: CardStatus, to: CardStatus): BoardHeader[] => {
+  const fromIndex = headers.findIndex((h) => h.key === from);
+  const toIndex = headers.findIndex((h) => h.key === to);
+  if (fromIndex < 0 || toIndex < 0 || fromIndex === toIndex) return headers;
+  const next = headers.filter((h) => h.key !== from);
+  next.splice(toIndex, 0, headers[fromIndex]);
+  return next;
+};
 
 // Okänd eller saknad status (äldre kort) hamnar i första listan
 export const columnForStatus = (headers: BoardHeader[], status?: string): number =>
@@ -258,8 +273,9 @@ export const rowsPerColumn = (counts: number[], { spans }: BoardColumns): number
 
 // Varje kort är en kolumn brett och en rad högt. Kolumnen kommer från kortets
 // status (delad av alla). Ordningen inom kolumnen kommer från användarens
-// sparade positioner; kort utan sparad position i sin kolumn (nya kort, eller
-// flyttade av någon annan) hamnar överst, i den ordning de kommer (nyast först).
+// sparade positioner (listans key, eller index i äldre layouter); kort utan sparad
+// position i sin kolumn (nya kort, eller flyttade av någon annan) hamnar överst,
+// i den ordning de kommer (nyast först).
 export const buildCardLayout = (
   headers: BoardHeader[],
   cards: BoardCard[],
@@ -271,7 +287,8 @@ export const buildCardLayout = (
   const placed = cards.map(({ id, status }) => {
     const x = columnForStatus(headers, status);
     const pos = byId.get(id);
-    const y = pos && pos.x === x ? pos.y : null;
+    const inThisList = pos && (pos.status !== undefined ? pos.status === headers[x].key : pos.x === x);
+    const y = inThisList ? pos.y : null;
     return { id, x, y, top: y === null ? unsavedRows[x]++ : 0 };
   });
 

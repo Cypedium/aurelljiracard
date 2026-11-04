@@ -39,6 +39,8 @@ import {
   splitByCollapsed,
   statusForColumn,
   toSavedPositions,
+  moveHeader,
+  withListKeys,
 } from "../../app/utils/boardLayout";
 
 const H = DEFAULT_HEADERS;
@@ -149,10 +151,38 @@ describe("cardKey", () => {
 });
 
 describe("toSavedPositions", () => {
-  it("maps grid items to saved positions", () => {
-    expect(toSavedPositions([{ i: "a", x: 2, y: 1, w: 1, h: 1 }])).toEqual([
-      { id: "a", x: 2, y: 1, w: 1, h: 1 },
+  it("maps grid items to saved positions with their list key", () => {
+    expect(toSavedPositions(H, [{ i: "a", x: 2, y: 1, w: 1, h: 1 }])).toEqual([
+      { id: "a", x: 2, y: 1, w: 1, h: 1, status: "test" },
     ]);
+  });
+});
+
+describe("withListKeys", () => {
+  it("gives older saved positions the key of their list, keeps saved keys", () => {
+    const saved = [
+      { id: "a", x: 1, y: 0, w: 1, h: 1 },
+      { id: "b", x: 0, y: 0, w: 1, h: 1, status: "done" },
+    ];
+    expect(withListKeys(H, saved)).toEqual([
+      { id: "a", x: 1, y: 0, w: 1, h: 1, status: "in-progress" },
+      saved[1],
+    ]);
+    expect(withListKeys(H)).toEqual([]);
+  });
+});
+
+describe("moveHeader", () => {
+  const keys = (headers: { key: string }[]) => headers.map((h) => h.key);
+
+  it("puts the list in the target's place, to the right or the left", () => {
+    expect(keys(moveHeader(H, "todo", "test"))).toEqual(["in-progress", "test", "todo", "done"]);
+    expect(keys(moveHeader(H, "done", "in-progress"))).toEqual(["todo", "done", "in-progress", "test"]);
+  });
+
+  it("returns the same headers for the same or an unknown list", () => {
+    expect(moveHeader(H, "todo", "todo")).toBe(H);
+    expect(moveHeader(H, "todo", "nope")).toBe(H);
   });
 });
 
@@ -214,6 +244,18 @@ describe("buildCardLayout", () => {
     const saved = [{ id: "a", x: 3, y: 4, w: 3, h: 2 }];
     expect(buildCardLayout(H, [{ id: "a", status: "done" }], saved)).toEqual([
       { i: "a", x: 3, y: 4, w: 1, h: 1 },
+    ]);
+  });
+
+  it("keeps the saved row in the saved list after lists were moved", () => {
+    const moved = [H[3], H[0], H[1], H[2]];
+    const saved = [
+      { id: "a", x: 0, y: 1, w: 1, h: 1, status: "todo" },
+      { id: "b", x: 0, y: 0, w: 1, h: 1, status: "todo" },
+    ];
+    expect(buildCardLayout(moved, [{ id: "a", status: "todo" }, { id: "b", status: "todo" }], saved)).toEqual([
+      { i: "a", x: 1, y: 1, w: 1, h: 1 },
+      { i: "b", x: 1, y: 0, w: 1, h: 1 },
     ]);
   });
 
