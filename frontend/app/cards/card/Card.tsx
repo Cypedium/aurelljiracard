@@ -37,7 +37,6 @@ type CardProps = {
   onCreated?: () => void;
 };
 
-
 const required = <span className="text-jira-danger">*</span>;
 
 export default function Card({ card, onSaved, onCancel, status, onCreated }: CardProps = {}) {
