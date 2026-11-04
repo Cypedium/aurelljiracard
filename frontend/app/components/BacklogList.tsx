@@ -9,6 +9,7 @@ import { DEFAULT_HEADERS } from '../utils/boardLayout';
 import { formatShortDate } from '../utils/date';
 import { TABLE_CELL_CLASS as TD_CLASS, TABLE_HEAD_CLASS as TH_CLASS, TABLE_ROW_CLASS, TABLE_WRAPPER_CLASS } from '../utils/styles';
 import IssueTypeIcon from './IssueTypeIcon';
+import TableSkeleton from './TableSkeleton';
 import { Button } from './ui/button';
 
 type BacklogListProps = {
@@ -56,7 +57,7 @@ export default function BacklogList({ refreshKey = 0, onMoved }: BacklogListProp
     }
   };
 
-  if (cards === null) return null;
+  if (cards === null) return <TableSkeleton />;
 
   if (cards.length === 0) {
     return <p className="rounded-lg bg-white p-6 text-center text-sm text-jira-secondary">The backlog is empty.</p>;

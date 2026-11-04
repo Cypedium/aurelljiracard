@@ -11,6 +11,7 @@ import { getUsername } from '../utils/session';
 import { TABLE_CELL_CLASS as TD_CLASS, TABLE_HEAD_CLASS as TH_CLASS, TABLE_ROW_CLASS, TABLE_WRAPPER_CLASS } from '../utils/styles';
 import { countCardsByAuthor } from '../utils/userForm';
 import EditUserForm from './EditUserForm';
+import TableSkeleton from '../components/TableSkeleton';
 import { Dialog, DialogContent, DialogTitle } from '../components/ui/dialog';
 import {
   AlertDialog,
@@ -83,7 +84,7 @@ export default function Users() {
     }
   };
 
-  if (users === null) return null;
+  if (users === null) return <TableSkeleton />;
 
   return (
     <>

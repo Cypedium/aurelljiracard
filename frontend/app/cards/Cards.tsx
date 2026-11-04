@@ -8,6 +8,7 @@ import ColumnColorPicker from "../components/ColumnColorPicker";
 import debounce from "lodash.debounce";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogTitle } from "../components/ui/dialog";
+import { Skeleton } from "../components/ui/skeleton";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,6 +33,7 @@ import {
   HEADER_HEIGHT,
   HEADER_TITLE_MAX_LENGTH,
   ROW_HEIGHT,
+  SKELETON_CARD_COUNT,
   boardColumns,
   buildCardLayout,
   cardKey,
@@ -63,6 +65,7 @@ import { CARD_ACTION_CLASS, CARD_HOVER_CLASS, LIST_BUTTON_HOVER_CLASS, listColor
 
 export default function Home() {
   const [cards, setCards] = useState<Card[]>([]);
+  const [cardsLoaded, setCardsLoaded] = useState(false);
   const [userLayout, setUserLayout] = useState<UserLayout>(DEFAULT_LAYOUT);
   const [layoutLoaded, setLayoutLoaded] = useState(false);
   const [userName, setUserName] = useState("");
@@ -88,6 +91,8 @@ export default function Home() {
     } catch (err: any) {
       console.error("Error fetching cards:", err.message);
       toast.error(apiErrorMessage(err, "Could not load cards."));
+    } finally {
+      setCardsLoaded(true);
     }
   }, []);
 
@@ -248,7 +253,12 @@ export default function Home() {
 
   // Antal kort per kolumn: visas i rubriken och styr listans höjd
   const columnCounts = countCardsPerColumn(gridLayout);
-  const columnRows = rowsPerColumn(columnCounts, collapsed);
+  // Skeleton-korten visas medan kort och layout hämtas
+  const boardLoading = !cardsLoaded || !layoutLoaded;
+  const columnRows = rowsPerColumn(
+    boardLoading ? columnCounts.map(() => SKELETON_CARD_COUNT) : columnCounts,
+    collapsed,
+  );
   const columnGrid = {
     padding: `0 ${GRID_MARGIN}px`,
     gap: GRID_MARGIN,
@@ -315,7 +325,7 @@ export default function Home() {
                   <EyeIcon className="size-4 shrink-0 opacity-80" aria-hidden />
                   {/* Rubriken läses uppifrån och ner, som i Trello */}
                   <span className="min-h-0 truncate text-sm font-semibold [writing-mode:vertical-rl]">{h.title}</span>
-                  <span className="shrink-0 text-sm opacity-80">{columnCounts[i]}</span>
+                  <span className="shrink-0 text-sm opacity-80">{boardLoading ? null : columnCounts[i]}</span>
                 </button>
               ) : (
               <div
@@ -355,7 +365,7 @@ export default function Home() {
                       {h.title}
                     </button>
                   )}
-                  <span className="text-sm opacity-80">{columnCounts[i]}</span>
+                  <span className="text-sm opacity-80">{boardLoading ? null : columnCounts[i]}</span>
                   <ColumnColorPicker
                     title={h.title}
                     color={h.color}
@@ -386,6 +396,31 @@ export default function Home() {
               ),
             )}
           </div>
+
+          {boardLoading && (
+            <div
+              className="pointer-events-none absolute inset-0 grid items-start"
+              style={{ ...columnGrid, padding: `${CARDS_TOP}px ${GRID_MARGIN}px 0` }}
+              aria-busy="true"
+              aria-label="Loading cards"
+            >
+              {userLayout.headers.map((h, i) =>
+                columns.spans[i].collapsed ? (
+                  <div key={h.key} />
+                ) : (
+                  <div
+                    key={h.key}
+                    className="flex flex-col px-2"
+                    style={{ gridColumn: `span ${columns.spans[i].span}`, gap: GRID_MARGIN }}
+                  >
+                    {Array.from({ length: SKELETON_CARD_COUNT }, (_, n) => (
+                      <Skeleton key={n} className="rounded-lg bg-white/70" style={{ height: ROW_HEIGHT }} />
+                    ))}
+                  </div>
+                ),
+              )}
+            </div>
+          )}
 
           {!layoutLoaded || !mounted ? null : visibleLayout.length > 0 && (
             <ResponsiveGridLayout

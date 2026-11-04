@@ -23,6 +23,8 @@ export const ROW_HEIGHT = 150;
 export const ADD_BUTTON_HEIGHT = 40;
 // Korten börjar under rubrik och knapp
 export const CARDS_TOP = HEADER_HEIGHT + ADD_BUTTON_HEIGHT;
+// Antal skeleton-kort per lista medan boarden laddas
+export const SKELETON_CARD_COUNT = 2;
 
 // Listan växer med korten: rubrik + knapp + kort (GRID_MARGIN luft under sista kortet)
 export const listHeight = (rows: number): number =>
