@@ -3,8 +3,8 @@ import { toast } from "sonner";
 import {
   LOADING_TOAST_DELAY_MS,
   LOADING_TOAST_ID,
-  LOADING_TOAST_TEXT,
   createLoadingTracker,
+  loadingToastText,
 } from "../utils/loadingToast";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -13,9 +13,10 @@ const api = axios.create({
   baseURL: API_URL,
 });
 
-// Långsamma anrop (t.ex. cold start i produktion) visar en loading-toast
+// Långsam inloggning/utloggning (t.ex. cold start i produktion) visar en loading-toast
+let loadingText = "";
 const loadingTracker = createLoadingTracker(
-  () => toast.loading(LOADING_TOAST_TEXT, { id: LOADING_TOAST_ID }),
+  () => toast.loading(loadingText, { id: LOADING_TOAST_ID }),
   () => toast.dismiss(LOADING_TOAST_ID),
   LOADING_TOAST_DELAY_MS
 );
@@ -23,7 +24,11 @@ const loadingTracker = createLoadingTracker(
 // ⭐ REQUEST INTERCEPTOR — lägg till accessToken automatiskt
 api.interceptors.request.use(
   (config) => {
-    loadingTracker.start();
+    const text = loadingToastText(config.url);
+    if (text) {
+      loadingText = text;
+      loadingTracker.start();
+    }
     const token = sessionStorage.getItem("accessToken");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -115,11 +120,14 @@ const handleResponseError = async (error: any) => {
 
 api.interceptors.response.use(
   (response) => {
-    loadingTracker.done();
+    if (loadingToastText(response.config.url)) loadingTracker.done();
     return response;
   },
   // done() först när ev. refresh + omkörning är klar, så toasten inte blinkar
-  (error) => handleResponseError(error).finally(() => loadingTracker.done())
+  (error) =>
+    handleResponseError(error).finally(() => {
+      if (loadingToastText(error.config?.url)) loadingTracker.done();
+    })
 );
 
 export default api;
