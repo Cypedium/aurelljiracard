@@ -1,7 +1,7 @@
 // app/api/endpoints.ts
-// Paths must match the backend mounts in server/app.js: /auth, /card, /user
+// Paths must match the backend mounts in server/app.js: /auth, /card, /column, /user
 import api from "./api";
-import type { UserLayout } from "../utils/boardLayout";
+import type { CardStatus, UserLayout } from "../utils/boardLayout";
 import type { CardType } from "../utils/cardType";
 import type { AnyCardStatus } from "../utils/backlog";
 import type { Role } from "../utils/session";
@@ -48,6 +48,11 @@ export type PublicUser = {
   role: Role;
 };
 
+// A board list as the backend returns it; color null = the default colour
+export type BoardColumn = { key: CardStatus; title: string; color?: string | null; position: number };
+// Admin: title and colour of a list, both replaced (color null = the default colour)
+export type ColumnChanges = { title: string; color?: string | null };
+
 // Admin: fields left out keep their value
 export type UserChanges = { username?: string; role?: Role };
 
@@ -80,10 +85,20 @@ export const updateCardStatus = (id: string, status: AnyCardStatus) =>
 export const deleteCard = (id: string) =>
   api.delete(`/card/${id}`);
 
+// ⭐ COLUMNS (lists, shared by all users)
+export const getColumns = () => api.get<BoardColumn[]>("/column");
+
+// Admin: adds a list at the end of the board; the backend makes its key from the title
+export const createColumn = (changes: ColumnChanges) => api.post<BoardColumn>("/column", changes);
+
+// Admin: renames and/or recolours a list for everyone
+export const updateColumn = (key: CardStatus, changes: ColumnChanges) =>
+  api.put<BoardColumn>(`/column/${encodeURIComponent(key)}`, changes);
+
 // ⭐ USERS
 export const getUsers = () => api.get<PublicUser[]>("/user");
 
-// The logged-in user's board layout (column names/colours and card order)
+// The logged-in user's board layout (card order within the lists)
 export const getLayout = () => api.get<Partial<UserLayout>>("/user/layout");
 
 export const saveLayout = (layout: UserLayout) => api.put("/user/layout", layout);
@@ -111,6 +126,9 @@ export default {
   getLayout,
   saveLayout,
   deleteCard,
+  getColumns,
+  createColumn,
+  updateColumn,
   updateUser,
   deleteUser,
   revokeUserSessions,

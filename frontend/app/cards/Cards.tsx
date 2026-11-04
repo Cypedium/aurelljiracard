@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { ResponsiveGridLayout, useContainerWidth } from "react-grid-layout";
 import { gridBounds, type LayoutConstraint } from "react-grid-layout/core";
-import { EyeIcon, EyeSlashIcon, PencilIcon, PlusIcon, TrashIcon } from "@heroicons/react/16/solid";
+import { EyeIcon, EyeSlashIcon, PencilIcon, PlusIcon, TrashIcon, XMarkIcon } from "@heroicons/react/16/solid";
 import IssueTypeIcon from "../components/IssueTypeIcon";
 import ColumnColorPicker from "../components/ColumnColorPicker";
 import debounce from "lodash.debounce";
@@ -19,16 +19,29 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "../components/ui/alert-dialog";
-import { deleteCard, getCards, getLayout, saveLayout, updateCardStatus, type Card } from "../api/endpoints";
-import CardForm from "./card/Card";
 import {
+  createColumn,
+  deleteCard,
+  getCards,
+  getColumns,
+  getLayout,
+  saveLayout,
+  updateCardStatus,
+  updateColumn,
+  type Card,
+} from "../api/endpoints";
+import CardForm from "./card/Card";
+import { Button } from "../components/ui/button";
+import {
+  BoardHeader,
   CardPosition,
   CardStatus,
   UserLayout,
   CARDS_TOP,
   COLLAPSED_LIST_MAX_HEIGHT,
-  DEFAULT_LIST_COLORS,
+  DEFAULT_HEADERS,
   DEFAULT_LAYOUT,
+  EXPANDED_SPAN,
   GRID_MARGIN,
   HEADER_HEIGHT,
   HEADER_TITLE_MAX_LENGTH,
@@ -40,10 +53,12 @@ import {
   cardKey,
   columnAtGridX,
   countCardsPerColumn,
+  defaultListColor,
   fromGridLayout,
   listHeight,
   mobileBoardWidth,
   normalizeCollapsed,
+  normalizeColumns,
   normalizeLayout,
   recolorHeader,
   renameHeader,
@@ -69,6 +84,11 @@ export default function Home() {
   const [cardsLoaded, setCardsLoaded] = useState(false);
   const [userLayout, setUserLayout] = useState<UserLayout>(DEFAULT_LAYOUT);
   const [layoutLoaded, setLayoutLoaded] = useState(false);
+  // Listorna delas av alla; admins lägger till, byter namn och färg
+  const [headers, setHeaders] = useState<BoardHeader[]>(DEFAULT_HEADERS);
+  const [columnsLoaded, setColumnsLoaded] = useState(false);
+  // Formuläret "Add another list" är öppet
+  const [addingList, setAddingList] = useState(false);
   const [userName, setUserName] = useState("");
   const [admin, setAdmin] = useState(false);
   const [editingCard, setEditingCard] = useState<Card | null>(null);
@@ -129,6 +149,17 @@ export default function Home() {
     loadLayout().finally(() => setLayoutLoaded(true));
   }, []);
 
+  // Delade listor; om hämtningen misslyckas visas standardlistorna
+  useEffect(() => {
+    getColumns()
+      .then((res) => setHeaders(normalizeColumns(res.data)))
+      .catch((err) => {
+        console.error("Error fetching lists:", err.message);
+        toast.error(apiErrorMessage(err, "Could not load the lists."));
+      })
+      .finally(() => setColumnsLoaded(true));
+  }, []);
+
   useEffect(() => {
     try {
       setCollapsed(normalizeCollapsed(JSON.parse(localStorage.getItem(COLLAPSED_STORAGE_KEY) ?? "[]")));
@@ -148,23 +179,29 @@ export default function Home() {
   };
 
   // Räknas fram vid varje render, så gridden får aldrig en tom layout som
-  // sedan sparas över den riktiga
+  // sedan sparas över den riktiga. Väntar på listorna: annars hamnar kort i
+  // tillagda listor tillfälligt i första listan och den ordningen sparas
   const gridLayout = useMemo(
     () =>
-      layoutLoaded
+      layoutLoaded && columnsLoaded
         ? buildCardLayout(
+            headers,
             cards.map((fb, i) => ({ id: cardKey(fb, i), status: fb.status })),
             userLayout.cards,
           )
         : [],
-    [cards, userLayout.cards, layoutLoaded],
+    [headers, cards, userLayout.cards, layoutLoaded, columnsLoaded],
   );
 
-  const { visible: visibleLayout, hidden: hiddenLayout } = splitByCollapsed(gridLayout, collapsed);
+  const { visible: visibleLayout, hidden: hiddenLayout } = splitByCollapsed(headers, gridLayout, collapsed);
   const visibleIds = new Set(visibleLayout.map((l) => l.i));
 
-  // Dolda listor blir smala remsor; gridden räknar i enheter i stället för kolumner
-  const columns = useMemo(() => boardColumns(collapsed), [collapsed]);
+  // Dolda listor blir smala remsor; gridden räknar i enheter i stället för kolumner.
+  // Admins får plats för "Add another list" sist
+  const columns = useMemo(
+    () => boardColumns(headers, collapsed, admin ? EXPANDED_SPAN : 0),
+    [headers, collapsed, admin],
+  );
   // Kort snäpper till närmaste synliga lista medan de dras
   const constraints = useMemo<LayoutConstraint[]>(
     () => [
@@ -239,26 +276,52 @@ export default function Home() {
     }
   };
 
-  // Byt namn på en kolumn (bara för den här användaren, sparas i layouten)
-  const renameColumn = (key: CardStatus, title: string) => {
-    setRenamingKey(null);
-    const headers = renameHeader(userLayout.headers, key, title);
-    if (headers !== userLayout.headers) persistLayout({ ...userLayout, headers });
+  // Admin: listans namn och färg ändras för alla. Visas direkt; vid fel återställs den
+  const saveColumn = async (next: BoardHeader[], key: CardStatus) => {
+    const column = next.find((h) => h.key === key);
+    if (next === headers || !column) return;
+    const previous = headers;
+    setHeaders(next);
+    try {
+      await updateColumn(key, { title: column.title, color: column.color ?? null });
+    } catch (err: any) {
+      console.error("Error updating list:", err.message);
+      setHeaders(previous);
+      toast.error(apiErrorMessage(err, "Could not update the list."));
+    }
   };
 
-  // Byt listfärg (bara för den här användaren); null = standardfärgen
-  const recolorColumn = (key: CardStatus, color: string | null) => {
-    const headers = recolorHeader(userLayout.headers, key, color);
-    if (headers !== userLayout.headers) persistLayout({ ...userLayout, headers });
+  const renameColumn = (key: CardStatus, title: string) => {
+    setRenamingKey(null);
+    saveColumn(renameHeader(headers, key, title), key);
+  };
+
+  // null = standardfärgen
+  const recolorColumn = (key: CardStatus, color: string | null) => saveColumn(recolorHeader(headers, key, color), key);
+
+  // Admin: ny lista sist på boarden, för alla. Tomt namn stänger formuläret
+  const addList = async (title: string) => {
+    if (!title.trim()) {
+      setAddingList(false);
+      return;
+    }
+    try {
+      const res = await createColumn({ title: title.trim() });
+      setHeaders((prev) => normalizeColumns([...prev, res.data]));
+      setAddingList(false);
+    } catch (err: any) {
+      console.error("Error adding list:", err.message);
+      toast.error(apiErrorMessage(err, "Could not add the list."));
+    }
   };
 
   // Antal kort per kolumn: visas i rubriken och styr listans höjd
-  const columnCounts = countCardsPerColumn(gridLayout);
-  // Skeleton-korten visas medan kort och layout hämtas
-  const boardLoading = !cardsLoaded || !layoutLoaded;
+  const columnCounts = countCardsPerColumn(headers, gridLayout);
+  // Skeleton-korten visas medan kort, layout och listor hämtas
+  const boardLoading = !cardsLoaded || !layoutLoaded || !columnsLoaded;
   const columnRows = rowsPerColumn(
     boardLoading ? columnCounts.map(() => SKELETON_CARD_COUNT) : columnCounts,
-    collapsed,
+    columns,
   );
   const columnGrid = {
     padding: `0 ${GRID_MARGIN}px`,
@@ -293,7 +356,7 @@ export default function Home() {
         >
           {/* Listornas bakgrund, under korten */}
           <div className="pointer-events-none absolute inset-0 grid items-start" style={columnGrid}>
-            {userLayout.headers.map((h, i) =>
+            {headers.map((h, i) =>
               columns.spans[i].collapsed ? (
                 // Remsan ritas i rubriklagret
                 <div key={h.key} className="snap-start" />
@@ -311,9 +374,9 @@ export default function Home() {
             )}
           </div>
 
-          {/* Rubrik (klicka för att byta namn) och "Add a card", ovanför gridden så att de går att klicka */}
+          {/* Rubrik (admin: klicka för att byta namn) och "Add a card", ovanför gridden så att de går att klicka */}
           <div className="pointer-events-none absolute inset-0 z-[1] grid items-start" style={columnGrid}>
-            {userLayout.headers.map((h, i) =>
+            {headers.map((h, i) =>
               columns.spans[i].collapsed ? (
                 <button
                   key={h.key}
@@ -358,23 +421,29 @@ export default function Home() {
                       }}
                       className="pointer-events-auto min-w-0 flex-1 rounded-md bg-white px-2 py-1 text-sm font-semibold text-jira-text ring-2 ring-jira-focus outline-none"
                     />
-                  ) : (
+                  ) : admin ? (
                     <button
                       type="button"
-                      title="Click to rename"
+                      title="Click to rename (for everyone)"
                       className="pointer-events-auto min-w-0 flex-1 truncate rounded-md px-2 py-1 text-left text-sm font-semibold hover:bg-black/10"
                       onClick={() => setRenamingKey(h.key)}
                     >
                       {h.title}
                     </button>
+                  ) : (
+                    <span className="min-w-0 flex-1 truncate px-2 py-1 text-sm font-semibold" title={h.title}>
+                      {h.title}
+                    </span>
                   )}
                   <span className="text-sm opacity-80">{boardLoading ? null : columnCounts[i]}</span>
-                  <ColumnColorPicker
-                    title={h.title}
-                    color={h.color}
-                    defaultColor={DEFAULT_LIST_COLORS[h.key]}
-                    onChange={(color) => recolorColumn(h.key, color)}
-                  />
+                  {admin && (
+                    <ColumnColorPicker
+                      title={h.title}
+                      color={h.color}
+                      defaultColor={defaultListColor(h.key)}
+                      onChange={(color) => recolorColumn(h.key, color)}
+                    />
+                  )}
                   <button
                     type="button"
                     aria-label={`Hide ${h.title}`}
@@ -398,6 +467,53 @@ export default function Home() {
               </div>
               ),
             )}
+
+            {/* Admin: ny lista sist på boarden (platsen räknas in i columns.units) */}
+            {admin && (
+              <div className="snap-start px-2" style={{ gridColumn: `span ${EXPANDED_SPAN}` }}>
+                {addingList ? (
+                  <form
+                    className="pointer-events-auto flex flex-col gap-2 rounded-xl bg-jira-lane p-2 shadow-[0_1px_1px_rgba(9,30,66,0.25)]"
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      addList(new FormData(e.currentTarget).get("title")?.toString() ?? "");
+                    }}
+                  >
+                    <input
+                      autoFocus
+                      name="title"
+                      aria-label="List name"
+                      placeholder="Enter list name…"
+                      maxLength={HEADER_TITLE_MAX_LENGTH}
+                      onKeyDown={(e) => e.key === "Escape" && setAddingList(false)}
+                      className="rounded-md bg-white px-2 py-1.5 text-sm text-jira-text ring-2 ring-jira-focus outline-none"
+                    />
+                    <div className="flex items-center gap-1">
+                      <Button type="submit" size="sm">
+                        Add list
+                      </Button>
+                      <button
+                        type="button"
+                        aria-label="Cancel"
+                        className="rounded-md p-1.5 text-jira-secondary hover:bg-black/10"
+                        onClick={() => setAddingList(false)}
+                      >
+                        <XMarkIcon className="size-4" aria-hidden />
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <button
+                    type="button"
+                    className="pointer-events-auto flex w-full items-center gap-2 rounded-xl bg-white/25 px-3 py-2.5 text-sm font-semibold text-white backdrop-blur-sm hover:bg-white/35"
+                    onClick={() => setAddingList(true)}
+                  >
+                    <PlusIcon className="size-4" aria-hidden />
+                    Add another list
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
           {boardLoading && (
@@ -407,7 +523,7 @@ export default function Home() {
               aria-busy="true"
               aria-label="Loading cards"
             >
-              {userLayout.headers.map((h, i) =>
+              {headers.map((h, i) =>
                 columns.spans[i].collapsed ? (
                   <div key={h.key} />
                 ) : (
@@ -453,7 +569,7 @@ export default function Home() {
                 // Spara radordningen direkt så att kortet inte hoppar när statusen ändras
                 persistLayout({ ...userLayout, cards: savedPositions(currentLayout) });
                 const card = cards.find((fb, i) => cardKey(fb, i) === newItem.i);
-                if (card?._id) moveCard(card._id, statusForColumn(to));
+                if (card?._id) moveCard(card._id, statusForColumn(headers, to));
               }}
             >
               {cards.filter((fb, i) => visibleIds.has(cardKey(fb, i))).map((fb) => (

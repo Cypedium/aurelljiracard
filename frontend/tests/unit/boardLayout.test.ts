@@ -1,8 +1,11 @@
 import { describe, expect, it } from "@jest/globals";
 import {
-  BOARD_COLS,
   BOARD_UNITS,
   DEFAULT_HEADERS,
+  EXPANDED_SPAN,
+  NEW_LIST_COLOR,
+  defaultListColor,
+  normalizeColumns,
   boardColumns,
   desktopBoardWidth,
   columnAtGridX,
@@ -37,37 +40,55 @@ import {
   toSavedPositions,
 } from "../../app/utils/boardLayout";
 
+const H = DEFAULT_HEADERS;
+// Standardlistorna plus en som en admin lagt till
+const WITH_REVIEW = [...DEFAULT_HEADERS, { key: "review", title: "Review" }];
+
 describe("normalizeLayout", () => {
-  it("always uses the fixed columns and keeps only saved card positions", () => {
+  it("keeps only saved card positions; older layouts also have cols and headers", () => {
     const cards = [{ id: "a", x: 1, y: 0, w: 1, h: 1 }];
-    expect(normalizeLayout({ cols: 12, headers: [], cards })).toEqual({ ...DEFAULT_LAYOUT, cards });
+    expect(normalizeLayout({ cols: 12, headers: [], cards } as any)).toEqual({ ...DEFAULT_LAYOUT, cards });
     expect(normalizeLayout({})).toEqual({ ...DEFAULT_LAYOUT, cards: undefined });
   });
+});
 
-  it("keeps renamed titles for known columns and ignores the rest", () => {
-    const headers = [
-      { key: "done", title: " Shipped " },
-      { key: "test", title: "   " },
-      { key: "archived", title: "Archive" },
-    ] as any;
-    expect(normalizeLayout({ headers }).headers).toEqual([
+describe("normalizeColumns", () => {
+  it("keeps the shared lists in order, including added ones", () => {
+    const raw = [
+      { key: "todo", title: "To Do", color: null, position: 0 },
+      { key: "review", title: " Review ", color: "#FDD0EC", position: 4 },
+    ];
+    expect(normalizeColumns(raw)).toEqual([
       { key: "todo", title: "To Do" },
-      { key: "in-progress", title: "In Progress" },
-      { key: "test", title: "Test" },
-      { key: "done", title: "Shipped" },
+      { key: "review", title: "Review", color: "#fdd0ec" },
     ]);
   });
 
-  it("keeps valid column colors, lowercased, and drops invalid ones", () => {
-    const headers = [
-      { key: "todo", title: "To Do", color: "#FDD0EC" },
-      { key: "test", title: "Test", color: "red" },
-      { key: "done", title: "Done", color: null },
-    ] as any;
-    const result = normalizeLayout({ headers }).headers;
-    expect(result[0]).toEqual({ key: "todo", title: "To Do", color: "#fdd0ec" });
-    expect(result[2]).not.toHaveProperty("color");
-    expect(result[3]).not.toHaveProperty("color");
+  it("drops invalid keys and duplicates, and falls back to the key as title", () => {
+    const raw = [
+      { key: "todo", title: "   " },
+      { key: "todo", title: "Again" },
+      { key: "Not a key", title: "x" },
+      { key: 3, title: "x" },
+      null,
+      { key: "done", title: "Done", color: "red" },
+    ];
+    expect(normalizeColumns(raw)).toEqual([
+      { key: "todo", title: "todo" },
+      { key: "done", title: "Done" },
+    ]);
+  });
+
+  it("uses the default lists when there are none", () => {
+    expect(normalizeColumns([])).toBe(DEFAULT_HEADERS);
+    expect(normalizeColumns(undefined)).toBe(DEFAULT_HEADERS);
+  });
+});
+
+describe("defaultListColor", () => {
+  it("has a colour per default list and grey for added lists", () => {
+    expect(defaultListColor("todo")).toBe("#eed7fc");
+    expect(defaultListColor("review")).toBe(NEW_LIST_COLOR);
   });
 });
 
@@ -142,7 +163,6 @@ describe("DEFAULT_HEADERS", () => {
       "Test",
       "Done",
     ]);
-    expect(BOARD_COLS).toBe(4);
   });
 
   it("uses the backend status keys", () => {
@@ -153,26 +173,31 @@ describe("DEFAULT_HEADERS", () => {
 describe("columnForStatus / statusForColumn", () => {
   it("maps each status to its column and back", () => {
     DEFAULT_HEADERS.forEach((h, i) => {
-      expect(columnForStatus(h.key)).toBe(i);
-      expect(statusForColumn(i)).toBe(h.key);
+      expect(columnForStatus(H, h.key)).toBe(i);
+      expect(statusForColumn(H, i)).toBe(h.key);
     });
   });
 
+  it("finds a list an admin added", () => {
+    expect(columnForStatus(WITH_REVIEW, "review")).toBe(4);
+    expect(statusForColumn(WITH_REVIEW, 4)).toBe("review");
+  });
+
   it("puts cards without a known status in To Do", () => {
-    expect(columnForStatus(undefined)).toBe(0);
-    expect(columnForStatus("archived")).toBe(0);
+    expect(columnForStatus(H, undefined)).toBe(0);
+    expect(columnForStatus(H, "archived")).toBe(0);
   });
 
   it("clamps out-of-range columns", () => {
-    expect(statusForColumn(-1)).toBe("todo");
-    expect(statusForColumn(9)).toBe("done");
+    expect(statusForColumn(H, -1)).toBe("todo");
+    expect(statusForColumn(H, 9)).toBe("done");
   });
 });
 
 describe("buildCardLayout", () => {
   it("places cards in the column of their status, one cell each", () => {
     expect(
-      buildCardLayout([
+      buildCardLayout(H, [
         { id: "a" },
         { id: "b", status: "test" },
         { id: "c", status: "todo" },
@@ -186,21 +211,21 @@ describe("buildCardLayout", () => {
 
   it("keeps the saved row when the saved column matches the status", () => {
     const saved = [{ id: "a", x: 3, y: 4, w: 3, h: 2 }];
-    expect(buildCardLayout([{ id: "a", status: "done" }], saved)).toEqual([
+    expect(buildCardLayout(H, [{ id: "a", status: "done" }], saved)).toEqual([
       { i: "a", x: 3, y: 4, w: 1, h: 1 },
     ]);
   });
 
   it("follows the status when someone else moved the card", () => {
     const saved = [{ id: "a", x: 0, y: 2, w: 1, h: 1 }];
-    expect(buildCardLayout([{ id: "a", status: "in-progress" }], saved)).toEqual([
+    expect(buildCardLayout(H, [{ id: "a", status: "in-progress" }], saved)).toEqual([
       { i: "a", x: 1, y: 0, w: 1, h: 1 },
     ]);
   });
 
   it("places cards without a saved row below the saved ones in their column", () => {
     const saved = [{ id: "a", x: 0, y: 2, w: 1, h: 1 }];
-    expect(buildCardLayout([{ id: "new" }, { id: "a" }], saved)[0]).toEqual({
+    expect(buildCardLayout(H, [{ id: "new" }, { id: "a" }], saved)[0]).toEqual({
       i: "new",
       x: 0,
       y: 3,
@@ -219,8 +244,8 @@ describe("listHeight", () => {
 });
 
 describe("collapsed columns", () => {
-  it("keeps only known statuses, in board order, without duplicates", () => {
-    expect(normalizeCollapsed(["done", "nope", "todo", "done", 3])).toEqual(["todo", "done"]);
+  it("keeps strings without duplicates (lists may load later)", () => {
+    expect(normalizeCollapsed(["done", "review", "todo", "done", 3])).toEqual(["done", "review", "todo"]);
     expect(normalizeCollapsed("todo")).toEqual([]);
     expect(normalizeCollapsed(null)).toEqual([]);
   });
@@ -231,21 +256,21 @@ describe("collapsed columns", () => {
   });
 
   it("checks a grid column against the collapsed statuses", () => {
-    expect(isColumnCollapsed(["test"], columnForStatus("test"))).toBe(true);
-    expect(isColumnCollapsed(["test"], columnForStatus("done"))).toBe(false);
+    expect(isColumnCollapsed(H, ["test"], columnForStatus(H, "test"))).toBe(true);
+    expect(isColumnCollapsed(H, ["test"], columnForStatus(H, "done"))).toBe(false);
   });
 });
 
 describe("board columns", () => {
   it("splits the board evenly when nothing is hidden", () => {
-    const columns = boardColumns([]);
-    expect(columns.expandedSpan).toBe(BOARD_UNITS / BOARD_COLS);
+    const columns = boardColumns(H, []);
+    expect(columns.expandedSpan).toBe(EXPANDED_SPAN);
     expect(columns.units).toBe(BOARD_UNITS);
     expect(columns.spans.map((s) => s.start)).toEqual([0, 4, 8, 12]);
   });
 
   it("shrinks a hidden list to one unit without widening the others", () => {
-    const columns = boardColumns(["in-progress"]);
+    const columns = boardColumns(H, ["in-progress"]);
     expect(columns.spans).toEqual([
       { start: 0, span: 4, collapsed: false },
       { start: 4, span: 1, collapsed: true },
@@ -257,11 +282,11 @@ describe("board columns", () => {
   });
 
   it("fills the screen on desktop when nothing is hidden", () => {
-    expect(desktopBoardWidth(boardColumns([]))).toBe("100%");
+    expect(desktopBoardWidth(boardColumns(H, []))).toBe("100%");
   });
 
   it("keeps narrow strips when every list is hidden", () => {
-    const columns = boardColumns(DEFAULT_HEADERS.map((h) => h.key));
+    const columns = boardColumns(H, DEFAULT_HEADERS.map((h) => h.key));
     expect(columns.spans.map((s) => s.span)).toEqual([1, 1, 1, 1]);
     expect(columns.units).toBe(4);
     expect(desktopBoardWidth(columns)).toBe("25%");
@@ -269,7 +294,7 @@ describe("board columns", () => {
   });
 
   it("snaps a grid position to the nearest visible list", () => {
-    const columns = boardColumns(["in-progress"]);
+    const columns = boardColumns(H, ["in-progress"]);
     expect(columnAtGridX(columns, 0)).toBe(0);
     expect(columnAtGridX(columns, 4)).toBe(2); // remsan hoppas över
     expect(columnAtGridX(columns, 8)).toBe(3);
@@ -277,16 +302,31 @@ describe("board columns", () => {
   });
 
   it("converts card positions to grid units and back", () => {
-    const columns = boardColumns(["todo"]);
+    const columns = boardColumns(H, ["todo"]);
     const layout = [{ i: "a", x: 2, y: 1, w: 1, h: 1 }];
     const grid = toGridLayout(layout, columns);
     expect(grid).toEqual([{ i: "a", x: 5, y: 1, w: 4, h: 1 }]);
     expect(fromGridLayout(grid, columns)).toEqual(layout);
   });
 
+  it("makes the board wider than the screen for more than four lists", () => {
+    const columns = boardColumns(WITH_REVIEW, []);
+    expect(columns.units).toBe(20);
+    expect(desktopBoardWidth(columns)).toBe("125%");
+    expect(mobileBoardWidth(columns)).toBe("500%");
+  });
+
+  it("adds room after the lists for the add-list slot", () => {
+    const columns = boardColumns(H, [], EXPANDED_SPAN);
+    expect(columns.units).toBe(BOARD_UNITS + EXPANDED_SPAN);
+    expect(columns.spans.map((s) => s.start)).toEqual([0, 4, 8, 12]);
+    // Kort snäpper aldrig till platsen för "Add another list"
+    expect(columnAtGridX(columns, 17)).toBe(3);
+  });
+
   it("makes each visible list one screen wide on mobile", () => {
-    expect(mobileBoardWidth(boardColumns([]))).toBe("400%");
-    expect(mobileBoardWidth(boardColumns(["done"]))).toBe("325%");
+    expect(mobileBoardWidth(boardColumns(H, []))).toBe("400%");
+    expect(mobileBoardWidth(boardColumns(H, ["done"]))).toBe("325%");
   });
 });
 
@@ -298,15 +338,15 @@ describe("column helpers", () => {
   ];
 
   it("counts cards per column", () => {
-    expect(countCardsPerColumn(layout)).toEqual([2, 0, 1, 0]);
+    expect(countCardsPerColumn(H, layout)).toEqual([2, 0, 1, 0]);
   });
 
   it("gives a collapsed list no rows", () => {
-    expect(rowsPerColumn([2, 0, 1, 0], ["todo"])).toEqual([0, 0, 1, 0]);
+    expect(rowsPerColumn([2, 0, 1, 0], boardColumns(H, ["todo"]))).toEqual([0, 0, 1, 0]);
   });
 
   it("splits out cards in collapsed lists", () => {
-    const { visible, hidden } = splitByCollapsed(layout, ["todo"]);
+    const { visible, hidden } = splitByCollapsed(H, layout, ["todo"]);
 
     expect(visible.map((l) => l.i)).toEqual(["c"]);
     expect(hidden.map((l) => l.i)).toEqual(["a", "b"]);
