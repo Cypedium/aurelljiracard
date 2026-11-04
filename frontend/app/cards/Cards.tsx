@@ -438,10 +438,12 @@ export default function Home() {
                     <button
                       type="button"
                       title="Click to rename (for everyone)"
-                      className="pointer-events-auto min-w-0 flex-1 truncate rounded-md px-2 py-1 text-left text-sm font-semibold hover:bg-black/10"
+                      className="pointer-events-auto min-w-0 flex-1 truncate rounded-md px-2 py-1 text-left text-sm font-semibold"
                       onClick={() => setRenamingKey(h.key)}
                     >
-                      {h.title}
+                      <span className="inline-block hover:bg-black/10 rounded px-1">
+                        {h.title}
+                      </span>
                     </button>
                   ) : (
                     <span className="min-w-0 flex-1 truncate px-2 py-1 text-sm font-semibold" title={h.title}>
@@ -518,7 +520,7 @@ export default function Home() {
                 ) : (
                   <button
                     type="button"
-                    className="pointer-events-auto flex w-full items-center gap-2 rounded-xl bg-white/25 px-3 py-2.5 text-sm font-semibold text-white backdrop-blur-sm hover:bg-white/35"
+                    className="pointer-events-auto flex w-fit items-center gap-2 rounded-xl bg-white/25 px-3 py-2.5 text-sm font-semibold text-white backdrop-blur-sm hover:bg-white/35"
                     onClick={() => setAddingList(true)}
                   >
                     <PlusIcon className="size-4" aria-hidden />
