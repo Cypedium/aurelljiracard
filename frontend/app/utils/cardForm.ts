@@ -40,3 +40,13 @@ export const cardToFormValues = (card: Card): CardFormValues => ({
   productId: card.productId,
   rating: card.rating,
 });
+
+// Samma meddelande som backend (409); kollas medan man skriver, servern kollar igen vid sparning
+export const DUPLICATE_PRODUCT_ID_MESSAGE = "Issue key already exists.";
+export const ISSUE_KEY_CHECK_DELAY_MS = 300;
+// Felets typ i formuläret, så att bara det felet tas bort när man skriver en annan key
+export const DUPLICATE_ERROR_TYPE = "duplicate";
+
+// Issue keys som andra kort använder (exakt matchning, som backend); kortet som redigeras får behålla sin
+export const takenIssueKeys = (cards: Pick<Card, "_id" | "productId">[], ownId?: string): Set<string> =>
+  new Set(cards.filter((c) => c._id !== ownId).map((c) => c.productId));
