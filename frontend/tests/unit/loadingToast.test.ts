@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, jest } from "@jest/globals";
-import { createLoadingTracker } from "../../app/utils/loadingToast";
+import { createLoadingTracker, loadingToastText } from "../../app/utils/loadingToast";
 
 describe("createLoadingTracker", () => {
   const show = jest.fn();
@@ -51,5 +51,20 @@ describe("createLoadingTracker", () => {
     tracker.start();
     jest.advanceTimersByTime(800);
     expect(show).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("loadingToastText", () => {
+  it("has a text for register, login and logout", () => {
+    expect(loadingToastText("/auth/register")).toBe("Creating account, please wait…");
+    expect(loadingToastText("/auth/login")).toBe("Logging in, please wait…");
+    expect(loadingToastText("/auth/logout")).toBe("Logging out, please wait…");
+  });
+
+  it("returns null for data requests, which show skeletons instead", () => {
+    expect(loadingToastText("/card")).toBeNull();
+    expect(loadingToastText("/user/layout")).toBeNull();
+    expect(loadingToastText("/auth/refresh")).toBeNull();
+    expect(loadingToastText(undefined)).toBeNull();
   });
 });

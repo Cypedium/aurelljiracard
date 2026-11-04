@@ -1,5 +1,11 @@
 export const LOADING_TOAST_ID = "loading-data";
-export const LOADING_TOAST_TEXT = "Loading data, please wait…";
+// Bara registrering, inloggning och utloggning visar loading-toasten; data som laddas visar skeletons
+const LOADING_TOAST_TEXTS: Record<string, string> = {
+  "/auth/register": "Creating account, please wait…",
+  "/auth/login": "Logging in, please wait…",
+  "/auth/logout": "Logging out, please wait…",
+};
+export const loadingToastText = (url?: string): string | null => (url && LOADING_TOAST_TEXTS[url]) || null;
 // Visas bara om anropet dröjer, t.ex. när Fly väcker en stoppad maskin (cold start)
 export const LOADING_TOAST_DELAY_MS = 800;
 
