@@ -246,22 +246,29 @@ export const rowsPerColumn = (counts: number[], { spans }: BoardColumns): number
 
 // Varje kort är en kolumn brett och en rad högt. Kolumnen kommer från kortets
 // status (delad av alla). Ordningen inom kolumnen kommer från användarens
-// sparade positioner; kort utan sparad position i sin kolumn hamnar sist.
+// sparade positioner; kort utan sparad position i sin kolumn (nya kort, eller
+// flyttade av någon annan) hamnar överst, i den ordning de kommer (nyast först).
 export const buildCardLayout = (
   headers: BoardHeader[],
   cards: BoardCard[],
   saved: SavedCardPosition[] = [],
 ): CardPosition[] => {
   const byId = new Map(saved.map((s) => [s.id, s]));
-  const nextRow = new Array<number>(headers.length).fill(0);
+  const unsavedRows = new Array<number>(headers.length).fill(0);
 
   const placed = cards.map(({ id, status }) => {
     const x = columnForStatus(headers, status);
     const pos = byId.get(id);
     const y = pos && pos.x === x ? pos.y : null;
-    if (y !== null) nextRow[x] = Math.max(nextRow[x], y + 1);
-    return { id, x, y };
+    return { id, x, y, top: y === null ? unsavedRows[x]++ : 0 };
   });
 
-  return placed.map(({ id, x, y }) => ({ i: id, x, y: y ?? nextRow[x]++, w: 1, h: 1 }));
+  // Sparade kort flyttas ner under de nya; inbördes ordning behålls
+  return placed.map(({ id, x, y, top }) => ({
+    i: id,
+    x,
+    y: y === null ? top : y + unsavedRows[x],
+    w: 1,
+    h: 1,
+  }));
 };
