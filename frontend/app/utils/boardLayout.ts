@@ -211,13 +211,25 @@ export const boardColumns = (headers: BoardHeader[], collapsed: CardStatus[], ex
   return { spans, units: start + extraUnits, expandedSpan: EXPANDED_SPAN };
 };
 
-// Närmaste utfällda lista för en x-position i gridden; kort kan inte släppas på en remsa
+// Närmaste utfällda lista för en x-position i gridden. Kort snäpper inte till en remsa;
+// släpps ett kort på remsan (HIDDEN_LIST_ATTR) flyttas det överst i den dolda listan
 export const columnAtGridX = ({ spans }: BoardColumns, x: number): number =>
   spans.reduce(
     (best, s, i) =>
       !s.collapsed && (best < 0 || Math.abs(s.start - x) < Math.abs(spans[best].start - x)) ? i : best,
     -1,
   );
+
+// Remsan för en dold lista har detta attribut med listans key, så att ett släppt kort hittar den
+export const HIDDEN_LIST_ATTR = "data-hidden-list";
+
+// Pekarens position i ett mus- eller touch-event, t.ex. när ett kort släpps
+export const eventPoint = (e: Event): { x: number; y: number } | null => {
+  const { clientX, clientY } = e as MouseEvent;
+  if (typeof clientX === "number") return { x: clientX, y: clientY };
+  const touch = (e as TouchEvent).changedTouches?.[0];
+  return touch ? { x: touch.clientX, y: touch.clientY } : null;
+};
 
 export const snapGridX = (columns: BoardColumns, x: number): number =>
   columns.spans[Math.max(0, columnAtGridX(columns, x))].start;

@@ -27,6 +27,7 @@ import {
   listHeight,
   columnForStatus,
   countCardsPerColumn,
+  eventPoint,
   isColumnCollapsed,
   normalizeCollapsed,
   normalizeLayout,
@@ -355,5 +356,20 @@ describe("column helpers", () => {
 
     expect(visible.map((l) => l.i)).toEqual(["c"]);
     expect(hidden.map((l) => l.i)).toEqual(["a", "b"]);
+  });
+});
+
+describe("eventPoint", () => {
+  it("reads the pointer from a mouse event", () => {
+    expect(eventPoint({ clientX: 10, clientY: 20 } as unknown as Event)).toEqual({ x: 10, y: 20 });
+  });
+
+  it("reads the lifted finger from a touch event", () => {
+    const e = { changedTouches: [{ clientX: 5, clientY: 6 }] } as unknown as Event;
+    expect(eventPoint(e)).toEqual({ x: 5, y: 6 });
+  });
+
+  it("returns null without a position", () => {
+    expect(eventPoint({} as Event)).toBeNull();
   });
 });

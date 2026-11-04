@@ -52,6 +52,8 @@ import {
   buildCardLayout,
   cardKey,
   columnAtGridX,
+  eventPoint,
+  HIDDEN_LIST_ATTR,
   countCardsPerColumn,
   defaultListColor,
   fromGridLayout,
@@ -210,6 +212,14 @@ export default function Home() {
     ],
     [columns],
   );
+  // Dold lista som ett draget kort är över (remsan markeras); släpps kortet där flyttas det dit
+  const [dropTarget, setDropTarget] = useState<CardStatus | null>(null);
+  const hiddenListAt = (e: Event): CardStatus | null => {
+    const point = eventPoint(e);
+    if (!point) return null;
+    const strip = document.elementsFromPoint(point.x, point.y).find((el) => el.hasAttribute(HIDDEN_LIST_ATTR));
+    return strip?.getAttribute(HIDDEN_LIST_ATTR) ?? null;
+  };
   // Gridens positioner (enheter) → sparade positioner (kolumner), plus korten i dolda listor
   const savedPositions = (currentLayout: readonly CardPosition[]) =>
     toSavedPositions([...fromGridLayout(currentLayout, columns), ...hiddenLayout]);
@@ -384,7 +394,10 @@ export default function Home() {
                   aria-label={`Show ${h.title}`}
                   aria-expanded={false}
                   title="Show list"
-                  className={`pointer-events-auto flex min-w-0 flex-col items-center gap-3 overflow-hidden rounded-xl px-1 py-3 shadow-[0_1px_1px_rgba(9,30,66,0.25)] hover:brightness-95 ${listColor(h).className}`}
+                  {...{ [HIDDEN_LIST_ATTR]: h.key }}
+                  className={`pointer-events-auto flex min-w-0 flex-col items-center gap-3 overflow-hidden rounded-xl px-1 py-3 shadow-[0_1px_1px_rgba(9,30,66,0.25)] hover:brightness-95 ${
+                    dropTarget === h.key ? "ring-2 ring-white brightness-95" : ""
+                  } ${listColor(h).className}`}
                   style={{ maxHeight: COLLAPSED_LIST_MAX_HEIGHT, ...listColor(h).style }}
                   onClick={() => toggleColumn(h.key)}
                 >
@@ -561,8 +574,18 @@ export default function Home() {
               onLayoutChange={(currentLayout) => {
                 persistLayout({ ...userLayout, cards: savedPositions(currentLayout) });
               }}
-              onDragStop={(currentLayout, oldItem, newItem) => {
+              onDrag={(_layout, _oldItem, _newItem, _placeholder, e) => setDropTarget(hiddenListAt(e))}
+              onDragStop={(currentLayout, oldItem, newItem, _placeholder, e) => {
                 if (!oldItem || !newItem) return;
+                // Släppt på en dold lista: kortet flyttas dit och hamnar överst
+                // (det saknar sparad position där, se buildCardLayout)
+                const hiddenTarget = hiddenListAt(e);
+                setDropTarget(null);
+                if (hiddenTarget) {
+                  const moved = cards.find((fb, i) => cardKey(fb, i) === newItem.i);
+                  if (moved?._id) moveCard(moved._id, hiddenTarget);
+                  return;
+                }
                 const from = columnAtGridX(columns, oldItem.x);
                 const to = columnAtGridX(columns, newItem.x);
                 if (from === to) return;
