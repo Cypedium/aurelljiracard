@@ -175,7 +175,7 @@ class UserApiTest extends ApiIntegrationTest {
                 {
                   "cols": 4,
                   "headers": [{"key": "in-progress", "title": "  Doing  "}],
-                  "cards": [{"id": "c1", "x": 1, "y": 0, "w": 1, "h": 2}]
+                  "cards": [{"id": "c1", "x": 1, "y": 0, "w": 1, "h": 2, "status": "in-progress"}]
                 }"""), token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Layout updated successfully."));
@@ -186,7 +186,8 @@ class UserApiTest extends ApiIntegrationTest {
                 .andExpect(jsonPath("$.headers[0].title").value("Doing"))
                 .andExpect(jsonPath("$.cards[0].id").value("c1"))
                 .andExpect(jsonPath("$.cards[0].x").value(1))
-                .andExpect(jsonPath("$.cards[0].h").value(2));
+                .andExpect(jsonPath("$.cards[0].h").value(2))
+                .andExpect(jsonPath("$.cards[0].status").value("in-progress"));
     }
 
     @Test
@@ -223,6 +224,13 @@ class UserApiTest extends ApiIntegrationTest {
         mvc.perform(bearer(json(put("/user/layout"), """
                 {"headers": [{"key": "backlog", "title": "Backlog"}]}"""), token))
                 .andExpect(status().isBadRequest());
+
+        for (String status : new String[] {"Not a key", "backlog"}) {
+            mvc.perform(bearer(json(put("/user/layout"), """
+                    {"cards": [{"id": "c1", "x": 0, "y": 0, "status": "%s"}]}""".formatted(status)), token))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.message").value("Each saved card position needs a valid list key as status."));
+        }
 
         for (String color : new String[] {"red", "#fff", "#eed7fc; x"}) {
             mvc.perform(bearer(json(put("/user/layout"), """

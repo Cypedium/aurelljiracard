@@ -21,8 +21,11 @@ public record Layout(int cols, List<Header> headers, List<CardPosition> cards) {
     public record Header(String key, String title, String color) {
     }
 
-    /** A react-grid-layout item; {@code content} is opaque client data. */
+    /**
+     * A react-grid-layout item; {@code status} is the list key ({@code x} is the list index, which
+     * changes when lists are moved), {@code content} is opaque client data.
+     */
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public record CardPosition(String id, Integer x, Integer y, Integer w, Integer h, Object content) {
+    public record CardPosition(String id, Integer x, Integer y, Integer w, Integer h, String status, Object content) {
     }
 }
