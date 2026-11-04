@@ -197,7 +197,7 @@ export const COLLAPSED_LIST_MAX_HEIGHT = 280;
 export type ColumnSpan = { start: number; span: number; collapsed: boolean };
 export type BoardColumns = { spans: ColumnSpan[]; units: number; expandedSpan: number };
 
-// extraUnits: plats efter listorna, t.ex. för "Add another list"
+// extraUnits: plats efter listorna, t.ex. för "Add new column"
 export const boardColumns = (headers: BoardHeader[], collapsed: CardStatus[], extraUnits = 0): BoardColumns => {
   let start = 0;
   const spans = headers.map((h) => {

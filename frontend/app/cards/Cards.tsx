@@ -87,7 +87,7 @@ export default function Home() {
   // Listorna delas av alla; admins lägger till, byter namn och färg
   const [headers, setHeaders] = useState<BoardHeader[]>(DEFAULT_HEADERS);
   const [columnsLoaded, setColumnsLoaded] = useState(false);
-  // Formuläret "Add another list" är öppet
+  // Formuläret "Add new column" är öppet
   const [addingList, setAddingList] = useState(false);
   const [userName, setUserName] = useState("");
   const [admin, setAdmin] = useState(false);
@@ -197,7 +197,7 @@ export default function Home() {
   const visibleIds = new Set(visibleLayout.map((l) => l.i));
 
   // Dolda listor blir smala remsor; gridden räknar i enheter i stället för kolumner.
-  // Admins får plats för "Add another list" sist
+  // Admins får plats för "Add new column" sist
   const columns = useMemo(
     () => boardColumns(headers, collapsed, admin ? EXPANDED_SPAN : 0),
     [headers, collapsed, admin],
@@ -509,7 +509,7 @@ export default function Home() {
                     onClick={() => setAddingList(true)}
                   >
                     <PlusIcon className="size-4" aria-hidden />
-                    Add another list
+                    Add new column
                   </button>
                 )}
               </div>

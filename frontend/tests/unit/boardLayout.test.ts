@@ -320,7 +320,7 @@ describe("board columns", () => {
     const columns = boardColumns(H, [], EXPANDED_SPAN);
     expect(columns.units).toBe(BOARD_UNITS + EXPANDED_SPAN);
     expect(columns.spans.map((s) => s.start)).toEqual([0, 4, 8, 12]);
-    // Kort snäpper aldrig till platsen för "Add another list"
+    // Kort snäpper aldrig till platsen för "Add new column"
     expect(columnAtGridX(columns, 17)).toBe(3);
   });
 
