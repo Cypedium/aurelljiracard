@@ -427,6 +427,9 @@ export default function Home() {
 
           {!layoutLoaded || !mounted ? null : visibleLayout.length > 0 && (
             <ResponsiveGridLayout
+              // Ny gridd när antalet enheter ändras (lista döljs/visas): annars räknar
+              // react-grid-layout om de gamla positionerna och korten hamnar fel
+              key={columns.units}
               className="gridLayout"
               layouts={{ lg: toGridLayout(visibleLayout, columns) }}
               breakpoints={{ lg: 0 }}
