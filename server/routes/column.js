@@ -8,6 +8,8 @@ const requireAdmin = require("../middleware/requireAdmin");
 // Mounted at /column in app.js. Lists are shared: everyone reads them, admins change them
 router.get("/", auth, columnController.getAll);
 router.post("/", auth, requireAdmin, columnController.create);
+// Order of all lists: { keys: [...] }
+router.put("/", auth, requireAdmin, columnController.reorder);
 router.put("/:key", auth, requireAdmin, columnController.update);
 
 module.exports = router;

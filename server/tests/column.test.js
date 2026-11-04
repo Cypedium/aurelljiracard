@@ -1,7 +1,8 @@
 jest.mock("../models/Column", () => ({
   listAll: jest.fn(),
   create: jest.fn(),
-  findOne: jest.fn()
+  findOne: jest.fn(),
+  bulkWrite: jest.fn()
 }));
 
 const request = require("supertest");
@@ -22,7 +23,8 @@ describe("auth guard", () => {
   it.each([
     ["get", "/column"],
     ["post", "/column"],
-    ["put", "/column/todo"]
+    ["put", "/column/todo"],
+    ["put", "/column"]
   ])("%s %s returns 401 without a token", async (method, path) => {
     const res = await request(app)[method](path);
 
@@ -31,13 +33,15 @@ describe("auth guard", () => {
 
   it.each([
     ["post", "/column"],
-    ["put", "/column/todo"]
+    ["put", "/column/todo"],
+    ["put", "/column"]
   ])("%s %s returns 403 for a regular user", async (method, path) => {
-    const res = await request(app)[method](path).set("Authorization", authHeader()).send({ title: "Review" });
+    const res = await request(app)[method](path).set("Authorization", authHeader()).send({ title: "Review", keys: [] });
 
     expect(res.status).toBe(403);
     expect(Column.create).not.toHaveBeenCalled();
     expect(Column.findOne).not.toHaveBeenCalled();
+    expect(Column.bulkWrite).not.toHaveBeenCalled();
   });
 });
 
@@ -149,6 +153,36 @@ describe("PUT /column/:key", () => {
 
     expect(res.status).toBe(400);
     expect(Column.findOne).not.toHaveBeenCalled();
+  });
+});
+
+describe("PUT /column", () => {
+  it("moves lists for everyone and returns them in the new order", async () => {
+    const keys = ["done", "todo", "in-progress", "test"];
+
+    const res = await request(app).put("/column").set("Authorization", adminHeader()).send({ keys });
+
+    expect(res.status).toBe(200);
+    expect(res.body.map((c) => c.key)).toEqual(keys);
+    expect(res.body.map((c) => c.position)).toEqual([0, 1, 2, 3]);
+    expect(res.body[0]).toEqual({ key: "done", title: "Done", color: null, position: 0 });
+    expect(Column.bulkWrite).toHaveBeenCalledWith(
+      keys.map((key, position) => ({ updateOne: { filter: { key }, update: { $set: { position } } } }))
+    );
+  });
+
+  it.each([
+    ["no keys", {}],
+    ["keys that are not strings", { keys: [{ $ne: null }, "todo", "test", "done"] }],
+    ["a missing list", { keys: ["todo", "in-progress", "test"] }],
+    ["an unknown list", { keys: ["todo", "in-progress", "test", "nope"] }],
+    ["a list twice", { keys: ["todo", "todo", "test", "done"] }]
+  ])("returns 400 for %s", async (_name, body) => {
+    const res = await request(app).put("/column").set("Authorization", adminHeader()).send(body);
+
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe("List order must contain every list exactly once.");
+    expect(Column.bulkWrite).not.toHaveBeenCalled();
   });
 });
 

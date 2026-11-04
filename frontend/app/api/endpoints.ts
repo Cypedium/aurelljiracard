@@ -92,6 +92,9 @@ export const getColumns = () => api.get<BoardColumn[]>("/column");
 export const createColumn = (changes: ColumnChanges) => api.post<BoardColumn>("/column", changes);
 
 // Admin: renames and/or recolours a list for everyone
+// Admin: listornas ordning för alla; keys = alla listor, i den nya ordningen
+export const reorderColumns = (keys: CardStatus[]) => api.put<BoardColumn[]>("/column", { keys });
+
 export const updateColumn = (key: CardStatus, changes: ColumnChanges) =>
   api.put<BoardColumn>(`/column/${encodeURIComponent(key)}`, changes);
 
@@ -129,6 +132,7 @@ export default {
   getColumns,
   createColumn,
   updateColumn,
+  reorderColumns,
   updateUser,
   deleteUser,
   revokeUserSessions,

@@ -49,7 +49,8 @@ abstract class ApiIntegrationTest {
         jdbc.update("DELETE FROM board_columns WHERE column_key NOT IN ('todo', 'in-progress', 'test', 'done')");
         jdbc.update("""
                 UPDATE board_columns SET color = NULL, title = CASE column_key
-                    WHEN 'todo' THEN 'To Do' WHEN 'in-progress' THEN 'In Progress' WHEN 'test' THEN 'Test' ELSE 'Done' END""");
+                    WHEN 'todo' THEN 'To Do' WHEN 'in-progress' THEN 'In Progress' WHEN 'test' THEN 'Test' ELSE 'Done' END,
+                    position = CASE column_key WHEN 'todo' THEN 0 WHEN 'in-progress' THEN 1 WHEN 'test' THEN 2 ELSE 3 END""");
     }
 
     /** Registers a user, makes them admin (set directly in the database, like in production) and returns their access token. */

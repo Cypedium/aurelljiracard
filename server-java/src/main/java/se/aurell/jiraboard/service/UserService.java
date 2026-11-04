@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import se.aurell.jiraboard.dto.LayoutRequest;
 import se.aurell.jiraboard.dto.UserResponse;
 import se.aurell.jiraboard.dto.UserUpdateRequest;
+import se.aurell.jiraboard.entity.CardStatus;
 import se.aurell.jiraboard.entity.Layout;
 import se.aurell.jiraboard.entity.Role;
 import se.aurell.jiraboard.entity.User;
@@ -21,6 +22,7 @@ import se.aurell.jiraboard.security.AuthUser;
 public class UserService {
 
     private static final String USERNAME_TAKEN_MESSAGE = "Username already taken.";
+    private static final String CARD_POSITION_MESSAGE = "Each saved card position needs a valid list key as status.";
 
     private final UserRepository userRepository;
     private final CardRepository cardRepository;
@@ -48,6 +50,10 @@ public class UserService {
     /** Fields left out of the request keep their saved value. */
     @Transactional
     public void updateLayout(AuthUser authUser, LayoutRequest request) {
+        // A saved card position may name its list (status), so it survives lists being moved
+        if (request.cards() != null && !request.cards().stream().allMatch(UserService::isValidCardPosition)) {
+            throw ApiException.badRequest(CARD_POSITION_MESSAGE);
+        }
         User user = findUser(authUser);
         Layout saved = user.getLayout();
 
@@ -127,6 +133,10 @@ public class UserService {
         if (!user.isAdmin()) {
             throw ApiException.forbidden("Admins only.");
         }
+    }
+
+    private static boolean isValidCardPosition(Layout.CardPosition c) {
+        return c != null && (c.status() == null || CardStatus.isColumnKey(c.status()));
     }
 
     private static Layout.Header toHeader(LayoutRequest.HeaderRequest h) {

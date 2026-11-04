@@ -38,6 +38,40 @@ class ColumnApiTest extends ApiIntegrationTest {
         mvc.perform(bearer(json(put("/column/todo"), """
                 {"title": "Ready"}"""), alice))
                 .andExpect(status().isForbidden());
+
+        mvc.perform(bearer(json(put("/column"), """
+                {"keys": ["done", "todo", "in-progress", "test"]}"""), alice))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void adminMovesListsForEveryone() throws Exception {
+        mvc.perform(bearer(json(put("/column"), """
+                {"keys": ["done", "todo", "in-progress", "test"]}"""), adminAccessToken("boss")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].key").value(contains("done", "todo", "in-progress", "test")))
+                .andExpect(jsonPath("$[*].position").value(contains(0, 1, 2, 3)));
+
+        mvc.perform(bearer(get("/column"), accessToken("alice")))
+                .andExpect(jsonPath("$[*].key").value(contains("done", "todo", "in-progress", "test")))
+                .andExpect(jsonPath("$[0].title").value("Done"));
+    }
+
+    @Test
+    void listOrderMustContainEveryListOnce() throws Exception {
+        String admin = adminAccessToken("boss");
+        for (String body : new String[] {
+                "{}",
+                "{\"keys\": [\"todo\", \"in-progress\", \"test\"]}",
+                "{\"keys\": [\"todo\", \"in-progress\", \"test\", \"nope\"]}",
+                "{\"keys\": [\"todo\", \"todo\", \"test\", \"done\"]}",
+                "{\"keys\": [null, \"in-progress\", \"test\", \"done\"]}"}) {
+            mvc.perform(bearer(json(put("/column"), body), admin))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.message").value("List order must contain every list exactly once."));
+        }
+        mvc.perform(bearer(get("/column"), admin))
+                .andExpect(jsonPath("$[*].key").value(contains("todo", "in-progress", "test", "done")));
     }
 
     @Test

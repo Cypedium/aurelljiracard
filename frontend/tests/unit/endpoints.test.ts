@@ -33,6 +33,7 @@ describe("API endpoints", () => {
     ["getColumns", () => endpoints.getColumns(), "get", "/column"],
     ["createColumn", () => endpoints.createColumn({ title: "Review" }), "post", "/column"],
     ["updateColumn", () => endpoints.updateColumn("in-progress", { title: "Doing", color: null }), "put", "/column/in-progress"],
+    ["reorderColumns", () => endpoints.reorderColumns(["done", "todo"]), "put", "/column"],
     ["updateUser", () => endpoints.updateUser("u1", { role: "admin" }), "patch", "/user/u1"],
     ["deleteUser", () => endpoints.deleteUser("u1"), "delete", "/user/u1"],
     ["revokeUserSessions", () => endpoints.revokeUserSessions("u1"), "post", "/user/u1/logout"],

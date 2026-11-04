@@ -10,6 +10,7 @@ const MAX_COLUMNS = 12;
 const TITLE_MESSAGE = `List name is required (max ${TITLE_MAX_LENGTH} characters).`;
 const COLOR_MESSAGE = "List color must be a hex color like #eed7fc.";
 const DUPLICATE_KEY_ERROR = 11000;
+const ORDER_MESSAGE = "List order must contain every list exactly once.";
 
 const toColumn = ({ key, title, color, position }) => ({ key, title, color: color ?? null, position });
 
@@ -90,5 +91,29 @@ exports.update = async (req, res) => {
   } catch (error) {
     console.error("Update column error:", error.message);
     res.status(500).json({ message: "Could not update list." });
+  }
+};
+
+// Admin: sets the order of all lists for everyone; keys must be every list exactly once
+exports.reorder = async (req, res) => {
+  const { keys } = req.body;
+
+  if (!Array.isArray(keys) || !keys.every((key) => typeof key === "string")) {
+    return res.status(400).json({ message: ORDER_MESSAGE });
+  }
+
+  try {
+    const columns = await Column.listAll();
+    const byKey = new Map(columns.map((c) => [c.key, c]));
+    if (keys.length !== columns.length || new Set(keys).size !== keys.length || !keys.every((key) => byKey.has(key))) {
+      return res.status(400).json({ message: ORDER_MESSAGE });
+    }
+    await Column.bulkWrite(
+      keys.map((key, position) => ({ updateOne: { filter: { key }, update: { $set: { position } } } }))
+    );
+    res.status(200).json(keys.map((key, position) => toColumn({ ...byKey.get(key), position })));
+  } catch (error) {
+    console.error("Reorder columns error:", error.message);
+    res.status(500).json({ message: "Could not move the list." });
   }
 };

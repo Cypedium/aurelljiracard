@@ -1,11 +1,16 @@
 package se.aurell.jiraboard.service;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import se.aurell.jiraboard.dto.ColumnOrderRequest;
 import se.aurell.jiraboard.dto.ColumnRequest;
 import se.aurell.jiraboard.dto.ColumnResponse;
 import se.aurell.jiraboard.entity.BoardColumn;
@@ -14,7 +19,7 @@ import se.aurell.jiraboard.exception.ApiException;
 import se.aurell.jiraboard.repository.BoardColumnRepository;
 import se.aurell.jiraboard.security.AuthUser;
 
-/** Board columns are shared: everyone reads them, admins add, rename and recolour them. */
+/** Board columns are shared: everyone reads them, admins add, rename, recolour and move them. */
 @Service
 public class ColumnService {
 
@@ -61,6 +66,22 @@ public class ColumnService {
         column.setTitle(request.title().trim());
         column.setColor(toColor(request.color()));
         return ColumnResponse.from(column);
+    }
+
+    /** Admin: sets the order of all lists for everyone; keys must be every list exactly once. */
+    @Transactional
+    public List<ColumnResponse> reorder(ColumnOrderRequest request, AuthUser user) {
+        requireAdmin(user);
+        List<String> keys = request.keys();
+        Map<String, BoardColumn> byKey = findAll().stream()
+                .collect(Collectors.toMap(BoardColumn::getColumnKey, Function.identity()));
+        if (keys.size() != byKey.size() || new HashSet<>(keys).size() != keys.size() || !byKey.keySet().containsAll(keys)) {
+            throw ApiException.badRequest(ColumnOrderRequest.ORDER_MESSAGE);
+        }
+        for (int position = 0; position < keys.size(); position++) {
+            byKey.get(keys.get(position)).setPosition(position);
+        }
+        return keys.stream().map(key -> ColumnResponse.from(byKey.get(key))).toList();
     }
 
     /** A card's status must be a column key or the backlog; the message lists the valid ones. */

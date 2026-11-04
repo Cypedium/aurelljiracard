@@ -29,6 +29,10 @@ const isValidHeader = (h) =>
 const isValidHeaderColor = (h) =>
   h.color === undefined || h.color === null || (typeof h.color === "string" && HEX_COLOR.test(h.color));
 
+const CARD_POSITION_MESSAGE = "Each saved card position needs a valid list key as status.";
+const isValidCardPosition = (c) =>
+  c !== null && typeof c === "object" && (c.status === undefined || isColumnKey(c.status));
+
 const toHeader = ({ key, title, color }) => ({
   key,
   title: title.trim(),
@@ -91,6 +95,10 @@ exports.updateLayout = async (req, res) => {
   }
   if (headers !== undefined && !headers.every(isValidHeaderColor)) {
     return res.status(400).json({ message: HEADER_COLOR_MESSAGE });
+  }
+  // A saved card position may name its list (status), so it survives lists being moved
+  if (cards !== undefined && !cards.every(isValidCardPosition)) {
+    return res.status(400).json({ message: CARD_POSITION_MESSAGE });
   }
 
   try {

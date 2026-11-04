@@ -93,6 +93,27 @@ describe("layout", () => {
     expect(user.layout.headers).toEqual([{ key: "todo", title: "Backlog" }]);
   });
 
+  it("PUT /user/layout keeps the list key of saved card positions", async () => {
+    const user = { layout: { cols: 4, headers: [], cards: [] }, save: jest.fn().mockResolvedValue({}) };
+    User.findById.mockResolvedValue(user);
+    const cards = [{ id: "c1", x: 2, y: 0, w: 1, h: 1, status: "test" }];
+
+    const res = await request(app).put("/user/layout").set("Authorization", authHeader()).send({ cards });
+
+    expect(res.status).toBe(200);
+    expect(user.layout.cards).toEqual(cards);
+  });
+
+  it.each([[[null]], [[{ id: "c1", status: "Not a key" }]], [[{ id: "c1", status: { $ne: null } }]], [[{ id: "c1", status: "backlog" }]]])(
+    "PUT /user/layout rejects card positions %j with 400",
+    async (cards) => {
+      const res = await request(app).put("/user/layout").set("Authorization", authHeader()).send({ cards });
+
+      expect(res.status).toBe(400);
+      expect(User.findById).not.toHaveBeenCalled();
+    }
+  );
+
   it("PUT /user/layout saves an optional column color, lowercased", async () => {
     const user = { layout: { cols: 4, headers: [], cards: [] }, save: jest.fn().mockResolvedValue({}) };
     User.findById.mockResolvedValue(user);

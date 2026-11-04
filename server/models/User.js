@@ -18,6 +18,8 @@ const LayoutSchema = new mongoose.Schema({
       y: Number,
       w: Number,
       h: Number,
+      // Listans key; x är listans index, som ändras när listorna flyttas
+      status: String,
       content: mongoose.Schema.Types.Mixed
     }
   ]

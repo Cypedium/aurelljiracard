@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import se.aurell.jiraboard.dto.ColumnOrderRequest;
 import se.aurell.jiraboard.dto.ColumnRequest;
 import se.aurell.jiraboard.dto.ColumnResponse;
 import se.aurell.jiraboard.security.AuthUser;
@@ -36,6 +37,13 @@ public class ColumnController {
     @ResponseStatus(HttpStatus.CREATED)
     public ColumnResponse create(@Valid @RequestBody ColumnRequest request, @AuthenticationPrincipal AuthUser user) {
         return columnService.create(request, user);
+    }
+
+    /** Admin: moves lists; body {@code {"keys": [...]}} with every list key in the new order. */
+    @PutMapping
+    public List<ColumnResponse> reorder(@Valid @RequestBody ColumnOrderRequest request,
+            @AuthenticationPrincipal AuthUser user) {
+        return columnService.reorder(request, user);
     }
 
     @PutMapping("/{key}")

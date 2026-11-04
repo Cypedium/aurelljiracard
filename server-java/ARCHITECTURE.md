@@ -145,6 +145,7 @@ Two things worth noticing:
 | `DELETE` | `/card/{id}` | token, **author or admin** | `CardService.delete` | `200 { message }` |
 | `GET` | `/column` | token | `ColumnService.getAll` | `200 [{ key, title, color, position }…]` |
 | `POST` | `/column` | token, **admin** | `ColumnService.create` | `201 column` |
+| `PUT` | `/column` | token, **admin** | `ColumnService.reorder` | `200 [column…]` in the new order |
 | `PUT` | `/column/{key}` | token, **admin** | `ColumnService.update` | `200 column` |
 | `GET` | `/user` | token | `UserService.getAll` | `200 [{ _id, username, pictureUrl }]` |
 | `GET` | `/user/usernames` | token | `UserService.getUsernames` | `200 ["alice", …]` |
