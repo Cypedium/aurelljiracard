@@ -1,0 +1,13 @@
+// routes/column.js
+const express = require("express");
+const router = express.Router();
+const columnController = require("../controllers/columnController");
+const auth = require("../middleware/authMiddleware");
+const requireAdmin = require("../middleware/requireAdmin");
+
+// Mounted at /column in app.js. Lists are shared: everyone reads them, admins change them
+router.get("/", auth, columnController.getAll);
+router.post("/", auth, requireAdmin, columnController.create);
+router.put("/:key", auth, requireAdmin, columnController.update);
+
+module.exports = router;

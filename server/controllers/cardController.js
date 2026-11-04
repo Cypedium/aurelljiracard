@@ -1,7 +1,8 @@
 // server/controllers/cardController.js
 const Card = require("../models/Card");
+const Column = require("../models/Column");
 const { isNonEmptyString, isObjectId } = require("../utils/validate");
-const { BACKLOG_STATUS, CARD_STATUSES } = require("../utils/cardStatus");
+const { BACKLOG_STATUS } = require("../utils/cardStatus");
 const { CARD_TYPES } = require("../utils/cardType");
 const { ADMIN_ROLE } = require("../utils/role");
 
@@ -12,6 +13,10 @@ const PRODUCT_ID_PATTERN = /^[A-Za-z]+-[0-9]+$/;
 const PRODUCT_ID_MESSAGE = `Issue key must look like MA-100: letters, a hyphen and digits (max ${PRODUCT_ID_MAX_LENGTH} characters).`;
 const DUPLICATE_KEY_MESSAGE = "Issue key already exists.";
 const DUPLICATE_KEY_ERROR = 11000;
+
+// Valid statuses: the board columns' keys, then the backlog
+const cardStatuses = async () => [...(await Column.listAll()).map((c) => c.key), BACKLOG_STATUS];
+const statusMessage = (statuses) => `Status must be one of: ${statuses.join(", ")}.`;
 
 exports.getAll = async (req, res) => {
   try {
@@ -47,12 +52,15 @@ exports.create = async (req, res) => {
   if (invalid) {
     return res.status(400).json({ message: invalid });
   }
-  // Optional: lets the board create a card directly in a column
-  if (status !== undefined && (typeof status !== "string" || !CARD_STATUSES.includes(status))) {
-    return res.status(400).json({ message: `Status must be one of: ${CARD_STATUSES.join(", ")}.` });
-  }
 
   try {
+    // Optional: lets the board create a card directly in a column
+    if (status !== undefined) {
+      const statuses = await cardStatuses();
+      if (typeof status !== "string" || !statuses.includes(status)) {
+        return res.status(400).json({ message: statusMessage(statuses) });
+      }
+    }
     if (await Card.exists({ productId })) {
       return res.status(409).json({ message: DUPLICATE_KEY_MESSAGE });
     }
@@ -125,11 +133,12 @@ exports.updateStatus = async (req, res) => {
   if (!isObjectId(id)) {
     return res.status(400).json({ message: "Invalid card id." });
   }
-  if (typeof status !== "string" || !CARD_STATUSES.includes(status)) {
-    return res.status(400).json({ message: `Status must be one of: ${CARD_STATUSES.join(", ")}.` });
-  }
 
   try {
+    const statuses = await cardStatuses();
+    if (typeof status !== "string" || !statuses.includes(status)) {
+      return res.status(400).json({ message: statusMessage(statuses) });
+    }
     const card = await Card.findById(id);
     if (!card) {
       return res.status(404).json({ message: "Card not found." });

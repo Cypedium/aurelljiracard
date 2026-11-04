@@ -1,6 +1,6 @@
 // Delade Tailwind-klasser för board och kortformulär
 import { BugAntIcon, CheckIcon, DocumentTextIcon } from "@heroicons/react/16/solid";
-import { readableTextColor, type BoardHeader, type CardStatus } from "./boardLayout";
+import { NEW_LIST_COLOR, readableTextColor, type BoardHeader, type CardStatus } from "./boardLayout";
 import type { CardType } from "./cardType";
 import type { PasswordStrength } from "./checkPasswordStrength";
 
@@ -8,7 +8,7 @@ import type { PasswordStrength } from "./checkPasswordStrength";
 // (alltid på pekskärmar, där det inte finns hover)
 export const CARD_HOVER_CLASS =
   "opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100";
-// Trello-liknande färg per lista (bakgrund + text), nycklar = CardStatus
+// Trello-liknande färg per standardlista (bakgrund + text), nycklar = CardStatus
 export const LIST_COLOR_CLASS: Record<CardStatus, string> = {
   todo: "bg-list-todo text-list-todo-text",
   "in-progress": "bg-list-progress text-list-progress-text",
@@ -19,11 +19,19 @@ export const LIST_COLOR_CLASS: Record<CardStatus, string> = {
 // Mörkare vid hover även när listfärgen är en inline style (som slår hover:bg-*)
 export const LIST_BUTTON_HOVER_CLASS = "hover:shadow-[inset_0_0_0_100vmax_rgba(0,0,0,0.1)]";
 
-// Listans färg: användarens egen (inline style, text med bäst kontrast) eller standardklassen
+const inlineListColor = (color: string) => ({
+  className: "",
+  style: { backgroundColor: color, color: readableTextColor(color) },
+});
+
+// Listans färg: vald färg (inline style, text med bäst kontrast), standardklassen,
+// eller grått för listor som lagts till
 export const listColor = (header: BoardHeader): { className: string; style?: React.CSSProperties } =>
   header.color
-    ? { className: "", style: { backgroundColor: header.color, color: readableTextColor(header.color) } }
-    : { className: LIST_COLOR_CLASS[header.key] };
+    ? inlineListColor(header.color)
+    : LIST_COLOR_CLASS[header.key]
+      ? { className: LIST_COLOR_CLASS[header.key] }
+      : inlineListColor(NEW_LIST_COLOR);
 
 export const CARD_ACTION_CLASS =`no-drag rounded-[3px] px-1.5 py-1 text-jira-secondary hover:bg-jira-neutral ${CARD_HOVER_CLASS}`;
 

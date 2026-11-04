@@ -1,7 +1,7 @@
 import type { CardStatus } from "./boardLayout";
 
 // Kort i backloggen ligger inte på boarden och har ingen assignee.
-// Måste matcha BACKLOG_STATUS i server/utils/cardStatus.js och CardStatus.BACKLOG i server-java
+// Aldrig en listnyckel. Måste matcha BACKLOG_STATUS i server/utils/cardStatus.js och CardStatus.BACKLOG i server-java
 export const BACKLOG_STATUS = "backlog";
 export type AnyCardStatus = CardStatus | typeof BACKLOG_STATUS;
 

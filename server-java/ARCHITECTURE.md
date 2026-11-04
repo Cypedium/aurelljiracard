@@ -40,15 +40,15 @@ Everything lives under `src/main/java/se/aurell/jiraboard/`.
 ```mermaid
 flowchart TB
     subgraph web["Web layer"]
-        controller["controller/<br/>AuthController · CardController<br/>UserController · HealthController"]
+        controller["controller/<br/>AuthController · CardController · ColumnController<br/>UserController · HealthController"]
         dto["dto/<br/>request and response records"]
     end
     subgraph core["Business layer"]
-        service["service/<br/>AuthService · CardService · UserService"]
+        service["service/<br/>AuthService · CardService · ColumnService · UserService"]
     end
     subgraph data["Data layer"]
-        repository["repository/<br/>UserRepository · CardRepository"]
-        entity["entity/<br/>User · Card · Layout<br/>CardStatus · CardType · EnumConverters"]
+        repository["repository/<br/>UserRepository · CardRepository · BoardColumnRepository"]
+        entity["entity/<br/>User · Card · BoardColumn · Layout<br/>CardStatus · CardType · EnumConverters"]
     end
     subgraph cross["Cross-cutting"]
         security["security/<br/>JwtService · AccessTokenConverter<br/>ApiBearerTokenResolver · JsonAuthenticationEntryPoint · AuthUser"]
@@ -143,6 +143,9 @@ Two things worth noticing:
 | `PUT` | `/card/{id}` | token, **author only** | `CardService.update` | `200 card` |
 | `PATCH` | `/card/{id}/status` | token, any user | `CardService.updateStatus` | `200 card` |
 | `DELETE` | `/card/{id}` | token, **author or admin** | `CardService.delete` | `200 { message }` |
+| `GET` | `/column` | token | `ColumnService.getAll` | `200 [{ key, title, color, position }…]` |
+| `POST` | `/column` | token, **admin** | `ColumnService.create` | `201 column` |
+| `PUT` | `/column/{key}` | token, **admin** | `ColumnService.update` | `200 column` |
 | `GET` | `/user` | token | `UserService.getAll` | `200 [{ _id, username, pictureUrl }]` |
 | `GET` | `/user/usernames` | token | `UserService.getUsernames` | `200 ["alice", …]` |
 | `GET` | `/user/layout` | token | `UserService.getLayout` | `200 layout` |
@@ -290,7 +293,7 @@ Validation happens in two places:
 1. **Bean Validation on DTO records** (`@NotBlank`, `@Size`, `@Min`/`@Max`, `@Pattern`), triggered by `@Valid` in the controller.
 2. **The service**, for rules annotations can't express: password byte length, picture URL, uniqueness, ownership.
 
-Unknown `status` or `type` values are rejected while the JSON is being parsed: `CardStatus.fromValue` / `CardType.fromValue` (`@JsonCreator`) throw `ApiException.badRequest`.
+Unknown `type` values are rejected while the JSON is being parsed: `CardType.fromValue` (`@JsonCreator`) throws `ApiException.badRequest`. A card's `status` is a list key, so `ColumnService.requireCardStatus` checks it against the `board_columns` table (plus `backlog`); its message lists the valid keys.
 
 Every error, expected or not, ends up in `GlobalExceptionHandler` and leaves as `{ "message": "…" }`:
 
@@ -315,6 +318,13 @@ To return an error from new code, **throw** `ApiException.notFound("…")` (or `
 ```mermaid
 erDiagram
     USERS ||--o{ CARDS : "writes (by username)"
+    BOARD_COLUMNS ||--o{ CARDS : "status = column_key (checked in CardService)"
+    BOARD_COLUMNS {
+        varchar32 column_key PK
+        varchar50 title
+        varchar7 color "null = default"
+        int position
+    }
     USERS {
         uuid id PK
         varchar32 username UK
@@ -332,7 +342,7 @@ erDiagram
         varchar200 product_id "Issue key"
         varchar32 username FK
         timestamptz submitted_at "set once"
-        varchar20 status "todo | in-progress | test | done"
+        varchar32 status "column_key or backlog"
         varchar10 type "task | bug | doc"
     }
 ```
@@ -346,8 +356,9 @@ erDiagram
     "cards":   [{ "id": "…", "x": 0, "y": 0, "w": 3, "h": 2 }]
   }
   ```
-  The board only uses `cards` for the order of cards within a column, and `headers` for column names and colours.
-- **Enums are stored by their API value** (`"in-progress"`, not `"IN_PROGRESS"`) via `EnumConverters`. The same strings are used in JSON (`@JsonValue`) and in the database `CHECK` constraints.
+  The board only uses `cards`, for the order of cards within a list. `headers` is legacy: list names and colours are shared in `board_columns`.
+- **Enums are stored by their API value** (`"admin"`, not `"ADMIN"`) via `EnumConverters`. The same strings are used in JSON (`@JsonValue`) and in the database `CHECK` constraints.
+- **`cards.status` has no foreign key**: it is a `board_columns.column_key` or `backlog`, which is not a list. `CardService` checks it on create and move.
 - **Ids are UUIDs.** Responses expose them as `_id` (`@JsonProperty("_id")`) because the frontend was written for MongoDB.
 - Index `cards_submitted_at_idx` supports `GET /card` (newest first).
 
@@ -355,7 +366,7 @@ erDiagram
 
 The schema is owned by Flyway (`src/main/resources/db/migration/V<n>__*.sql`). Hibernate runs with `ddl-auto: validate`: on startup it checks that the entities match the tables and **refuses to start if they don't**. It never changes the schema itself.
 
-To change the schema, add a new `V2__….sql`. Never edit a migration that has already been applied. Adding a card status or type means changing the Java enum, `server/utils/`, `frontend/app/utils/` **and** a migration for the `CHECK` constraint.
+To change the schema, add a new `V2__….sql`. Never edit a migration that has already been applied. Adding a card type means changing the Java enum, `server/utils/`, `frontend/app/utils/` **and** a migration for the `CHECK` constraint. Board lists are data, not schema: admins add them with `POST /column`.
 
 ---
 

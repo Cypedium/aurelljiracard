@@ -10,6 +10,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
@@ -37,10 +38,27 @@ abstract class ApiIntegrationTest {
     @Autowired
     CardRepository cardRepository;
 
+    @Autowired
+    JdbcTemplate jdbc;
+
     @BeforeEach
     void cleanDatabase() {
         cardRepository.deleteAll();
         userRepository.deleteAll();
+        // Back to the four lists seeded by V6__board_columns.sql
+        jdbc.update("DELETE FROM board_columns WHERE column_key NOT IN ('todo', 'in-progress', 'test', 'done')");
+        jdbc.update("""
+                UPDATE board_columns SET color = NULL, title = CASE column_key
+                    WHEN 'todo' THEN 'To Do' WHEN 'in-progress' THEN 'In Progress' WHEN 'test' THEN 'Test' ELSE 'Done' END""");
+    }
+
+    /** Registers a user, makes them admin (set directly in the database, like in production) and returns their access token. */
+    String adminAccessToken(String username) throws Exception {
+        register(username);
+        jdbc.update("UPDATE users SET role = 'admin' WHERE username = ?", username);
+        return JsonPath.read(mvc.perform(json(post("/auth/login"), """
+                {"username": "%s", "password": "%s"}""".formatted(username, PASSWORD)))
+                .andReturn().getResponse().getContentAsString(), "$.accessToken");
     }
 
     void register(String username) throws Exception {

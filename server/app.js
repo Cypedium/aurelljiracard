@@ -8,6 +8,7 @@ mongoose.set('sanitizeFilter', true);
 
 const authRoutes = require('./routes/auth');
 const cardRoutes = require('./routes/card');
+const columnRoutes = require('./routes/column');
 const userRoutes = require('./routes/user');
 
 const DEFAULT_CLIENT_URLS = 'http://localhost:3000,https://aurelljiraboard.fly.dev';
@@ -27,6 +28,7 @@ app.use(cors({
 
 app.use('/auth', authRoutes);
 app.use('/card', cardRoutes);
+app.use('/column', columnRoutes);
 app.use('/user', userRoutes);
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));

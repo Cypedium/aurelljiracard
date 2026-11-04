@@ -37,7 +37,8 @@ src/main/resources/db/migration/   Flyway SQL migrations
 | `ObjectId` `_id` | `UUID` primary key, still serialised as `_id` |
 | `User` document | `users` table, `username` UNIQUE |
 | embedded `User.layout` | `layout JSONB` column |
-| `Card` document | `cards` table with `CHECK` constraints on `rating`, `status`, `type`, FK `username → users` |
+| `Card` document | `cards` table with `CHECK` constraints on `rating` and `type`, FK `username → users` |
+| `Column` document | `board_columns` table (`V6__board_columns.sql` seeds the four default lists) |
 | `$inc` on `tokenVersion` | atomic `UPDATE … SET token_version = token_version + 1` |
 
 ## Running locally
@@ -118,4 +119,3 @@ Same as the Express API; see the [root README](../README.md#api). Differences th
 
 - Ids are UUIDs instead of 24-character ObjectIds.
 - A body that is not valid JSON, or has a field of the wrong type, returns `400 { "message": "Invalid request body." }`.
-- An unknown header `key` in `PUT /user/layout` returns the status-list message instead of the header message.

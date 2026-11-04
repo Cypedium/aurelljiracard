@@ -26,7 +26,10 @@ public record LayoutRequest(
     static final String COLOR_MESSAGE = "Header color must be a hex color like #eed7fc.";
 
     public record HeaderRequest(
-            @NotNull(message = HEADER_MESSAGE) CardStatus key,
+            @NotNull(message = HEADER_MESSAGE)
+            @Size(max = CardStatus.KEY_MAX_LENGTH, message = HEADER_MESSAGE)
+            @Pattern(regexp = CardStatus.KEY_PATTERN, message = HEADER_MESSAGE)
+            String key,
             @NotBlank(message = HEADER_MESSAGE) @Size(max = 50, message = HEADER_MESSAGE) String title,
             // Optional; must match HEX_COLOR in server/controllers/userController.js
             @Pattern(regexp = "^#[0-9a-fA-F]{6}$", message = COLOR_MESSAGE) String color) {
@@ -34,7 +37,7 @@ public record LayoutRequest(
         // Backlog is not a board column, so it has no header
         @AssertTrue(message = HEADER_MESSAGE)
         boolean isBoardColumn() {
-            return key == null || key.isBoardColumn();
+            return !CardStatus.BACKLOG.equals(key);
         }
     }
 }

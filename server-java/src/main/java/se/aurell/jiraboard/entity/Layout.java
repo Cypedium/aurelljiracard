@@ -8,6 +8,7 @@ import java.util.List;
  * order of cards within a column; cols/headers are written as the fixed four columns.
  */
 public record Layout(int cols, List<Header> headers, List<CardPosition> cards) {
+    // Legacy: list names and colours are shared now (BoardColumn); the frontend no longer sends headers
 
     public static final int DEFAULT_COLS = 12;
 
@@ -17,7 +18,7 @@ public record Layout(int cols, List<Header> headers, List<CardPosition> cards) {
 
     /** {@code color} is an optional list colour (#rrggbb); null means the default. */
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public record Header(CardStatus key, String title, String color) {
+    public record Header(String key, String title, String color) {
     }
 
     /** A react-grid-layout item; {@code content} is opaque client data. */

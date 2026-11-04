@@ -6,12 +6,12 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
-import se.aurell.jiraboard.entity.CardStatus;
 import se.aurell.jiraboard.entity.CardType;
 
 /**
  * Body of POST /card and PUT /card/{id}. Author and date always come from the server.
- * {@code type} defaults to task; {@code status} is only used on create (board column).
+ * {@code type} defaults to task; {@code status} is only used on create (a column key or "backlog",
+ * checked by ColumnService).
  */
 public record CardRequest(
         @NotNull(message = RATING_MESSAGE)
@@ -30,7 +30,7 @@ public record CardRequest(
 
         CardType type,
 
-        CardStatus status) {
+        String status) {
 
     static final String RATING_MESSAGE = "Rating must be an integer between 1 and 5.";
     // Issue key in Jira format, e.g. MA-100 (same rule as server/ and the frontend)

@@ -1,19 +1,20 @@
-// Statusarna måste matcha CARD_STATUSES i server/utils/cardStatus.js
-export type CardStatus = "todo" | "in-progress" | "test" | "done";
-// color: valfri listfärg (#rrggbb) per användare; saknas = standardfärgen
+// Ett korts status = nyckeln till en lista. Listorna delas av alla (GET /column) och
+// admins kan lägga till fler; nycklar som i server/utils/cardStatus.js
+export type CardStatus = string;
+// color: valfri listfärg (#rrggbb), delad; saknas = standardfärgen
 export type BoardHeader = { key: CardStatus; title: string; color?: string };
 export type SavedCardPosition = { id: string; x: number; y: number; w: number; h: number };
 export type CardPosition = { i: string; x: number; y: number; w: number; h: number };
 export type BoardCard = { id: string; status?: string };
 
+// Standardlistorna (samma som DEFAULT_COLUMNS i server/utils/cardStatus.js); används
+// tills listorna hämtats och om hämtningen misslyckas
 export const DEFAULT_HEADERS: BoardHeader[] = [
   { key: "todo", title: "To Do" },
   { key: "in-progress", title: "In Progress" },
   { key: "test", title: "Test" },
   { key: "done", title: "Done" },
 ];
-
-export const BOARD_COLS = DEFAULT_HEADERS.length;
 
 // Måste matcha ResponsiveGridLayout så att rubrikerna linjerar med kolumnerna
 export const GRID_MARGIN = 10;
@@ -30,24 +31,20 @@ export const SKELETON_CARD_COUNT = 2;
 export const listHeight = (rows: number): number =>
   CARDS_TOP + rows * (ROW_HEIGHT + GRID_MARGIN);
 
+// Användarens egen layout: bara kortens ordning inom listorna
 export type UserLayout = {
-  cols: number;
-  headers: BoardHeader[];
   cards?: SavedCardPosition[];
 };
 
-export const DEFAULT_LAYOUT: UserLayout = {
-  cols: BOARD_COLS,
-  headers: DEFAULT_HEADERS,
-};
+export const DEFAULT_LAYOUT: UserLayout = {};
 
-// Måste matcha HEADER_TITLE_MAX_LENGTH i server/controllers/userController.js
+// Måste matcha TITLE_MAX_LENGTH i server/controllers/columnController.js
 export const HEADER_TITLE_MAX_LENGTH = 50;
 
 const sanitizeTitle = (title: unknown): string =>
   typeof title === "string" ? title.trim().slice(0, HEADER_TITLE_MAX_LENGTH) : "";
 
-// Måste matcha HEX_COLOR i server/controllers/userController.js
+// Måste matcha HEX_COLOR i server/controllers/columnController.js
 export const HEX_COLOR = /^#[0-9a-f]{6}$/i;
 
 const sanitizeColor = (color: unknown): string | undefined =>
@@ -60,6 +57,10 @@ export const DEFAULT_LIST_COLORS: Record<CardStatus, string> = {
   test: "#cce0ff",
   done: "#baf3db",
 };
+// Listor som admins lagt till, utan egen färg; samma som --color-jira-lane i app/root.css
+export const NEW_LIST_COLOR = "#f1f2f4";
+
+export const defaultListColor = (key: CardStatus): string => DEFAULT_LIST_COLORS[key] ?? NEW_LIST_COLOR;
 
 // Färgerna i färgväljaren: ljusa Trello-toner överst, mörkare under
 export const LIST_SWATCHES: { name: string; color: string }[] = [
@@ -102,17 +103,24 @@ export const contrastRatio = (a: string, b: string): number => {
 export const readableTextColor = (background: string): string =>
   contrastRatio(background, DARK_TEXT) >= contrastRatio(background, LIGHT_TEXT) ? DARK_TEXT : LIGHT_TEXT;
 
-// Boarden har alltid de fyra fasta kolumnerna; användaren kan byta namn på
-// dem, och kortpositioner sparas
-export const normalizeLayout = (raw: Partial<UserLayout>): UserLayout => ({
-  ...DEFAULT_LAYOUT,
-  headers: DEFAULT_HEADERS.map((h) => {
-    const saved = raw.headers?.find((s) => s?.key === h.key);
-    const color = sanitizeColor(saved?.color);
-    return { key: h.key, title: sanitizeTitle(saved?.title) || h.title, ...(color ? { color } : {}) };
-  }),
-  cards: raw.cards,
-});
+// Bara kortpositionerna används; äldre layouter har även cols och headers
+export const normalizeLayout = (raw: Partial<UserLayout>): UserLayout => ({ cards: raw.cards });
+
+// Listnycklar som servern skapar dem: små bokstäver och siffror med bindestreck
+const COLUMN_KEY = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+
+// Listorna från GET /column: ogiltiga och dubbletter tas bort; inga alls = standardlistorna
+export const normalizeColumns = (raw: unknown): BoardHeader[] => {
+  if (!Array.isArray(raw)) return DEFAULT_HEADERS;
+  const headers: BoardHeader[] = [];
+  for (const c of raw) {
+    const key = c?.key;
+    if (typeof key !== "string" || !COLUMN_KEY.test(key) || headers.some((h) => h.key === key)) continue;
+    const color = sanitizeColor(c.color);
+    headers.push({ key, title: sanitizeTitle(c.title) || key, ...(color ? { color } : {}) });
+  }
+  return headers.length ? headers : DEFAULT_HEADERS;
+};
 
 // Tomt eller oförändrat namn returnerar samma array, så inget sparas
 export const renameHeader = (
@@ -148,52 +156,59 @@ export const cardKey = (card: { _id?: string }, index: number): string =>
 export const toSavedPositions = (layout: readonly CardPosition[]): SavedCardPosition[] =>
   layout.map((l) => ({ id: l.i, x: l.x, y: l.y, w: l.w, h: l.h }));
 
-// Okänd eller saknad status (äldre kort) hamnar i To Do
-export const columnForStatus = (status?: string): number =>
-  Math.max(0, DEFAULT_HEADERS.findIndex((h) => h.key === status));
+// Okänd eller saknad status (äldre kort) hamnar i första listan
+export const columnForStatus = (headers: BoardHeader[], status?: string): number =>
+  Math.max(0, headers.findIndex((h) => h.key === status));
 
-export const statusForColumn = (x: number): CardStatus =>
-  DEFAULT_HEADERS[Math.min(Math.max(0, x), BOARD_COLS - 1)].key;
+export const statusForColumn = (headers: BoardHeader[], x: number): CardStatus =>
+  headers[Math.min(Math.max(0, x), headers.length - 1)].key;
 
-// Ihopfällda listor (sparas per webbläsare); okända värden och dubbletter tas bort
+// Ihopfällda listor (sparas per webbläsare): unika strängar. Nycklar till listor som
+// inte finns gör ingenting, så valet kan läsas innan listorna hämtats
 export const normalizeCollapsed = (raw: unknown): CardStatus[] =>
-  Array.isArray(raw) ? DEFAULT_HEADERS.map((h) => h.key).filter((k) => raw.includes(k)) : [];
+  Array.isArray(raw) ? [...new Set(raw.filter((k): k is string => typeof k === "string"))] : [];
 
 export const toggleCollapsed = (collapsed: CardStatus[], key: CardStatus): CardStatus[] =>
   collapsed.includes(key) ? collapsed.filter((k) => k !== key) : [...collapsed, key];
 
-export const isColumnCollapsed = (collapsed: CardStatus[], x: number): boolean =>
-  collapsed.includes(statusForColumn(x));
+export const isColumnCollapsed = (headers: BoardHeader[], collapsed: CardStatus[], x: number): boolean =>
+  collapsed.includes(statusForColumn(headers, x));
 
 // Kort i ihopfällda listor tas bort ur gridden; deras positioner sparas ändå
-export const splitByCollapsed = <T extends { x: number }>(layout: readonly T[], collapsed: CardStatus[]) => ({
-  visible: layout.filter((l) => !isColumnCollapsed(collapsed, l.x)),
-  hidden: layout.filter((l) => isColumnCollapsed(collapsed, l.x)),
+export const splitByCollapsed = <T extends { x: number }>(
+  headers: BoardHeader[],
+  layout: readonly T[],
+  collapsed: CardStatus[],
+) => ({
+  visible: layout.filter((l) => !isColumnCollapsed(headers, collapsed, l.x)),
+  hidden: layout.filter((l) => isColumnCollapsed(headers, collapsed, l.x)),
 });
 
-// Gridden delas i enheter: en utfälld lista är flera enheter bred, en dold
-// lista en enhet (en smal remsa, som i Trello). Utfällda listor delar på resten
+// Gridden delas i enheter: en utfälld lista är alltid EXPANDED_SPAN enheter bred,
+// en dold lista en enhet (en smal remsa, som i Trello). Dolda listor gör boarden
+// smalare; de andra listorna breddas inte. Fyra utfällda listor fyller skärmen på
+// desktop; fler listor ger horisontell scroll
 export const BOARD_UNITS = 16;
+export const LISTS_PER_SCREEN = 4;
+export const EXPANDED_SPAN = BOARD_UNITS / LISTS_PER_SCREEN;
 // Remsans högsta höjd; långa namn kortas av
 export const COLLAPSED_LIST_MAX_HEIGHT = 280;
 
 export type ColumnSpan = { start: number; span: number; collapsed: boolean };
 export type BoardColumns = { spans: ColumnSpan[]; units: number; expandedSpan: number };
 
-export const boardColumns = (collapsed: CardStatus[]): BoardColumns => {
-  const hiddenCount = DEFAULT_HEADERS.filter((h) => collapsed.includes(h.key)).length;
-  const expandedCount = BOARD_COLS - hiddenCount;
-  const expandedSpan = expandedCount ? Math.floor((BOARD_UNITS - hiddenCount) / expandedCount) : 0;
+// extraUnits: plats efter listorna, t.ex. för "Add new column"
+export const boardColumns = (headers: BoardHeader[], collapsed: CardStatus[], extraUnits = 0): BoardColumns => {
   let start = 0;
-  const spans = DEFAULT_HEADERS.map((h) => {
+  const spans = headers.map((h) => {
     const isCollapsed = collapsed.includes(h.key);
-    const span = isCollapsed ? 1 : expandedSpan;
+    const span = isCollapsed ? 1 : EXPANDED_SPAN;
     const col = { start, span, collapsed: isCollapsed };
     start += span;
     return col;
   });
-  // Alla dolda: remsorna behåller sin bredd, resten av boarden är tom
-  return { spans, units: expandedCount ? start : BOARD_UNITS, expandedSpan };
+  // units = de enheter som används; resten av boarden är tom
+  return { spans, units: start + extraUnits, expandedSpan: EXPANDED_SPAN };
 };
 
 // Närmaste utfällda lista för en x-position i gridden; kort kan inte släppas på en remsa
@@ -207,7 +222,7 @@ export const columnAtGridX = ({ spans }: BoardColumns, x: number): number =>
 export const snapGridX = (columns: BoardColumns, x: number): number =>
   columns.spans[Math.max(0, columnAtGridX(columns, x))].start;
 
-// Kolumnindex (0–3) → grid-enheter och tillbaka
+// Listindex → grid-enheter och tillbaka
 export const toGridLayout = <T extends { x: number; w: number }>(layout: readonly T[], columns: BoardColumns): T[] =>
   layout.map((l) => ({ ...l, x: columns.spans[l.x].start, w: columns.expandedSpan }));
 
@@ -216,28 +231,32 @@ export const fromGridLayout = <T extends { x: number; w: number }>(layout: reado
 
 // Mobil: en utfälld lista är en skärm bred, en remsa lika många enheter som annars
 export const mobileBoardWidth = ({ units, expandedSpan }: BoardColumns): string =>
-  `${expandedSpan ? (units / expandedSpan) * 100 : 100}%`;
+  `${(units / expandedSpan) * 100}%`;
+
+// Desktop: fyra utfällda listor fyller skärmen; dolda listor gör boarden smalare, fler bredare
+export const desktopBoardWidth = ({ units }: BoardColumns): string => `${(units / BOARD_UNITS) * 100}%`;
 
 // Antal kort per kolumn: visas i rubriken
-export const countCardsPerColumn = (layout: readonly { x: number }[]): number[] =>
-  DEFAULT_HEADERS.map((_, i) => layout.filter((l) => l.x === i).length);
+export const countCardsPerColumn = (headers: BoardHeader[], layout: readonly { x: number }[]): number[] =>
+  headers.map((_, i) => layout.filter((l) => l.x === i).length);
 
 // Rader per lista (styr höjden); en ihopfälld lista har ingen plats för kort
-export const rowsPerColumn = (counts: number[], collapsed: CardStatus[]): number[] =>
-  counts.map((count, i) => (isColumnCollapsed(collapsed, i) ? 0 : count));
+export const rowsPerColumn = (counts: number[], { spans }: BoardColumns): number[] =>
+  counts.map((count, i) => (spans[i]?.collapsed ? 0 : count));
 
 // Varje kort är en kolumn brett och en rad högt. Kolumnen kommer från kortets
 // status (delad av alla). Ordningen inom kolumnen kommer från användarens
 // sparade positioner; kort utan sparad position i sin kolumn hamnar sist.
 export const buildCardLayout = (
+  headers: BoardHeader[],
   cards: BoardCard[],
   saved: SavedCardPosition[] = [],
 ): CardPosition[] => {
   const byId = new Map(saved.map((s) => [s.id, s]));
-  const nextRow = new Array<number>(BOARD_COLS).fill(0);
+  const nextRow = new Array<number>(headers.length).fill(0);
 
   const placed = cards.map(({ id, status }) => {
-    const x = columnForStatus(status);
+    const x = columnForStatus(headers, status);
     const pos = byId.get(id);
     const y = pos && pos.x === x ? pos.y : null;
     if (y !== null) nextRow[x] = Math.max(nextRow[x], y + 1);

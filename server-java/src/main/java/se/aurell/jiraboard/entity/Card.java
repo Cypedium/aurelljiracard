@@ -42,9 +42,9 @@ public class Card {
     @Column(name = "submitted_at", nullable = false, updatable = false)
     private Instant submittedAt;
 
-    @Convert(converter = EnumConverters.CardStatusConverter.class)
-    @Column(nullable = false, length = 20)
-    private CardStatus status = CardStatus.DEFAULT;
+    // Key of a BoardColumn or "backlog"; checked by ColumnService.requireCardStatus
+    @Column(nullable = false, length = 32)
+    private String status = CardStatus.DEFAULT;
 
     @Convert(converter = EnumConverters.CardTypeConverter.class)
     @Column(nullable = false, length = 10)
@@ -105,11 +105,11 @@ public class Card {
         return submittedAt;
     }
 
-    public CardStatus getStatus() {
+    public String getStatus() {
         return status;
     }
 
-    public void setStatus(CardStatus status) {
+    public void setStatus(String status) {
         this.status = status;
     }
 
