@@ -1,10 +1,22 @@
 'use client';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { submitCard, updateCard, type Card as CardData } from '..//../api/endpoints';
+import { getCards, submitCard, updateCard, type Card as CardData } from '..//../api/endpoints';
 import { toast } from 'sonner';
-import { EMPTY_CARD_FORM, PRIORITIES, PRODUCT_ID_MAX_LENGTH, cardFormSchema, cardToFormValues, type CardFormValues } from '../../utils/cardForm';
+import {
+  DUPLICATE_ERROR_TYPE,
+  DUPLICATE_PRODUCT_ID_MESSAGE,
+  EMPTY_CARD_FORM,
+  ISSUE_KEY_CHECK_DELAY_MS,
+  PRIORITIES,
+  PRODUCT_ID_MAX_LENGTH,
+  cardFormSchema,
+  cardToFormValues,
+  takenIssueKeys,
+  type CardFormValues,
+} from '../../utils/cardForm';
 import { apiErrorMessage, isConflictError } from '../../utils/apiError';
 import { FIELD_ERROR_CLASS, FORM_ITEM_CLASS, LABEL_CLASS, SECTION_PADDING } from '../../utils/styles';
 import type { AnyCardStatus } from '../../utils/backlog';
@@ -25,6 +37,7 @@ type CardProps = {
   onCreated?: () => void;
 };
 
+
 const required = <span className="text-jira-danger">*</span>;
 
 export default function Card({ card, onSaved, onCancel, status, onCreated }: CardProps = {}) {
@@ -35,10 +48,36 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
     defaultValues: card ? cardToFormValues(card) : EMPTY_CARD_FORM,
   });
 
+  // Issue keys already in use, so a duplicate shows under the field while typing.
+  // If they can't be loaded, the server's 409 still catches duplicates
+  const [takenKeys, setTakenKeys] = useState<Set<string>>(() => new Set());
+  useEffect(() => {
+    getCards()
+      .then((res) => setTakenKeys(takenIssueKeys(res.data || [], card?._id)))
+      .catch((err) => console.error('Fetch issue keys error:', err.message));
+  }, [card?._id]);
+
+  const showDuplicateKey = (message = DUPLICATE_PRODUCT_ID_MESSAGE, focus = false) =>
+    form.setError('productId', { type: DUPLICATE_ERROR_TYPE, message }, { shouldFocus: focus });
+
+  const productId = form.watch('productId');
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (takenKeys.has(productId.trim())) {
+        showDuplicateKey();
+      } else if (form.getFieldState('productId').error?.type === DUPLICATE_ERROR_TYPE) {
+        form.clearErrors('productId');
+      }
+    }, ISSUE_KEY_CHECK_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [productId, takenKeys]);
+
   // Duplicate issue key (409) is shown under the field instead of as a toast
-  const showError = (error: unknown, fallback: string) => {
+  const showError = (error: unknown, fallback: string, key: string) => {
     if (isConflictError(error)) {
-      form.setError('productId', { message: apiErrorMessage(error, 'Issue key already exists.') }, { shouldFocus: true });
+      // Added by someone else after the form opened
+      setTakenKeys((prev) => new Set(prev).add(key));
+      showDuplicateKey(apiErrorMessage(error, DUPLICATE_PRODUCT_ID_MESSAGE), true);
       return;
     }
     toast.error(apiErrorMessage(error, fallback));
@@ -46,6 +85,10 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
 
   // The backend sets the date (today) when the card is created
   const onSubmit = async (fields: CardFormValues) => {
+    if (takenKeys.has(fields.productId)) {
+      showDuplicateKey(DUPLICATE_PRODUCT_ID_MESSAGE, true);
+      return;
+    }
     if (isEdit && card?._id) {
       try {
         const res = await updateCard(card._id, fields);
@@ -53,7 +96,7 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
         toast.success('Card updated.');
       } catch (error) {
         console.error('Update error:', (error as Error).message);
-        showError(error, 'Failed to save card.');
+        showError(error, 'Failed to save card.', fields.productId);
       }
       return;
     }
@@ -74,7 +117,7 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
 
     } catch (error) {
       console.error('Submission error:', (error as Error).message);
-      showError(error, 'Failed to submit card.');
+      showError(error, 'Failed to submit card.', fields.productId);
     }
   };
 

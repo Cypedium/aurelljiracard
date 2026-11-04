@@ -1,5 +1,5 @@
 import { describe, expect, it } from "@jest/globals";
-import { COMMENT_MAX_LENGTH, PRIORITIES, PRODUCT_ID_MAX_LENGTH, cardFormSchema, cardToFormValues } from "../../app/utils/cardForm";
+import { COMMENT_MAX_LENGTH, PRIORITIES, PRODUCT_ID_MAX_LENGTH, cardFormSchema, cardToFormValues, takenIssueKeys } from "../../app/utils/cardForm";
 
 const valid = { type: "task", comment: "Fix the login page", productId: "AGB-12", rating: 3 };
 
@@ -66,5 +66,25 @@ describe("cardToFormValues", () => {
 
   it("treats a card without type as a task", () => {
     expect(cardToFormValues(card).type).toBe("task");
+  });
+});
+
+describe("takenIssueKeys", () => {
+  const cards = [
+    { _id: "1", productId: "MA-1" },
+    { _id: "2", productId: "MA-2" },
+  ];
+
+  it("lists the keys of all cards, matched exactly", () => {
+    const taken = takenIssueKeys(cards);
+    expect(taken.has("MA-1")).toBe(true);
+    expect(taken.has("ma-1")).toBe(false);
+    expect(taken.has("MA-3")).toBe(false);
+  });
+
+  it("lets the edited card keep its own key", () => {
+    const taken = takenIssueKeys(cards, "1");
+    expect(taken.has("MA-1")).toBe(false);
+    expect(taken.has("MA-2")).toBe(true);
   });
 });
