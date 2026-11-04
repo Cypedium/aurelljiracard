@@ -13,13 +13,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.jayway.jsonpath.JsonPath;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
 
 class CardApiTest extends ApiIntegrationTest {
-
-    @Autowired
-    JdbcTemplate jdbc;
 
     private static final String VALID_CARD = """
             {"rating": 3, "comment": "Login button broken", "productId": "AJB-1"}""";

@@ -12,13 +12,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
 
 class UserApiTest extends ApiIntegrationTest {
-
-    @Autowired
-    JdbcTemplate jdbc;
 
     /** Registers an admin (set directly in the database, like in production) and returns its access token. */
     private String adminToken() throws Exception {

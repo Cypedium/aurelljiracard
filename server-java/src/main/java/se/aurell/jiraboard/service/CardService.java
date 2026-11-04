@@ -20,9 +20,11 @@ public class CardService {
     private static final String DUPLICATE_KEY_MESSAGE = "Issue key already exists.";
 
     private final CardRepository cardRepository;
+    private final ColumnService columnService;
 
-    public CardService(CardRepository cardRepository) {
+    public CardService(CardRepository cardRepository, ColumnService columnService) {
         this.cardRepository = cardRepository;
+        this.columnService = columnService;
     }
 
     @Transactional(readOnly = true)
@@ -33,6 +35,9 @@ public class CardService {
     /** Author comes from the token and the date is always now, never from the request body. */
     @Transactional
     public void create(CardRequest request, AuthUser user) {
+        if (request.status() != null) {
+            columnService.requireCardStatus(request.status());
+        }
         if (cardRepository.existsByProductId(request.productId())) {
             throw ApiException.conflict(DUPLICATE_KEY_MESSAGE);
         }
@@ -45,7 +50,7 @@ public class CardService {
             card.setStatus(request.status());
         }
         // Cards on the board are assigned to their author; backlog cards to no one
-        card.setAssignee(card.getStatus().isBoardColumn() ? user.username() : null);
+        card.setAssignee(isBacklog(card.getStatus()) ? null : user.username());
         saveUnique(card);
     }
 
@@ -70,11 +75,12 @@ public class CardService {
      * backlog assigns it to the caller; moving it to the backlog unassigns it.
      */
     @Transactional
-    public CardResponse updateStatus(UUID id, CardStatus status, AuthUser user) {
+    public CardResponse updateStatus(UUID id, String status, AuthUser user) {
+        columnService.requireCardStatus(status);
         Card card = findCard(id);
-        if (!status.isBoardColumn()) {
+        if (isBacklog(status)) {
             card.setAssignee(null);
-        } else if (!card.getStatus().isBoardColumn()) {
+        } else if (isBacklog(card.getStatus())) {
             card.setAssignee(user.username());
         }
         card.setStatus(status);
@@ -86,6 +92,10 @@ public class CardService {
     public void delete(UUID id, AuthUser user) {
         Card card = user.isAdmin() ? findCard(id) : findOwnCard(id, user, "You can only delete your own card.");
         cardRepository.delete(card);
+    }
+
+    private static boolean isBacklog(String status) {
+        return CardStatus.BACKLOG.equals(status);
     }
 
     private Card saveUnique(Card card) {

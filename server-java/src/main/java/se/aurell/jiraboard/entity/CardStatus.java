@@ -1,48 +1,57 @@
 package se.aurell.jiraboard.entity;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonValue;
-import java.util.Arrays;
-import java.util.stream.Collectors;
-import se.aurell.jiraboard.exception.ApiException;
+import java.text.Normalizer;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Locale;
+import java.util.Set;
 
 /**
- * Board column, shared by all users. Must match DEFAULT_HEADERS keys in frontend/app/utils/boardLayout.ts.
- * BACKLOG is not a board column: backlog cards are listed on /backlog and have no assignee.
+ * A card's status: the key of a {@link BoardColumn} (shared by all users) or {@link #BACKLOG}.
+ * Backlog cards are listed on /backlog and have no assignee. Must match server/utils/cardStatus.js.
  */
-public enum CardStatus {
-    TODO("todo"),
-    IN_PROGRESS("in-progress"),
-    TEST("test"),
-    DONE("done"),
-    BACKLOG("backlog");
+public final class CardStatus {
 
-    public static final CardStatus DEFAULT = TODO;
+    public static final String BACKLOG = "backlog";
+    public static final String DEFAULT = "todo";
 
-    private static final String ALLOWED = Arrays.stream(values())
-            .map(CardStatus::getValue)
-            .collect(Collectors.joining(", "));
+    /** Column keys: lowercase letters and digits joined by single hyphens, e.g. "in-progress". */
+    public static final String KEY_PATTERN = "^[a-z0-9]+(-[a-z0-9]+)*$";
+    public static final int KEY_MAX_LENGTH = 32;
+    // Room for a "-NN" suffix when two lists get the same name
+    private static final int KEY_BASE_LENGTH = 24;
 
-    private final String value;
-
-    CardStatus(String value) {
-        this.value = value;
+    private CardStatus() {
     }
 
-    @JsonValue
-    public String getValue() {
-        return value;
+    public static boolean isColumnKey(String value) {
+        return value != null && value.length() <= KEY_MAX_LENGTH && value.matches(KEY_PATTERN) && !BACKLOG.equals(value);
     }
 
-    public boolean isBoardColumn() {
-        return this != BACKLOG;
+    /** A new column's key from its title ("Code review" → "code-review"), unique among the taken keys. */
+    public static String keyFromTitle(String title, Collection<String> takenKeys) {
+        Set<String> taken = new HashSet<>(takenKeys);
+        taken.add(BACKLOG);
+        String base = slugify(title);
+        if (!taken.contains(base)) {
+            return base;
+        }
+        for (int n = 2; ; n++) {
+            String key = base + "-" + n;
+            if (!taken.contains(key)) {
+                return key;
+            }
+        }
     }
 
-    @JsonCreator
-    public static CardStatus fromValue(String value) {
-        return Arrays.stream(values())
-                .filter(s -> s.value.equals(value))
-                .findFirst()
-                .orElseThrow(() -> ApiException.badRequest("Status must be one of: " + ALLOWED + "."));
+    // å/ä/ö lose their accents; nothing left → "list"
+    private static String slugify(String title) {
+        String slug = Normalizer.normalize(title, Normalizer.Form.NFD)
+                .replaceAll("[\\u0300-\\u036f]", "")
+                .toLowerCase(Locale.ROOT)
+                .replaceAll("[^a-z0-9]+", "-")
+                .replaceAll("^-+|-+$", "");
+        slug = slug.substring(0, Math.min(slug.length(), KEY_BASE_LENGTH)).replaceAll("-+$", "");
+        return slug.isEmpty() ? "list" : slug;
     }
 }
