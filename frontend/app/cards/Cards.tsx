@@ -330,14 +330,14 @@ export default function Home() {
   };
 
   return (
-    <div id="cards-container" className="font-jira">
+    <div id="cards-container" className="flex flex-1 flex-col font-jira">
       {/* <div className="mb-4 rounded-xl bg-black/25 px-5 py-3 backdrop-blur-sm">
         <h1 className="text-xl font-bold text-white">Jira Board</h1>
       </div> */}
       {/* Mobil: varje lista är en skärm bred och man sveper mellan dem (snap).
           md och uppåt: alla listor får plats i skärmens bredd */}
       <div
-        className="snap-x snap-mandatory overflow-x-auto overscroll-x-contain md:snap-none"
+        className="board-scroll flex-1 snap-x snap-mandatory overflow-x-auto overscroll-x-contain md:snap-none"
         style={{ scrollPaddingInline: GRID_MARGIN }}
       >
         <div

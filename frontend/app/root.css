@@ -116,3 +116,25 @@ main {
 button {
   cursor: pointer;
 }
+
+/* Boardens scrollbar: genomskinlig vit på bakgrunden, som i Trello */
+.board-scroll::-webkit-scrollbar {
+  height: 12px;
+}
+.board-scroll::-webkit-scrollbar-track {
+  border-radius: 9999px;
+  background: rgb(255 255 255 / 0.15);
+}
+.board-scroll::-webkit-scrollbar-thumb {
+  border-radius: 9999px;
+  background: rgb(255 255 255 / 0.5);
+}
+.board-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgb(255 255 255 / 0.7);
+}
+/* Firefox saknar ::-webkit-scrollbar */
+@supports not selector(::-webkit-scrollbar) {
+  .board-scroll {
+    scrollbar-color: rgb(255 255 255 / 0.5) rgb(255 255 255 / 0.15);
+  }
+}
