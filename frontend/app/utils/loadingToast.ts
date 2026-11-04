@@ -1,6 +1,7 @@
 export const LOADING_TOAST_ID = "loading-data";
-// Bara inloggning och utloggning visar loading-toasten; data som laddas visar skeletons
+// Bara registrering, inloggning och utloggning visar loading-toasten; data som laddas visar skeletons
 const LOADING_TOAST_TEXTS: Record<string, string> = {
+  "/auth/register": "Creating account, please wait…",
   "/auth/login": "Logging in, please wait…",
   "/auth/logout": "Logging out, please wait…",
 };

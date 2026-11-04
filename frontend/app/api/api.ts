@@ -13,7 +13,7 @@ const api = axios.create({
   baseURL: API_URL,
 });
 
-// Långsam inloggning/utloggning (t.ex. cold start i produktion) visar en loading-toast
+// Långsam registrering/inloggning/utloggning (t.ex. cold start i produktion) visar en loading-toast
 let loadingText = "";
 const loadingTracker = createLoadingTracker(
   () => toast.loading(loadingText, { id: LOADING_TOAST_ID }),
