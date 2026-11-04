@@ -4,6 +4,7 @@ import {
   BOARD_UNITS,
   DEFAULT_HEADERS,
   boardColumns,
+  desktopBoardWidth,
   columnAtGridX,
   fromGridLayout,
   mobileBoardWidth,
@@ -243,43 +244,49 @@ describe("board columns", () => {
     expect(columns.spans.map((s) => s.start)).toEqual([0, 4, 8, 12]);
   });
 
-  it("shrinks a hidden list to one unit and lets the others share the rest", () => {
+  it("shrinks a hidden list to one unit without widening the others", () => {
     const columns = boardColumns(["in-progress"]);
     expect(columns.spans).toEqual([
-      { start: 0, span: 5, collapsed: false },
-      { start: 5, span: 1, collapsed: true },
-      { start: 6, span: 5, collapsed: false },
-      { start: 11, span: 5, collapsed: false },
+      { start: 0, span: 4, collapsed: false },
+      { start: 4, span: 1, collapsed: true },
+      { start: 5, span: 4, collapsed: false },
+      { start: 9, span: 4, collapsed: false },
     ]);
-    expect(columns.units).toBe(16);
+    expect(columns.units).toBe(13);
+    expect(desktopBoardWidth(columns)).toBe("81.25%");
+  });
+
+  it("fills the screen on desktop when nothing is hidden", () => {
+    expect(desktopBoardWidth(boardColumns([]))).toBe("100%");
   });
 
   it("keeps narrow strips when every list is hidden", () => {
     const columns = boardColumns(DEFAULT_HEADERS.map((h) => h.key));
     expect(columns.spans.map((s) => s.span)).toEqual([1, 1, 1, 1]);
-    expect(columns.units).toBe(BOARD_UNITS);
+    expect(columns.units).toBe(4);
+    expect(desktopBoardWidth(columns)).toBe("25%");
     expect(mobileBoardWidth(columns)).toBe("100%");
   });
 
   it("snaps a grid position to the nearest visible list", () => {
     const columns = boardColumns(["in-progress"]);
     expect(columnAtGridX(columns, 0)).toBe(0);
-    expect(columnAtGridX(columns, 5)).toBe(2); // remsan hoppas över
-    expect(columnAtGridX(columns, 10)).toBe(3);
-    expect(snapGridX(columns, 7)).toBe(6);
+    expect(columnAtGridX(columns, 4)).toBe(2); // remsan hoppas över
+    expect(columnAtGridX(columns, 8)).toBe(3);
+    expect(snapGridX(columns, 6)).toBe(5);
   });
 
   it("converts card positions to grid units and back", () => {
     const columns = boardColumns(["todo"]);
     const layout = [{ i: "a", x: 2, y: 1, w: 1, h: 1 }];
     const grid = toGridLayout(layout, columns);
-    expect(grid).toEqual([{ i: "a", x: 6, y: 1, w: 5, h: 1 }]);
+    expect(grid).toEqual([{ i: "a", x: 5, y: 1, w: 4, h: 1 }]);
     expect(fromGridLayout(grid, columns)).toEqual(layout);
   });
 
   it("makes each visible list one screen wide on mobile", () => {
     expect(mobileBoardWidth(boardColumns([]))).toBe("400%");
-    expect(mobileBoardWidth(boardColumns(["done"]))).toBe("320%");
+    expect(mobileBoardWidth(boardColumns(["done"]))).toBe("325%");
   });
 });
 

@@ -35,6 +35,7 @@ import {
   ROW_HEIGHT,
   SKELETON_CARD_COUNT,
   boardColumns,
+  desktopBoardWidth,
   buildCardLayout,
   cardKey,
   columnAtGridX,
@@ -278,11 +279,13 @@ export default function Home() {
       >
         <div
           ref={containerRef}
-          // En skärmbredd per synlig lista; gridden läser bredden via useContainerWidth
-          className="relative w-(--board-width) md:w-full"
+          // Mobil: en skärmbredd per synlig lista. Desktop: fast listbredd, dolda listor
+          // breddar inte de andra. Gridden läser bredden via useContainerWidth
+          className="relative w-(--board-width) md:w-(--board-width-md)"
           style={
             {
               "--board-width": mobileBoardWidth(columns),
+              "--board-width-md": desktopBoardWidth(columns),
               minHeight:
                 Math.max(...columnRows.map(listHeight), collapsed.length ? COLLAPSED_LIST_MAX_HEIGHT : 0) + GRID_MARGIN,
             } as React.CSSProperties

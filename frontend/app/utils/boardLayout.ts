@@ -171,9 +171,11 @@ export const splitByCollapsed = <T extends { x: number }>(layout: readonly T[], 
   hidden: layout.filter((l) => isColumnCollapsed(collapsed, l.x)),
 });
 
-// Gridden delas i enheter: en utfälld lista är flera enheter bred, en dold
-// lista en enhet (en smal remsa, som i Trello). Utfällda listor delar på resten
+// Gridden delas i enheter: en utfälld lista är alltid EXPANDED_SPAN enheter bred,
+// en dold lista en enhet (en smal remsa, som i Trello). Dolda listor gör boarden
+// smalare; de andra listorna breddas inte
 export const BOARD_UNITS = 16;
+export const EXPANDED_SPAN = BOARD_UNITS / BOARD_COLS;
 // Remsans högsta höjd; långa namn kortas av
 export const COLLAPSED_LIST_MAX_HEIGHT = 280;
 
@@ -181,19 +183,16 @@ export type ColumnSpan = { start: number; span: number; collapsed: boolean };
 export type BoardColumns = { spans: ColumnSpan[]; units: number; expandedSpan: number };
 
 export const boardColumns = (collapsed: CardStatus[]): BoardColumns => {
-  const hiddenCount = DEFAULT_HEADERS.filter((h) => collapsed.includes(h.key)).length;
-  const expandedCount = BOARD_COLS - hiddenCount;
-  const expandedSpan = expandedCount ? Math.floor((BOARD_UNITS - hiddenCount) / expandedCount) : 0;
   let start = 0;
   const spans = DEFAULT_HEADERS.map((h) => {
     const isCollapsed = collapsed.includes(h.key);
-    const span = isCollapsed ? 1 : expandedSpan;
+    const span = isCollapsed ? 1 : EXPANDED_SPAN;
     const col = { start, span, collapsed: isCollapsed };
     start += span;
     return col;
   });
-  // Alla dolda: remsorna behåller sin bredd, resten av boarden är tom
-  return { spans, units: expandedCount ? start : BOARD_UNITS, expandedSpan };
+  // units = de enheter som används; resten av boarden är tom
+  return { spans, units: start, expandedSpan: EXPANDED_SPAN };
 };
 
 // Närmaste utfällda lista för en x-position i gridden; kort kan inte släppas på en remsa
@@ -216,7 +215,10 @@ export const fromGridLayout = <T extends { x: number; w: number }>(layout: reado
 
 // Mobil: en utfälld lista är en skärm bred, en remsa lika många enheter som annars
 export const mobileBoardWidth = ({ units, expandedSpan }: BoardColumns): string =>
-  `${expandedSpan ? (units / expandedSpan) * 100 : 100}%`;
+  `${(units / expandedSpan) * 100}%`;
+
+// Desktop: alla listor utfällda fyller skärmen; dolda listor gör boarden smalare
+export const desktopBoardWidth = ({ units }: BoardColumns): string => `${(units / BOARD_UNITS) * 100}%`;
 
 // Antal kort per kolumn: visas i rubriken
 export const countCardsPerColumn = (layout: readonly { x: number }[]): number[] =>
