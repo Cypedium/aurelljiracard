@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { loginUser } from "../api/endpoints";
 import { apiErrorMessage } from "../utils/apiError";
-import { saveSession } from "../utils/session";
+import { saveSession, tokenUsername } from "../utils/session";
 import { loginSchema, type LoginValues } from "../utils/register";
 import { AUTH_FORM_CLASS, FIELD_ERROR_CLASS, FORM_ITEM_CLASS, LABEL_CLASS } from "../utils/styles";
 import { Button } from "./ui/button";
@@ -20,7 +20,8 @@ export default function LoginForm() {
   const handleLogin = async ({ username, password }: LoginValues) => {
     try {
       const { data } = await loginUser({ username, password });
-      saveSession(username, data.accessToken, data.refreshToken);
+      // Inloggning ignorerar skiftläge; spara namnet som backend har det, annars matchar inte korten
+      saveSession(tokenUsername(data.accessToken) ?? username, data.accessToken, data.refreshToken);
       window.location.href = "/cards";
     } catch (error) {
       // Backendens meddelande (t.ex. 401 "Invalid credentials."), annars nådde vi inte servern
