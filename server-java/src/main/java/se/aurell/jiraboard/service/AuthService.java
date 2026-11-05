@@ -38,14 +38,21 @@ public class AuthService {
     @Transactional
     public void register(RegisterRequest request) {
         if (request.password().getBytes(StandardCharsets.UTF_8).length > PASSWORD_MAX_BYTES) {
-            throw ApiException.badRequest("Password must be 6-72 characters.");
+            throw ApiException.badRequest(CredentialRules.PASSWORD_LENGTH_MESSAGE);
+        }
+        if (CredentialRules.isRudeUsername(request.username())) {
+            throw ApiException.badRequest(CredentialRules.RUDE_USERNAME_MESSAGE);
+        }
+        if (CredentialRules.isRepetitivePassword(request.password())) {
+            throw ApiException.badRequest(CredentialRules.PASSWORD_REPEAT_MESSAGE);
         }
         String pictureUrl = StringUtils.hasText(request.pictureUrl()) ? request.pictureUrl() : null;
         if (pictureUrl != null && !isValidPicture(pictureUrl)) {
             throw ApiException.badRequest("Invalid profile picture.");
         }
-        if (userRepository.existsByUsername(request.username())) {
-            throw ApiException.conflict("Username already taken.");
+        // "mike" is taken if "Mike" exists
+        if (userRepository.existsByUsernameIgnoreCase(request.username())) {
+            throw ApiException.conflict(CredentialRules.USERNAME_TAKEN_MESSAGE);
         }
 
         try {
@@ -53,13 +60,15 @@ public class AuthService {
                     new User(request.username(), passwordEncoder.encode(request.password()), pictureUrl));
         } catch (DataIntegrityViolationException e) {
             // Another request registered the same username in between
-            throw ApiException.conflict("Username already taken.");
+            throw ApiException.conflict(CredentialRules.USERNAME_TAKEN_MESSAGE);
         }
     }
 
     @Transactional(readOnly = true)
     public TokenResponse login(LoginRequest request) {
+        // Exact name first; otherwise any casing ("mike" logs in as "Mike")
         User user = userRepository.findByUsername(request.username())
+                .or(() -> userRepository.findFirstByUsernameIgnoreCase(request.username()))
                 .filter(u -> passwordEncoder.matches(request.password(), u.getPasswordHash()))
                 .orElseThrow(() -> ApiException.unauthorized("Invalid credentials."));
         return issueTokens(user);

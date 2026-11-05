@@ -13,7 +13,10 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     Optional<User> findByUsername(String username);
 
-    boolean existsByUsername(String username);
+    // "Mike" and "mike" are the same user (names are still stored as typed)
+    boolean existsByUsernameIgnoreCase(String username);
+
+    Optional<User> findFirstByUsernameIgnoreCase(String username);
 
     @Query("select new se.aurell.jiraboard.dto.UserResponse(u.id, u.username, u.pictureUrl, u.role) from User u")
     List<UserResponse> findAllPublic();
