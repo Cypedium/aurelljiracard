@@ -75,6 +75,7 @@ import {
   toGridLayout,
   toSavedPositions,
   moveHeader,
+  previewHeaders,
   withListKeys,
   toggleCollapsed,
 } from "../utils/boardLayout";
@@ -190,26 +191,39 @@ export default function Home() {
   // Räknas fram vid varje render, så gridden får aldrig en tom layout som
   // sedan sparas över den riktiga. Väntar på listorna: annars hamnar kort i
   // tillagda listor tillfälligt i första listan och den ordningen sparas
+  // Admin: listan som dras i sin rubrik följer musen (lutad). Medan den dras visas boarden i den nya
+  // ordningen (boardHeaders): de andra listorna och deras kort flyttar undan och den lyfta listans plats
+  // är en mörk platshållare. Åtgärderna (spara, byta namn) använder alltid headers
+  const { drag: listDrag, onPointerDown: onListPointerDown, previewRef, previewStyle } = useListDrag({
+    scrollRef: boardScrollRef,
+    onDrop: (from, toIndex) => moveList(from, headers[toIndex]?.key ?? from),
+  });
+  const draggingList = listDrag?.key ?? null;
+  const boardHeaders = useMemo(
+    () => (listDrag ? previewHeaders(headers, listDrag.key, listDrag.target) : headers),
+    [headers, listDrag],
+  );
+
   const gridLayout = useMemo(
     () =>
       layoutLoaded && columnsLoaded
         ? buildCardLayout(
-            headers,
+            boardHeaders,
             cards.map((fb, i) => ({ id: cardKey(fb, i), status: fb.status })),
             userLayout.cards,
           )
         : [],
-    [headers, cards, userLayout.cards, layoutLoaded, columnsLoaded],
+    [boardHeaders, cards, userLayout.cards, layoutLoaded, columnsLoaded],
   );
 
-  const { visible: visibleLayout, hidden: hiddenLayout } = splitByCollapsed(headers, gridLayout, collapsed);
+  const { visible: visibleLayout, hidden: hiddenLayout } = splitByCollapsed(boardHeaders, gridLayout, collapsed);
   const visibleIds = new Set(visibleLayout.map((l) => l.i));
 
   // Dolda listor blir smala remsor; gridden räknar i enheter i stället för kolumner.
   // Admins får plats för "Add new column" sist
   const columns = useMemo(
-    () => boardColumns(headers, collapsed, admin ? EXPANDED_SPAN : 0),
-    [headers, collapsed, admin],
+    () => boardColumns(boardHeaders, collapsed, admin ? EXPANDED_SPAN : 0),
+    [boardHeaders, collapsed, admin],
   );
   // Kort snäpper till närmaste synliga lista medan de dras
   const constraints = useMemo<LayoutConstraint[]>(
@@ -229,7 +243,7 @@ export default function Home() {
   };
   // Gridens positioner (enheter) → sparade positioner (kolumner), plus korten i dolda listor
   const savedPositions = (currentLayout: readonly CardPosition[]) =>
-    toSavedPositions(headers, [...fromGridLayout(currentLayout, columns), ...hiddenLayout]);
+    toSavedPositions(boardHeaders, [...fromGridLayout(currentLayout, columns), ...hiddenLayout]);
 
   // 🔥 Spara layout till server via api.ts
   const saveLayoutToServer = useCallback(
@@ -336,18 +350,9 @@ export default function Home() {
     }
   };
 
-  // Admin: listan som dras i sin rubrik följer musen (lutad); dess plats blir en mörk platshållare
-  // och listan den släpps på (hela listan eller remsan för en dold lista) markeras
-  const { drag: listDrag, onPointerDown: onListPointerDown, previewRef, previewStyle } = useListDrag({
-    scrollRef: boardScrollRef,
-    onDrop: moveList,
-  });
-  const draggingList = listDrag?.key ?? null;
-  const listDropClass = (key: CardStatus) =>
-    listDrag && listDrag.target === key && listDrag.key !== key ? "rounded-xl ring-2 ring-white" : "";
   // Korten i listan som dras (de visas i förhandsvisningen i stället)
   const draggedCardIds = new Set(
-    draggingList ? visibleLayout.filter((l) => headers[l.x]?.key === draggingList).map((l) => l.i) : [],
+    draggingList ? visibleLayout.filter((l) => boardHeaders[l.x]?.key === draggingList).map((l) => l.i) : [],
   );
 
   // Admin: ny lista sist på boarden, för alla. Tomt namn stänger formuläret
@@ -367,7 +372,7 @@ export default function Home() {
   };
 
   // Antal kort per kolumn: visas i rubriken och styr listans höjd
-  const columnCounts = countCardsPerColumn(headers, gridLayout);
+  const columnCounts = countCardsPerColumn(boardHeaders, gridLayout);
   // Skeleton-korten visas medan kort, layout och listor hämtas
   const boardLoading = !cardsLoaded || !layoutLoaded || !columnsLoaded;
   const columnRows = rowsPerColumn(
@@ -408,7 +413,7 @@ export default function Home() {
         >
           {/* Listornas bakgrund, under korten */}
           <div className="pointer-events-none absolute inset-0 grid items-start" style={columnGrid}>
-            {headers.map((h, i) =>
+            {boardHeaders.map((h, i) =>
               columns.spans[i].collapsed ? (
                 // Remsan ritas i rubriklagret
                 <div key={h.key} className="snap-start" />
@@ -435,7 +440,7 @@ export default function Home() {
 
           {/* Rubrik (admin: klicka för att byta namn) och "Add a card", ovanför gridden så att de går att klicka */}
           <div className="pointer-events-none absolute inset-0 z-[1] grid items-start" style={columnGrid}>
-            {headers.map((h, i) =>
+            {boardHeaders.map((h, i) =>
               columns.spans[i].collapsed ? (
                 <button
                   key={h.key}
@@ -446,7 +451,7 @@ export default function Home() {
                   {...{ [HIDDEN_LIST_ATTR]: h.key, [LIST_KEY_ATTR]: h.key }}
                   className={`pointer-events-auto flex min-w-0 flex-col items-center gap-3 overflow-hidden rounded-xl px-1 py-3 shadow-[0_1px_1px_rgba(9,30,66,0.25)] hover:brightness-95 ${
                     dropTarget === h.key ? "ring-2 ring-white brightness-95" : ""
-                  } ${listDropClass(h.key)} ${listColor(h).className}`}
+                  } ${listColor(h).className}`}
                   style={{ maxHeight: COLLAPSED_LIST_MAX_HEIGHT, ...listColor(h).style }}
                   onClick={() => toggleColumn(h.key)}
                 >
@@ -460,7 +465,7 @@ export default function Home() {
                 key={h.key}
                 {...{ [LIST_KEY_ATTR]: h.key }}
                 // Den lyfta listans innehåll döljs; platshållaren ritas i bakgrundslagret
-                className={`flex flex-col px-2 ${listDropClass(h.key)} ${draggingList === h.key ? "[&>*]:invisible" : ""}`}
+                className={`flex flex-col px-2 ${draggingList === h.key ? "[&>*]:invisible" : ""}`}
                 style={{ gridColumn: `span ${columns.spans[i].span}`, height: listHeight(columnRows[i]) }}
               >
                 <div
@@ -595,7 +600,7 @@ export default function Home() {
               aria-busy="true"
               aria-label="Loading cards"
             >
-              {headers.map((h, i) =>
+              {boardHeaders.map((h, i) =>
                 columns.spans[i].collapsed ? (
                   <div key={h.key} />
                 ) : (
@@ -617,7 +622,7 @@ export default function Home() {
             <ResponsiveGridLayout
               // Ny gridd när antalet enheter eller listornas ordning ändras (lista döljs, visas eller flyttas): annars räknar
               // react-grid-layout om de gamla positionerna och korten hamnar fel
-              key={`${columns.units}:${headers.map((h) => h.key).join()}`}
+              key={`${columns.units}:${boardHeaders.map((h) => h.key).join()}`}
               className="gridLayout"
               layouts={{ lg: toGridLayout(visibleLayout, columns) }}
               breakpoints={{ lg: 0 }}
@@ -631,6 +636,8 @@ export default function Home() {
               // Korten har fast storlek (1x1), så inget resize-handtag
               resizeConfig={{ enabled: false }}
               onLayoutChange={(currentLayout) => {
+                // Förhandsvisningen medan en lista dras sparas inte
+                if (listDrag) return;
                 persistLayout({ ...userLayout, cards: savedPositions(currentLayout) });
               }}
               onDrag={(_layout, _oldItem, _newItem, _placeholder, e) => setDropTarget(hiddenListAt(e))}
@@ -651,7 +658,7 @@ export default function Home() {
                 // Spara radordningen direkt så att kortet inte hoppar när statusen ändras
                 persistLayout({ ...userLayout, cards: savedPositions(currentLayout) });
                 const card = cards.find((fb, i) => cardKey(fb, i) === newItem.i);
-                if (card?._id) moveCard(card._id, statusForColumn(headers, to));
+                if (card?._id) moveCard(card._id, statusForColumn(boardHeaders, to));
               }}
             >
               {cards
@@ -734,8 +741,8 @@ export default function Home() {
 
       {/* Den lyfta listan följer musen, lutad (useListDrag flyttar den) */}
       {listDrag && (() => {
-        const index = headers.findIndex((h) => h.key === listDrag.key);
-        const h = headers[index];
+        const index = boardHeaders.findIndex((h) => h.key === listDrag.key);
+        const h = boardHeaders[index];
         if (!h) return null;
         const cardById = new Map(cards.map((fb, i) => [cardKey(fb, i), fb]));
         const listCards = visibleLayout

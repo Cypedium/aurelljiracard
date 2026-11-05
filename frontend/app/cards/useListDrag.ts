@@ -7,27 +7,30 @@ import {
   LIST_DRAG_TILT_DEG,
   LIST_KEY_ATTR,
   NO_LIST_DRAG_ATTR,
-  nearestListAtX,
+  nearestListIndexAtX,
   type CardStatus,
 } from "../utils/boardLayout";
 
-// Listan som dras, dess bredd (för förhandsvisningen) och listan pekaren är över
+// Listan som dras, dess bredd (för förhandsvisningen) och platsen (index) pekaren är över
 export type ListDrag = {
   key: CardStatus;
-  target: CardStatus | null;
+  target: number | null;
   width: number;
 };
 
 type Options = {
   // Elementet som scrollar i sidled; scrollar när pekaren är nära kanten
   scrollRef: RefObject<HTMLElement | null>;
-  onDrop: (from: CardStatus, to: CardStatus) => void;
+  // toIndex: platsen i listornas ordning
+  onDrop: (from: CardStatus, toIndex: number) => void;
 };
 
 const previewTransform = (x: number, y: number) => `translate(${x}px, ${y}px) rotate(${LIST_DRAG_TILT_DEG}deg)`;
 
 // Admin: dra en lista i rubriken med musen, som i Trello. Den lyfta listan följer pekaren
-// (previewRef flyttas utan omrendering); listan den är över blir target. Escape avbryter
+// (previewRef flyttas utan omrendering); platsen den är över blir target. Platsen räknas i
+// boardens aktuella ordning, där den lyfta listan redan står på target, så att den inte hoppar fram och tillbaka.
+// Escape avbryter
 export function useListDrag({ scrollRef, onDrop }: Options) {
   const [drag, setDrag] = useState<ListDrag | null>(null);
   const previewRef = useRef<HTMLDivElement>(null);
@@ -39,11 +42,9 @@ export function useListDrag({ scrollRef, onDrop }: Options) {
 
   useEffect(() => () => cleanupRef.current(), []);
 
+  // Listorna i dokumentordning = boardens ordning
   const listsAt = () =>
-    Array.from(document.querySelectorAll<HTMLElement>(`[${LIST_KEY_ATTR}]`), (el) => {
-      const rect = el.getBoundingClientRect();
-      return { key: el.getAttribute(LIST_KEY_ATTR) as CardStatus, left: rect.left, right: rect.right };
-    });
+    Array.from(document.querySelectorAll<HTMLElement>(`[${LIST_KEY_ATTR}]`), (el) => el.getBoundingClientRect());
 
   const onPointerDown = (key: CardStatus) => (e: ReactPointerEvent<HTMLElement>) => {
     // Bara mus/penna: på touch sveper man mellan listorna
@@ -57,7 +58,7 @@ export function useListDrag({ scrollRef, onDrop }: Options) {
     const origin = { x: e.clientX, y: e.clientY };
     let pointer = origin;
     let started = false;
-    let target: CardStatus | null = null;
+    let target: number | null = null;
     let frame = 0;
 
     // Scrollar boarden medan pekaren står nära kanten
@@ -73,7 +74,7 @@ export function useListDrag({ scrollRef, onDrop }: Options) {
     };
 
     const updateTarget = () => {
-      const next = nearestListAtX(listsAt(), pointer.x);
+      const next = nearestListIndexAtX(listsAt(), pointer.x);
       if (next !== target) {
         target = next;
         setDrag((d) => (d ? { ...d, target: next } : d));
@@ -88,8 +89,8 @@ export function useListDrag({ scrollRef, onDrop }: Options) {
         document.body.style.cursor = "grabbing";
         document.body.style.userSelect = "none";
         window.getSelection()?.removeAllRanges();
-        setDrag({ key, target: key, width: rect.width });
-        target = key;
+        target = nearestListIndexAtX(listsAt(), pointer.x);
+        setDrag({ key, target, width: rect.width });
         frame = requestAnimationFrame(autoScroll);
       }
       positionRef.current = { x: pointer.x - grab.x, y: pointer.y - grab.y };
@@ -109,7 +110,7 @@ export function useListDrag({ scrollRef, onDrop }: Options) {
       };
       window.addEventListener("click", swallow, { capture: true, once: true });
       setTimeout(() => window.removeEventListener("click", swallow, { capture: true }));
-      if (drop && target && target !== key) onDropRef.current(key, target);
+      if (drop && target !== null) onDropRef.current(key, target);
     };
     const up = () => finish(true);
     const keydown = (ev: KeyboardEvent) => ev.key === "Escape" && finish(false);

@@ -314,15 +314,21 @@ export const LIST_DRAG_TILT_DEG = 4;
 export const LIST_DRAG_EDGE_PX = 60;
 export const LIST_DRAG_SCROLL_STEP_PX = 12;
 
-// Listan under pekarens x, annars den närmaste (pekaren i mellanrummet eller utanför boarden)
-export const nearestListAtX = (
-  lists: readonly { key: CardStatus; left: number; right: number }[],
-  x: number,
-): CardStatus | null => {
-  let best: { key: CardStatus; distance: number } | null = null;
-  for (const { key, left, right } of lists) {
+// Platsen (index i boardens ordning) under pekarens x, annars den närmaste
+// (pekaren i mellanrummet eller utanför boarden). null utan listor
+export const nearestListIndexAtX = (lists: readonly { left: number; right: number }[], x: number): number | null => {
+  let best: number | null = null;
+  let bestDistance = Infinity;
+  for (const [index, { left, right }] of lists.entries()) {
     const distance = x < left ? left - x : x > right ? x - right : 0;
-    if (!best || distance < best.distance) best = { key, distance };
+    if (distance < bestDistance) {
+      best = index;
+      bestDistance = distance;
+    }
   }
-  return best?.key ?? null;
+  return best;
 };
+
+// Ordningen medan en lista dras: den lyfta listan på platsen pekaren är över
+export const previewHeaders = (headers: BoardHeader[], from: CardStatus, toIndex: number | null): BoardHeader[] =>
+  toIndex === null || !headers[toIndex] ? headers : moveHeader(headers, from, headers[toIndex].key);

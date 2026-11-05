@@ -9,7 +9,8 @@ import {
   boardColumns,
   desktopBoardWidth,
   columnAtGridX,
-  nearestListAtX,
+  nearestListIndexAtX,
+  previewHeaders,
   fromGridLayout,
   mobileBoardWidth,
   snapGridX,
@@ -417,25 +418,39 @@ describe("eventPoint", () => {
   });
 });
 
-describe("nearestListAtX", () => {
+describe("nearestListIndexAtX", () => {
   const lists = [
-    { key: "todo", left: 0, right: 100 },
-    { key: "done", left: 110, right: 210 },
+    { left: 0, right: 100 },
+    { left: 110, right: 210 },
   ];
 
-  it("returns the list under the pointer", () => {
-    expect(nearestListAtX(lists, 50)).toBe("todo");
-    expect(nearestListAtX(lists, 110)).toBe("done");
+  it("returns the slot under the pointer", () => {
+    expect(nearestListIndexAtX(lists, 50)).toBe(0);
+    expect(nearestListIndexAtX(lists, 110)).toBe(1);
   });
 
-  it("returns the nearest list in a gap or outside the board", () => {
-    expect(nearestListAtX(lists, 103)).toBe("todo");
-    expect(nearestListAtX(lists, 108)).toBe("done");
-    expect(nearestListAtX(lists, -40)).toBe("todo");
-    expect(nearestListAtX(lists, 900)).toBe("done");
+  it("returns the nearest slot in a gap or outside the board", () => {
+    expect(nearestListIndexAtX(lists, 103)).toBe(0);
+    expect(nearestListIndexAtX(lists, 108)).toBe(1);
+    expect(nearestListIndexAtX(lists, -40)).toBe(0);
+    expect(nearestListIndexAtX(lists, 900)).toBe(1);
   });
 
   it("returns null without lists", () => {
-    expect(nearestListAtX([], 10)).toBeNull();
+    expect(nearestListIndexAtX([], 10)).toBeNull();
+  });
+});
+
+describe("previewHeaders", () => {
+  const keys = (headers: { key: string }[]) => headers.map((h) => h.key);
+
+  it("puts the dragged list in the slot under the pointer", () => {
+    expect(keys(previewHeaders(DEFAULT_HEADERS, "todo", 2))).toEqual(["in-progress", "test", "todo", "done"]);
+    expect(keys(previewHeaders(DEFAULT_HEADERS, "done", 0))).toEqual(["done", "todo", "in-progress", "test"]);
+  });
+
+  it("keeps the order for its own slot or no slot", () => {
+    expect(previewHeaders(DEFAULT_HEADERS, "todo", 0)).toBe(DEFAULT_HEADERS);
+    expect(previewHeaders(DEFAULT_HEADERS, "todo", null)).toBe(DEFAULT_HEADERS);
   });
 });
