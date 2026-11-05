@@ -1,10 +1,11 @@
 "use client";
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { ResponsiveGridLayout, useContainerWidth } from "react-grid-layout";
 import { gridBounds, type LayoutConstraint } from "react-grid-layout/core";
 import { EyeIcon, EyeSlashIcon, PencilIcon, PlusIcon, TrashIcon, XMarkIcon } from "@heroicons/react/16/solid";
 import IssueTypeIcon from "../components/IssueTypeIcon";
 import ColumnColorPicker from "../components/ColumnColorPicker";
+import TopScrollbar from "../components/TopScrollbar";
 import debounce from "lodash.debounce";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogTitle } from "../components/ui/dialog";
@@ -107,6 +108,7 @@ export default function Home() {
   const [collapsed, setCollapsed] = useState<CardStatus[]>([]);
   // Gridden följer boardens bredd så att den fyller skärmen
   const { width, containerRef, mounted } = useContainerWidth();
+  const boardScrollRef = useRef<HTMLDivElement>(null);
 
   // 🔥 Hämta card via api.ts (token-rotation ingår)
   const fetchCards = useCallback(async () => {
@@ -395,9 +397,11 @@ export default function Home() {
         <h1 className="text-xl font-bold text-white">Jira Board</h1>
       </div> */}
       {/* Mobil: varje lista är en skärm bred och man sveper mellan dem (snap).
-          md och uppåt: alla listor får plats i skärmens bredd */}
+          md och uppåt: scrollbaren ligger överst, under navbaren */}
+      <TopScrollbar target={boardScrollRef} className="mb-2 hidden md:block" />
       <div
-        className="board-scroll flex-1 snap-x snap-mandatory overflow-x-auto overscroll-x-contain md:snap-none"
+        ref={boardScrollRef}
+        className="board-scroll board-scroll-top-md flex-1 snap-x snap-mandatory overflow-x-auto overscroll-x-contain md:snap-none"
         style={{ scrollPaddingInline: GRID_MARGIN }}
       >
         <div

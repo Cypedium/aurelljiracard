@@ -132,6 +132,15 @@ button {
 .board-scroll::-webkit-scrollbar-thumb:hover {
   background: rgb(255 255 255 / 0.7);
 }
+/* md och uppåt visas boardens scrollbar överst (TopScrollbar) i stället för nederst */
+@media (width >= 48rem) {
+  .board-scroll-top-md {
+    scrollbar-width: none;
+  }
+  .board-scroll-top-md::-webkit-scrollbar {
+    display: none;
+  }
+}
 /* Firefox saknar ::-webkit-scrollbar */
 @supports not selector(::-webkit-scrollbar) {
   .board-scroll {
