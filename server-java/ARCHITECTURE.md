@@ -246,7 +246,8 @@ sequenceDiagram
 ### 5.3 Passwords
 
 - Hashed with BCrypt, strength 10, the same as the Express API. Hashes are interchangeable, so users migrated from MongoDB can log in unchanged.
-- Length is 6–72 characters (`@Size`), **and** at most 72 bytes (checked in `AuthService`), because BCrypt silently ignores anything after byte 72.
+- Length is 8–72 characters (`@Size`), **and** at most 72 bytes (checked in `AuthService`), because BCrypt silently ignores anything after byte 72.
+- New passwords must not repeat a character three times in a row and need at least 4 different characters (`CredentialRules.isRepetitivePassword`). Login doesn't check these rules, so older passwords keep working.
 - Login returns the same `401 "Invalid credentials."` for an unknown user and for a wrong password, so the response doesn't reveal which usernames exist.
 
 ---
@@ -255,7 +256,7 @@ sequenceDiagram
 
 ### AuthService
 
-- `register`: checks the password byte length and the picture (empty → default picture; otherwise a `data:image/…;base64,` or `http(s)://` URL, at most 1.5 MB). Checks that the username is free (`409`). Saves with a BCrypt hash. A unique-constraint violation from a concurrent registration is also turned into `409`.
+- `register`: checks the password byte length and the picture (empty → default picture; otherwise a `data:image/…;base64,` or `http(s)://` URL, at most 1.5 MB). Rejects rude usernames (`CredentialRules.isRudeUsername`, same list as `server/utils/username.js`) and repetitive passwords. Checks that the username is free in any casing (`existsByUsernameIgnoreCase`, `409`); names are still stored as typed. `login` tries the exact name first, then `findFirstByUsernameIgnoreCase`. Saves with a BCrypt hash. A unique-constraint violation from a concurrent registration is also turned into `409`.
 - `login`, `refresh`, `logout`: see 5.2. `logout` never fails; an invalid or missing refresh token simply means there's nothing to revoke.
 
 ### CardService
