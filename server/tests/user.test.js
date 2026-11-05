@@ -215,6 +215,35 @@ describe("admin user management", () => {
     expect(res.body.message).toBe("Username already taken.");
   });
 
+  it("returns 409 when the new username is taken in other casing", async () => {
+    User.findById.mockResolvedValue(storedUser());
+    User.exists.mockResolvedValue({ _id: "x" });
+
+    const res = await request(app).patch(`/user/${OTHER_ID}`).set("Authorization", admin()).send({ username: "Carol" });
+
+    expect(res.status).toBe(409);
+    expect(User.exists.mock.calls[0][0].username.test("carol")).toBe(true);
+  });
+
+  it("lets an admin change only the casing of a name", async () => {
+    const user = storedUser();
+    User.findById.mockResolvedValue(user);
+
+    const res = await request(app).patch(`/user/${OTHER_ID}`).set("Authorization", admin()).send({ username: "Bob" });
+
+    expect(res.status).toBe(200);
+    expect(res.body.username).toBe("Bob");
+    expect(User.exists).not.toHaveBeenCalled();
+  });
+
+  it("rejects a rude new username", async () => {
+    const res = await request(app).patch(`/user/${OTHER_ID}`).set("Authorization", admin()).send({ username: "sh1thead" });
+
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe("Username contains inappropriate words.");
+    expect(User.findById).not.toHaveBeenCalled();
+  });
+
   it("does not let an admin remove their own admin role", async () => {
     const res = await request(app).patch(`/user/${USER_ID}`).set("Authorization", admin()).send({ role: "user" });
 

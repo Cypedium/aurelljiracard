@@ -4,10 +4,15 @@ const Card = require("../models/Card");
 const { isNonEmptyString, isObjectId } = require("../utils/validate");
 const { isColumnKey } = require("../utils/cardStatus");
 const { ADMIN_ROLE, ROLES } = require("../utils/role");
-
-// Same limit and message as register (authController.js)
-const USERNAME_MAX_LENGTH = 32;
-const USERNAME_MESSAGE = `Username is required (max ${USERNAME_MAX_LENGTH} characters).`;
+const {
+  USERNAME_MAX_LENGTH,
+  USERNAME_MESSAGE,
+  USERNAME_TAKEN_MESSAGE,
+  RUDE_USERNAME_MESSAGE,
+  isRudeUsername,
+  sameUsername,
+  usernameIgnoreCase,
+} = require("../utils/username");
 const DUPLICATE_KEY_ERROR = 11000;
 
 const MIN_COLS = 1;
@@ -135,6 +140,9 @@ exports.update = async (req, res) => {
   if (username !== undefined && !isNonEmptyString(username, USERNAME_MAX_LENGTH)) {
     return res.status(400).json({ message: USERNAME_MESSAGE });
   }
+  if (username !== undefined && isRudeUsername(username)) {
+    return res.status(400).json({ message: RUDE_USERNAME_MESSAGE });
+  }
   if (role !== undefined && (typeof role !== "string" || !ROLES.includes(role))) {
     return res.status(400).json({ message: `Role must be one of: ${ROLES.join(", ")}.` });
   }
@@ -153,8 +161,9 @@ exports.update = async (req, res) => {
     const renamed = username !== undefined && username !== oldUsername;
     const roleChanged = role !== undefined && role !== user.role;
 
-    if (renamed && (await User.exists({ username }))) {
-      return res.status(409).json({ message: "Username already taken." });
+    // Only changing the casing of the user's own name ("mike" → "Mike") is not a conflict
+    if (renamed && !sameUsername(username, oldUsername) && (await User.exists({ username: usernameIgnoreCase(username) }))) {
+      return res.status(409).json({ message: USERNAME_TAKEN_MESSAGE });
     }
     if (renamed) user.username = username;
     if (roleChanged) user.role = role;
@@ -171,7 +180,7 @@ exports.update = async (req, res) => {
   } catch (error) {
     // Another request took the name in between
     if (error.code === DUPLICATE_KEY_ERROR) {
-      return res.status(409).json({ message: "Username already taken." });
+      return res.status(409).json({ message: USERNAME_TAKEN_MESSAGE });
     }
     console.error("Update user error:", error.message);
     res.status(500).json({ message: "Could not update user." });

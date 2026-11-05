@@ -3,10 +3,22 @@ const bcrypt = require("bcrypt");
 const User = require("../models/User");
 const { generateAccessToken, generateRefreshToken, verifyRefreshToken } = require("../utils/jwt");
 const { isNonEmptyString } = require("../utils/validate");
+const {
+  USERNAME_MAX_LENGTH,
+  USERNAME_MESSAGE,
+  USERNAME_TAKEN_MESSAGE,
+  RUDE_USERNAME_MESSAGE,
+  isRudeUsername,
+  usernameIgnoreCase,
+} = require("../utils/username");
+const {
+  PASSWORD_MIN_LENGTH,
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_LENGTH_MESSAGE,
+  PASSWORD_REPEAT_MESSAGE,
+  isRepetitivePassword,
+} = require("../utils/password");
 
-const USERNAME_MAX_LENGTH = 32;
-const PASSWORD_MIN_LENGTH = 6;
-const PASSWORD_MAX_LENGTH = 72; // bcrypt ignores bytes beyond 72
 const PICTURE_MAX_LENGTH = 1.5 * 1024 * 1024; // base64 data URL, ~1 MB image
 const PICTURE_URL_PATTERN = /^(data:image\/[a-z+.-]+;base64,|https?:\/\/)/i;
 
@@ -15,19 +27,27 @@ exports.register = async (req, res) => {
   const { username, password, pictureUrl } = req.body;
 
   if (!isNonEmptyString(username, USERNAME_MAX_LENGTH)) {
-    return res.status(400).json({ message: `Username is required (max ${USERNAME_MAX_LENGTH} characters).` });
+    return res.status(400).json({ message: USERNAME_MESSAGE });
   }
   if (typeof password !== "string" || password.length < PASSWORD_MIN_LENGTH || password.length > PASSWORD_MAX_LENGTH) {
-    return res.status(400).json({ message: `Password must be ${PASSWORD_MIN_LENGTH}-${PASSWORD_MAX_LENGTH} characters.` });
+    return res.status(400).json({ message: PASSWORD_LENGTH_MESSAGE });
+  }
+  // After the type/length checks, in the same order as server-java
+  if (isRudeUsername(username)) {
+    return res.status(400).json({ message: RUDE_USERNAME_MESSAGE });
+  }
+  if (isRepetitivePassword(password)) {
+    return res.status(400).json({ message: PASSWORD_REPEAT_MESSAGE });
   }
   if (pictureUrl && (typeof pictureUrl !== "string" || pictureUrl.length > PICTURE_MAX_LENGTH || !PICTURE_URL_PATTERN.test(pictureUrl))) {
     return res.status(400).json({ message: "Invalid profile picture." });
   }
 
   try {
-    const existing = await User.findOne({ username });
+    // "mike" is taken if "Mike" exists
+    const existing = await User.findOne({ username: usernameIgnoreCase(username) });
     if (existing) {
-      return res.status(409).json({ message: "Username already taken." });
+      return res.status(409).json({ message: USERNAME_TAKEN_MESSAGE });
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
@@ -50,7 +70,9 @@ exports.login = async (req, res) => {
   }
 
   try {
-    const user = await User.findOne({ username });
+    // Exact name first; otherwise any casing ("mike" logs in as "Mike")
+    const user =
+      (await User.findOne({ username })) ?? (await User.findOne({ username: usernameIgnoreCase(username) }));
     if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
       return res.status(401).json({ message: "Invalid credentials." });
     }
