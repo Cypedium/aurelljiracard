@@ -301,3 +301,28 @@ export const buildCardLayout = (
     h: 1,
   }));
 };
+
+// Admin: flytta en lista genom att dra rubriken (useListDrag). Listorna (och remsorna) har
+// LIST_KEY_ATTR; element med NO_LIST_DRAG_ATTR (färgväljare, dölj-knapp) startar ingen dragning
+export const LIST_KEY_ATTR = "data-list-key";
+export const NO_LIST_DRAG_ATTR = "data-no-list-drag";
+// Så långt musen måste röra sig innan det blir en dragning (annars ett klick)
+export const LIST_DRAG_THRESHOLD_PX = 5;
+// Den lyfta listan lutar som i Trello
+export const LIST_DRAG_TILT_DEG = 4;
+// Nära boardens kant scrollar den i sidled, så här mycket per bildruta
+export const LIST_DRAG_EDGE_PX = 60;
+export const LIST_DRAG_SCROLL_STEP_PX = 12;
+
+// Listan under pekarens x, annars den närmaste (pekaren i mellanrummet eller utanför boarden)
+export const nearestListAtX = (
+  lists: readonly { key: CardStatus; left: number; right: number }[],
+  x: number,
+): CardStatus | null => {
+  let best: { key: CardStatus; distance: number } | null = null;
+  for (const { key, left, right } of lists) {
+    const distance = x < left ? left - x : x > right ? x - right : 0;
+    if (!best || distance < best.distance) best = { key, distance };
+  }
+  return best?.key ?? null;
+};

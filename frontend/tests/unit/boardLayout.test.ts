@@ -9,6 +9,7 @@ import {
   boardColumns,
   desktopBoardWidth,
   columnAtGridX,
+  nearestListAtX,
   fromGridLayout,
   mobileBoardWidth,
   snapGridX,
@@ -413,5 +414,28 @@ describe("eventPoint", () => {
 
   it("returns null without a position", () => {
     expect(eventPoint({} as Event)).toBeNull();
+  });
+});
+
+describe("nearestListAtX", () => {
+  const lists = [
+    { key: "todo", left: 0, right: 100 },
+    { key: "done", left: 110, right: 210 },
+  ];
+
+  it("returns the list under the pointer", () => {
+    expect(nearestListAtX(lists, 50)).toBe("todo");
+    expect(nearestListAtX(lists, 110)).toBe("done");
+  });
+
+  it("returns the nearest list in a gap or outside the board", () => {
+    expect(nearestListAtX(lists, 103)).toBe("todo");
+    expect(nearestListAtX(lists, 108)).toBe("done");
+    expect(nearestListAtX(lists, -40)).toBe("todo");
+    expect(nearestListAtX(lists, 900)).toBe("done");
+  });
+
+  it("returns null without lists", () => {
+    expect(nearestListAtX([], 10)).toBeNull();
   });
 });

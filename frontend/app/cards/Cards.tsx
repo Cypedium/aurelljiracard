@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { ResponsiveGridLayout, useContainerWidth } from "react-grid-layout";
 import { gridBounds, type LayoutConstraint } from "react-grid-layout/core";
 import { EyeIcon, EyeSlashIcon, PencilIcon, PlusIcon, TrashIcon, XMarkIcon } from "@heroicons/react/16/solid";
@@ -32,6 +32,7 @@ import {
   type Card,
 } from "../api/endpoints";
 import CardForm from "./card/Card";
+import { useListDrag } from "./useListDrag";
 import { Button } from "../components/ui/button";
 import {
   BoardHeader,
@@ -55,6 +56,8 @@ import {
   columnAtGridX,
   eventPoint,
   HIDDEN_LIST_ATTR,
+  LIST_KEY_ATTR,
+  NO_LIST_DRAG_ATTR,
   countCardsPerColumn,
   defaultListColor,
   fromGridLayout,
@@ -107,6 +110,7 @@ export default function Home() {
   const [collapsed, setCollapsed] = useState<CardStatus[]>([]);
   // Gridden följer boardens bredd så att den fyller skärmen
   const { width, containerRef, mounted } = useContainerWidth();
+  const boardScrollRef = useRef<HTMLDivElement>(null);
 
   // 🔥 Hämta card via api.ts (token-rotation ingår)
   const fetchCards = useCallback(async () => {
@@ -312,18 +316,9 @@ export default function Home() {
   // null = standardfärgen
   const recolorColumn = (key: CardStatus, color: string | null) => saveColumn(recolorHeader(headers, key, color), key);
 
-  // Admin: listan som dras i sin rubrik och listan den är över (markeras)
-  const [draggingList, setDraggingList] = useState<CardStatus | null>(null);
-  const [listDropTarget, setListDropTarget] = useState<CardStatus | null>(null);
-  const endListDrag = () => {
-    setDraggingList(null);
-    setListDropTarget(null);
-  };
-
   // Admin: flyttar en lista för alla; korten följer med (de hör till listan via status).
   // Visas direkt; vid fel flyttas listan tillbaka
   const moveList = async (from: CardStatus, to: CardStatus) => {
-    endListDrag();
     const next = moveHeader(headers, from, to);
     if (next === headers) return;
     // Äldre sparade positioner har bara listans index: spara listans key innan ordningen ändras
@@ -341,23 +336,19 @@ export default function Home() {
     }
   };
 
-  // Mål för en lista som dras: hela listan (eller remsan för en dold lista)
-  const listDropProps = (key: CardStatus) =>
-    draggingList
-      ? {
-          onDragOver: (e: React.DragEvent) => {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = "move";
-            setListDropTarget(key);
-          },
-          onDrop: (e: React.DragEvent) => {
-            e.preventDefault();
-            moveList(draggingList, key);
-          },
-        }
-      : {};
+  // Admin: listan som dras i sin rubrik följer musen (lutad); dess plats blir en mörk platshållare
+  // och listan den släpps på (hela listan eller remsan för en dold lista) markeras
+  const { drag: listDrag, onPointerDown: onListPointerDown, previewRef, previewStyle } = useListDrag({
+    scrollRef: boardScrollRef,
+    onDrop: moveList,
+  });
+  const draggingList = listDrag?.key ?? null;
   const listDropClass = (key: CardStatus) =>
-    draggingList && listDropTarget === key && draggingList !== key ? "rounded-xl ring-2 ring-white" : "";
+    listDrag && listDrag.target === key && listDrag.key !== key ? "rounded-xl ring-2 ring-white" : "";
+  // Korten i listan som dras (de visas i förhandsvisningen i stället)
+  const draggedCardIds = new Set(
+    draggingList ? visibleLayout.filter((l) => headers[l.x]?.key === draggingList).map((l) => l.i) : [],
+  );
 
   // Admin: ny lista sist på boarden, för alla. Tomt namn stänger formuläret
   const addList = async (title: string) => {
@@ -397,6 +388,7 @@ export default function Home() {
       {/* Mobil: varje lista är en skärm bred och man sveper mellan dem (snap).
           md och uppåt: alla listor får plats i skärmens bredd */}
       <div
+        ref={boardScrollRef}
         className="board-scroll flex-1 snap-x snap-mandatory overflow-x-auto overscroll-x-contain md:snap-none"
         style={{ scrollPaddingInline: GRID_MARGIN }}
       >
@@ -420,6 +412,13 @@ export default function Home() {
               columns.spans[i].collapsed ? (
                 // Remsan ritas i rubriklagret
                 <div key={h.key} className="snap-start" />
+              ) : draggingList === h.key ? (
+                // Platshållare där den lyfta listan låg
+                <div
+                  key={h.key}
+                  className="snap-start rounded-xl bg-black/20"
+                  style={{ gridColumn: `span ${columns.spans[i].span}`, height: listHeight(columnRows[i]) }}
+                />
               ) : (
                 <div
                   key={h.key}
@@ -444,8 +443,7 @@ export default function Home() {
                   aria-label={`Show ${h.title}`}
                   aria-expanded={false}
                   title="Show list"
-                  {...{ [HIDDEN_LIST_ATTR]: h.key }}
-                  {...listDropProps(h.key)}
+                  {...{ [HIDDEN_LIST_ATTR]: h.key, [LIST_KEY_ATTR]: h.key }}
                   className={`pointer-events-auto flex min-w-0 flex-col items-center gap-3 overflow-hidden rounded-xl px-1 py-3 shadow-[0_1px_1px_rgba(9,30,66,0.25)] hover:brightness-95 ${
                     dropTarget === h.key ? "ring-2 ring-white brightness-95" : ""
                   } ${listDropClass(h.key)} ${listColor(h).className}`}
@@ -460,24 +458,14 @@ export default function Home() {
               ) : (
               <div
                 key={h.key}
-                // Medan en lista dras tar hela listan emot den
-                className={`flex flex-col px-2 ${draggingList ? "pointer-events-auto" : ""} ${listDropClass(h.key)} ${
-                  draggingList === h.key ? "opacity-60" : ""
-                }`}
+                {...{ [LIST_KEY_ATTR]: h.key }}
+                // Den lyfta listans innehåll döljs; platshållaren ritas i bakgrundslagret
+                className={`flex flex-col px-2 ${listDropClass(h.key)} ${draggingList === h.key ? "[&>*]:invisible" : ""}`}
                 style={{ gridColumn: `span ${columns.spans[i].span}`, height: listHeight(columnRows[i]) }}
-                {...listDropProps(h.key)}
               >
                 <div
                   // Admin: dra i rubriken för att flytta listan (för alla)
-                  draggable={admin && renamingKey !== h.key}
-                  onDragStart={(e) => {
-                    e.dataTransfer.effectAllowed = "move";
-                    // Firefox startar bara en drag med data
-                    e.dataTransfer.setData("text/plain", h.key);
-                    // Efter dragstart: att ändra DOM:en i dragstart avbryter dragningen i Chrome
-                    setTimeout(() => setDraggingList(h.key));
-                  }}
-                  onDragEnd={endListDrag}
+                  onPointerDown={admin && renamingKey !== h.key ? onListPointerDown(h.key) : undefined}
                   title={admin ? "Drag to move the list (for everyone)" : undefined}
                   className={`flex items-center gap-2 pr-1 ${admin ? "pointer-events-auto cursor-grab" : ""} ${listColor(h).className}`}
                   style={{ height: HEADER_HEIGHT, ...listColor(h).style }}
@@ -518,18 +506,21 @@ export default function Home() {
                   )}
                   <span className="text-sm opacity-80">{boardLoading ? null : columnCounts[i]}</span>
                   {admin && (
-                    <ColumnColorPicker
-                      title={h.title}
-                      color={h.color}
-                      defaultColor={defaultListColor(h.key)}
-                      onChange={(color) => recolorColumn(h.key, color)}
-                    />
+                    <span className="contents" {...{ [NO_LIST_DRAG_ATTR]: "" }}>
+                      <ColumnColorPicker
+                        title={h.title}
+                        color={h.color}
+                        defaultColor={defaultListColor(h.key)}
+                        onChange={(color) => recolorColumn(h.key, color)}
+                      />
+                    </span>
                   )}
                   <button
                     type="button"
                     aria-label={`Hide ${h.title}`}
                     aria-expanded
                     title="Hide list"
+                    {...{ [NO_LIST_DRAG_ATTR]: "" }}
                     className="pointer-events-auto rounded-md p-1 opacity-70 hover:bg-black/10 hover:opacity-100"
                     onClick={() => toggleColumn(h.key)}
                   >
@@ -663,11 +654,14 @@ export default function Home() {
                 if (card?._id) moveCard(card._id, statusForColumn(headers, to));
               }}
             >
-              {cards.filter((fb, i) => visibleIds.has(cardKey(fb, i))).map((fb) => (
+              {cards
+                .map((fb, i) => ({ fb, id: cardKey(fb, i) }))
+                .filter(({ id }) => visibleIds.has(id))
+                .map(({ fb, id }) => (
                 <div
                   key={fb._id || fb.username + fb.submittedAt}
-                  // Luft mellan kortet och kolumnens kanter
-                  className="px-2"
+                  // Luft mellan kortet och kolumnens kanter. Korten i en lyft lista visas i förhandsvisningen
+                  className={`px-2 ${draggedCardIds.has(id) ? "invisible" : ""}`}
                 >
                   <div
                     className="group relative flex h-full cursor-grab flex-col gap-2 overflow-hidden rounded-lg bg-white p-3 text-sm text-jira-text shadow-[0_1px_1px_rgba(9,30,66,0.25),0_0_1px_rgba(9,30,66,0.31)] hover:ring-2 hover:ring-jira-focus hover:ring-inset"
@@ -737,6 +731,51 @@ export default function Home() {
           )}
         </div>
       </div>
+
+      {/* Den lyfta listan följer musen, lutad (useListDrag flyttar den) */}
+      {listDrag && (() => {
+        const index = headers.findIndex((h) => h.key === listDrag.key);
+        const h = headers[index];
+        if (!h) return null;
+        const cardById = new Map(cards.map((fb, i) => [cardKey(fb, i), fb]));
+        const listCards = visibleLayout
+          .filter((l) => l.x === index)
+          .sort((a, b) => a.y - b.y)
+          .flatMap((l) => cardById.get(l.i) ?? []);
+        return (
+          <div
+            ref={previewRef}
+            aria-hidden
+            className={`pointer-events-none fixed top-0 left-0 z-[999] flex flex-col gap-[10px] overflow-hidden rounded-xl px-2 pb-2 shadow-[0_12px_28px_rgba(9,30,66,0.35)] ${listColor(h).className}`}
+            style={{ ...previewStyle(listDrag), maxHeight: "80vh", ...listColor(h).style }}
+          >
+            <div className="flex items-center gap-2 pr-1" style={{ height: HEADER_HEIGHT }}>
+              <span className="min-w-0 flex-1 truncate px-3 py-1 text-sm font-semibold">{h.title}</span>
+              <span className="text-sm opacity-80">{columnCounts[index]}</span>
+            </div>
+            {/* Samma ordning som listan: rubrik, "Add a card", korten */}
+            <div className="flex h-8 shrink-0 items-center gap-2 px-2 text-sm font-medium">
+              <PlusIcon className="size-4" aria-hidden />
+              Add a card
+            </div>
+            {listCards.map((fb) => (
+              <div
+                key={fb._id || fb.username + fb.submittedAt}
+                className="flex shrink-0 flex-col gap-2 rounded-lg bg-white p-3 text-sm text-jira-text shadow-[0_1px_1px_rgba(9,30,66,0.25),0_0_1px_rgba(9,30,66,0.31)]"
+                style={{ height: ROW_HEIGHT }}
+              >
+                <p className="line-clamp-3 leading-5 wrap-anywhere">{fb.comment}</p>
+                <div className="mt-auto flex items-center gap-1.5">
+                  <IssueTypeIcon type={fb.type} />
+                  <span className="min-w-0 flex-1 truncate text-xs font-semibold uppercase text-jira-secondary">
+                    {fb.productId}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+      })()}
 
       {/* Radix sköter fokus, Escape, klick utanför och scroll-lås */}
       <Dialog open={dialogOpen} onOpenChange={(open) => !open && closeDialog()}>
