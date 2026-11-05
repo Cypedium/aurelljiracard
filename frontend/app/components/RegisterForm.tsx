@@ -5,7 +5,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import checkPasswordStrength from "../utils/checkPasswordStrength";
 import { registerUser } from "../api/endpoints";
-import { apiErrorMessage } from "../utils/apiError";
+import { apiErrorMessage, isConflictError } from "../utils/apiError";
+import { USERNAME_TAKEN_MESSAGE } from "../utils/username";
 import { readAsDataUrl, registerSchema, type RegisterValues } from "../utils/register";
 import { AUTH_FORM_CLASS, FIELD_ERROR_CLASS, FORM_ITEM_CLASS, LABEL_CLASS, PASSWORD_STRENGTH_CLASS } from "../utils/styles";
 import { Button } from "./ui/button";
@@ -31,7 +32,11 @@ export default function RegisterForm() {
       toast.success(res.data.message);
       router.push("/login");
     } catch (err) {
-      // T.ex. 409 "Username already taken."
+      // Taget namn (409, även med annan skiftläge: "mike" när "Mike" finns) visas under fältet, som issue key
+      if (isConflictError(err)) {
+        form.setError("username", { message: apiErrorMessage(err, USERNAME_TAKEN_MESSAGE) }, { shouldFocus: true });
+        return;
+      }
       toast.error(apiErrorMessage(err, "Registration failed. Please try again."));
     }
   };

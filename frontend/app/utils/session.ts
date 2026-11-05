@@ -15,17 +15,29 @@ export const getUsername = (): string => sessionStorage.getItem("username") || "
 export const ROLES = ["user", "admin"] as const;
 export type Role = (typeof ROLES)[number];
 
-// Rollen läses ur access-tokenets payload (bara för UI:t; backend kontrollerar själv).
-// Saknas eller ogiltig → "user"
-export const getRole = (): Role => {
+// Access-tokenets payload (bara för UI:t; backend kontrollerar själv). Ogiltig → {}
+const tokenPayload = (accessToken: string): Record<string, unknown> => {
   try {
-    const payload = (sessionStorage.getItem("accessToken") || "").split(".")[1];
-    const json = atob(payload.replace(/-/g, "+").replace(/_/g, "/"));
-    const role = JSON.parse(json).role;
-    return ROLES.includes(role) ? role : "user";
+    const payload = accessToken.split(".")[1];
+    const json = new TextDecoder().decode(
+      Uint8Array.from(atob(payload.replace(/-/g, "+").replace(/_/g, "/")), (c) => c.charCodeAt(0)),
+    );
+    return JSON.parse(json) ?? {};
   } catch {
-    return "user";
+    return {};
   }
+};
+
+// Rollen läses ur access-tokenet. Saknas eller ogiltig → "user"
+export const getRole = (): Role => {
+  const role = tokenPayload(sessionStorage.getItem("accessToken") || "").role;
+  return ROLES.includes(role as Role) ? (role as Role) : "user";
+};
+
+// Namnet som det är sparat ("Mike"), även om man loggade in som "mike"
+export const tokenUsername = (accessToken: string): string | null => {
+  const username = tokenPayload(accessToken).username;
+  return typeof username === "string" && username ? username : null;
 };
 
 export const isAdmin = (): boolean => getRole() === "admin";

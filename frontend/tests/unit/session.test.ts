@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "@jest/globals";
-import { canDeleteCard, canEditCard, getRole, getUsername, hasSession, isAdmin, saveSession } from "../../app/utils/session";
+import { canDeleteCard, canEditCard, getRole, getUsername, hasSession, isAdmin, saveSession, tokenUsername } from "../../app/utils/session";
 
 // Tests run in Node, so provide minimal in-memory sessionStorage and localStorage
 const memoryStorage = (map: Map<string, string>) => ({
@@ -74,6 +74,13 @@ describe("session", () => {
 
       expect(getRole()).toBe("user");
       expect(isAdmin()).toBe(false);
+    });
+
+    it("tokenUsername reads the stored name, also with non-ASCII letters", () => {
+      expect(tokenUsername(token({ username: "Mike" }))).toBe("Mike");
+      expect(tokenUsername(token({ username: "Åsa" }))).toBe("Åsa");
+      expect(tokenUsername(token({ role: "user" }))).toBeNull();
+      expect(tokenUsername("not-a-jwt")).toBeNull();
     });
   });
 });

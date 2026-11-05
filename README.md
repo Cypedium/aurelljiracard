@@ -68,8 +68,8 @@ All routes except `/auth/*` and `/health` require `Authorization: Bearer <access
 
 | Method | Path | Description |
 |---|---|---|
-| `POST` | `/auth/register` | `{ username, password, pictureUrl? }` → `201` |
-| `POST` | `/auth/login` | `{ username, password }` → `{ accessToken, refreshToken }` |
+| `POST` | `/auth/register` | `{ username, password, pictureUrl? }` → `201`. Password 8–72 characters, no character three times in a row and at least 4 different characters; usernames with rude words → `400`. `409 "Username already taken."` also when the name differs only in case (`mike` vs `Mike`) |
+| `POST` | `/auth/login` | `{ username, password }` → `{ accessToken, refreshToken }`. The username is matched case-insensitively (exact match first); the token carries the stored name |
 | `POST` | `/auth/refresh` | `{ refreshToken }` → new `{ accessToken, refreshToken }` |
 | `POST` | `/auth/logout` | `{ refreshToken }` → revokes all of the user's refresh tokens |
 | `GET` | `/card` | All cards, newest first |
@@ -85,7 +85,7 @@ All routes except `/auth/*` and `/health` require `Authorization: Bearer <access
 | `GET` | `/user/usernames` | Usernames only |
 | `GET` | `/user/layout` | Current user's board layout (the frontend only reads `cards`: the order of cards within each list) |
 | `PUT` | `/user/layout` | `{ cols?, headers?, cards? }` — merge and save layout. `headers` is legacy (list names and colours are shared via `/column` now); each header is `{ key, title, color? }`. Each card position is `{ id, x, y, w, h, status? }`; `status` is the list key, so card order survives lists being moved |
-| `PATCH` | `/user/:id` | **Admin.** `{ username?, role? }` → updated user. Either change revokes the user's refresh tokens; their cards follow a rename. `409` if the name is taken, `400` if you remove your own admin role |
+| `PATCH` | `/user/:id` | **Admin.** `{ username?, role? }` → updated user. Either change revokes the user's refresh tokens; their cards follow a rename. `409` if the name is taken in any casing (changing only the casing of their own name is allowed), `400` for rude words or if you remove your own admin role |
 | `DELETE` | `/user/:id` | **Admin.** Delete a user; `409` while they still author cards, `400` for yourself. Cards assigned to them become unassigned |
 | `POST` | `/user/:id/logout` | **Admin.** Revoke all the user's refresh tokens (logged out within 15 min) |
 | `GET` | `/health` | `{ status: "ok" }` |

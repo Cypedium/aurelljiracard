@@ -21,7 +21,6 @@ import se.aurell.jiraboard.security.AuthUser;
 @Service
 public class UserService {
 
-    private static final String USERNAME_TAKEN_MESSAGE = "Username already taken.";
     private static final String CARD_POSITION_MESSAGE = "Each saved card position needs a valid list key as status.";
 
     private final UserRepository userRepository;
@@ -85,8 +84,13 @@ public class UserService {
         boolean renamed = request.username() != null && !request.username().equals(user.getUsername());
         boolean roleChanged = role != null && role != user.getRole();
 
-        if (renamed && userRepository.existsByUsername(request.username())) {
-            throw ApiException.conflict(USERNAME_TAKEN_MESSAGE);
+        if (renamed && CredentialRules.isRudeUsername(request.username())) {
+            throw ApiException.badRequest(CredentialRules.RUDE_USERNAME_MESSAGE);
+        }
+        // Only changing the casing of the user's own name ("mike" → "Mike") is not a conflict
+        if (renamed && !request.username().equalsIgnoreCase(user.getUsername())
+                && userRepository.existsByUsernameIgnoreCase(request.username())) {
+            throw ApiException.conflict(CredentialRules.USERNAME_TAKEN_MESSAGE);
         }
         if (renamed) {
             user.setUsername(request.username());
@@ -100,7 +104,7 @@ public class UserService {
                 userRepository.saveAndFlush(user);
             } catch (DataIntegrityViolationException e) {
                 // Another request took the name in between
-                throw ApiException.conflict(USERNAME_TAKEN_MESSAGE);
+                throw ApiException.conflict(CredentialRules.USERNAME_TAKEN_MESSAGE);
             }
         }
         return UserResponse.from(user);

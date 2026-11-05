@@ -41,6 +41,31 @@ describe("POST /auth/register", () => {
     expect(res.status).toBe(409);
   });
 
+  it("treats a username in other casing as taken", async () => {
+    User.findOne.mockResolvedValue({ username: "Mike" });
+
+    const res = await request(app).post("/auth/register").send({ username: "mike", password: "secret123" });
+
+    expect(res.status).toBe(409);
+    expect(res.body.message).toBe("Username already taken.");
+    const { username } = User.findOne.mock.calls[0][0];
+    expect(username).toBeInstanceOf(RegExp);
+    expect(username.test("Mike")).toBe(true);
+  });
+
+  it.each([
+    ["fuckface", "secret123", "Username contains inappropriate words."],
+    ["alice", "secret1", "Password must be 8-72 characters."],
+    ["alice", "abc11112", "Password must not repeat characters (e.g. aaa or 1212)."],
+    ["alice", "12121212", "Password must not repeat characters (e.g. aaa or 1212)."]
+  ])("rejects %s / %s with %j", async (username, password, message) => {
+    const res = await request(app).post("/auth/register").send({ username, password });
+
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe(message);
+    expect(User.findOne).not.toHaveBeenCalled();
+  });
+
   it.each([
     [{ password: "secret123" }],
     [{ username: "alice", password: "123" }],
@@ -64,6 +89,17 @@ describe("POST /auth/login", () => {
     expect(res.status).toBe(200);
     expect(jwt.verify(res.body.accessToken, process.env.JWT_SECRET)).toMatchObject({ id: USER_ID, username: "alice", role: "user" });
     expect(jwt.verify(res.body.refreshToken, process.env.REFRESH_SECRET)).toMatchObject({ id: USER_ID, tokenVersion: 0 });
+  });
+
+  it("logs in with the username in other casing and puts the stored name in the token", async () => {
+    const passwordHash = await bcrypt.hash("secret123", 4);
+    User.findOne.mockResolvedValueOnce(null).mockResolvedValueOnce({ _id: USER_ID, username: "Mike", passwordHash });
+
+    const res = await request(app).post("/auth/login").send({ username: "mike", password: "secret123" });
+
+    expect(res.status).toBe(200);
+    expect(jwt.verify(res.body.accessToken, process.env.JWT_SECRET)).toMatchObject({ username: "Mike" });
+    expect(User.findOne.mock.calls[1][0].username).toBeInstanceOf(RegExp);
   });
 
   it("puts the admin role in the access token", async () => {

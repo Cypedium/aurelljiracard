@@ -77,10 +77,23 @@ class UserApiTest extends ApiIntegrationTest {
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message").value("Username already taken."));
         mvc.perform(bearer(json(patch("/user/" + idOf("bob")), """
+                {"username": "Carol"}"""), admin))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("Username already taken."));
+        mvc.perform(bearer(json(patch("/user/" + idOf("bob")), """
+                {"username": "fuckface"}"""), admin))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Username contains inappropriate words."));
+        // Only the casing of the user's own name
+        mvc.perform(bearer(json(patch("/user/" + idOf("bob")), """
+                {"username": "Bob"}"""), admin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.username").value("Bob"));
+        mvc.perform(bearer(json(patch("/user/" + idOf("Bob")), """
                 {"username": "  "}"""), admin))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Username is required (max 32 characters)."));
-        mvc.perform(bearer(json(patch("/user/" + idOf("bob")), """
+        mvc.perform(bearer(json(patch("/user/" + idOf("Bob")), """
                 {"role": "owner"}"""), admin))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Role must be one of: user, admin."));

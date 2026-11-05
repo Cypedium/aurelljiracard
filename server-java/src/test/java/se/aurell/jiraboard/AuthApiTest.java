@@ -1,11 +1,13 @@
 package se.aurell.jiraboard;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.jayway.jsonpath.JsonPath;
+import java.util.Base64;
 import org.junit.jupiter.api.Test;
 
 class AuthApiTest extends ApiIntegrationTest {
@@ -42,9 +44,9 @@ class AuthApiTest extends ApiIntegrationTest {
     @Test
     void registerValidatesFields() throws Exception {
         mvc.perform(json(post("/auth/register"), """
-                {"username": "alice", "password": "123"}"""))
+                {"username": "alice", "password": "secret1"}"""))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Password must be 6-72 characters."));
+                .andExpect(jsonPath("$.message").value("Password must be 8-72 characters."));
 
         mvc.perform(json(post("/auth/register"), """
                 {"username": "   ", "password": "secret123"}"""))
@@ -55,6 +57,44 @@ class AuthApiTest extends ApiIntegrationTest {
                 {"username": "alice", "password": "secret123", "pictureUrl": "javascript:alert(1)"}"""))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Invalid profile picture."));
+    }
+
+    @Test
+    void registerTreatsOtherCasingAsTaken() throws Exception {
+        register("Mike");
+
+        mvc.perform(json(post("/auth/register"), """
+                {"username": "mike", "password": "secret123"}"""))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("Username already taken."));
+    }
+
+    @Test
+    void registerRejectsRudeUsernamesAndRepetitivePasswords() throws Exception {
+        mvc.perform(json(post("/auth/register"), """
+                {"username": "Sh1t_head", "password": "secret123"}"""))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Username contains inappropriate words."));
+
+        for (String password : new String[] {"abc11112", "12121212"}) {
+            mvc.perform(json(post("/auth/register"), """
+                    {"username": "alice", "password": "%s"}""".formatted(password)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.message").value("Password must not repeat characters (e.g. aaa or 1212)."));
+        }
+    }
+
+    @Test
+    void loginIgnoresCasingAndPutsStoredNameInToken() throws Exception {
+        register("Mike");
+
+        String body = mvc.perform(json(post("/auth/login"), """
+                {"username": "mike", "password": "secret123"}"""))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        String payload = new String(Base64.getUrlDecoder()
+                .decode(JsonPath.<String>read(body, "$.accessToken").split("\\.")[1]));
+        assertThat(JsonPath.<String>read(payload, "$.username")).isEqualTo("Mike");
     }
 
     @Test
