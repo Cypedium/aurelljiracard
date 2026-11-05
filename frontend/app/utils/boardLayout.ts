@@ -301,3 +301,34 @@ export const buildCardLayout = (
     h: 1,
   }));
 };
+
+// Admin: flytta en lista genom att dra rubriken (useListDrag). Listorna (och remsorna) har
+// LIST_KEY_ATTR; element med NO_LIST_DRAG_ATTR (färgväljare, dölj-knapp) startar ingen dragning
+export const LIST_KEY_ATTR = "data-list-key";
+export const NO_LIST_DRAG_ATTR = "data-no-list-drag";
+// Så långt musen måste röra sig innan det blir en dragning (annars ett klick)
+export const LIST_DRAG_THRESHOLD_PX = 5;
+// Den lyfta listan lutar som i Trello
+export const LIST_DRAG_TILT_DEG = 4;
+// Nära boardens kant scrollar den i sidled, så här mycket per bildruta
+export const LIST_DRAG_EDGE_PX = 60;
+export const LIST_DRAG_SCROLL_STEP_PX = 12;
+
+// Platsen (index i boardens ordning) under pekarens x, annars den närmaste
+// (pekaren i mellanrummet eller utanför boarden). null utan listor
+export const nearestListIndexAtX = (lists: readonly { left: number; right: number }[], x: number): number | null => {
+  let best: number | null = null;
+  let bestDistance = Infinity;
+  for (const [index, { left, right }] of lists.entries()) {
+    const distance = x < left ? left - x : x > right ? x - right : 0;
+    if (distance < bestDistance) {
+      best = index;
+      bestDistance = distance;
+    }
+  }
+  return best;
+};
+
+// Ordningen medan en lista dras: den lyfta listan på platsen pekaren är över
+export const previewHeaders = (headers: BoardHeader[], from: CardStatus, toIndex: number | null): BoardHeader[] =>
+  toIndex === null || !headers[toIndex] ? headers : moveHeader(headers, from, headers[toIndex].key);

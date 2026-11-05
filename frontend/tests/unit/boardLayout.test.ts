@@ -9,6 +9,8 @@ import {
   boardColumns,
   desktopBoardWidth,
   columnAtGridX,
+  nearestListIndexAtX,
+  previewHeaders,
   fromGridLayout,
   mobileBoardWidth,
   snapGridX,
@@ -413,5 +415,42 @@ describe("eventPoint", () => {
 
   it("returns null without a position", () => {
     expect(eventPoint({} as Event)).toBeNull();
+  });
+});
+
+describe("nearestListIndexAtX", () => {
+  const lists = [
+    { left: 0, right: 100 },
+    { left: 110, right: 210 },
+  ];
+
+  it("returns the slot under the pointer", () => {
+    expect(nearestListIndexAtX(lists, 50)).toBe(0);
+    expect(nearestListIndexAtX(lists, 110)).toBe(1);
+  });
+
+  it("returns the nearest slot in a gap or outside the board", () => {
+    expect(nearestListIndexAtX(lists, 103)).toBe(0);
+    expect(nearestListIndexAtX(lists, 108)).toBe(1);
+    expect(nearestListIndexAtX(lists, -40)).toBe(0);
+    expect(nearestListIndexAtX(lists, 900)).toBe(1);
+  });
+
+  it("returns null without lists", () => {
+    expect(nearestListIndexAtX([], 10)).toBeNull();
+  });
+});
+
+describe("previewHeaders", () => {
+  const keys = (headers: { key: string }[]) => headers.map((h) => h.key);
+
+  it("puts the dragged list in the slot under the pointer", () => {
+    expect(keys(previewHeaders(DEFAULT_HEADERS, "todo", 2))).toEqual(["in-progress", "test", "todo", "done"]);
+    expect(keys(previewHeaders(DEFAULT_HEADERS, "done", 0))).toEqual(["done", "todo", "in-progress", "test"]);
+  });
+
+  it("keeps the order for its own slot or no slot", () => {
+    expect(previewHeaders(DEFAULT_HEADERS, "todo", 0)).toBe(DEFAULT_HEADERS);
+    expect(previewHeaders(DEFAULT_HEADERS, "todo", null)).toBe(DEFAULT_HEADERS);
   });
 });
