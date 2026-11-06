@@ -101,13 +101,11 @@ const Navbar = () => {
       {onBoard && (
         <div className="flex items-center gap-4 bg-gray-700 py-1.5 pr-[2%] pl-[3%] text-base text-white">
           <button type="button" className={SUB_ROW_BUTTON_CLASS} onClick={() => requestBoardAction(BOARD_ACTIONS.createCard)}>
-            <PlusIcon className="size-5" aria-hidden />
             Create card
           </button>
           {/* Bara admin kan lägga till listor (backend nekar andra) */}
           {admin && (
             <button type="button" className={SUB_ROW_BUTTON_CLASS} onClick={() => requestBoardAction(BOARD_ACTIONS.createColumn)}>
-              <PlusIcon className="size-5" aria-hidden />
               Create column
             </button>
           )}
