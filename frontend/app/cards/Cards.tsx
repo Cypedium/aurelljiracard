@@ -44,6 +44,7 @@ import {
   previewHeaders,
 } from "../utils/boardLayout";
 import { canDeleteCard, canEditCard, getUsername, isAdmin } from "../utils/session";
+import { BOARD_ACTIONS, onBoardAction } from "../utils/boardActions";
 
 export default function Home() {
   const { cards, setCards, cardsLoaded, fetchCards, userLayout, layoutLoaded, persistLayout, headers, setHeaders, columnsLoaded } =
@@ -75,6 +76,18 @@ export default function Home() {
     setUserName(getUsername());
     setAdmin(isAdmin());
   }, []);
+
+  // Navbarens "Create card" (nytt kort i första listan) och "Create column" (admin: formuläret sist på boarden)
+  useEffect(() => onBoardAction(BOARD_ACTIONS.createCard, () => setCreatingIn(headers[0]?.key ?? null)), [headers, setCreatingIn]);
+  useEffect(() => {
+    if (!admin) return;
+    return onBoardAction(BOARD_ACTIONS.createColumn, () => setAddingList(true));
+  }, [admin, setAddingList]);
+  // Formuläret ligger sist på boarden: scrolla dit när det har ritats
+  useEffect(() => {
+    const board = boardScrollRef.current;
+    if (admin && addingList && board) board.scrollTo({ left: board.scrollWidth, behavior: "smooth" });
+  }, [admin, addingList]);
 
   // Admin: listan som dras i sin rubrik följer musen (lutad). Medan den dras visas boarden i den nya
   // ordningen (boardHeaders): de andra listorna och deras kort flyttar undan och den lyfta listans plats
@@ -108,10 +121,11 @@ export default function Home() {
   const visibleIds = new Set(visibleLayout.map((l) => l.i));
 
   // Dolda listor blir smala remsor; gridden räknar i enheter i stället för kolumner.
-  // Admins får plats för "Add new column" sist
+  // Formuläret för en ny lista (navbarens "Create column") får plats sist medan det är öppet
+  const showAddList = admin && addingList;
   const columns = useMemo(
-    () => boardColumns(boardHeaders, collapsed, admin ? EXPANDED_SPAN : 0),
-    [boardHeaders, collapsed, admin],
+    () => boardColumns(boardHeaders, collapsed, showAddList ? EXPANDED_SPAN : 0),
+    [boardHeaders, collapsed, showAddList],
   );
   // Kort snäpper till närmaste synliga lista medan de dras
   const constraints = useMemo<LayoutConstraint[]>(
@@ -217,14 +231,7 @@ export default function Home() {
               );
             })}
 
-            {admin && (
-              <AddListForm
-                open={addingList}
-                onOpen={() => setAddingList(true)}
-                onClose={() => setAddingList(false)}
-                onSubmit={addList}
-              />
-            )}
+            {showAddList && <AddListForm onClose={() => setAddingList(false)} onSubmit={addList} />}
           </div>
 
           {boardLoading && <BoardSkeleton headers={boardHeaders} columns={columns} gridStyle={columnGrid} />}
