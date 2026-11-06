@@ -51,7 +51,7 @@ export function useCardActions({ cards, setCards, fetchCards }: Options) {
     setEditingCard(null);
   };
 
-  const deleteCardCard = async (id: string) => {
+  const removeCard = async (id: string) => {
     try {
       await deleteCard(id);
       setCards((prev) => prev.filter((fb) => fb._id !== id));
@@ -72,6 +72,6 @@ export function useCardActions({ cards, setCards, fetchCards }: Options) {
     closeDialog,
     handleCardCreated,
     handleCardSaved,
-    deleteCardCard,
+    removeCard,
   };
 }

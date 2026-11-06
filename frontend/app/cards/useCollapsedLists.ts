@@ -1,8 +1,6 @@
 'use client';
 import { useEffect, useState } from "react";
-import { normalizeCollapsed, toggleCollapsed, type CardStatus } from "../utils/boardLayout";
-
-const COLLAPSED_STORAGE_KEY = "collapsed_columns";
+import { COLLAPSED_STORAGE_KEY, normalizeCollapsed, toggleCollapsed, type CardStatus } from "../utils/boardLayout";
 
 // Ihopfällda listor visar bara en smal remsa. Sparas per webbläsare i localStorage
 export function useCollapsedLists() {

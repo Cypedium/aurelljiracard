@@ -8,6 +8,7 @@ import { boardCards } from "../utils/backlog";
 import {
   DEFAULT_HEADERS,
   DEFAULT_LAYOUT,
+  LAYOUT_STORAGE_KEY,
   normalizeColumns,
   normalizeLayout,
   type BoardHeader,
@@ -56,7 +57,7 @@ export function useBoardData() {
       }
 
       try {
-        const saved = localStorage.getItem("user_layout");
+        const saved = localStorage.getItem(LAYOUT_STORAGE_KEY);
         setUserLayout(saved ? normalizeLayout(JSON.parse(saved)) : DEFAULT_LAYOUT);
       } catch {
         setUserLayout(DEFAULT_LAYOUT);
@@ -93,7 +94,7 @@ export function useBoardData() {
 
   const persistLayout = (next: UserLayout) => {
     setUserLayout(next);
-    localStorage.setItem("user_layout", JSON.stringify(next));
+    localStorage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify(next));
     saveLayoutToServer(next);
   };
 

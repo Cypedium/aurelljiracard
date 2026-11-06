@@ -59,7 +59,7 @@ export default function Home() {
     closeDialog,
     handleCardCreated,
     handleCardSaved,
-    deleteCardCard,
+    removeCard,
   } = useCardActions({ cards, setCards, fetchCards });
   const { renamingKey, setRenamingKey, addingList, setAddingList, renameColumn, recolorColumn, moveList, addList } =
     useColumnActions({ headers, setHeaders, userLayout, persistLayout });
@@ -314,7 +314,7 @@ export default function Home() {
         onClose={closeDialog}
       />
 
-      <DeleteCardDialog card={deletingCard} onClose={() => setDeletingCard(null)} onConfirm={deleteCardCard} />
+      <DeleteCardDialog card={deletingCard} onClose={() => setDeletingCard(null)} onConfirm={removeCard} />
     </div>
   );
 }

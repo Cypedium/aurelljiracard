@@ -16,6 +16,8 @@ import {
   snapGridX,
   toGridLayout,
   DEFAULT_LAYOUT,
+  COLLAPSED_STORAGE_KEY,
+  LAYOUT_STORAGE_KEY,
   ADD_BUTTON_HEIGHT,
   CARDS_TOP,
   GRID_MARGIN,
@@ -46,6 +48,14 @@ import {
 } from "../../app/utils/boardLayout";
 
 const H = DEFAULT_HEADERS;
+describe("storage keys", () => {
+  // Ändras nycklarna tappar användarna sina sparade boardinställningar
+  it("keeps the localStorage keys stable", () => {
+    expect(LAYOUT_STORAGE_KEY).toBe("user_layout");
+    expect(COLLAPSED_STORAGE_KEY).toBe("collapsed_columns");
+  });
+});
+
 // Standardlistorna plus en som en admin lagt till
 const WITH_REVIEW = [...DEFAULT_HEADERS, { key: "review", title: "Review" }];
 
