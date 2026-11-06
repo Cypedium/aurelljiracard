@@ -4,7 +4,11 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { handleLogout } from '../utils/logout';
 import { getUsername, hasSession, isAdmin } from '../utils/session';
-import { ArrowRightStartOnRectangleIcon, Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
+import { BOARD_ACTIONS, requestBoardAction } from '../utils/boardActions';
+import { ArrowRightStartOnRectangleIcon, Bars3Icon, PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
+
+const BOARD_PATH = '/cards';
+const SUB_ROW_BUTTON_CLASS = 'flex items-center gap-1.5 rounded-md px-2 py-0.5 hover:bg-white/10';
 
 const Navbar = () => {
   const pathname = usePathname();
@@ -20,68 +24,96 @@ const Navbar = () => {
     setAdmin(isAdmin());
   }, [pathname]);
 
+  const onBoard = isLoggedIn && pathname === BOARD_PATH;
+
   return (
-    <nav className="fixed z-[1000] flex w-full items-center justify-between border bg-gray-600 py-[0.5%] pr-[2%] pl-[3%] font-brand">
-      <button
-        className="block text-white md:hidden"
-        onClick={() => setMenuOpen(!menuOpen)}
-        aria-label={menuOpen ? 'Close menu' : 'Open menu'}
-        aria-expanded={menuOpen}
-      >
-        {menuOpen ? <XMarkIcon className="size-8" aria-hidden /> : <Bars3Icon className="size-8" aria-hidden />}
-      </button>
+    <header className="fixed z-[1000] w-full font-brand">
+      {/* z-10: mobilmenyn hamnar över raden under */}
+      <nav className="relative z-10 flex w-full items-center justify-between border bg-gray-600 py-[0.5%] pr-[2%] pl-[3%]">
+        <button
+          className="block text-white md:hidden"
+          onClick={() => setMenuOpen(!menuOpen)}
+          aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+          aria-expanded={menuOpen}
+        >
+          {menuOpen ? <XMarkIcon className="size-8" aria-hidden /> : <Bars3Icon className="size-8" aria-hidden />}
+        </button>
 
-      {/* Mobil: dold tills menyn öppnas. Desktop: alltid synlig på en rad */}
-      <ul
-        className={`${menuOpen ? 'flex' : 'hidden'} absolute top-[50px] w-full flex-col gap-4 rounded-lg bg-brand p-8 text-2xl text-white md:static md:flex md:flex-1 md:flex-row md:items-center md:gap-10 md:bg-transparent md:p-0`}
-      >
-        {isLoggedIn && (
-          <>
-            <li onClick={() => setMenuOpen(false)}>
-              <Link href="/cards">Aurell Jira Board</Link>
-            </li>
-            <li onClick={() => setMenuOpen(false)}>
-              <Link href="/cards/card">Create Card</Link>
-            </li>
-            <li onClick={() => setMenuOpen(false)}>
-              <Link href="/backlog">Backlog</Link>
-            </li>
-            {/* Bara för admin; backend nekar andra (403) */}
-            {admin && (
+        {/* Mobil: dold tills menyn öppnas. Desktop: alltid synlig på en rad */}
+        <ul
+          className={`${menuOpen ? 'flex' : 'hidden'} absolute top-[50px] w-full flex-col gap-4 rounded-lg bg-brand p-8 text-2xl text-white md:static md:flex md:flex-1 md:flex-row md:items-center md:gap-10 md:bg-transparent md:p-0`}
+        >
+          {isLoggedIn && (
+            <>
               <li onClick={() => setMenuOpen(false)}>
-                <Link href="/users">Users</Link>
+                <Link href="/cards">Aurell Jira Board</Link>
               </li>
-            )}
-          </>
-        )}
+              <li onClick={() => setMenuOpen(false)}>
+                <Link
+                  href={BOARD_PATH}
+                  aria-current={pathname === BOARD_PATH ? 'page' : undefined}
+                  className="underline-offset-8 aria-[current=page]:underline"
+                >
+                  The Board
+                </Link>
+              </li>
+              <li onClick={() => setMenuOpen(false)}>
+                <Link href="/backlog">Backlog</Link>
+              </li>
+              {/* Bara för admin; backend nekar andra (403) */}
+              {admin && (
+                <li onClick={() => setMenuOpen(false)}>
+                  <Link href="/users">Users</Link>
+                </li>
+              )}
+            </>
+          )}
 
-        {isLoggedIn ? (
-          <>
-            {/* Desktop: användare och logout längst till höger */}
-            {userName && (
-              <li key="profile" className="md:ml-auto">
-                <span>{userName}</span>
+          {isLoggedIn ? (
+            <>
+              {/* Desktop: användare och logout längst till höger */}
+              {userName && (
+                <li key="profile" className="md:ml-auto">
+                  <span>{userName}</span>
+                </li>
+              )}
+              <li key="logout" className={userName ? undefined : 'md:ml-auto'}>
+                <button onClick={handleLogout} className="flex items-center gap-2">
+                  <ArrowRightStartOnRectangleIcon className="size-7" aria-hidden />
+                  Logout
+                </button>
               </li>
-            )}
-            <li key="logout" className={userName ? undefined : 'md:ml-auto'}>
-              <button onClick={handleLogout} className="flex items-center gap-2">
-                <ArrowRightStartOnRectangleIcon className="size-7" aria-hidden />
-                Logout
-              </button>
-            </li>
-          </>
-        ) : (
-          <>
-            <li key="register" onClick={() => setMenuOpen(false)}>
-              <Link href="/register">Register User</Link>
-            </li>
-            <li key="login" onClick={() => setMenuOpen(false)}>
-              <Link href="/login">Login</Link>
-            </li>
-          </>
-        )}
-      </ul>
-    </nav>
+            </>
+          ) : (
+            <>
+              <li key="register" onClick={() => setMenuOpen(false)}>
+                <Link href="/register">Register User</Link>
+              </li>
+              <li key="login" onClick={() => setMenuOpen(false)}>
+                <Link href="/login">Login</Link>
+              </li>
+            </>
+          )}
+        </ul>
+      </nav>
+
+      {/* Rad två, bara på boarden: öppnar boardens formulär. Lite mörkare än raden ovanför */}
+      {onBoard && (
+        <div className="flex items-center gap-4 bg-gray-700 py-1.5 pr-[2%] pl-[3%] text-base text-white">
+          <button type="button" className={SUB_ROW_BUTTON_CLASS} onClick={() => requestBoardAction(BOARD_ACTIONS.createCard)}>
+            <PlusIcon className="size-5" aria-hidden />
+            Create card
+          </button>
+          {/* Bara admin kan lägga till listor (backend nekar andra) */}
+          {admin && (
+            <button type="button" className={SUB_ROW_BUTTON_CLASS} onClick={() => requestBoardAction(BOARD_ACTIONS.createColumn)}>
+              <PlusIcon className="size-5" aria-hidden />
+              Create column
+            </button>
+          )}
+        </div>
+      )}
+    </header>
   );
 };
 
