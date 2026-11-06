@@ -1,6 +1,7 @@
 package se.aurell.jiraboard.service;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.regex.Pattern;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -64,7 +65,7 @@ public class AuthService {
         }
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public TokenResponse login(LoginRequest request) {
         // Exact name first; otherwise any casing ("mike" logs in as "Mike")
         User user = userRepository.findByUsername(request.username())
@@ -81,13 +82,13 @@ public class AuthService {
             return;
         }
         try {
-            userRepository.incrementTokenVersion(jwtService.decodeRefreshToken(refreshToken).userId());
+            userRepository.revokeTokens(jwtService.decodeRefreshToken(refreshToken).userId(), Instant.now());
         } catch (JwtException e) {
             // Invalid or expired token: nothing to revoke
         }
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public TokenResponse refresh(String refreshToken) {
         if (refreshToken == null) {
             throw ApiException.unauthorized("No refresh token provided");
@@ -106,7 +107,9 @@ public class AuthService {
         return issueTokens(user);
     }
 
+    /** Also marks the user active, for the admin user list. */
     private TokenResponse issueTokens(User user) {
+        userRepository.markActive(user.getId(), Instant.now());
         return new TokenResponse(jwtService.issueAccessToken(user), jwtService.issueRefreshToken(user));
     }
 

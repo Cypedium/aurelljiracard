@@ -89,6 +89,19 @@ describe("POST /auth/login", () => {
     expect(res.status).toBe(200);
     expect(jwt.verify(res.body.accessToken, process.env.JWT_SECRET)).toMatchObject({ id: USER_ID, username: "alice", role: "user" });
     expect(jwt.verify(res.body.refreshToken, process.env.REFRESH_SECRET)).toMatchObject({ id: USER_ID, tokenVersion: 0 });
+    expect(User.updateOne).toHaveBeenCalledWith({ _id: USER_ID }, { $set: { lastActiveAt: expect.any(Date) } });
+  });
+
+  it("still logs in when marking the user active fails", async () => {
+    const passwordHash = await bcrypt.hash("secret123", 4);
+    User.findOne.mockResolvedValue({ _id: USER_ID, username: "alice", passwordHash });
+    User.updateOne.mockRejectedValue(new Error("db down"));
+    jest.spyOn(console, "error").mockImplementation(() => {});
+
+    const res = await request(app).post("/auth/login").send({ username: "alice", password: "secret123" });
+
+    expect(res.status).toBe(200);
+    console.error.mockRestore();
   });
 
   it("logs in with the username in other casing and puts the stored name in the token", async () => {
@@ -118,6 +131,7 @@ describe("POST /auth/login", () => {
     const res = await request(app).post("/auth/login").send({ username: "alice", password: "wrong" });
 
     expect(res.status).toBe(401);
+    expect(User.updateOne).not.toHaveBeenCalled();
   });
 
   it("rejects non-string credentials (operator injection) with 400", async () => {
@@ -137,6 +151,7 @@ describe("POST /auth/refresh", () => {
 
     expect(res.status).toBe(200);
     expect(jwt.verify(res.body.accessToken, process.env.JWT_SECRET)).toMatchObject({ username: "alice" });
+    expect(User.updateOne).toHaveBeenCalledWith({ _id: USER_ID }, { $set: { lastActiveAt: expect.any(Date) } });
   });
 
   it("rejects a revoked refresh token with 403", async () => {
@@ -162,14 +177,17 @@ describe("POST /auth/refresh", () => {
 });
 
 describe("POST /auth/logout", () => {
-  it("revokes the user's refresh tokens", async () => {
+  it("revokes the user's refresh tokens and marks them logged out", async () => {
     User.updateOne.mockResolvedValue({});
     const refreshToken = generateRefreshToken({ _id: USER_ID, tokenVersion: 0 });
 
     const res = await request(app).post("/auth/logout").send({ refreshToken });
 
     expect(res.status).toBe(200);
-    expect(User.updateOne).toHaveBeenCalledWith({ _id: USER_ID }, { $inc: { tokenVersion: 1 } });
+    expect(User.updateOne).toHaveBeenCalledWith(
+      { _id: USER_ID },
+      { $inc: { tokenVersion: 1 }, $set: { loggedOutAt: expect.any(Date) } }
+    );
   });
 
   it("succeeds without revoking anything for an invalid token", async () => {

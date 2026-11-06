@@ -36,6 +36,10 @@ const userSchema = new mongoose.Schema({
   // Incremented on logout to revoke all outstanding refresh tokens
   tokenVersion: { type: Number, default: 0 },
 
+  // Presence for the admin user list (utils/presence.js): set on login/refresh and on logout
+  lastActiveAt: { type: Date, default: null },
+  loggedOutAt: { type: Date, default: null },
+
   // Layout sparas direkt på användaren
   layout: {
     type: LayoutSchema,

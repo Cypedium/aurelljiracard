@@ -19,6 +19,15 @@ const {
   isRepetitivePassword,
 } = require("../utils/password");
 
+// Presence for the admin user list; a failed write must not stop login or refresh
+const markActive = async (id) => {
+  try {
+    await User.updateOne({ _id: id }, { $set: { lastActiveAt: new Date() } });
+  } catch (err) {
+    console.error("Mark active error:", err.message);
+  }
+};
+
 const PICTURE_MAX_LENGTH = 1.5 * 1024 * 1024; // base64 data URL, ~1 MB image
 const PICTURE_URL_PATTERN = /^(data:image\/[a-z+.-]+;base64,|https?:\/\/)/i;
 
@@ -76,6 +85,7 @@ exports.login = async (req, res) => {
     if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
       return res.status(401).json({ message: "Invalid credentials." });
     }
+    await markActive(user._id);
 
     // Frontend stores tokens in localStorage → return them in the body
     res.json({
@@ -96,7 +106,7 @@ exports.logout = async (req, res) => {
   if (typeof refreshToken === "string") {
     try {
       const decoded = verifyRefreshToken(refreshToken);
-      await User.updateOne({ _id: decoded.id }, { $inc: { tokenVersion: 1 } });
+      await User.updateOne({ _id: decoded.id }, { $inc: { tokenVersion: 1 }, $set: { loggedOutAt: new Date() } });
     } catch {
       // Invalid or expired token: nothing to revoke
     }
@@ -125,6 +135,7 @@ exports.refresh = async (req, res) => {
     if (!user || (user.tokenVersion ?? 0) !== (decoded.tokenVersion ?? 0)) {
       return res.status(403).json({ message: "Invalid refresh token" });
     }
+    await markActive(user._id);
 
     return res.json({
       accessToken: generateAccessToken(user),

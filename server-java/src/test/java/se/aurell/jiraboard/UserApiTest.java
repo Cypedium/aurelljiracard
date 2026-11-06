@@ -1,5 +1,6 @@
 package se.aurell.jiraboard;
 
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -153,6 +154,40 @@ class UserApiTest extends ApiIntegrationTest {
     }
 
     @Test
+    void adminSeesWhoIsOnline() throws Exception {
+        String bobRefresh = JsonPath.read(registerAndLogin("bob"), "$.refreshToken");
+        register("carol");
+        String admin = adminToken();
+
+        mvc.perform(bearer(get("/user"), admin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.username == 'bob')].online", contains(true)))
+                .andExpect(jsonPath("$[?(@.username == 'bob')].lastActiveAt").isNotEmpty())
+                .andExpect(jsonPath("$[?(@.username == 'boss')].online", contains(true)))
+                .andExpect(jsonPath("$[?(@.username == 'carol')].online", contains(false)))
+                .andExpect(jsonPath("$[0].loggedOutAt").doesNotExist());
+
+        mvc.perform(json(post("/auth/logout"), """
+                {"refreshToken": "%s"}""".formatted(bobRefresh)))
+                .andExpect(status().isOk());
+
+        mvc.perform(bearer(get("/user"), admin))
+                .andExpect(jsonPath("$[?(@.username == 'bob')].online", contains(false)))
+                .andExpect(jsonPath("$[?(@.username == 'bob')].lastActiveAt").isNotEmpty());
+    }
+
+    @Test
+    void adminLogoutShowsUserOffline() throws Exception {
+        registerAndLogin("bob");
+        String admin = adminToken();
+
+        mvc.perform(bearer(post("/user/" + idOf("bob") + "/logout"), admin)).andExpect(status().isOk());
+
+        mvc.perform(bearer(get("/user"), admin))
+                .andExpect(jsonPath("$[?(@.username == 'bob')].online", contains(false)));
+    }
+
+    @Test
     void listsPublicUserInfoOnly() throws Exception {
         register("alice");
         String token = accessToken("bob");
@@ -164,7 +199,10 @@ class UserApiTest extends ApiIntegrationTest {
                 .andExpect(jsonPath("$[0]._id").isString())
                 .andExpect(jsonPath("$[0].pictureUrl").value("https://example.com/default-profile.png"))
                 .andExpect(jsonPath("$[0].role").value("user"))
-                .andExpect(jsonPath("$[0].passwordHash").doesNotExist());
+                .andExpect(jsonPath("$[0].passwordHash").doesNotExist())
+                // Presence is for admins only
+                .andExpect(jsonPath("$[0].online").doesNotExist())
+                .andExpect(jsonPath("$[0].lastActiveAt").doesNotExist());
 
         mvc.perform(bearer(get("/user/usernames"), token))
                 .andExpect(status().isOk())

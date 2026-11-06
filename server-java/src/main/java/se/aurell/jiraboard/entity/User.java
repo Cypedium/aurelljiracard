@@ -42,6 +42,13 @@ public class User {
     @Column(name = "token_version", nullable = false)
     private int tokenVersion;
 
+    // Presence for the admin user list: set on login/refresh and on logout (UserRepository)
+    @Column(name = "last_active_at")
+    private Instant lastActiveAt;
+
+    @Column(name = "logged_out_at")
+    private Instant loggedOutAt;
+
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(nullable = false)
     private Layout layout = Layout.empty();
@@ -100,6 +107,14 @@ public class User {
 
     public int getTokenVersion() {
         return tokenVersion;
+    }
+
+    public Instant getLastActiveAt() {
+        return lastActiveAt;
+    }
+
+    public Instant getLoggedOutAt() {
+        return loggedOutAt;
     }
 
     public Layout getLayout() {

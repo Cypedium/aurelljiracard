@@ -205,7 +205,7 @@ Why each class exists:
 
 `JwtProperties` refuses to start the app if a secret is missing or shorter than 32 bytes, because HS256 needs a key of at least 256 bits.
 
-**Revocation with `tokenVersion`:** each user row has a `token_version` counter, and every refresh token carries the version it was issued with. Logout increments the counter atomically (`UserRepository.incrementTokenVersion`), which makes all refresh tokens issued before it invalid. Access tokens aren't revoked; they simply expire within 15 minutes.
+**Revocation with `tokenVersion`:** each user row has a `token_version` counter, and every refresh token carries the version it was issued with. Logout increments the counter atomically and sets `logged_out_at` (`UserRepository.revokeTokens`), which makes all refresh tokens issued before it invalid. Access tokens aren't revoked; they simply expire within 15 minutes.
 
 ```mermaid
 sequenceDiagram
