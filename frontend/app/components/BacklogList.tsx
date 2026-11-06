@@ -1,13 +1,16 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { getCards, updateCardStatus, type Card } from '../api/endpoints';
+import { PencilIcon, TrashIcon } from '@heroicons/react/16/solid';
+import { deleteCard, getCards, updateCardStatus, type Card } from '../api/endpoints';
+import { CardFormDialog, DeleteCardDialog } from '../cards/board/CardDialogs';
 import { apiErrorMessage } from '../utils/apiError';
 import { avatarColor, avatarInitials } from '../utils/avatar';
 import { backlogCards } from '../utils/backlog';
 import { DEFAULT_HEADERS } from '../utils/boardLayout';
 import { formatShortDate } from '../utils/date';
-import { TABLE_CELL_CLASS as TD_CLASS, TABLE_HEAD_CLASS as TH_CLASS, TABLE_ROW_CLASS, TABLE_WRAPPER_CLASS } from '../utils/styles';
+import { canDeleteCard, canEditCard, getUsername, isAdmin } from '../utils/session';
+import { CARD_ACTION_CLASS, TABLE_CELL_CLASS as TD_CLASS, TABLE_HEAD_CLASS as TH_CLASS, TABLE_ROW_CLASS, TABLE_WRAPPER_CLASS } from '../utils/styles';
 import IssueTypeIcon from './IssueTypeIcon';
 import TableSkeleton from './TableSkeleton';
 import { Button } from './ui/button';
@@ -25,6 +28,16 @@ const TARGET_STATUS = DEFAULT_HEADERS[0].key;
 export default function BacklogList({ refreshKey = 0, onMoved }: BacklogListProps) {
   const [cards, setCards] = useState<Card[] | null>(null);
   const [movingId, setMovingId] = useState<string | null>(null);
+  // Samma edit- och delete-dialoger som på boarden
+  const [editingCard, setEditingCard] = useState<Card | null>(null);
+  const [deletingCard, setDeletingCard] = useState<Card | null>(null);
+  const [userName, setUserName] = useState('');
+  const [admin, setAdmin] = useState(false);
+
+  useEffect(() => {
+    setUserName(getUsername());
+    setAdmin(isAdmin());
+  }, []);
 
   const fetchBacklog = useCallback(async () => {
     try {
@@ -57,6 +70,21 @@ export default function BacklogList({ refreshKey = 0, onMoved }: BacklogListProp
     }
   };
 
+  const handleCardSaved = (updated: Card) => {
+    setCards((prev) => prev?.map((c) => (c._id === updated._id ? updated : c)) ?? null);
+    setEditingCard(null);
+  };
+
+  const removeCard = async (id: string) => {
+    try {
+      await deleteCard(id);
+      setCards((prev) => prev?.filter((c) => c._id !== id) ?? null);
+    } catch (err: any) {
+      console.error('Error deleting card:', err.message);
+      toast.error(apiErrorMessage(err, 'Could not delete card.'));
+    }
+  };
+
   if (cards === null) return <TableSkeleton />;
 
   if (cards.length === 0) {
@@ -65,62 +93,86 @@ export default function BacklogList({ refreshKey = 0, onMoved }: BacklogListProp
 
   // Mobil: Created och Reporter döljs så att tabellen får plats
   return (
-    <div className={TABLE_WRAPPER_CLASS}>
-      {/* Små kolumner får sin innehållsbredd; Summary tar resten och kortas med … */}
-      <table className="w-full text-sm text-jira-text [&_td]:whitespace-nowrap [&_th]:whitespace-nowrap">
-        <thead className="border-b-2 border-jira-neutral">
-          <tr>
-            <th scope="col" className={TH_CLASS}>Key</th>
-            <th scope="col" className={TH_CLASS}>Summary</th>
-            <th scope="col" className={`${TH_CLASS} text-center`}>Priority</th>
-            <th scope="col" className={`${TH_CLASS} max-[480px]:hidden`}>Created</th>
-            <th scope="col" className={`${TH_CLASS} text-center max-[480px]:hidden`}>Reporter</th>
-            <th scope="col" className={TH_CLASS}>
-              <span className="sr-only">Actions</span>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {cards.map((card) => (
-            <tr key={card._id} className={TABLE_ROW_CLASS}>
-              <td className={TD_CLASS}>
-                <div className="flex items-center gap-2">
-                  <IssueTypeIcon type={card.type} />
-                  <span className="text-xs font-semibold uppercase text-jira-secondary">{card.productId}</span>
-                </div>
-              </td>
-              <td className={`${TD_CLASS} w-full max-w-0 truncate`} title={card.comment}>
-                {card.comment}
-              </td>
-              <td className={`${TD_CLASS} text-center`}>
-                <span
-                  className="inline-block min-w-5 rounded-full bg-jira-neutral px-1.5 text-center text-xs/4"
-                  title={`Priority: ${card.rating}/5`}
-                >
-                  {card.rating}
-                </span>
-              </td>
-              <td className={`${TD_CLASS} text-xs text-jira-secondary tabular-nums max-[480px]:hidden`}>
-                <time dateTime={card.submittedAt}>{formatShortDate(card.submittedAt)}</time>
-              </td>
-              <td className={`${TD_CLASS} text-center max-[480px]:hidden`}>
-                <span
-                  className="inline-flex size-6 items-center justify-center rounded-full text-[10px] font-semibold text-white"
-                  style={{ background: avatarColor(card.username) }}
-                  title={`Created by ${card.username}`}
-                >
-                  {avatarInitials(card.username)}
-                </span>
-              </td>
-              <td className={`${TD_CLASS} text-right`}>
-                <Button size="sm" disabled={movingId === card._id} onClick={() => moveToBoard(card)}>
-                  Move to board
-                </Button>
-              </td>
+    <>
+      <div className={TABLE_WRAPPER_CLASS}>
+        {/* Små kolumner får sin innehållsbredd; Summary tar resten och kortas med … */}
+        <table className="w-full text-sm text-jira-text [&_td]:whitespace-nowrap [&_th]:whitespace-nowrap">
+          <thead className="border-b-2 border-jira-neutral">
+            <tr>
+              <th scope="col" className={TH_CLASS}>Key</th>
+              <th scope="col" className={TH_CLASS}>Summary</th>
+              <th scope="col" className={`${TH_CLASS} text-center`}>Priority</th>
+              <th scope="col" className={`${TH_CLASS} max-[480px]:hidden`}>Created</th>
+              <th scope="col" className={`${TH_CLASS} text-center max-[480px]:hidden`}>Reporter</th>
+              <th scope="col" className={TH_CLASS}>
+                <span className="sr-only">Actions</span>
+              </th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody>
+            {cards.map((card) => (
+              <tr key={card._id} className={`group ${TABLE_ROW_CLASS}`}>
+                <td className={TD_CLASS}>
+                  <div className="flex items-center gap-2">
+                    <IssueTypeIcon type={card.type} />
+                    <span className="text-xs font-semibold uppercase text-jira-secondary">{card.productId}</span>
+                  </div>
+                </td>
+                <td className={`${TD_CLASS} w-full max-w-0 truncate`} title={card.comment}>
+                  {card.comment}
+                </td>
+                <td className={`${TD_CLASS} text-center`}>
+                  <span
+                    className="inline-block min-w-5 rounded-full bg-jira-neutral px-1.5 text-center text-xs/4"
+                    title={`Priority: ${card.rating}/5`}
+                  >
+                    {card.rating}
+                  </span>
+                </td>
+                <td className={`${TD_CLASS} text-xs text-jira-secondary tabular-nums max-[480px]:hidden`}>
+                  <time dateTime={card.submittedAt}>{formatShortDate(card.submittedAt)}</time>
+                </td>
+                <td className={`${TD_CLASS} text-center max-[480px]:hidden`}>
+                  <span
+                    className="inline-flex size-6 items-center justify-center rounded-full text-[10px] font-semibold text-white"
+                    style={{ background: avatarColor(card.username) }}
+                    title={`Created by ${card.username}`}
+                  >
+                    {avatarInitials(card.username)}
+                  </span>
+                </td>
+                <td className={`${TD_CLASS} text-right`}>
+                  <div className="flex items-center justify-end gap-1">
+                    {/* Edit och delete på egna kort, eller alla för admin (syns vid hover, som på boarden) */}
+                    {canEditCard(card, userName, admin) && (
+                      <button className={CARD_ACTION_CLASS} aria-label="Edit card" title="Edit" onClick={() => setEditingCard(card)}>
+                        <PencilIcon className="size-4" aria-hidden />
+                      </button>
+                    )}
+                    {canDeleteCard(card, userName, admin) && (
+                      <button className={CARD_ACTION_CLASS} aria-label="Delete card" title="Delete" onClick={() => setDeletingCard(card)}>
+                        <TrashIcon className="size-4" aria-hidden />
+                      </button>
+                    )}
+                    <Button size="sm" disabled={movingId === card._id} onClick={() => moveToBoard(card)}>
+                      Move to board
+                    </Button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <CardFormDialog
+        editingCard={editingCard}
+        creatingIn={null}
+        onSaved={handleCardSaved}
+        onCreated={() => setEditingCard(null)}
+        onClose={() => setEditingCard(null)}
+      />
+      <DeleteCardDialog card={deletingCard} onClose={() => setDeletingCard(null)} onConfirm={removeCard} />
+    </>
   );
 }
