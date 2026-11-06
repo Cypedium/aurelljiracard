@@ -8,6 +8,7 @@ import { BOARD_ACTIONS, requestBoardAction } from '../utils/boardActions';
 import { ArrowRightStartOnRectangleIcon, Bars3Icon, PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
 const BOARD_PATH = '/cards';
+const BACKLOG_PATH = '/backlog';
 const SUB_ROW_BUTTON_CLASS = 'flex items-center gap-1.5 rounded-md px-2 py-0.5 hover:bg-white/10';
 
 const Navbar = () => {
@@ -25,6 +26,7 @@ const Navbar = () => {
   }, [pathname]);
 
   const onBoard = isLoggedIn && pathname === BOARD_PATH;
+  const onBacklog = isLoggedIn && pathname === BACKLOG_PATH;
 
   return (
     <header className="fixed z-[1000] w-full font-brand">
@@ -58,7 +60,13 @@ const Navbar = () => {
                 </Link>
               </li>
               <li onClick={() => setMenuOpen(false)}>
-                <Link href="/backlog">Backlog</Link>
+                <Link
+                  href={BACKLOG_PATH}
+                  aria-current={pathname === BACKLOG_PATH ? 'page' : undefined}
+                  className="underline-offset-8 aria-[current=page]:underline"
+                >
+                  Backlog
+                </Link>
               </li>
               {/* Bara för admin; backend nekar andra (403) */}
               {admin && (
@@ -97,14 +105,14 @@ const Navbar = () => {
         </ul>
       </nav>
 
-      {/* Rad två, bara på boarden: öppnar boardens formulär. Lite mörkare än raden ovanför */}
-      {onBoard && (
+      {/* Rad två, på boarden och backloggen: öppnar sidans formulär. Lite mörkare än raden ovanför */}
+      {(onBoard || onBacklog) && (
         <div className="flex items-center gap-4 bg-gray-700 py-1.5 pr-[2%] pl-[3%] text-base text-white">
           <button type="button" className={SUB_ROW_BUTTON_CLASS} onClick={() => requestBoardAction(BOARD_ACTIONS.createCard)}>
             Create card
           </button>
           {/* Bara admin kan lägga till listor (backend nekar andra) */}
-          {admin && (
+          {onBoard && admin && (
             <button type="button" className={SUB_ROW_BUTTON_CLASS} onClick={() => requestBoardAction(BOARD_ACTIONS.createColumn)}>
               Create column
             </button>

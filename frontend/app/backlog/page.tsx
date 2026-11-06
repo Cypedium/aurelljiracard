@@ -1,17 +1,20 @@
 'use client';
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import Layout from "../components/Layout";
 import BacklogList from "../components/BacklogList";
 import CardForm from "../cards/card/Card";
-import { Button } from "../components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "../components/ui/dialog";
 import { BACKLOG_STATUS } from "../utils/backlog";
+import { BOARD_ACTIONS, onBoardAction } from "../utils/boardActions";
 
 export default function BacklogPage() {
   const [creating, setCreating] = useState(false);
   // Ökas när ett kort lagts till, så att listan hämtas igen
   const [refreshKey, setRefreshKey] = useState(0);
+
+  // Navbarens "Create card" öppnar formuläret (nytt kort i backloggen)
+  useEffect(() => onBoardAction(BOARD_ACTIONS.createCard, () => setCreating(true)), []);
 
   const handleCreated = () => {
     setCreating(false);
@@ -21,12 +24,11 @@ export default function BacklogPage() {
 
   return (
     <Layout>
-      {/* Samma bakgrund som boarden; pt eftersom navbaren är fixed */}
-      <div className="min-h-screen bg-linear-135 from-board-from via-board-via to-board-to px-4 pt-20 pb-6 font-jira">
+      {/* Samma bakgrund som boarden; pt eftersom navbaren (två rader) är fixed */}
+      <div className="min-h-screen bg-linear-135 from-board-from via-board-via to-board-to px-4 pt-30 pb-6 font-jira">
         <div className="mx-auto flex max-w-[960px] flex-col gap-4">
-          <div className="flex items-center justify-between gap-4 rounded-xl bg-black/25 px-5 py-3 backdrop-blur-sm">
+          <div className="rounded-xl bg-black/25 px-5 py-3 backdrop-blur-sm">
             <h1 className="text-xl font-bold text-white">Backlog</h1>
-            <Button onClick={() => setCreating(true)}>Add to backlog</Button>
           </div>
           <BacklogList refreshKey={refreshKey} />
         </div>
