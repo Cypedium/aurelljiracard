@@ -1,5 +1,5 @@
-// Navbarens knappar på boarden ("Create card", "Create column") ber boarden öppna sina formulär.
-// Navbaren och boarden är skilda komponenter, så de pratar via en delad EventTarget
+// Navbarens knappar ("Create card", "Create column") ber sidan (boarden eller backloggen) öppna sina formulär.
+// Navbaren och sidan är skilda komponenter, så de pratar via en delad EventTarget
 export const BOARD_ACTIONS = {
   createCard: "create-card",
   createColumn: "create-column",
