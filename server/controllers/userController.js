@@ -4,6 +4,7 @@ const Card = require("../models/Card");
 const { isNonEmptyString, isObjectId } = require("../utils/validate");
 const { isColumnKey } = require("../utils/cardStatus");
 const { ADMIN_ROLE, ROLES } = require("../utils/role");
+const { presence } = require("../utils/presence");
 const {
   USERNAME_MAX_LENGTH,
   USERNAME_MESSAGE,
@@ -44,11 +45,18 @@ const toHeader = ({ key, title, color }) => ({
   ...(color ? { color: color.toLowerCase() } : {})
 });
 
-// GET ALL USERS
+// GET ALL USERS (admins also see who is online and when each user was last active)
 exports.getAll = async (req, res) => {
   try {
-    const users = await User.find({}, "username pictureUrl role").lean();
-    res.status(200).json(users);
+    if (req.user.role !== ADMIN_ROLE) {
+      const users = await User.find({}, "username pictureUrl role").lean();
+      return res.status(200).json(users);
+    }
+    const users = await User.find({}, "username pictureUrl role lastActiveAt loggedOutAt").lean();
+    const now = Date.now();
+    res.status(200).json(
+      users.map(({ lastActiveAt, loggedOutAt, ...user }) => ({ ...user, ...presence({ lastActiveAt, loggedOutAt }, now) }))
+    );
   } catch (error) {
     console.error("Fetch users error:", error.message);
     res.status(500).json({ message: "Could not retrieve users." });
@@ -215,7 +223,7 @@ exports.remove = async (req, res) => {
   }
 };
 
-// ⭐ ADMIN: revoke all refresh tokens; the user must log in again within 15 min
+// ⭐ ADMIN: revoke all refresh tokens; the user must log in again within 15 min and shows as offline
 exports.revokeSessions = async (req, res) => {
   const { id } = req.params;
 
@@ -224,7 +232,7 @@ exports.revokeSessions = async (req, res) => {
   }
 
   try {
-    const result = await User.updateOne({ _id: id }, { $inc: { tokenVersion: 1 } });
+    const result = await User.updateOne({ _id: id }, { $inc: { tokenVersion: 1 }, $set: { loggedOutAt: new Date() } });
     if (result.matchedCount === 0) {
       return res.status(404).json({ message: "User not found." });
     }

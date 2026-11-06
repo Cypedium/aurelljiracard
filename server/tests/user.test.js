@@ -47,6 +47,34 @@ describe("user routes", () => {
     expect(User.find).toHaveBeenCalledWith({}, "username pictureUrl role");
   });
 
+  it("GET /user shows admins who is online and when users were last active", async () => {
+    const now = Date.now();
+    const recent = new Date(now - 60 * 1000);
+    const old = new Date(now - 60 * 60 * 1000);
+    User.find.mockReturnValue(
+      query([
+        { username: "alice", role: "user", lastActiveAt: recent, loggedOutAt: null },
+        { username: "bob", role: "user", lastActiveAt: recent, loggedOutAt: new Date(now) },
+        { username: "carol", role: "user", lastActiveAt: old, loggedOutAt: null },
+        { username: "dave", role: "user" }
+      ])
+    );
+
+    const res = await request(app).get("/user").set("Authorization", authHeader("boss", USER_ID, "admin"));
+
+    expect(res.status).toBe(200);
+    expect(User.find).toHaveBeenCalledWith({}, "username pictureUrl role lastActiveAt loggedOutAt");
+    expect(res.body.map((u) => [u.username, u.online])).toEqual([
+      ["alice", true],
+      ["bob", false],
+      ["carol", false],
+      ["dave", false]
+    ]);
+    expect(res.body[0].lastActiveAt).toBe(recent.toISOString());
+    expect(res.body[3].lastActiveAt).toBeNull();
+    expect(res.body[1]).not.toHaveProperty("loggedOutAt");
+  });
+
   it("GET /user/usernames returns a list of names", async () => {
     User.find.mockReturnValue(query([{ username: "alice" }, { username: "bob" }]));
 
@@ -306,7 +334,10 @@ describe("admin user management", () => {
     const res = await request(app).post(`/user/${OTHER_ID}/logout`).set("Authorization", admin());
 
     expect(res.status).toBe(200);
-    expect(User.updateOne).toHaveBeenCalledWith({ _id: OTHER_ID }, { $inc: { tokenVersion: 1 } });
+    expect(User.updateOne).toHaveBeenCalledWith(
+      { _id: OTHER_ID },
+      { $inc: { tokenVersion: 1 }, $set: { loggedOutAt: expect.any(Date) } }
+    );
   });
 
   it("returns 404 when logging out a missing user", async () => {
