@@ -48,7 +48,7 @@ const Navbar = () => {
           {isLoggedIn && (
             <>
               <li onClick={() => setMenuOpen(false)}>
-                <Link href="/cards">Aurell Jira Board</Link>
+                <Link href="/cards">Aurello</Link>
               </li>
               <li onClick={() => setMenuOpen(false)}>
                 <Link
