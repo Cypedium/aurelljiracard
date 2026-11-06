@@ -44,6 +44,7 @@ import {
   previewHeaders,
 } from "../utils/boardLayout";
 import { canDeleteCard, canEditCard, getUsername, isAdmin } from "../utils/session";
+import { BOARD_ACTIONS, onBoardAction } from "../utils/boardActions";
 
 export default function Home() {
   const { cards, setCards, cardsLoaded, fetchCards, userLayout, layoutLoaded, persistLayout, headers, setHeaders, columnsLoaded } =
@@ -75,6 +76,20 @@ export default function Home() {
     setUserName(getUsername());
     setAdmin(isAdmin());
   }, []);
+
+  // Navbarens "Create card" (nytt kort i första listan) och "Create column" (admin: formuläret sist på boarden)
+  useEffect(() => onBoardAction(BOARD_ACTIONS.createCard, () => setCreatingIn(headers[0]?.key ?? null)), [headers, setCreatingIn]);
+  useEffect(() => {
+    if (!admin) return;
+    return onBoardAction(BOARD_ACTIONS.createColumn, () => {
+      setAddingList(true);
+      // Formuläret ligger sist; scrolla dit när det har ritats
+      requestAnimationFrame(() => {
+        const board = boardScrollRef.current;
+        board?.scrollTo({ left: board.scrollWidth, behavior: "smooth" });
+      });
+    });
+  }, [admin, setAddingList]);
 
   // Admin: listan som dras i sin rubrik följer musen (lutad). Medan den dras visas boarden i den nya
   // ordningen (boardHeaders): de andra listorna och deras kort flyttar undan och den lyfta listans plats
