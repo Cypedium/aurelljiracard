@@ -18,6 +18,7 @@ import {
   type CardFormValues,
 } from '../../utils/cardForm';
 import { apiErrorMessage, isConflictError } from '../../utils/apiError';
+import { formatDate } from '../../utils/date';
 import { FIELD_ERROR_CLASS, FORM_ITEM_CLASS, LABEL_CLASS, SECTION_PADDING } from '../../utils/styles';
 import type { AnyCardStatus } from '../../utils/backlog';
 import IssueTypeSelect from '../../components/IssueTypeSelect';
@@ -217,7 +218,13 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
           />
         </div>
 
-        <footer className={`${SECTION_PADDING} flex justify-end gap-2 pt-4 pb-6`}>
+        <footer className={`${SECTION_PADDING} flex items-center justify-end gap-2 pt-4 pb-6`}>
+          {/* Sätts av servern när kortet skapas och ändras aldrig, så det visas bara */}
+          {isEdit && card?.submittedAt && (
+            <span className="mr-auto text-xs text-jira-secondary">
+              Created <time dateTime={card.submittedAt}>{formatDate(card.submittedAt)}</time>
+            </span>
+          )}
           <Button
             type="button"
             variant="ghost"
