@@ -32,8 +32,8 @@ public class UserController {
     }
 
     @GetMapping
-    public List<UserResponse> getAll() {
-        return userService.getAll();
+    public List<?> getAll(@AuthenticationPrincipal AuthUser user) {
+        return userService.getAll(user);
     }
 
     @GetMapping("/usernames")

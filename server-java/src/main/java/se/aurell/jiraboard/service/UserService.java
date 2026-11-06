@@ -1,5 +1,6 @@
 package se.aurell.jiraboard.service;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
@@ -31,9 +32,10 @@ public class UserService {
         this.cardRepository = cardRepository;
     }
 
+    /** Admins also see when each user was last active and who is online. */
     @Transactional(readOnly = true)
-    public List<UserResponse> getAll() {
-        return userRepository.findAllPublic();
+    public List<?> getAll(AuthUser authUser) {
+        return authUser.isAdmin() ? userRepository.findAllWithPresence() : userRepository.findAllPublic();
     }
 
     @Transactional(readOnly = true)
@@ -124,11 +126,11 @@ public class UserService {
         userRepository.delete(user);
     }
 
-    /** Admin: revoke all refresh tokens; the user must log in again within 15 minutes. */
+    /** Admin: revoke all refresh tokens; the user must log in again within 15 minutes and shows as offline. */
     @Transactional
     public void revokeSessions(UUID id, AuthUser admin) {
         requireAdmin(admin);
-        if (userRepository.incrementTokenVersion(id) == 0) {
+        if (userRepository.revokeTokens(id, Instant.now()) == 0) {
             throw ApiException.notFound("User not found.");
         }
     }
