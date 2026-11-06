@@ -39,6 +39,10 @@ export type UserLayout = {
 
 export const DEFAULT_LAYOUT: UserLayout = {};
 
+// localStorage-nycklar för boardens inställningar (per webbläsare)
+export const LAYOUT_STORAGE_KEY = "user_layout";
+export const COLLAPSED_STORAGE_KEY = "collapsed_columns";
+
 // Måste matcha TITLE_MAX_LENGTH i server/controllers/columnController.js
 export const HEADER_TITLE_MAX_LENGTH = 50;
 
