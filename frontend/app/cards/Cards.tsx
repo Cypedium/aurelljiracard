@@ -1,22 +1,12 @@
 "use client";
-import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import { ResponsiveGridLayout, useContainerWidth } from "react-grid-layout";
 import { gridBounds, type LayoutConstraint } from "react-grid-layout/core";
-import debounce from "lodash.debounce";
-import { toast } from "sonner";
-import {
-  createColumn,
-  deleteCard,
-  getCards,
-  getColumns,
-  getLayout,
-  saveLayout,
-  updateCardStatus,
-  updateColumn,
-  reorderColumns,
-  type Card,
-} from "../api/endpoints";
 import { useListDrag } from "./useListDrag";
+import { useBoardData } from "./useBoardData";
+import { useCardActions } from "./useCardActions";
+import { useCollapsedLists } from "./useCollapsedLists";
+import { useColumnActions } from "./useColumnActions";
 import AddListForm from "./board/AddListForm";
 import BoardCard from "./board/BoardCard";
 import BoardSkeleton from "./board/BoardSkeleton";
@@ -26,14 +16,10 @@ import ListBackgrounds from "./board/ListBackgrounds";
 import ListDragPreview from "./board/ListDragPreview";
 import ListHeader from "./board/ListHeader";
 import {
-  BoardHeader,
   CardPosition,
   CardStatus,
-  UserLayout,
   CARDS_TOP,
   COLLAPSED_LIST_MAX_HEIGHT,
-  DEFAULT_HEADERS,
-  DEFAULT_LAYOUT,
   EXPANDED_SPAN,
   GRID_MARGIN,
   ROW_HEIGHT,
@@ -49,131 +35,47 @@ import {
   fromGridLayout,
   listHeight,
   mobileBoardWidth,
-  normalizeCollapsed,
-  normalizeColumns,
-  normalizeLayout,
-  recolorHeader,
-  renameHeader,
   rowsPerColumn,
   snapGridX,
   splitByCollapsed,
   statusForColumn,
   toGridLayout,
   toSavedPositions,
-  moveHeader,
   previewHeaders,
-  withListKeys,
-  toggleCollapsed,
 } from "../utils/boardLayout";
-
-const COLLAPSED_STORAGE_KEY = "collapsed_columns";
 import { canDeleteCard, canEditCard, getUsername, isAdmin } from "../utils/session";
-import { apiErrorMessage } from "../utils/apiError";
-import { boardCards, type AnyCardStatus } from "../utils/backlog";
 
 export default function Home() {
-  const [cards, setCards] = useState<Card[]>([]);
-  const [cardsLoaded, setCardsLoaded] = useState(false);
-  const [userLayout, setUserLayout] = useState<UserLayout>(DEFAULT_LAYOUT);
-  const [layoutLoaded, setLayoutLoaded] = useState(false);
-  // Listorna delas av alla; admins lägger till, byter namn och färg
-  const [headers, setHeaders] = useState<BoardHeader[]>(DEFAULT_HEADERS);
-  const [columnsLoaded, setColumnsLoaded] = useState(false);
-  // Formuläret "Add new column" är öppet
-  const [addingList, setAddingList] = useState(false);
+  const { cards, setCards, cardsLoaded, fetchCards, userLayout, layoutLoaded, persistLayout, headers, setHeaders, columnsLoaded } =
+    useBoardData();
+  const {
+    editingCard,
+    setEditingCard,
+    deletingCard,
+    setDeletingCard,
+    creatingIn,
+    setCreatingIn,
+    moveCard,
+    closeDialog,
+    handleCardCreated,
+    handleCardSaved,
+    deleteCardCard,
+  } = useCardActions({ cards, setCards, fetchCards });
+  const { renamingKey, setRenamingKey, addingList, setAddingList, renameColumn, recolorColumn, moveList, addList } =
+    useColumnActions({ headers, setHeaders, userLayout, persistLayout });
+  // Ihopfällda listor: visar bara rubrik och "Add a card"
+  const { collapsed, toggleColumn } = useCollapsedLists();
   const [userName, setUserName] = useState("");
   const [admin, setAdmin] = useState(false);
-  const [editingCard, setEditingCard] = useState<Card | null>(null);
-  // Kortet som väntar på bekräftelse i delete-dialogen
-  const [deletingCard, setDeletingCard] = useState<Card | null>(null);
-  // Kolumnen där ett nytt kort skapas ("Add a card")
-  const [creatingIn, setCreatingIn] = useState<CardStatus | null>(null);
-  // Kolumnen vars rubrik redigeras
-  const [renamingKey, setRenamingKey] = useState<CardStatus | null>(null);
-  // Ihopfällda listor: visar bara rubrik och "Add a card"
-  const [collapsed, setCollapsed] = useState<CardStatus[]>([]);
   // Gridden följer boardens bredd så att den fyller skärmen
   const { width, containerRef, mounted } = useContainerWidth();
   const boardScrollRef = useRef<HTMLDivElement>(null);
 
-  // 🔥 Hämta card via api.ts (token-rotation ingår)
-  const fetchCards = useCallback(async () => {
-    try {
-      const res = await getCards();
-      // Backloggen visas på /backlog, inte på boarden
-      setCards(boardCards(res.data || []));
-    } catch (err: any) {
-      console.error("Error fetching cards:", err.message);
-      toast.error(apiErrorMessage(err, "Could not load cards."));
-    } finally {
-      setCardsLoaded(true);
-    }
-  }, []);
-
   useEffect(() => {
     setUserName(getUsername());
     setAdmin(isAdmin());
-    fetchCards();
-  }, [fetchCards]);
-
-  // 🔥 Hämta layout från server eller localStorage
-  useEffect(() => {
-    const loadLayout = async () => {
-      try {
-        const res = await getLayout();
-        if (res.status === 200) {
-          setUserLayout(normalizeLayout(res.data || {}));
-          return;
-        }
-      } catch (e) {
-        console.warn(
-          "Could not load layout from server, falling back to localStorage",
-        );
-      }
-
-      try {
-        const saved = localStorage.getItem("user_layout");
-        setUserLayout(saved ? normalizeLayout(JSON.parse(saved)) : DEFAULT_LAYOUT);
-      } catch {
-        setUserLayout(DEFAULT_LAYOUT);
-      }
-    };
-
-    loadLayout().finally(() => setLayoutLoaded(true));
   }, []);
 
-  // Delade listor; om hämtningen misslyckas visas standardlistorna
-  useEffect(() => {
-    getColumns()
-      .then((res) => setHeaders(normalizeColumns(res.data)))
-      .catch((err) => {
-        console.error("Error fetching lists:", err.message);
-        toast.error(apiErrorMessage(err, "Could not load the lists."));
-      })
-      .finally(() => setColumnsLoaded(true));
-  }, []);
-
-  useEffect(() => {
-    try {
-      setCollapsed(normalizeCollapsed(JSON.parse(localStorage.getItem(COLLAPSED_STORAGE_KEY) ?? "[]")));
-    } catch {
-      setCollapsed([]);
-    }
-  }, []);
-
-  const toggleColumn = (key: CardStatus) => {
-    const next = toggleCollapsed(collapsed, key);
-    setCollapsed(next);
-    try {
-      localStorage.setItem(COLLAPSED_STORAGE_KEY, JSON.stringify(next));
-    } catch {
-      // Sparas inte, men fungerar tills sidan laddas om
-    }
-  };
-
-  // Räknas fram vid varje render, så gridden får aldrig en tom layout som
-  // sedan sparas över den riktiga. Väntar på listorna: annars hamnar kort i
-  // tillagda listor tillfälligt i första listan och den ordningen sparas
   // Admin: listan som dras i sin rubrik följer musen (lutad). Medan den dras visas boarden i den nya
   // ordningen (boardHeaders): de andra listorna och deras kort flyttar undan och den lyfta listans plats
   // är en mörk platshållare. Åtgärderna (spara, byta namn) använder alltid headers
@@ -187,6 +89,9 @@ export default function Home() {
     [headers, listDrag],
   );
 
+  // Räknas fram vid varje render, så gridden får aldrig en tom layout som
+  // sedan sparas över den riktiga. Väntar på listorna: annars hamnar kort i
+  // tillagda listor tillfälligt i första listan och den ordningen sparas
   const gridLayout = useMemo(
     () =>
       layoutLoaded && columnsLoaded
@@ -228,132 +133,12 @@ export default function Home() {
   const savedPositions = (currentLayout: readonly CardPosition[]) =>
     toSavedPositions(boardHeaders, [...fromGridLayout(currentLayout, columns), ...hiddenLayout]);
 
-  // 🔥 Spara layout till server via api.ts
-  const saveLayoutToServer = useCallback(
-    debounce(async (newLayout: UserLayout) => {
-      try {
-        await saveLayout(newLayout);
-      } catch (e: any) {
-        console.error("Failed to save layout to server:", e.message);
-        // Fast id: upprepade fel ersätter samma toast i stället för att staplas
-        toast.error("Could not save the board layout. It is kept in this browser.", { id: "layout-save" });
-      }
-    }, 800),
-    [],
-  );
-
-  const persistLayout = (next: UserLayout) => {
-    setUserLayout(next);
-    localStorage.setItem("user_layout", JSON.stringify(next));
-    saveLayoutToServer(next);
-  };
-
-  // Flytta kortet direkt och spara statusen; vid fel flyttas det tillbaka
-  const moveCard = async (id: string, status: CardStatus) => {
-    const previous = cards.find((fb) => fb._id === id)?.status;
-    const setStatus = (s?: AnyCardStatus) =>
-      setCards((prev) => prev.map((fb) => (fb._id === id ? { ...fb, status: s } : fb)));
-
-    setStatus(status);
-    try {
-      await updateCardStatus(id, status);
-    } catch (err: any) {
-      console.error("Error moving card:", err.message);
-      setStatus(previous);
-      toast.error(apiErrorMessage(err, "Could not move card."));
-    }
-  };
-
-  const closeDialog = () => {
-    setEditingCard(null);
-    setCreatingIn(null);
-  };
-
-  const handleCardCreated = () => {
-    closeDialog();
-    fetchCards();
-  };
-
-  const handleCardSaved = (updated: Card) => {
-    setCards((prev) => prev.map((fb) => (fb._id === updated._id ? updated : fb)));
-    setEditingCard(null);
-  };
-
-  const deleteCardCard = async (id: string) => {
-    try {
-      await deleteCard(id);
-      setCards((prev) => prev.filter((fb) => fb._id !== id));
-    } catch (err: any) {
-      console.error("Error deleting card:", err.message);
-      toast.error(apiErrorMessage(err, "Could not delete card."));
-    }
-  };
-
-  // Admin: listans namn och färg ändras för alla. Visas direkt; vid fel återställs den
-  const saveColumn = async (next: BoardHeader[], key: CardStatus) => {
-    const column = next.find((h) => h.key === key);
-    if (next === headers || !column) return;
-    const previous = headers;
-    setHeaders(next);
-    try {
-      await updateColumn(key, { title: column.title, color: column.color ?? null });
-    } catch (err: any) {
-      console.error("Error updating list:", err.message);
-      setHeaders(previous);
-      toast.error(apiErrorMessage(err, "Could not update the list."));
-    }
-  };
-
-  const renameColumn = (key: CardStatus, title: string) => {
-    setRenamingKey(null);
-    saveColumn(renameHeader(headers, key, title), key);
-  };
-
-  // null = standardfärgen
-  const recolorColumn = (key: CardStatus, color: string | null) => saveColumn(recolorHeader(headers, key, color), key);
-
-  // Admin: flyttar en lista för alla; korten följer med (de hör till listan via status).
-  // Visas direkt; vid fel flyttas listan tillbaka
-  const moveList = async (from: CardStatus, to: CardStatus) => {
-    const next = moveHeader(headers, from, to);
-    if (next === headers) return;
-    // Äldre sparade positioner har bara listans index: spara listans key innan ordningen ändras
-    if (userLayout.cards?.some((c) => c.status === undefined)) {
-      persistLayout({ ...userLayout, cards: withListKeys(headers, userLayout.cards) });
-    }
-    const previous = headers;
-    setHeaders(next);
-    try {
-      await reorderColumns(next.map((h) => h.key));
-    } catch (err: any) {
-      console.error("Error moving list:", err.message);
-      setHeaders(previous);
-      toast.error(apiErrorMessage(err, "Could not move the list."));
-    }
-  };
-
   // Listan som dras: dess kort döljs i gridden och visas i förhandsvisningen i stället, i samma ordning
   const dragIndex = draggingList ? boardHeaders.findIndex((h) => h.key === draggingList) : -1;
   const dragLayout = dragIndex < 0 ? [] : visibleLayout.filter((l) => l.x === dragIndex).sort((a, b) => a.y - b.y);
   const draggedCardIds = new Set(dragLayout.map((l) => l.i));
   const cardById = new Map(cards.map((fb, i) => [cardKey(fb, i), fb]));
   const dragCards = dragLayout.flatMap((l) => cardById.get(l.i) ?? []);
-
-  // Admin: ny lista sist på boarden, för alla. Tomt namn stänger formuläret
-  const addList = async (title: string) => {
-    if (!title.trim()) {
-      setAddingList(false);
-      return;
-    }
-    try {
-      const res = await createColumn({ title: title.trim() });
-      setHeaders((prev) => normalizeColumns([...prev, res.data]));
-      setAddingList(false);
-    } catch (err: any) {
-      console.error("Error adding list:", err.message);
-      toast.error(apiErrorMessage(err, "Could not add the list."));
-    }
-  };
 
   // Antal kort per kolumn: visas i rubriken och styr listans höjd
   const columnCounts = countCardsPerColumn(boardHeaders, gridLayout);
