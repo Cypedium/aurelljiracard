@@ -8,6 +8,7 @@ import { apiErrorMessage } from '../utils/apiError';
 import { avatarColor, avatarInitials } from '../utils/avatar';
 import { handleLogout } from '../utils/logout';
 import { getUsername } from '../utils/session';
+import { lastSeenLabel } from '../utils/presence';
 import { TABLE_CELL_CLASS as TD_CLASS, TABLE_HEAD_CLASS as TH_CLASS, TABLE_ROW_CLASS, TABLE_WRAPPER_CLASS } from '../utils/styles';
 import { countCardsByAuthor } from '../utils/userForm';
 import EditUserForm from './EditUserForm';
@@ -77,6 +78,8 @@ export default function Users() {
   const logOutUser = async (user: PublicUser) => {
     try {
       await revokeUserSessions(user._id);
+      // Backenden räknar dem som utloggade direkt
+      setUsers((prev) => prev?.map((u) => (u._id === user._id ? { ...u, online: false } : u)) ?? null);
       toast.success(`${user.username} will be logged out within 15 minutes.`);
     } catch (err: any) {
       console.error('Error logging out user:', err.message);
@@ -94,6 +97,7 @@ export default function Users() {
             <tr>
               <th scope="col" className={TH_CLASS}>User</th>
               <th scope="col" className={TH_CLASS}>Role</th>
+              <th scope="col" className={TH_CLASS}>Status</th>
               <th scope="col" className={`${TH_CLASS} text-right max-[480px]:hidden`}>Cards</th>
               <th scope="col" className={`${TH_CLASS} text-right`}>Actions</th>
             </tr>
@@ -132,6 +136,22 @@ export default function Users() {
                       }`}
                     >
                       {user.role}
+                    </span>
+                  </td>
+                  <td className={TD_CLASS}>
+                    {/* Grön prick = inloggad nu, annars när användaren senast var aktiv */}
+                    <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-jira-secondary">
+                      <span
+                        className={`size-2 shrink-0 rounded-full ${user.online ? 'bg-[#22a06b]' : 'bg-jira-border'}`}
+                        aria-hidden
+                      />
+                      {user.online ? (
+                        <span className="font-medium text-jira-text">Online</span>
+                      ) : (
+                        <span title={user.lastActiveAt ? new Date(user.lastActiveAt).toLocaleString() : undefined}>
+                          {lastSeenLabel(user.lastActiveAt)}
+                        </span>
+                      )}
                     </span>
                   </td>
                   <td className={`${TD_CLASS} text-right text-jira-secondary tabular-nums max-[480px]:hidden`}>{cards}</td>

@@ -46,6 +46,9 @@ export type PublicUser = {
   username: string;
   pictureUrl?: string;
   role: Role;
+  // Bara för admins: senast inloggad/förnyad token (ISO) och om användaren är inloggad nu
+  lastActiveAt?: string | null;
+  online?: boolean;
 };
 
 // A board list as the backend returns it; color null = the default colour
