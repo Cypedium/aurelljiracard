@@ -264,8 +264,14 @@ export const fromGridLayout = <T extends { x: number; w: number }>(layout: reado
 export const mobileBoardWidth = ({ units, expandedSpan }: BoardColumns): string =>
   `${(units / expandedSpan) * 100}%`;
 
-// Desktop: fyra utfällda listor fyller skärmen; dolda listor gör boarden smalare, fler bredare
-export const desktopBoardWidth = ({ units }: BoardColumns): string => `${(units / BOARD_UNITS) * 100}%`;
+// Minsta bredd för en utfälld lista på desktop (som Trello); en remsa är en fjärdedel
+export const MIN_LIST_WIDTH = 217;
+const MIN_UNIT_WIDTH = MIN_LIST_WIDTH / EXPANDED_SPAN;
+
+// Desktop: fyra utfällda listor fyller skärmen; dolda listor gör boarden smalare.
+// Fler listor delar på skärmens bredd tills de når MIN_LIST_WIDTH, sedan scrollar boarden
+export const desktopBoardWidth = ({ units }: BoardColumns): string =>
+  `max(${Math.min(units / BOARD_UNITS, 1) * 100}%, ${units * MIN_UNIT_WIDTH}px)`;
 
 // Antal kort per kolumn: visas i rubriken
 export const countCardsPerColumn = (headers: BoardHeader[], layout: readonly { x: number }[]): number[] =>

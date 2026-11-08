@@ -13,6 +13,7 @@ import {
   previewHeaders,
   fromGridLayout,
   mobileBoardWidth,
+  MIN_LIST_WIDTH,
   snapGridX,
   toGridLayout,
   DEFAULT_LAYOUT,
@@ -338,18 +339,18 @@ describe("board columns", () => {
       { start: 9, span: 4, collapsed: false },
     ]);
     expect(columns.units).toBe(13);
-    expect(desktopBoardWidth(columns)).toBe("81.25%");
+    expect(desktopBoardWidth(columns)).toBe("max(81.25%, 884px)");
   });
 
   it("fills the screen on desktop when nothing is hidden", () => {
-    expect(desktopBoardWidth(boardColumns(H, []))).toBe("100%");
+    expect(desktopBoardWidth(boardColumns(H, []))).toBe("max(100%, 1088px)");
   });
 
   it("keeps narrow strips when every list is hidden", () => {
     const columns = boardColumns(H, DEFAULT_HEADERS.map((h) => h.key));
     expect(columns.spans.map((s) => s.span)).toEqual([1, 1, 1, 1]);
     expect(columns.units).toBe(4);
-    expect(desktopBoardWidth(columns)).toBe("25%");
+    expect(desktopBoardWidth(columns)).toBe("max(25%, 272px)");
     expect(mobileBoardWidth(columns)).toBe("100%");
   });
 
@@ -369,10 +370,11 @@ describe("board columns", () => {
     expect(fromGridLayout(grid, columns)).toEqual(layout);
   });
 
-  it("makes the board wider than the screen for more than four lists", () => {
+  it("lets more than four lists share the screen until they reach the minimum width", () => {
     const columns = boardColumns(WITH_REVIEW, []);
     expect(columns.units).toBe(20);
-    expect(desktopBoardWidth(columns)).toBe("125%");
+    // 5 × MIN_LIST_WIDTH; boarden scrollar först när skärmen är smalare än så
+    expect(desktopBoardWidth(columns)).toBe(`max(100%, ${5 * MIN_LIST_WIDTH}px)`);
     expect(mobileBoardWidth(columns)).toBe("500%");
   });
 
