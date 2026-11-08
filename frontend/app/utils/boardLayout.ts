@@ -265,7 +265,7 @@ export const mobileBoardWidth = ({ units, expandedSpan }: BoardColumns): string 
   `${(units / expandedSpan) * 100}%`;
 
 // Minsta bredd för en utfälld lista på desktop (som Trello); en remsa är en fjärdedel
-export const MIN_LIST_WIDTH = 272;
+export const MIN_LIST_WIDTH = 217;
 const MIN_UNIT_WIDTH = MIN_LIST_WIDTH / EXPANDED_SPAN;
 
 // Desktop: fyra utfällda listor fyller skärmen; dolda listor gör boarden smalare.
