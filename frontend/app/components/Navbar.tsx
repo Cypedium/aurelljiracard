@@ -1,10 +1,12 @@
 'use client';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { handleLogout } from '../utils/logout';
 import { getUsername, hasSession, isAdmin } from '../utils/session';
 import { BOARD_ACTIONS, requestBoardAction } from '../utils/boardActions';
+import logo from './images/aurello.png';
 import { ArrowRightStartOnRectangleIcon, Bars3Icon, PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
 const BOARD_PATH = '/cards';
@@ -48,7 +50,10 @@ const Navbar = () => {
           {isLoggedIn && (
             <>
               <li onClick={() => setMenuOpen(false)}>
-                <Link href="/cards">Aurello</Link>
+                <Link href="/cards" className="flex items-center gap-2">
+                  <Image src={logo} alt="" width={32} height={32} className="size-8" priority />
+                  Aurello
+                </Link>
               </li>
               <li onClick={() => setMenuOpen(false)}>
                 <Link
