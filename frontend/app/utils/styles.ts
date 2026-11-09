@@ -1,7 +1,16 @@
 // Delade Tailwind-klasser för board och kortformulär
-import { BugAntIcon, CheckIcon, DocumentTextIcon } from "@heroicons/react/16/solid";
+import {
+  BoltIcon,
+  BugAntIcon,
+  CheckIcon,
+  DocumentTextIcon,
+  FlagIcon,
+  LightBulbIcon,
+  StarIcon,
+  WrenchIcon,
+} from "@heroicons/react/16/solid";
 import { NEW_LIST_COLOR, readableTextColor, type BoardHeader, type CardStatus } from "./boardLayout";
-import type { CardType } from "./cardType";
+import type { IssueTypeIconName } from "./cardType";
 import type { PasswordStrength } from "./checkPasswordStrength";
 
 // Board: datum, edit- och delete-knappen syns bara när man hovrar över kortet
@@ -47,11 +56,16 @@ export const SECTION_PADDING = "px-6 max-[480px]:px-4";
 export const AUTH_FORM_CLASS =
   "mx-4 flex w-full max-w-md flex-col rounded-xl bg-white p-6 font-jira text-sm text-jira-text shadow-[0_8px_12px_rgba(9,30,66,0.15),0_0_1px_rgba(9,30,66,0.31)]";
 
-// Jira-liknande ikon per ärendetyp: Task blå, Bug röd, Doc lila (IssueTypeIcon)
-export const ISSUE_TYPE_STYLE: Record<CardType, { Icon: typeof CheckIcon; className: string }> = {
-  task: { Icon: CheckIcon, className: "bg-jira-task" },
-  bug: { Icon: BugAntIcon, className: "bg-jira-danger" },
-  doc: { Icon: DocumentTextIcon, className: "bg-[#8270db]" },
+// Ikon per ärendetyp (IssueTypeIcon); bakgrunden är typens färg
+export const ISSUE_TYPE_ICON: Record<IssueTypeIconName, typeof CheckIcon> = {
+  check: CheckIcon,
+  bug: BugAntIcon,
+  doc: DocumentTextIcon,
+  bolt: BoltIcon,
+  star: StarIcon,
+  flag: FlagIcon,
+  wrench: WrenchIcon,
+  "light-bulb": LightBulbIcon,
 };
 
 // Färg på "Password strength" i registreringsformuläret

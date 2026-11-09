@@ -40,8 +40,9 @@ describe("cardFormSchema", () => {
     expect(PRODUCT_ID_MAX_LENGTH).toBe(6);
   });
 
-  it("rejects an unknown issue type", () => {
-    expect(firstError({ ...valid, type: "epic" })).not.toBeNull();
+  it("accepts any issue type key (the server checks it) but not an empty one", () => {
+    expect(firstError({ ...valid, type: "user-story" })).toBeNull();
+    expect(firstError({ ...valid, type: "" })).not.toBeNull();
   });
 
   it.each([
