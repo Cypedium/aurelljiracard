@@ -28,7 +28,7 @@ export default function CardPage() {
 
   // Samma bakgrund som boarden; pt eftersom navbaren är fixed
   return (
-    <div className="min-h-screen bg-linear-135 from-board-from via-board-via to-board-to px-4 pt-20 pb-6">
+    <div className="min-h-[calc(100dvh-60px)] bg-linear-135 from-board-from via-board-via to-board-to px-4 pt-20 pb-6">
       <div className="mx-auto flex w-full max-w-[640px] gap-1 font-jira" role="tablist">
         {TABS.map(({ key, label }) => (
           <button
