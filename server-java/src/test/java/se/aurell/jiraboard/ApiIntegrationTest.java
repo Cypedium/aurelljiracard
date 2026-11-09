@@ -51,6 +51,8 @@ abstract class ApiIntegrationTest {
                 UPDATE board_columns SET color = NULL, title = CASE column_key
                     WHEN 'todo' THEN 'To Do' WHEN 'in-progress' THEN 'In Progress' WHEN 'test' THEN 'Test' ELSE 'Done' END,
                     position = CASE column_key WHEN 'todo' THEN 0 WHEN 'in-progress' THEN 1 WHEN 'test' THEN 2 ELSE 3 END""");
+        // Back to the three issue types seeded by V8__issue_types.sql
+        jdbc.update("DELETE FROM issue_types WHERE type_key NOT IN ('task', 'bug', 'doc')");
     }
 
     /** Registers a user, makes them admin (set directly in the database, like in production) and returns their access token. */

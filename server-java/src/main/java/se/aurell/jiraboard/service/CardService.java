@@ -21,10 +21,12 @@ public class CardService {
 
     private final CardRepository cardRepository;
     private final ColumnService columnService;
+    private final IssueTypeService issueTypeService;
 
-    public CardService(CardRepository cardRepository, ColumnService columnService) {
+    public CardService(CardRepository cardRepository, ColumnService columnService, IssueTypeService issueTypeService) {
         this.cardRepository = cardRepository;
         this.columnService = columnService;
+        this.issueTypeService = issueTypeService;
     }
 
     @Transactional(readOnly = true)
@@ -35,6 +37,9 @@ public class CardService {
     /** Author comes from the token and the date is always now, never from the request body. */
     @Transactional
     public void create(CardRequest request, AuthUser user) {
+        if (request.type() != null) {
+            issueTypeService.requireCardType(request.type());
+        }
         if (request.status() != null) {
             columnService.requireCardStatus(request.status());
         }
@@ -57,6 +62,9 @@ public class CardService {
     /** The author or an admin may edit; author, date and status are never changed by an edit. */
     @Transactional
     public CardResponse update(UUID id, CardRequest request, AuthUser user) {
+        if (request.type() != null) {
+            issueTypeService.requireCardType(request.type());
+        }
         Card card = user.isAdmin() ? findCard(id) : findOwnCard(id, user, "You can only edit your own card.");
         if (cardRepository.existsByProductIdAndIdNot(request.productId(), id)) {
             throw ApiException.conflict(DUPLICATE_KEY_MESSAGE);

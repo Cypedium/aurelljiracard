@@ -6,11 +6,10 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
-import se.aurell.jiraboard.entity.CardType;
 
 /**
  * Body of POST /card and PUT /card/{id}. Author and date always come from the server.
- * {@code type} defaults to task; {@code status} is only used on create (a column key or "backlog",
+ * {@code type} defaults to task (an issue type key, checked by IssueTypeService); {@code status} is only used on create (a column key or "backlog",
  * checked by ColumnService).
  */
 public record CardRequest(
@@ -28,7 +27,7 @@ public record CardRequest(
         @Pattern(regexp = "^[A-Za-z]+-[0-9]+$", message = PRODUCT_ID_MESSAGE)
         String productId,
 
-        CardType type,
+        String type,
 
         String status) {
 

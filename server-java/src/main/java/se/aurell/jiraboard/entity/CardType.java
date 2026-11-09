@@ -1,39 +1,24 @@
 package se.aurell.jiraboard.entity;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonValue;
-import java.util.Arrays;
-import java.util.stream.Collectors;
-import se.aurell.jiraboard.exception.ApiException;
+import java.util.Collection;
+import java.util.List;
 
-/** Issue type. Must match CARD_TYPES in frontend/app/utils/cardType.ts. */
-public enum CardType {
-    TASK("task"),
-    BUG("bug"),
-    DOC("doc");
+/**
+ * A card's type: the key of an {@link IssueType} (shared by all users, admins add new ones).
+ * Must match server/utils/cardType.js and frontend/app/utils/cardType.ts.
+ */
+public final class CardType {
 
-    public static final CardType DEFAULT = TASK;
+    public static final String DEFAULT = "task";
 
-    private static final String ALLOWED = Arrays.stream(values())
-            .map(CardType::getValue)
-            .collect(Collectors.joining(", "));
+    /** Icons an issue type can have; must match ISSUE_TYPE_ICONS in server/utils/cardType.js. */
+    public static final List<String> ICONS = List.of("check", "bug", "doc", "bolt", "star", "flag", "wrench", "light-bulb");
 
-    private final String value;
-
-    CardType(String value) {
-        this.value = value;
+    private CardType() {
     }
 
-    @JsonValue
-    public String getValue() {
-        return value;
-    }
-
-    @JsonCreator
-    public static CardType fromValue(String value) {
-        return Arrays.stream(values())
-                .filter(t -> t.value.equals(value))
-                .findFirst()
-                .orElseThrow(() -> ApiException.badRequest("Type must be one of: " + ALLOWED + "."));
+    /** A new issue type's key from its name ("User story" → "user-story"), unique among the taken keys. */
+    public static String keyFromLabel(String label, Collection<String> takenKeys) {
+        return CardStatus.uniqueKey(label, takenKeys, "type");
     }
 }
