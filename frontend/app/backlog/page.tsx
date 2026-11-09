@@ -25,7 +25,7 @@ export default function BacklogPage() {
   return (
     <Layout>
       {/* Samma bakgrund som boarden; pt eftersom navbaren (två rader) är fixed */}
-      <div className="min-h-screen bg-linear-135 from-board-from via-board-via to-board-to px-4 pt-30 pb-6 font-jira">
+      <div className="min-h-[calc(100dvh-60px)] bg-linear-135 from-board-from via-board-via to-board-to px-4 pt-30 pb-6 font-jira">
         <div className="mx-auto flex max-w-[960px] flex-col gap-4">
           {/* Ingen synlig rubrik (navbaren visar sidan); kvar för skärmläsare */}
           <h1 className="sr-only">Backlog</h1>
