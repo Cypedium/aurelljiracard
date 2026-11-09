@@ -1,5 +1,5 @@
 import { describe, expect, it } from "@jest/globals";
-import { COMMENT_MAX_LENGTH, PRIORITIES, PRODUCT_ID_MAX_LENGTH, cardFormSchema, cardToFormValues, takenIssueKeys } from "../../app/utils/cardForm";
+import { COMMENT_MAX_LENGTH, PRIORITIES, PRODUCT_ID_MAX_LENGTH, cardFormSchema, cardToFormValues, formListKey, takenIssueKeys } from "../../app/utils/cardForm";
 
 const valid = { type: "task", comment: "Fix the login page", productId: "AGB-12", rating: 3 };
 
@@ -86,5 +86,26 @@ describe("takenIssueKeys", () => {
     const taken = takenIssueKeys(cards, "1");
     expect(taken.has("MA-1")).toBe(false);
     expect(taken.has("MA-2")).toBe(true);
+  });
+});
+
+describe("formListKey", () => {
+  const headers = [
+    { key: "todo", title: "To Do" },
+    { key: "done", title: "Done" },
+  ];
+
+  it("returns the card's list", () => {
+    expect(formListKey(headers, "done")).toBe("done");
+  });
+
+  it("falls back to the first list for missing or unknown statuses, like the board", () => {
+    expect(formListKey(headers)).toBe("todo");
+    expect(formListKey(headers, "gone")).toBe("todo");
+  });
+
+  it("returns undefined for backlog cards and before the lists are loaded", () => {
+    expect(formListKey(headers, "backlog")).toBeUndefined();
+    expect(formListKey([], "todo")).toBeUndefined();
   });
 });

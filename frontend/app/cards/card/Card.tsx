@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { getCards, submitCard, updateCard, type Card as CardData } from '..//../api/endpoints';
+import { getCards, getColumns, submitCard, updateCard, updateCardStatus, type Card as CardData } from '../../api/endpoints';
 import { toast } from 'sonner';
 import {
   DUPLICATE_ERROR_TYPE,
@@ -14,14 +14,17 @@ import {
   PRODUCT_ID_MAX_LENGTH,
   cardFormSchema,
   cardToFormValues,
+  formListKey,
   takenIssueKeys,
   type CardFormValues,
 } from '../../utils/cardForm';
 import { apiErrorMessage, isConflictError } from '../../utils/apiError';
 import { formatDate } from '../../utils/date';
 import { FIELD_ERROR_CLASS, FORM_ITEM_CLASS, LABEL_CLASS, SECTION_PADDING } from '../../utils/styles';
-import type { AnyCardStatus } from '../../utils/backlog';
+import { BACKLOG_STATUS, type AnyCardStatus } from '../../utils/backlog';
+import { normalizeColumns, type BoardHeader, type CardStatus } from '../../utils/boardLayout';
 import IssueTypeSelect from '../../components/IssueTypeSelect';
+import ListSelect from '../../components/ListSelect';
 import { Button } from '../../components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../../components/ui/form';
 import { Input } from '../../components/ui/input';
@@ -56,6 +59,19 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
       .then((res) => setTakenKeys(takenIssueKeys(res.data || [], card?._id)))
       .catch((err) => console.error('Fetch issue keys error:', err.message));
   }, [card?._id]);
+
+  // Boardens listor till dropdownen bredvid Issue type. Kortet flyttas när man sparar
+  // och hamnar då överst i den nya listan (se buildCardLayout)
+  const [lists, setLists] = useState<BoardHeader[]>([]);
+  useEffect(() => {
+    getColumns()
+      .then((res) => setLists(normalizeColumns(res.data)))
+      .catch((err) => console.error('Fetch lists error:', err.message));
+  }, []);
+  // null = inte ändrad: kortet stannar där det är (nytt kort: listan det skapas i)
+  const [movedTo, setMovedTo] = useState<CardStatus | null>(null);
+  const currentStatus = card ? card.status : status;
+  const selectedList = movedTo ?? formListKey(lists, currentStatus);
 
   const showDuplicateKey = (message = DUPLICATE_PRODUCT_ID_MESSAGE, focus = false) =>
     form.setError('productId', { type: DUPLICATE_ERROR_TYPE, message }, { shouldFocus: focus });
@@ -92,7 +108,19 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
     if (isEdit && card?._id) {
       try {
         const res = await updateCard(card._id, fields);
-        onSaved?.(res.data);
+        let saved = res.data;
+        if (movedTo && movedTo !== card.status) {
+          try {
+            saved = (await updateCardStatus(card._id, movedTo)).data;
+          } catch (error) {
+            // Ändringarna är sparade, bara flytten misslyckades
+            console.error('Move error:', (error as Error).message);
+            toast.error(apiErrorMessage(error, 'Card saved, but it could not be moved.'));
+            onSaved?.(saved);
+            return;
+          }
+        }
+        onSaved?.(saved);
         toast.success('Card updated.');
       } catch (error) {
         console.error('Update error:', (error as Error).message);
@@ -103,7 +131,7 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
 
     try {
       // Author is taken from the access token by the backend
-      const res = await submitCard({ ...fields, status });
+      const res = await submitCard({ ...fields, status: movedTo ?? status });
 
       if (onCreated) {
         onCreated();
@@ -140,19 +168,35 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
             Required fields are marked with an asterisk {required}
           </p>
 
-          <FormField
-            control={form.control}
-            name="type"
-            render={({ field }) => (
-              <FormItem className={FORM_ITEM_CLASS}>
-                <FormLabel className={LABEL_CLASS}>Issue type {required}</FormLabel>
-                <FormControl>
-                  <IssueTypeSelect value={field.value} onChange={field.onChange} />
-                </FormControl>
-                <FormMessage className={FIELD_ERROR_CLASS} />
-              </FormItem>
-            )}
-          />
+          {/* Issue type och listan bredvid varandra; under varandra på smala skärmar */}
+          <div className="flex flex-wrap gap-x-4">
+            <FormField
+              control={form.control}
+              name="type"
+              render={({ field }) => (
+                <FormItem className={`${FORM_ITEM_CLASS} min-w-[180px] flex-1`}>
+                  <FormLabel className={LABEL_CLASS}>Issue type {required}</FormLabel>
+                  <FormControl>
+                    <IssueTypeSelect value={field.value} onChange={field.onChange} />
+                  </FormControl>
+                  <FormMessage className={FIELD_ERROR_CLASS} />
+                </FormItem>
+              )}
+            />
+
+            <div className={`${FORM_ITEM_CLASS} min-w-[180px] flex-1`}>
+              <label htmlFor="card-list" className={LABEL_CLASS}>
+                List
+              </label>
+              <ListSelect
+                id="card-list"
+                lists={lists}
+                value={selectedList}
+                onChange={setMovedTo}
+                placeholder={currentStatus === BACKLOG_STATUS ? 'Backlog' : 'Loading lists…'}
+              />
+            </div>
+          </div>
 
           <FormField
             control={form.control}
