@@ -4,14 +4,17 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { createIssueType } from '../api/endpoints';
-import { addIssueType } from '../cards/useIssueTypes';
-import { apiErrorMessage } from '../utils/apiError';
+import { addIssueType, useIssueTypes } from '../cards/useIssueTypes';
+import { apiErrorMessage, isConflictError } from '../utils/apiError';
+import { DUPLICATE_ERROR_TYPE, ISSUE_KEY_CHECK_DELAY_MS } from '../utils/cardForm';
 import {
+  DUPLICATE_ISSUE_TYPE_MESSAGE,
   EMPTY_ISSUE_TYPE_FORM,
   ISSUE_TYPE_ICONS,
   ISSUE_TYPE_LABEL_MAX_LENGTH,
   ISSUE_TYPE_SWATCHES,
   issueTypeFormSchema,
+  isTakenIssueTypeLabel,
   type IssueType,
   type IssueTypeFormValues,
 } from '../utils/cardType';
@@ -46,7 +49,28 @@ export default function NewIssueTypeDialog({ open, onClose, onCreated }: Props) 
 
   const preview = form.watch();
 
+  // Samma kontroll som för Issue key i kortformuläret: ett namn som redan finns visas under fältet medan man skriver
+  const types = useIssueTypes();
+  const showDuplicate = (message = DUPLICATE_ISSUE_TYPE_MESSAGE, focus = false) =>
+    form.setError('label', { type: DUPLICATE_ERROR_TYPE, message }, { shouldFocus: focus });
+
+  const label = preview.label;
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (isTakenIssueTypeLabel(types, label)) {
+        showDuplicate();
+      } else if (form.getFieldState('label').error?.type === DUPLICATE_ERROR_TYPE) {
+        form.clearErrors('label');
+      }
+    }, ISSUE_KEY_CHECK_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [label, types]);
+
   const onSubmit = async (values: IssueTypeFormValues) => {
+    if (isTakenIssueTypeLabel(types, values.label)) {
+      showDuplicate(DUPLICATE_ISSUE_TYPE_MESSAGE, true);
+      return;
+    }
     try {
       const res = await createIssueType({ ...values, label: values.label.trim() });
       addIssueType(res.data);
@@ -54,6 +78,10 @@ export default function NewIssueTypeDialog({ open, onClose, onCreated }: Props) 
       onCreated(res.data);
     } catch (error) {
       console.error('Create issue type error:', (error as Error).message);
+      if (isConflictError(error)) {
+        showDuplicate(apiErrorMessage(error, DUPLICATE_ISSUE_TYPE_MESSAGE), true);
+        return;
+      }
       toast.error(apiErrorMessage(error, 'Could not add issue type.'));
     }
   };

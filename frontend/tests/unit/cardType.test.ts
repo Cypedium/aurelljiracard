@@ -5,6 +5,7 @@ import {
   ISSUE_TYPE_ICONS,
   ISSUE_TYPE_SWATCHES,
   countCardsByType,
+  isTakenIssueTypeLabel,
   issueTypeFormSchema,
   issueTypeOf,
   normalizeIssueTypes,
@@ -67,6 +68,18 @@ describe("issueTypeOf", () => {
     expect(issueTypeOf(types).key).toBe("task");
     expect(issueTypeOf(types, "epic").key).toBe("task");
     expect(issueTypeOf([], "epic").key).toBe("task");
+  });
+});
+
+describe("isTakenIssueTypeLabel", () => {
+  it("matches an existing name regardless of case and surrounding spaces", () => {
+    expect(isTakenIssueTypeLabel(DEFAULT_ISSUE_TYPES, "Bug")).toBe(true);
+    expect(isTakenIssueTypeLabel(DEFAULT_ISSUE_TYPES, "  bUG ")).toBe(true);
+  });
+
+  it("allows new and empty names", () => {
+    expect(isTakenIssueTypeLabel(DEFAULT_ISSUE_TYPES, "Bugfix")).toBe(false);
+    expect(isTakenIssueTypeLabel(DEFAULT_ISSUE_TYPES, "  ")).toBe(false);
   });
 });
 

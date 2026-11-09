@@ -60,6 +60,14 @@ export const issueTypeOf = (types: IssueType[], key?: string): IssueType =>
   types.find((t) => t.key === DEFAULT_CARD_TYPE) ??
   DEFAULT_ISSUE_TYPES[0];
 
+// Namnet på en ny typ får inte finnas redan (skiftläge och mellanslag runt om spelar ingen roll)
+export const DUPLICATE_ISSUE_TYPE_MESSAGE = "Issue type already exists.";
+
+export const isTakenIssueTypeLabel = (types: Pick<IssueType, "label">[], label: string): boolean => {
+  const name = label.trim().toLowerCase();
+  return name !== "" && types.some((t) => t.label.trim().toLowerCase() === name);
+};
+
 // Antal kort per typ; kort utan typ räknas som Task. Typer som används kan inte tas bort
 export const countCardsByType = (cards: { type?: string }[]): Record<string, number> =>
   cards.reduce<Record<string, number>>((counts, { type }) => {
