@@ -42,6 +42,12 @@ export const addIssueType = (type: IssueType) => {
   emit();
 };
 
+// Admin: en borttagen typ försvinner direkt ur alla dropdowns
+export const removeIssueType = (key: string) => {
+  issueTypes = issueTypes.filter((t) => t.key !== key);
+  emit();
+};
+
 export function useIssueTypes(): IssueType[] {
   useEffect(load, []);
   return useSyncExternalStore(subscribe, () => issueTypes, () => DEFAULT_ISSUE_TYPES);

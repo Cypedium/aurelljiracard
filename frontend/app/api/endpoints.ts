@@ -110,6 +110,9 @@ export const getIssueTypes = () => api.get<IssueType[]>("/issue-type");
 // Admin: adds an issue type at the end of the dropdown
 export const createIssueType = (type: NewIssueType) => api.post<IssueType>("/issue-type", type);
 
+// Admin: only issue types that no card uses can be deleted (409 otherwise); the default type (task) stays
+export const deleteIssueType = (key: CardType) => api.delete(`/issue-type/${encodeURIComponent(key)}`);
+
 // ⭐ USERS
 export const getUsers = () => api.get<PublicUser[]>("/user");
 
@@ -147,6 +150,7 @@ export default {
   reorderColumns,
   getIssueTypes,
   createIssueType,
+  deleteIssueType,
   updateUser,
   deleteUser,
   revokeUserSessions,

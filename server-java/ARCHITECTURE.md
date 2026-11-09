@@ -149,6 +149,7 @@ Two things worth noticing:
 | `PUT` | `/column/{key}` | token, **admin** | `ColumnService.update` | `200 column` |
 | `GET` | `/issue-type` | token | `IssueTypeService.getAll` | `200 [{ key, label, color, icon, position }…]` |
 | `POST` | `/issue-type` | token, **admin** | `IssueTypeService.create` | `201 issue type` |
+| `DELETE` | `/issue-type/{key}` | token, **admin** | `IssueTypeService.delete` | `200 { message }`; `409` while cards use it, `400` for `task` |
 | `GET` | `/user` | token | `UserService.getAll` | `200 [{ _id, username, pictureUrl }]` |
 | `GET` | `/user/usernames` | token | `UserService.getUsernames` | `200 ["alice", …]` |
 | `GET` | `/user/layout` | token | `UserService.getLayout` | `200 layout` |

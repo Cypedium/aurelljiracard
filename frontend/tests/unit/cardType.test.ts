@@ -4,6 +4,7 @@ import {
   EMPTY_ISSUE_TYPE_FORM,
   ISSUE_TYPE_ICONS,
   ISSUE_TYPE_SWATCHES,
+  countCardsByType,
   issueTypeFormSchema,
   issueTypeOf,
   normalizeIssueTypes,
@@ -66,6 +67,13 @@ describe("issueTypeOf", () => {
     expect(issueTypeOf(types).key).toBe("task");
     expect(issueTypeOf(types, "epic").key).toBe("task");
     expect(issueTypeOf([], "epic").key).toBe("task");
+  });
+});
+
+describe("countCardsByType", () => {
+  it("counts cards per type, with untyped cards as Task", () => {
+    expect(countCardsByType([{ type: "bug" }, {}, { type: "task" }, { type: "bug" }])).toEqual({ bug: 2, task: 2 });
+    expect(countCardsByType([])).toEqual({});
   });
 });
 

@@ -83,6 +83,7 @@ All routes except `/auth/*` and `/health` require `Authorization: Bearer <access
 | `PUT` | `/column/:key` | **Admin.** `{ title, color }` → updated list; renames and recolours it for everyone (`color` omitted or `null` = default colour). `404` for an unknown key |
 | `GET` | `/issue-type` | The issue types, shared by all users, in dropdown order: `[{ key, label, color, icon, position }]`. The three defaults (`task`, `bug`, `doc`) always exist |
 | `POST` | `/issue-type` | **Admin.** `{ label (≤ 30), color (#rrggbb), icon }` → `201` new issue type at the end; `icon` is one of `check`, `bug`, `doc`, `bolt`, `star`, `flag`, `wrench`, `light-bulb`; its `key` is made from the label (`"User story"` → `user-story`, unique). At most 12 types |
+| `DELETE` | `/issue-type/:key` | **Admin.** Deletes an issue type → `200 { message }`; `409` while cards use it, `400` for the default type `task`, `404` if unknown |
 | `GET` | `/user` | Users (`_id`, `username`, `pictureUrl`, `role`) |
 | `GET` | `/user/usernames` | Usernames only |
 | `GET` | `/user/layout` | Current user's board layout (the frontend only reads `cards`: the order of cards within each list) |
@@ -96,7 +97,7 @@ Errors are returned as `{ message }`.
 
 ### Roles
 
-Every user has a `role`: `user` (default) or `admin`. Admins can edit and delete any card (the author never changes). The role is sent as a `role` claim in the access token, so a change takes effect at the next login or token refresh (max 15 min). Admins manage users (rename, change role, delete, log out) on the **Users** page (`/users`, shown in the navbar for admins only). The first admin has to be set in the database:
+Every user has a `role`: `user` (default) or `admin`. Admins can edit and delete any card (the author never changes). The role is sent as a `role` claim in the access token, so a change takes effect at the next login or token refresh (max 15 min). Admins manage users (rename, change role, delete, log out) on the **Users** page (`/users`, shown in the navbar for admins only), and issue types (add, or delete the ones no card uses) on the **Issue types** page (`/issue-types`). The first admin has to be set in the database:
 
 ```sql
 -- server-java (PostgreSQL)

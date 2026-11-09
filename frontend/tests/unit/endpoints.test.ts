@@ -36,6 +36,7 @@ describe("API endpoints", () => {
     ["reorderColumns", () => endpoints.reorderColumns(["done", "todo"]), "put", "/column"],
     ["getIssueTypes", () => endpoints.getIssueTypes(), "get", "/issue-type"],
     ["createIssueType", () => endpoints.createIssueType({ label: "Story", color: "#1f845a", icon: "star" }), "post", "/issue-type"],
+    ["deleteIssueType", () => endpoints.deleteIssueType("story"), "delete", "/issue-type/story"],
     ["updateUser", () => endpoints.updateUser("u1", { role: "admin" }), "patch", "/user/u1"],
     ["deleteUser", () => endpoints.deleteUser("u1"), "delete", "/user/u1"],
     ["revokeUserSessions", () => endpoints.revokeUserSessions("u1"), "post", "/user/u1/logout"],
