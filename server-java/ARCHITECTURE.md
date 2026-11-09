@@ -48,7 +48,7 @@ flowchart TB
     end
     subgraph data["Data layer"]
         repository["repository/<br/>UserRepository · CardRepository · BoardColumnRepository"]
-        entity["entity/<br/>User · Card · BoardColumn · Layout<br/>CardStatus · CardType · EnumConverters"]
+        entity["entity/<br/>User · Card · BoardColumn · IssueType · Layout<br/>CardStatus · CardType · EnumConverters"]
     end
     subgraph cross["Cross-cutting"]
         security["security/<br/>JwtService · AccessTokenConverter<br/>ApiBearerTokenResolver · JsonAuthenticationEntryPoint · AuthUser"]
@@ -147,6 +147,8 @@ Two things worth noticing:
 | `POST` | `/column` | token, **admin** | `ColumnService.create` | `201 column` |
 | `PUT` | `/column` | token, **admin** | `ColumnService.reorder` | `200 [column…]` in the new order |
 | `PUT` | `/column/{key}` | token, **admin** | `ColumnService.update` | `200 column` |
+| `GET` | `/issue-type` | token | `IssueTypeService.getAll` | `200 [{ key, label, color, icon, position }…]` |
+| `POST` | `/issue-type` | token, **admin** | `IssueTypeService.create` | `201 issue type` |
 | `GET` | `/user` | token | `UserService.getAll` | `200 [{ _id, username, pictureUrl }]` |
 | `GET` | `/user/usernames` | token | `UserService.getUsernames` | `200 ["alice", …]` |
 | `GET` | `/user/layout` | token | `UserService.getLayout` | `200 layout` |
@@ -295,7 +297,7 @@ Validation happens in two places:
 1. **Bean Validation on DTO records** (`@NotBlank`, `@Size`, `@Min`/`@Max`, `@Pattern`), triggered by `@Valid` in the controller.
 2. **The service**, for rules annotations can't express: password byte length, picture URL, uniqueness, ownership.
 
-Unknown `type` values are rejected while the JSON is being parsed: `CardType.fromValue` (`@JsonCreator`) throws `ApiException.badRequest`. A card's `status` is a list key, so `ColumnService.requireCardStatus` checks it against the `board_columns` table (plus `backlog`); its message lists the valid keys.
+A card's `type` is an issue type key, so `IssueTypeService.requireCardType` checks it against the `issue_types` table; its message lists the valid keys. A card's `status` is a list key, so `ColumnService.requireCardStatus` checks it against the `board_columns` table (plus `backlog`); its message lists the valid keys.
 
 Every error, expected or not, ends up in `GlobalExceptionHandler` and leaves as `{ "message": "…" }`:
 
@@ -345,7 +347,7 @@ erDiagram
         varchar32 username FK
         timestamptz submitted_at "set once"
         varchar32 status "column_key or backlog"
-        varchar10 type "task | bug | doc"
+        varchar32 type "issue_types.type_key"
     }
 ```
 
@@ -359,8 +361,9 @@ erDiagram
   }
   ```
   The board only uses `cards`, for the order of cards within a list. `headers` is legacy: list names and colours are shared in `board_columns`.
-- **Enums are stored by their API value** (`"admin"`, not `"ADMIN"`) via `EnumConverters`. The same strings are used in JSON (`@JsonValue`) and in the database `CHECK` constraints.
+- **The `Role` enum is stored by its API value** (`"admin"`, not `"ADMIN"`) via `EnumConverters`. The same strings are used in JSON (`@JsonValue`) and in the database `CHECK` constraint.
 - **`cards.status` has no foreign key**: it is a `board_columns.column_key` or `backlog`, which is not a list. `CardService` checks it on create and move.
+- **`cards.type` has no foreign key** either: it is an `issue_types.type_key`, checked by `CardService` on create and update. Cards keep their type if it is ever removed.
 - **Ids are UUIDs.** Responses expose them as `_id` (`@JsonProperty("_id")`) because the frontend was written for MongoDB.
 - Index `cards_submitted_at_idx` supports `GET /card` (newest first).
 
@@ -368,7 +371,7 @@ erDiagram
 
 The schema is owned by Flyway (`src/main/resources/db/migration/V<n>__*.sql`). Hibernate runs with `ddl-auto: validate`: on startup it checks that the entities match the tables and **refuses to start if they don't**. It never changes the schema itself.
 
-To change the schema, add a new `V2__….sql`. Never edit a migration that has already been applied. Adding a card type means changing the Java enum, `server/utils/`, `frontend/app/utils/` **and** a migration for the `CHECK` constraint. Board lists are data, not schema: admins add them with `POST /column`.
+To change the schema, add a new `V2__….sql`. Never edit a migration that has already been applied. Board lists and issue types are data, not schema: admins add them with `POST /column` and `POST /issue-type`. A new issue type icon means changing `CardType.ICONS`, `server/utils/cardType.js` and `frontend/app/utils/cardType.ts`.
 
 ---
 

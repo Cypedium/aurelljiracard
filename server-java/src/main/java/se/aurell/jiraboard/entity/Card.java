@@ -1,7 +1,6 @@
 package se.aurell.jiraboard.entity;
 
 import jakarta.persistence.Column;
-import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -46,9 +45,9 @@ public class Card {
     @Column(nullable = false, length = 32)
     private String status = CardStatus.DEFAULT;
 
-    @Convert(converter = EnumConverters.CardTypeConverter.class)
-    @Column(nullable = false, length = 10)
-    private CardType type = CardType.DEFAULT;
+    // Key of an IssueType; checked by IssueTypeService.requireCardType
+    @Column(nullable = false, length = 32)
+    private String type = CardType.DEFAULT;
 
     protected Card() {
     }
@@ -113,11 +112,11 @@ public class Card {
         this.status = status;
     }
 
-    public CardType getType() {
+    public String getType() {
         return type;
     }
 
-    public void setType(CardType type) {
+    public void setType(String type) {
         this.type = type;
     }
 }

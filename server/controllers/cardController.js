@@ -1,9 +1,9 @@
 // server/controllers/cardController.js
 const Card = require("../models/Card");
 const Column = require("../models/Column");
+const IssueType = require("../models/IssueType");
 const { isNonEmptyString, isObjectId } = require("../utils/validate");
 const { BACKLOG_STATUS } = require("../utils/cardStatus");
-const { CARD_TYPES } = require("../utils/cardType");
 const { ADMIN_ROLE } = require("../utils/role");
 
 const COMMENT_MAX_LENGTH = 2000;
@@ -18,6 +18,13 @@ const DUPLICATE_KEY_ERROR = 11000;
 const cardStatuses = async () => [...(await Column.listAll()).map((c) => c.key), BACKLOG_STATUS];
 const statusMessage = (statuses) => `Status must be one of: ${statuses.join(", ")}.`;
 
+// Optional type: an issue type's key. Returns an error message, or null when valid or missing
+const checkType = async (type) => {
+  if (type === undefined) return null;
+  const types = (await IssueType.listAll()).map((t) => t.key);
+  return typeof type === "string" && types.includes(type) ? null : `Type must be one of: ${types.join(", ")}.`;
+};
+
 exports.getAll = async (req, res) => {
   try {
     const cards = await Card.find().sort({ submittedAt: -1 }).lean();
@@ -28,8 +35,8 @@ exports.getAll = async (req, res) => {
   }
 };
 
-// Returns an error message, or null when the card fields are valid
-const validateCardFields = ({ rating, comment, productId, type }) => {
+// Returns an error message, or null when the card fields are valid (type: see checkType)
+const validateCardFields = ({ rating, comment, productId }) => {
   if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
     return "Rating must be an integer between 1 and 5.";
   }
@@ -38,9 +45,6 @@ const validateCardFields = ({ rating, comment, productId, type }) => {
   }
   if (!isNonEmptyString(productId, PRODUCT_ID_MAX_LENGTH) || !PRODUCT_ID_PATTERN.test(productId)) {
     return PRODUCT_ID_MESSAGE;
-  }
-  if (type !== undefined && (typeof type !== "string" || !CARD_TYPES.includes(type))) {
-    return `Type must be one of: ${CARD_TYPES.join(", ")}.`;
   }
   return null;
 };
@@ -54,6 +58,10 @@ exports.create = async (req, res) => {
   }
 
   try {
+    const invalidType = await checkType(type);
+    if (invalidType) {
+      return res.status(400).json({ message: invalidType });
+    }
     // Optional: lets the board create a card directly in a column
     if (status !== undefined) {
       const statuses = await cardStatuses();
@@ -94,6 +102,10 @@ exports.update = async (req, res) => {
   }
 
   try {
+    const invalidType = await checkType(type);
+    if (invalidType) {
+      return res.status(400).json({ message: invalidType });
+    }
     const card = await Card.findById(id);
     if (!card) {
       return res.status(404).json({ message: "Card not found." });

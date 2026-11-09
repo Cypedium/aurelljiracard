@@ -32,7 +32,16 @@ public final class CardStatus {
     public static String keyFromTitle(String title, Collection<String> takenKeys) {
         Set<String> taken = new HashSet<>(takenKeys);
         taken.add(BACKLOG);
-        String base = slugify(title);
+        return uniqueKey(title, taken, "list");
+    }
+
+    /**
+     * A key made from a name, unique among the taken keys ("done" taken → "done-2"); {@code fallback}
+     * when nothing is left of the name. Also used for issue type keys ({@link CardType#keyFromLabel}).
+     */
+    public static String uniqueKey(String title, Collection<String> takenKeys, String fallback) {
+        Set<String> taken = new HashSet<>(takenKeys);
+        String base = slugify(title, fallback);
         if (!taken.contains(base)) {
             return base;
         }
@@ -44,14 +53,14 @@ public final class CardStatus {
         }
     }
 
-    // å/ä/ö lose their accents; nothing left → "list"
-    private static String slugify(String title) {
+    // å/ä/ö lose their accents; nothing left → fallback
+    private static String slugify(String title, String fallback) {
         String slug = Normalizer.normalize(title, Normalizer.Form.NFD)
                 .replaceAll("[\\u0300-\\u036f]", "")
                 .toLowerCase(Locale.ROOT)
                 .replaceAll("[^a-z0-9]+", "-")
                 .replaceAll("^-+|-+$", "");
         slug = slug.substring(0, Math.min(slug.length(), KEY_BASE_LENGTH)).replaceAll("-+$", "");
-        return slug.isEmpty() ? "list" : slug;
+        return slug.isEmpty() ? fallback : slug;
     }
 }

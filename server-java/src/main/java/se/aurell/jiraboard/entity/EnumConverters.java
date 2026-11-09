@@ -3,23 +3,10 @@ package se.aurell.jiraboard.entity;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 
-/** Stores the enums by their API value ("admin"), not their Java name ("ADMIN"). */
+/** Stores the enum by its API value ("admin"), not its Java name ("ADMIN"). */
 final class EnumConverters {
 
     private EnumConverters() {
-    }
-
-    @Converter
-    static class CardTypeConverter implements AttributeConverter<CardType, String> {
-        @Override
-        public String convertToDatabaseColumn(CardType type) {
-            return type == null ? null : type.getValue();
-        }
-
-        @Override
-        public CardType convertToEntityAttribute(String value) {
-            return value == null ? null : CardType.fromValue(value);
-        }
     }
 
     @Converter
