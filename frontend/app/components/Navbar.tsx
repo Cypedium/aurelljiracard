@@ -9,6 +9,7 @@ import {
   ArrowRightStartOnRectangleIcon,
   Bars3Icon,
   HomeIcon,
+  PlusIcon,
   QueueListIcon,
   TagIcon,
   UsersIcon,
@@ -20,7 +21,8 @@ const BOARD_PATH = '/cards';
 const BACKLOG_PATH = '/backlog';
 // Länk med ikon före texten (som Trellos sidomeny)
 const NAV_LINK_CLASS = 'flex items-center gap-2';
-const NAV_ICON_CLASS = 'size-6 shrink-0';
+const NAV_ICON_CLASS = 'size-5 shrink-0';
+const NAV_ICON_SUB_CLASS = 'size-4 shrink-0';
 const SUB_ROW_BUTTON_CLASS = 'flex items-center gap-1.5 rounded-md px-2 py-0.5 hover:bg-white/10';
 
 const Navbar = () => {
@@ -142,7 +144,7 @@ const Navbar = () => {
               )}
               <li key="logout" className={userName ? undefined : 'md:ml-auto'}>
                 <button onClick={handleLogout} className="flex items-center gap-2">
-                  <ArrowRightStartOnRectangleIcon className="size-7" aria-hidden />
+                  <ArrowRightStartOnRectangleIcon className={NAV_ICON_CLASS} aria-hidden />
                   Logout
                 </button>
               </li>
@@ -171,11 +173,13 @@ const Navbar = () => {
             style={subRowCenter === null ? undefined : { marginLeft: subRowCenter }}
           >
             <button type="button" className={SUB_ROW_BUTTON_CLASS} onClick={() => requestBoardAction(BOARD_ACTIONS.createCard)}>
+              <PlusIcon className={NAV_ICON_SUB_CLASS} aria-hidden />
               Create card
             </button>
             {/* Bara admin kan lägga till listor (backend nekar andra) */}
             {onBoard && admin && (
               <button type="button" className={SUB_ROW_BUTTON_CLASS} onClick={() => requestBoardAction(BOARD_ACTIONS.createColumn)}>
+                <PlusIcon className={NAV_ICON_SUB_CLASS} aria-hidden />
                 Create column
               </button>
             )}
