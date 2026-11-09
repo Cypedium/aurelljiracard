@@ -9,7 +9,7 @@ import { avatarColor, avatarInitials } from '../utils/avatar';
 import { handleLogout } from '../utils/logout';
 import { getUsername } from '../utils/session';
 import { lastSeenLabel } from '../utils/presence';
-import { TABLE_CELL_CLASS as TD_CLASS, TABLE_HEAD_CLASS as TH_CLASS, TABLE_ROW_CLASS, TABLE_WRAPPER_CLASS } from '../utils/styles';
+import { TABLE_CELL_CLASS as TD_CLASS, TABLE_HEAD_CLASS as TH_CLASS, TABLE_THEAD_CLASS, TABLE_ROW_CLASS, TABLE_WRAPPER_CLASS } from '../utils/styles';
 import { countCardsByAuthor } from '../utils/userForm';
 import EditUserForm from './EditUserForm';
 import TableSkeleton from '../components/TableSkeleton';
@@ -93,7 +93,7 @@ export default function Users() {
     <>
       <div className={TABLE_WRAPPER_CLASS}>
         <table className="w-full text-sm text-jira-text">
-          <thead className="border-b-2 border-jira-neutral">
+          <thead className={TABLE_THEAD_CLASS}>
             <tr>
               <th scope="col" className={TH_CLASS}>User</th>
               <th scope="col" className={TH_CLASS}>Role</th>
