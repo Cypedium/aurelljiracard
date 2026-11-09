@@ -1,8 +1,8 @@
 // app/api/endpoints.ts
-// Paths must match the backend mounts in server/app.js: /auth, /card, /column, /user
+// Paths must match the backend mounts in server/app.js: /auth, /card, /column, /issue-type, /user
 import api from "./api";
 import type { CardStatus, UserLayout } from "../utils/boardLayout";
-import type { CardType } from "../utils/cardType";
+import type { CardType, IssueType, IssueTypeIconName } from "../utils/cardType";
 import type { AnyCardStatus } from "../utils/backlog";
 import type { Role } from "../utils/session";
 
@@ -56,6 +56,9 @@ export type BoardColumn = { key: CardStatus; title: string; color?: string | nul
 // Admin: title and colour of a list, both replaced (color null = the default colour)
 export type ColumnChanges = { title: string; color?: string | null };
 
+// Admin: a new issue type; the backend makes its key from the label
+export type NewIssueType = { label: string; color: string; icon: IssueTypeIconName };
+
 // Admin: fields left out keep their value
 export type UserChanges = { username?: string; role?: Role };
 
@@ -101,6 +104,12 @@ export const reorderColumns = (keys: CardStatus[]) => api.put<BoardColumn[]>("/c
 export const updateColumn = (key: CardStatus, changes: ColumnChanges) =>
   api.put<BoardColumn>(`/column/${encodeURIComponent(key)}`, changes);
 
+// ⭐ ISSUE TYPES (shared by all users)
+export const getIssueTypes = () => api.get<IssueType[]>("/issue-type");
+
+// Admin: adds an issue type at the end of the dropdown
+export const createIssueType = (type: NewIssueType) => api.post<IssueType>("/issue-type", type);
+
 // ⭐ USERS
 export const getUsers = () => api.get<PublicUser[]>("/user");
 
@@ -136,6 +145,8 @@ export default {
   createColumn,
   updateColumn,
   reorderColumns,
+  getIssueTypes,
+  createIssueType,
   updateUser,
   deleteUser,
   revokeUserSessions,

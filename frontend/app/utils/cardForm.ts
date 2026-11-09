@@ -1,7 +1,7 @@
 import leoProfanity from "leo-profanity";
 import { z } from "zod";
 import type { Card } from "../api/endpoints";
-import { CARD_TYPES, DEFAULT_CARD_TYPE, cardTypeOf, type CardType } from "./cardType";
+import { DEFAULT_CARD_TYPE } from "./cardType";
 import { BACKLOG_STATUS } from "./backlog";
 import { columnForStatus, type BoardHeader, type CardStatus } from "./boardLayout";
 
@@ -23,7 +23,8 @@ const requiredText = (max: number, message: string) =>
   z.string().trim().min(1, message).max(max, message).refine(isClean, PROFANITY_MESSAGE);
 
 export const cardFormSchema = z.object({
-  type: z.enum(CARD_TYPES.map((t) => t.key) as [CardType, ...CardType[]]),
+  // En typnyckel från GET /issue-type; servern kollar att typen finns
+  type: z.string().min(1, "Please select an issue type."),
   comment: requiredText(COMMENT_MAX_LENGTH, `Summary is required (max ${COMMENT_MAX_LENGTH} characters).`),
   productId: requiredText(PRODUCT_ID_MAX_LENGTH, PRODUCT_ID_MESSAGE).regex(PRODUCT_ID_PATTERN, PRODUCT_ID_MESSAGE),
   // 0 = inget valt än
@@ -37,7 +38,7 @@ export const EMPTY_CARD_FORM: CardFormValues = { type: DEFAULT_CARD_TYPE, commen
 
 // Formulärvärden för att redigera ett befintligt kort; kort utan typ blir "task"
 export const cardToFormValues = (card: Card): CardFormValues => ({
-  type: cardTypeOf(card.type),
+  type: card.type || DEFAULT_CARD_TYPE,
   comment: card.comment,
   productId: card.productId,
   rating: card.rating,
