@@ -79,7 +79,7 @@ const Navbar = () => {
   return (
     <header ref={headerRef} className="fixed z-[1000] w-full font-brand">
       {/* z-10: mobilmenyn hamnar över raden under */}
-      <nav className="relative z-10 flex w-full items-center justify-between border bg-gray-600 py-[0.5%] pr-[2%] pl-[3%]">
+      <nav className="relative z-10 flex w-full items-center justify-between bg-gray-600 py-[0.5%] pr-[2%] pl-[3%]">
         <button
           className="block text-white md:hidden"
           onClick={() => setMenuOpen(!menuOpen)}
