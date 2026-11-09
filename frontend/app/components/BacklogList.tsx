@@ -10,7 +10,7 @@ import { backlogCards } from '../utils/backlog';
 import { DEFAULT_HEADERS } from '../utils/boardLayout';
 import { formatShortDate } from '../utils/date';
 import { canDeleteCard, canEditCard, getUsername, isAdmin } from '../utils/session';
-import { CARD_ACTION_CLASS, TABLE_CELL_CLASS as TD_CLASS, TABLE_HEAD_CLASS as TH_CLASS, TABLE_ROW_CLASS, TABLE_WRAPPER_CLASS } from '../utils/styles';
+import { CARD_ACTION_CLASS, TABLE_CELL_CLASS as TD_CLASS, TABLE_HEAD_CLASS as TH_CLASS, TABLE_THEAD_CLASS, TABLE_ROW_CLASS, TABLE_WRAPPER_CLASS } from '../utils/styles';
 import IssueTypeIcon from './IssueTypeIcon';
 import TableSkeleton from './TableSkeleton';
 import { Button } from './ui/button';
@@ -98,7 +98,7 @@ export default function BacklogList({ refreshKey = 0, onMoved }: BacklogListProp
       <div className={TABLE_WRAPPER_CLASS}>
         {/* Små kolumner får sin innehållsbredd; Summary tar resten och kortas med … */}
         <table className="w-full text-sm text-jira-text [&_td]:whitespace-nowrap [&_th]:whitespace-nowrap">
-          <thead className="border-b-2 border-jira-neutral">
+          <thead className={TABLE_THEAD_CLASS}>
             <tr>
               <th scope="col" className={TH_CLASS}>Key</th>
               <th scope="col" className={TH_CLASS}>Summary</th>

@@ -7,7 +7,7 @@ import { removeIssueType } from '../cards/useIssueTypes';
 import { apiErrorMessage } from '../utils/apiError';
 import { BOARD_ACTIONS, onBoardAction } from '../utils/boardActions';
 import { countCardsByType, DEFAULT_CARD_TYPE, MAX_ISSUE_TYPES, normalizeIssueTypes, type IssueType } from '../utils/cardType';
-import { TABLE_CELL_CLASS as TD_CLASS, TABLE_HEAD_CLASS as TH_CLASS, TABLE_ROW_CLASS, TABLE_WRAPPER_CLASS } from '../utils/styles';
+import { TABLE_CELL_CLASS as TD_CLASS, TABLE_HEAD_CLASS as TH_CLASS, TABLE_THEAD_CLASS, TABLE_ROW_CLASS, TABLE_WRAPPER_CLASS } from '../utils/styles';
 import IssueTypeIcon from '../components/IssueTypeIcon';
 import NewIssueTypeDialog from '../components/NewIssueTypeDialog';
 import TableSkeleton from '../components/TableSkeleton';
@@ -85,7 +85,7 @@ export default function IssueTypes() {
       ) : (
         <div className={TABLE_WRAPPER_CLASS}>
           <table className="w-full text-sm text-jira-text">
-            <thead className="border-b-2 border-jira-neutral">
+            <thead className={TABLE_THEAD_CLASS}>
               <tr>
                 <th scope="col" className={TH_CLASS}>Issue type</th>
                 <th scope="col" className={`${TH_CLASS} max-[480px]:hidden`}>Key</th>
