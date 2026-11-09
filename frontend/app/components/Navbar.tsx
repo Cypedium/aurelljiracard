@@ -112,7 +112,7 @@ const Navbar = () => {
                   className={`${NAV_LINK_CLASS} underline-offset-8 aria-[current=page]:underline`}
                 >
                   <ViewColumnsIcon className={NAV_ICON_CLASS} aria-hidden />
-                  The Board
+                  Board
                 </Link>
               </li>
               <li onClick={() => setMenuOpen(false)}>

@@ -17,8 +17,8 @@ export default function IssueTypesPage() {
 
   return (
     <Layout>
-      {/* Samma bakgrund som boarden; pt eftersom navbaren är fixed */}
-      <div className="min-h-screen bg-linear-135 from-board-from via-board-via to-board-to px-4 pt-20 pb-6 font-jira">
+      {/* Samma bakgrund som boarden; pt eftersom navbaren (två rader) är fixed; samma som backloggen */}
+      <div className="min-h-screen bg-linear-135 from-board-from via-board-via to-board-to px-4 pt-30 pb-6 font-jira">
         {allowed && (
           <div className="mx-auto flex max-w-[960px] flex-col gap-4">
             <IssueTypes />
