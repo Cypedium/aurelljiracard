@@ -13,6 +13,7 @@ import {
   previewHeaders,
   fromGridLayout,
   mobileBoardWidth,
+  MOBILE_GUTTER,
   MIN_LIST_WIDTH,
   snapGridX,
   toGridLayout,
@@ -378,7 +379,7 @@ describe("board columns", () => {
     expect(columns.units).toBe(20);
     // 5 × MIN_LIST_WIDTH; boarden scrollar först när skärmen är smalare än så
     expect(desktopBoardWidth(columns)).toBe(`max(100%, ${5 * MIN_LIST_WIDTH}px)`);
-    expect(mobileBoardWidth(columns)).toBe("500%");
+    expect(mobileBoardWidth(columns)).toBe(`calc(500% - ${4 * MOBILE_GUTTER}px)`);
   });
 
   it("adds room after the lists for the add-list slot", () => {
@@ -389,9 +390,10 @@ describe("board columns", () => {
     expect(columnAtGridX(columns, 17)).toBe(3);
   });
 
-  it("makes each visible list one screen wide on mobile", () => {
-    expect(mobileBoardWidth(boardColumns(H, []))).toBe("400%");
-    expect(mobileBoardWidth(boardColumns(H, ["done"]))).toBe("325%");
+  it("makes each visible list one screen wide on mobile, minus the gutter on both sides", () => {
+    expect(mobileBoardWidth(boardColumns(H, []))).toBe(`calc(400% - ${3 * MOBILE_GUTTER}px)`);
+    expect(mobileBoardWidth(boardColumns(H, ["done"]))).toBe(`calc(325% - ${2.25 * MOBILE_GUTTER}px)`);
+    expect(mobileBoardWidth(boardColumns(H, []), 10)).toBe("calc(400% - 30px)");
   });
 });
 

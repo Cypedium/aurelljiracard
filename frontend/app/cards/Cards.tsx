@@ -6,6 +6,7 @@ import { useListDrag } from "./useListDrag";
 import { useBoardData } from "./useBoardData";
 import { useCardActions } from "./useCardActions";
 import { useCollapsedLists } from "./useCollapsedLists";
+import { useIsMobile } from "./useIsMobile";
 import { useColumnActions } from "./useColumnActions";
 import AddListForm from "./board/AddListForm";
 import BoardCard from "./board/BoardCard";
@@ -22,6 +23,7 @@ import {
   COLLAPSED_LIST_MAX_HEIGHT,
   EXPANDED_SPAN,
   GRID_MARGIN,
+  MOBILE_GUTTER,
   ROW_HEIGHT,
   SKELETON_CARD_COUNT,
   boardColumns,
@@ -70,6 +72,9 @@ export default function Home() {
   const [admin, setAdmin] = useState(false);
   // Gridden följer boardens bredd så att den fyller skärmen
   const { width, containerRef, mounted } = useContainerWidth();
+  // Luft mellan listorna och mot skärmkanten: större på mobil, så att man kan svepa upp/ner bredvid korten.
+  // Samma värde i CSS-griddarna (bakgrund, rubriker) och i react-grid-layout (korten), så att de linjerar
+  const gutter = useIsMobile() ? MOBILE_GUTTER : GRID_MARGIN;
   const boardScrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -163,8 +168,9 @@ export default function Home() {
     columns,
   );
   const columnGrid = {
-    padding: `0 ${GRID_MARGIN}px`,
-    gap: GRID_MARGIN,
+    padding: `0 ${gutter}px`,
+    columnGap: gutter,
+    rowGap: GRID_MARGIN,
     gridTemplateColumns: `repeat(${columns.units}, 1fr)`,
   };
 
@@ -175,7 +181,7 @@ export default function Home() {
       <div
         ref={boardScrollRef}
         className="board-scroll flex-1 snap-x snap-mandatory overflow-x-auto overscroll-x-contain md:snap-none"
-        style={{ scrollPaddingInline: GRID_MARGIN }}
+        style={{ scrollPaddingInline: gutter }}
       >
         <div
           ref={containerRef}
@@ -248,8 +254,8 @@ export default function Home() {
               constraints={constraints}
               rowHeight={ROW_HEIGHT}
               width={width}
-              margin={[GRID_MARGIN, GRID_MARGIN]}
-              containerPadding={[GRID_MARGIN, CARDS_TOP]}
+              margin={[gutter, GRID_MARGIN]}
+              containerPadding={[gutter, CARDS_TOP]}
               dragConfig={{ cancel: ".no-drag" }}
               // Korten har fast storlek (1x1), så inget resize-handtag
               resizeConfig={{ enabled: false }}

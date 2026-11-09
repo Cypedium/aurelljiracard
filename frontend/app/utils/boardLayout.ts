@@ -260,9 +260,16 @@ export const toGridLayout = <T extends { x: number; w: number }>(layout: readonl
 export const fromGridLayout = <T extends { x: number; w: number }>(layout: readonly T[], columns: BoardColumns): T[] =>
   layout.map((l) => ({ ...l, x: Math.max(0, columnAtGridX(columns, l.x)), w: 1 }));
 
-// Mobil: en utfälld lista är en skärm bred, en remsa lika många enheter som annars
-export const mobileBoardWidth = ({ units, expandedSpan }: BoardColumns): string =>
-  `${(units / expandedSpan) * 100}%`;
+// Mobil: luft mellan listan och skärmkanten på båda sidor, så att man kan svepa upp/ner bredvid korten
+// (på korten drar man dem). Desktop använder GRID_MARGIN
+export const MOBILE_GUTTER = 20;
+
+// Mobil: en utfälld lista är skärmen minus gutter på båda sidor, en remsa lika många enheter som annars.
+// Med gutter g och n skärmar: n·100% − (n−1)·g, så att listan som snäppts in har g på båda sidor
+export const mobileBoardWidth = ({ units, expandedSpan }: BoardColumns, gutter = MOBILE_GUTTER): string => {
+  const screens = units / expandedSpan;
+  return screens > 1 ? `calc(${screens * 100}% - ${(screens - 1) * gutter}px)` : `${screens * 100}%`;
+};
 
 // Minsta bredd för en utfälld lista på desktop (som Trello); en remsa är en fjärdedel
 export const MIN_LIST_WIDTH = 217;

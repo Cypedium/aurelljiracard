@@ -20,7 +20,8 @@ export default function BoardSkeleton({ headers, columns, gridStyle }: Props) {
   return (
     <div
       className="pointer-events-none absolute inset-0 grid items-start"
-      style={{ ...gridStyle, padding: `${CARDS_TOP}px ${GRID_MARGIN}px 0` }}
+      // Samma sidmarginal som boarden (gridStyle); korten börjar under rubrik och knapp
+      style={{ ...gridStyle, paddingTop: CARDS_TOP }}
       aria-busy="true"
       aria-label="Loading cards"
     >
