@@ -31,7 +31,7 @@ export default function ListDragPreview({ ref, header, count, cards, style }: Pr
         <span className="text-sm opacity-80">{count}</span>
       </div>
       {/* Samma ordning som listan: rubrik, "Add a card", korten */}
-      <div className="flex h-8 shrink-0 items-center gap-2 px-2 text-sm font-medium">
+      <div className="flex h-8 w-fit shrink-0 items-center gap-2 px-2 text-sm font-medium">
         <PlusIcon className="size-4" aria-hidden />
         Add a card
       </div>

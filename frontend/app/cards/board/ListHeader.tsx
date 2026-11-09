@@ -117,7 +117,7 @@ export default function ListHeader({
       </div>
       <button
         type="button"
-        className={`pointer-events-auto flex h-8 shrink-0 items-center gap-2 rounded-lg px-2 text-sm font-medium ${LIST_BUTTON_HOVER_CLASS} ${color.className}`}
+        className={`pointer-events-auto flex h-8 w-fit shrink-0 items-center gap-2 rounded-lg px-2 text-sm font-medium ${LIST_BUTTON_HOVER_CLASS} ${color.className}`}
         style={color.style}
         onClick={onAddCard}
       >
