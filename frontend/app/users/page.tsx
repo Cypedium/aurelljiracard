@@ -21,9 +21,8 @@ export default function UsersPage() {
       <div className="min-h-screen bg-linear-135 from-board-from via-board-via to-board-to px-4 pt-20 pb-6 font-jira">
         {allowed && (
           <div className="mx-auto flex max-w-[960px] flex-col gap-4">
-            <div className="rounded-xl bg-black/25 px-5 py-3 backdrop-blur-sm">
-              <h1 className="text-xl font-bold text-white">Users</h1>
-            </div>
+            {/* Ingen synlig rubrik (navbaren visar sidan); kvar för skärmläsare */}
+            <h1 className="sr-only">Users</h1>
             <Users />
           </div>
         )}

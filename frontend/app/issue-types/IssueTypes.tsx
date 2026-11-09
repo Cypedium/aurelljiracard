@@ -77,9 +77,8 @@ export default function IssueTypes() {
 
   return (
     <>
-      <div className="rounded-xl bg-black/25 px-5 py-3 backdrop-blur-sm">
-        <h1 className="text-xl font-bold text-white">Issue types</h1>
-      </div>
+      {/* Ingen synlig rubrik (navbaren visar sidan); kvar för skärmläsare */}
+      <h1 className="sr-only">Issue types</h1>
 
       {types === null ? (
         <TableSkeleton />
