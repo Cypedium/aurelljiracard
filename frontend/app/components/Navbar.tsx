@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { avatarColor, avatarInitials } from '../utils/avatar';
 import { handleLogout } from '../utils/logout';
 import { getUsername, hasSession, isAdmin } from '../utils/session';
 import { BOARD_ACTIONS, requestBoardAction } from '../utils/boardActions';
@@ -153,7 +154,16 @@ const Navbar = () => {
               {/* Desktop: användare och logout längst till höger */}
               {userName && (
                 <li key="profile" className="md:ml-auto">
-                  <span>{userName}</span>
+                  {/* Samma avatar som på korten; namnet visas vid hovring och läses upp */}
+                  <span
+                    role="img"
+                    aria-label={`Logged in as ${userName}`}
+                    title={userName}
+                    className="inline-flex size-8 shrink-0 items-center justify-center rounded-full font-jira text-xs font-semibold text-white"
+                    style={{ background: avatarColor(userName) }}
+                  >
+                    {avatarInitials(userName)}
+                  </span>
                 </li>
               )}
               <li key="logout" className={userName ? undefined : 'md:ml-auto'}>
