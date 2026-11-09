@@ -1,7 +1,9 @@
 'use client';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import logo from '../icon.png';
 import { avatarColor, avatarInitials } from '../utils/avatar';
 import { handleLogout } from '../utils/logout';
 import { getUsername, hasSession, isAdmin } from '../utils/session';
@@ -9,7 +11,6 @@ import { BOARD_ACTIONS, requestBoardAction } from '../utils/boardActions';
 import {
   ArrowRightStartOnRectangleIcon,
   Bars3Icon,
-  HomeIcon,
   PlusIcon,
   QueueListIcon,
   TagIcon,
@@ -98,7 +99,8 @@ const Navbar = () => {
             <>
               <li onClick={() => setMenuOpen(false)}>
                 <Link href="/cards" className={NAV_LINK_CLASS}>
-                  <HomeIcon className={NAV_ICON_CLASS} aria-hidden />
+                  {/* Samma bild som favicon (app/icon.png) */}
+                  <Image src={logo} alt="" className="size-7 shrink-0" priority />
                   Aurello
                 </Link>
               </li>
