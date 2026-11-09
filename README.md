@@ -77,10 +77,11 @@ All routes except `/auth/*` and `/health` require `Authorization: Bearer <access
 | `PUT` | `/card/:id` | Edit a card, same body as `POST` → updated card; `403` unless it is your own or you are an admin, `409` if another card has the issue key |
 | `PATCH` | `/card/:id/status` | `{ status }` (a list key from `GET /column`, or `backlog`) → updated card. Any logged-in user can move any card; taking a card from the backlog assigns it to the caller, moving it to `backlog` unassigns it |
 | `DELETE` | `/card/:id` | Delete a card; `403` unless it is your own or you are an admin |
-| `GET` | `/column` | The board's lists, shared by all users, in board order: `[{ key, title, color, position }]` (`color` `null` = default colour). The four default lists (`todo`, `in-progress`, `test`, `done`) always exist |
+| `GET` | `/column` | The board's lists, shared by all users, in board order: `[{ key, title, color, position }]` (`color` `null` = default colour). The four default lists (`todo`, `in-progress`, `test`, `done`) exist from the start; `todo` always does |
 | `POST` | `/column` | **Admin.** `{ title, color? }` → `201` new list at the end; its `key` is made from the title (`"Code review"` → `code-review`, unique). At most 12 lists |
 | `PUT` | `/column` | **Admin.** `{ keys }` — every list key exactly once, in the new order → the lists in that order. Moves lists for everyone; cards follow their list. `400` if a list is missing, unknown or repeated |
 | `PUT` | `/column/:key` | **Admin.** `{ title, color }` → updated list; renames and recolours it for everyone (`color` omitted or `null` = default colour). `404` for an unknown key |
+| `DELETE` | `/column/:key` | **Admin.** Deletes an empty list for everyone → `200 { message }`; `409` while any card has that status, `400` for the default list `todo` or a malformed key, `404` if unknown |
 | `GET` | `/issue-type` | The issue types, shared by all users, in dropdown order: `[{ key, label, color, icon, position }]`. The three defaults (`task`, `bug`, `doc`) always exist |
 | `POST` | `/issue-type` | **Admin.** `{ label (≤ 30), color (#rrggbb), icon }` → `201` new issue type at the end; `icon` is one of `check`, `bug`, `doc`, `bolt`, `star`, `flag`, `wrench`, `light-bulb`; its `key` is made from the label (`"User story"` → `user-story`, unique). At most 12 types |
 | `DELETE` | `/issue-type/:key` | **Admin.** Deletes an issue type → `200 { message }`; `409` while cards use it, `400` for the default type `task`, `404` if unknown |
