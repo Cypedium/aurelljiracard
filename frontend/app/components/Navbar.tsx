@@ -19,6 +19,7 @@ import {
 
 const BOARD_PATH = '/cards';
 const BACKLOG_PATH = '/backlog';
+const ISSUE_TYPES_PATH = '/issue-types';
 // Länk med ikon före texten (som Trellos sidomeny)
 const NAV_LINK_CLASS = 'flex items-center gap-2';
 const NAV_ICON_CLASS = 'size-5 shrink-0';
@@ -41,15 +42,23 @@ const Navbar = () => {
 
   const onBoard = isLoggedIn && pathname === BOARD_PATH;
   const onBacklog = isLoggedIn && pathname === BACKLOG_PATH;
+  const onIssueTypes = isLoggedIn && admin && pathname === ISSUE_TYPES_PATH;
 
-  // Rad två centreras under sin länk (The Board / Backlog). null = vänsterställd (mobil, där länken är dold)
+  // Rad två centreras under sin länk (The Board / Backlog / Issue types). null = vänsterställd (mobil, där länken är dold)
   const headerRef = useRef<HTMLElement>(null);
   const boardLinkRef = useRef<HTMLAnchorElement>(null);
   const backlogLinkRef = useRef<HTMLAnchorElement>(null);
+  const issueTypesLinkRef = useRef<HTMLAnchorElement>(null);
   const [subRowCenter, setSubRowCenter] = useState<number | null>(null);
 
   useLayoutEffect(() => {
-    const link = onBoard ? boardLinkRef.current : onBacklog ? backlogLinkRef.current : null;
+    const link = onBoard
+      ? boardLinkRef.current
+      : onBacklog
+        ? backlogLinkRef.current
+        : onIssueTypes
+          ? issueTypesLinkRef.current
+          : null;
     const header = headerRef.current;
     if (!link || !header) {
       setSubRowCenter(null);
@@ -65,7 +74,7 @@ const Navbar = () => {
     observer.observe(link);
     observer.observe(header);
     return () => observer.disconnect();
-  }, [onBoard, onBacklog, admin, userName]);
+  }, [onBoard, onBacklog, onIssueTypes, admin, userName]);
 
   return (
     <header ref={headerRef} className="fixed z-[1000] w-full font-brand">
@@ -124,7 +133,12 @@ const Navbar = () => {
                     </Link>
                   </li>
                   <li onClick={() => setMenuOpen(false)}>
-                    <Link href="/issue-types" className={NAV_LINK_CLASS}>
+                    <Link
+                      ref={issueTypesLinkRef}
+                      href={ISSUE_TYPES_PATH}
+                      aria-current={pathname === ISSUE_TYPES_PATH ? 'page' : undefined}
+                      className={`${NAV_LINK_CLASS} underline-offset-8 aria-[current=page]:underline`}
+                    >
                       <TagIcon className={NAV_ICON_CLASS} aria-hidden />
                       Issue types
                     </Link>
@@ -162,8 +176,8 @@ const Navbar = () => {
         </ul>
       </nav>
 
-      {/* Rad två, på boarden och backloggen: öppnar sidans formulär. Lite mörkare än raden ovanför */}
-      {(onBoard || onBacklog) && (
+      {/* Rad två, på boarden, backloggen och Issue types: öppnar sidans formulär. Lite mörkare än raden ovanför */}
+      {(onBoard || onBacklog || onIssueTypes) && (
         <div
           className={`flex items-center bg-gray-700 py-1.5 pr-[2%] text-base text-white ${subRowCenter === null ? 'pl-[3%]' : ''}`}
         >
@@ -172,15 +186,27 @@ const Navbar = () => {
             className={`flex w-fit shrink-0 items-center gap-4 ${subRowCenter === null ? '' : '-translate-x-1/2'}`}
             style={subRowCenter === null ? undefined : { marginLeft: subRowCenter }}
           >
-            <button type="button" className={SUB_ROW_BUTTON_CLASS} onClick={() => requestBoardAction(BOARD_ACTIONS.createCard)}>
-              <PlusIcon className={NAV_ICON_SUB_CLASS} aria-hidden />
-              Create card
-            </button>
+            {(onBoard || onBacklog) && (
+              <button type="button" className={SUB_ROW_BUTTON_CLASS} onClick={() => requestBoardAction(BOARD_ACTIONS.createCard)}>
+                <PlusIcon className={NAV_ICON_SUB_CLASS} aria-hidden />
+                Create card
+              </button>
+            )}
             {/* Bara admin kan lägga till listor (backend nekar andra) */}
             {onBoard && admin && (
               <button type="button" className={SUB_ROW_BUTTON_CLASS} onClick={() => requestBoardAction(BOARD_ACTIONS.createColumn)}>
                 <PlusIcon className={NAV_ICON_SUB_CLASS} aria-hidden />
                 Create column
+              </button>
+            )}
+            {onIssueTypes && (
+              <button
+                type="button"
+                className={SUB_ROW_BUTTON_CLASS}
+                onClick={() => requestBoardAction(BOARD_ACTIONS.createIssueType)}
+              >
+                <PlusIcon className={NAV_ICON_SUB_CLASS} aria-hidden />
+                Create Issue type
               </button>
             )}
           </div>
