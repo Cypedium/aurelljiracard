@@ -1,10 +1,11 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { PlusIcon, TrashIcon } from '@heroicons/react/16/solid';
+import { TrashIcon } from '@heroicons/react/16/solid';
 import { deleteIssueType, getCards, getIssueTypes } from '../api/endpoints';
 import { removeIssueType } from '../cards/useIssueTypes';
 import { apiErrorMessage } from '../utils/apiError';
+import { BOARD_ACTIONS, onBoardAction } from '../utils/boardActions';
 import { countCardsByType, DEFAULT_CARD_TYPE, MAX_ISSUE_TYPES, normalizeIssueTypes, type IssueType } from '../utils/cardType';
 import { TABLE_CELL_CLASS as TD_CLASS, TABLE_HEAD_CLASS as TH_CLASS, TABLE_ROW_CLASS, TABLE_WRAPPER_CLASS } from '../utils/styles';
 import IssueTypeIcon from '../components/IssueTypeIcon';
@@ -59,22 +60,25 @@ export default function IssueTypes() {
     }
   };
 
-  const full = (types?.length ?? 0) >= MAX_ISSUE_TYPES;
+  // "Create Issue type" i navbaren öppnar dialogen; vid max antal typer visas varför i stället
+  const typeCount = types?.length ?? null;
+  useEffect(
+    () =>
+      onBoardAction(BOARD_ACTIONS.createIssueType, () => {
+        if (typeCount === null) return;
+        if (typeCount >= MAX_ISSUE_TYPES) {
+          toast.error(`There can be at most ${MAX_ISSUE_TYPES} issue types.`, { id: 'issue-types-full' });
+          return;
+        }
+        setCreating(true);
+      }),
+    [typeCount],
+  );
 
   return (
     <>
-      <div className="flex items-center justify-between gap-3 rounded-xl bg-black/25 px-5 py-3 backdrop-blur-sm">
+      <div className="rounded-xl bg-black/25 px-5 py-3 backdrop-blur-sm">
         <h1 className="text-xl font-bold text-white">Issue types</h1>
-        <button
-          type="button"
-          className="flex items-center gap-1.5 rounded-[3px] bg-white/15 px-3 py-1.5 text-sm font-medium text-white hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-50"
-          title={full ? `Max ${MAX_ISSUE_TYPES} issue types` : undefined}
-          disabled={types === null || full}
-          onClick={() => setCreating(true)}
-        >
-          <PlusIcon className="size-4" aria-hidden />
-          New issue type
-        </button>
       </div>
 
       {types === null ? (

@@ -1,8 +1,10 @@
-// Navbarens knappar ("Create card", "Create column") ber sidan (boarden eller backloggen) öppna sina formulär.
+// Navbarens knappar ("Create card", "Create column", "Create Issue type") ber sidan (boarden, backloggen
+// eller Issue types) öppna sina formulär.
 // Navbaren och sidan är skilda komponenter, så de pratar via en delad EventTarget
 export const BOARD_ACTIONS = {
   createCard: "create-card",
   createColumn: "create-column",
+  createIssueType: "create-issue-type",
 } as const;
 
 export type BoardAction = (typeof BOARD_ACTIONS)[keyof typeof BOARD_ACTIONS];

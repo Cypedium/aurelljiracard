@@ -1,14 +1,31 @@
 'use client';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import logo from '../icon.png';
+import { avatarColor, avatarInitials } from '../utils/avatar';
 import { handleLogout } from '../utils/logout';
 import { getUsername, hasSession, isAdmin } from '../utils/session';
 import { BOARD_ACTIONS, requestBoardAction } from '../utils/boardActions';
-import { ArrowRightStartOnRectangleIcon, Bars3Icon, PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import {
+  ArrowRightStartOnRectangleIcon,
+  Bars3Icon,
+  PlusIcon,
+  QueueListIcon,
+  TagIcon,
+  UsersIcon,
+  ViewColumnsIcon,
+  XMarkIcon,
+} from '@heroicons/react/24/outline';
 
 const BOARD_PATH = '/cards';
 const BACKLOG_PATH = '/backlog';
+const ISSUE_TYPES_PATH = '/issue-types';
+// Länk med ikon före texten (som Trellos sidomeny)
+const NAV_LINK_CLASS = 'flex items-center gap-2';
+const NAV_ICON_CLASS = 'size-5 shrink-0';
+const NAV_ICON_SUB_CLASS = 'size-4 shrink-0';
 const SUB_ROW_BUTTON_CLASS = 'flex items-center gap-1.5 rounded-md px-2 py-0.5 hover:bg-white/10';
 
 const Navbar = () => {
@@ -27,15 +44,23 @@ const Navbar = () => {
 
   const onBoard = isLoggedIn && pathname === BOARD_PATH;
   const onBacklog = isLoggedIn && pathname === BACKLOG_PATH;
+  const onIssueTypes = isLoggedIn && admin && pathname === ISSUE_TYPES_PATH;
 
-  // Rad två centreras under sin länk (The Board / Backlog). null = vänsterställd (mobil, där länken är dold)
+  // Rad två centreras under sin länk (The Board / Backlog / Issue types). null = vänsterställd (mobil, där länken är dold)
   const headerRef = useRef<HTMLElement>(null);
   const boardLinkRef = useRef<HTMLAnchorElement>(null);
   const backlogLinkRef = useRef<HTMLAnchorElement>(null);
+  const issueTypesLinkRef = useRef<HTMLAnchorElement>(null);
   const [subRowCenter, setSubRowCenter] = useState<number | null>(null);
 
   useLayoutEffect(() => {
-    const link = onBoard ? boardLinkRef.current : onBacklog ? backlogLinkRef.current : null;
+    const link = onBoard
+      ? boardLinkRef.current
+      : onBacklog
+        ? backlogLinkRef.current
+        : onIssueTypes
+          ? issueTypesLinkRef.current
+          : null;
     const header = headerRef.current;
     if (!link || !header) {
       setSubRowCenter(null);
@@ -51,12 +76,12 @@ const Navbar = () => {
     observer.observe(link);
     observer.observe(header);
     return () => observer.disconnect();
-  }, [onBoard, onBacklog, admin, userName]);
+  }, [onBoard, onBacklog, onIssueTypes, admin, userName]);
 
   return (
     <header ref={headerRef} className="fixed z-[1000] w-full font-brand">
       {/* z-10: mobilmenyn hamnar över raden under */}
-      <nav className="relative z-10 flex w-full items-center justify-between border bg-gray-600 py-[0.5%] pr-[2%] pl-[3%]">
+      <nav className="relative z-10 flex w-full items-center justify-between bg-gray-600 py-[0.5%] pr-[2%] pl-[3%]">
         <button
           className="block text-white md:hidden"
           onClick={() => setMenuOpen(!menuOpen)}
@@ -73,15 +98,20 @@ const Navbar = () => {
           {isLoggedIn && (
             <>
               <li onClick={() => setMenuOpen(false)}>
-                <Link href="/cards">Aurello</Link>
+                <Link href="/cards" className={NAV_LINK_CLASS}>
+                  {/* Samma bild som favicon (app/icon.png) */}
+                  <Image src={logo} alt="" className="size-7 shrink-0" priority />
+                  Aurello
+                </Link>
               </li>
               <li onClick={() => setMenuOpen(false)}>
                 <Link
                   ref={boardLinkRef}
                   href={BOARD_PATH}
                   aria-current={pathname === BOARD_PATH ? 'page' : undefined}
-                  className="underline-offset-8 aria-[current=page]:underline"
+                  className={`${NAV_LINK_CLASS} underline-offset-8 aria-[current=page]:underline`}
                 >
+                  <ViewColumnsIcon className={NAV_ICON_CLASS} aria-hidden />
                   The Board
                 </Link>
               </li>
@@ -90,8 +120,9 @@ const Navbar = () => {
                   ref={backlogLinkRef}
                   href={BACKLOG_PATH}
                   aria-current={pathname === BACKLOG_PATH ? 'page' : undefined}
-                  className="underline-offset-8 aria-[current=page]:underline"
+                  className={`${NAV_LINK_CLASS} underline-offset-8 aria-[current=page]:underline`}
                 >
+                  <QueueListIcon className={NAV_ICON_CLASS} aria-hidden />
                   Backlog
                 </Link>
               </li>
@@ -99,10 +130,21 @@ const Navbar = () => {
               {admin && (
                 <>
                   <li onClick={() => setMenuOpen(false)}>
-                    <Link href="/users">Users</Link>
+                    <Link href="/users" className={NAV_LINK_CLASS}>
+                      <UsersIcon className={NAV_ICON_CLASS} aria-hidden />
+                      Users
+                    </Link>
                   </li>
                   <li onClick={() => setMenuOpen(false)}>
-                    <Link href="/issue-types">Issue types</Link>
+                    <Link
+                      ref={issueTypesLinkRef}
+                      href={ISSUE_TYPES_PATH}
+                      aria-current={pathname === ISSUE_TYPES_PATH ? 'page' : undefined}
+                      className={`${NAV_LINK_CLASS} underline-offset-8 aria-[current=page]:underline`}
+                    >
+                      <TagIcon className={NAV_ICON_CLASS} aria-hidden />
+                      Issue types
+                    </Link>
                   </li>
                 </>
               )}
@@ -114,12 +156,21 @@ const Navbar = () => {
               {/* Desktop: användare och logout längst till höger */}
               {userName && (
                 <li key="profile" className="md:ml-auto">
-                  <span>{userName}</span>
+                  {/* Samma avatar som på korten; namnet visas vid hovring och läses upp */}
+                  <span
+                    role="img"
+                    aria-label={`Logged in as ${userName}`}
+                    title={userName}
+                    className="inline-flex size-8 shrink-0 items-center justify-center rounded-full font-jira text-xs font-semibold text-white"
+                    style={{ background: avatarColor(userName) }}
+                  >
+                    {avatarInitials(userName)}
+                  </span>
                 </li>
               )}
               <li key="logout" className={userName ? undefined : 'md:ml-auto'}>
                 <button onClick={handleLogout} className="flex items-center gap-2">
-                  <ArrowRightStartOnRectangleIcon className="size-7" aria-hidden />
+                  <ArrowRightStartOnRectangleIcon className={NAV_ICON_CLASS} aria-hidden />
                   Logout
                 </button>
               </li>
@@ -137,8 +188,8 @@ const Navbar = () => {
         </ul>
       </nav>
 
-      {/* Rad två, på boarden och backloggen: öppnar sidans formulär. Lite mörkare än raden ovanför */}
-      {(onBoard || onBacklog) && (
+      {/* Rad två, på boarden, backloggen och Issue types: öppnar sidans formulär. Lite mörkare än raden ovanför */}
+      {(onBoard || onBacklog || onIssueTypes) && (
         <div
           className={`flex items-center bg-gray-700 py-1.5 pr-[2%] text-base text-white ${subRowCenter === null ? 'pl-[3%]' : ''}`}
         >
@@ -147,13 +198,27 @@ const Navbar = () => {
             className={`flex w-fit shrink-0 items-center gap-4 ${subRowCenter === null ? '' : '-translate-x-1/2'}`}
             style={subRowCenter === null ? undefined : { marginLeft: subRowCenter }}
           >
-            <button type="button" className={SUB_ROW_BUTTON_CLASS} onClick={() => requestBoardAction(BOARD_ACTIONS.createCard)}>
-              Create card
-            </button>
+            {(onBoard || onBacklog) && (
+              <button type="button" className={SUB_ROW_BUTTON_CLASS} onClick={() => requestBoardAction(BOARD_ACTIONS.createCard)}>
+                <PlusIcon className={NAV_ICON_SUB_CLASS} aria-hidden />
+                Create card
+              </button>
+            )}
             {/* Bara admin kan lägga till listor (backend nekar andra) */}
             {onBoard && admin && (
               <button type="button" className={SUB_ROW_BUTTON_CLASS} onClick={() => requestBoardAction(BOARD_ACTIONS.createColumn)}>
+                <PlusIcon className={NAV_ICON_SUB_CLASS} aria-hidden />
                 Create column
+              </button>
+            )}
+            {onIssueTypes && (
+              <button
+                type="button"
+                className={SUB_ROW_BUTTON_CLASS}
+                onClick={() => requestBoardAction(BOARD_ACTIONS.createIssueType)}
+              >
+                <PlusIcon className={NAV_ICON_SUB_CLASS} aria-hidden />
+                Create Issue type
               </button>
             )}
           </div>
