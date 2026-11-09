@@ -5,10 +5,22 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { handleLogout } from '../utils/logout';
 import { getUsername, hasSession, isAdmin } from '../utils/session';
 import { BOARD_ACTIONS, requestBoardAction } from '../utils/boardActions';
-import { ArrowRightStartOnRectangleIcon, Bars3Icon, PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import {
+  ArrowRightStartOnRectangleIcon,
+  Bars3Icon,
+  HomeIcon,
+  QueueListIcon,
+  TagIcon,
+  UsersIcon,
+  ViewColumnsIcon,
+  XMarkIcon,
+} from '@heroicons/react/24/outline';
 
 const BOARD_PATH = '/cards';
 const BACKLOG_PATH = '/backlog';
+// Länk med ikon före texten (som Trellos sidomeny)
+const NAV_LINK_CLASS = 'flex items-center gap-2';
+const NAV_ICON_CLASS = 'size-6 shrink-0';
 const SUB_ROW_BUTTON_CLASS = 'flex items-center gap-1.5 rounded-md px-2 py-0.5 hover:bg-white/10';
 
 const Navbar = () => {
@@ -73,15 +85,19 @@ const Navbar = () => {
           {isLoggedIn && (
             <>
               <li onClick={() => setMenuOpen(false)}>
-                <Link href="/cards">Aurello</Link>
+                <Link href="/cards" className={NAV_LINK_CLASS}>
+                  <HomeIcon className={NAV_ICON_CLASS} aria-hidden />
+                  Aurello
+                </Link>
               </li>
               <li onClick={() => setMenuOpen(false)}>
                 <Link
                   ref={boardLinkRef}
                   href={BOARD_PATH}
                   aria-current={pathname === BOARD_PATH ? 'page' : undefined}
-                  className="underline-offset-8 aria-[current=page]:underline"
+                  className={`${NAV_LINK_CLASS} underline-offset-8 aria-[current=page]:underline`}
                 >
+                  <ViewColumnsIcon className={NAV_ICON_CLASS} aria-hidden />
                   The Board
                 </Link>
               </li>
@@ -90,8 +106,9 @@ const Navbar = () => {
                   ref={backlogLinkRef}
                   href={BACKLOG_PATH}
                   aria-current={pathname === BACKLOG_PATH ? 'page' : undefined}
-                  className="underline-offset-8 aria-[current=page]:underline"
+                  className={`${NAV_LINK_CLASS} underline-offset-8 aria-[current=page]:underline`}
                 >
+                  <QueueListIcon className={NAV_ICON_CLASS} aria-hidden />
                   Backlog
                 </Link>
               </li>
@@ -99,10 +116,16 @@ const Navbar = () => {
               {admin && (
                 <>
                   <li onClick={() => setMenuOpen(false)}>
-                    <Link href="/users">Users</Link>
+                    <Link href="/users" className={NAV_LINK_CLASS}>
+                      <UsersIcon className={NAV_ICON_CLASS} aria-hidden />
+                      Users
+                    </Link>
                   </li>
                   <li onClick={() => setMenuOpen(false)}>
-                    <Link href="/issue-types">Issue types</Link>
+                    <Link href="/issue-types" className={NAV_LINK_CLASS}>
+                      <TagIcon className={NAV_ICON_CLASS} aria-hidden />
+                      Issue types
+                    </Link>
                   </li>
                 </>
               )}
