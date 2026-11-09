@@ -322,6 +322,9 @@ describe("collapsed columns", () => {
   });
 });
 
+// Minsta bredd på desktop i px för så många enheter (en utfälld lista = EXPANDED_SPAN enheter)
+const minWidth = (units: number) => `${(units * MIN_LIST_WIDTH) / EXPANDED_SPAN}px`;
+
 describe("board columns", () => {
   it("splits the board evenly when nothing is hidden", () => {
     const columns = boardColumns(H, []);
@@ -339,18 +342,18 @@ describe("board columns", () => {
       { start: 9, span: 4, collapsed: false },
     ]);
     expect(columns.units).toBe(13);
-    expect(desktopBoardWidth(columns)).toBe("max(81.25%, 884px)");
+    expect(desktopBoardWidth(columns)).toBe(`max(81.25%, ${minWidth(13)})`);
   });
 
   it("fills the screen on desktop when nothing is hidden", () => {
-    expect(desktopBoardWidth(boardColumns(H, []))).toBe("max(100%, 1088px)");
+    expect(desktopBoardWidth(boardColumns(H, []))).toBe(`max(100%, ${minWidth(16)})`);
   });
 
   it("keeps narrow strips when every list is hidden", () => {
     const columns = boardColumns(H, DEFAULT_HEADERS.map((h) => h.key));
     expect(columns.spans.map((s) => s.span)).toEqual([1, 1, 1, 1]);
     expect(columns.units).toBe(4);
-    expect(desktopBoardWidth(columns)).toBe("max(20%, px)");
+    expect(desktopBoardWidth(columns)).toBe(`max(25%, ${minWidth(4)})`);
     expect(mobileBoardWidth(columns)).toBe("100%");
   });
 
