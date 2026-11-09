@@ -17,6 +17,16 @@ export const DEFAULT_HEADERS: BoardHeader[] = [
   { key: "done", title: "Done" },
 ];
 
+// Standardlistan: nya kort utan status hamnar där, så den kan inte tas bort (DEFAULT_CARD_STATUS i servern)
+export const DEFAULT_LIST_KEY: CardStatus = "todo";
+
+// Admin: varför en lista inte kan tas bort, eller null. Bara tomma listor (inga kort med listans status)
+export const listDeleteBlocker = (key: CardStatus, cards: { status?: string }[]): string | null => {
+  if (key === DEFAULT_LIST_KEY) return "Default list";
+  const count = cards.filter((c) => (c.status ?? DEFAULT_LIST_KEY) === key).length;
+  return count ? `${count} card${count === 1 ? "" : "s"}` : null;
+};
+
 // Måste matcha ResponsiveGridLayout så att rubrikerna linjerar med kolumnerna
 export const GRID_MARGIN = 10;
 export const HEADER_HEIGHT = 44;

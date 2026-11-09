@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import se.aurell.jiraboard.dto.ColumnOrderRequest;
 import se.aurell.jiraboard.dto.ColumnRequest;
 import se.aurell.jiraboard.dto.ColumnResponse;
+import se.aurell.jiraboard.dto.MessageResponse;
 import se.aurell.jiraboard.security.AuthUser;
 import se.aurell.jiraboard.service.ColumnService;
 
@@ -50,5 +52,12 @@ public class ColumnController {
     public ColumnResponse update(@PathVariable String key, @Valid @RequestBody ColumnRequest request,
             @AuthenticationPrincipal AuthUser user) {
         return columnService.update(key, request, user);
+    }
+
+    /** Admin: deletes an empty list; never the default list (todo). */
+    @DeleteMapping("/{key}")
+    public MessageResponse delete(@PathVariable String key, @AuthenticationPrincipal AuthUser user) {
+        columnService.delete(key, user);
+        return new MessageResponse("List deleted.");
     }
 }

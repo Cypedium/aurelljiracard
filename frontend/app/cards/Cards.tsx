@@ -13,6 +13,7 @@ import BoardCard from "./board/BoardCard";
 import BoardSkeleton from "./board/BoardSkeleton";
 import { CardFormDialog, DeleteCardDialog } from "./board/CardDialogs";
 import CollapsedListStrip from "./board/CollapsedListStrip";
+import DeleteListDialog from "./board/DeleteListDialog";
 import ListBackgrounds from "./board/ListBackgrounds";
 import ListDragPreview from "./board/ListDragPreview";
 import ListHeader from "./board/ListHeader";
@@ -64,8 +65,19 @@ export default function Home() {
     handleCardSaved,
     removeCard,
   } = useCardActions({ cards, setCards, fetchCards });
-  const { renamingKey, setRenamingKey, addingList, setAddingList, renameColumn, recolorColumn, moveList, addList } =
-    useColumnActions({ headers, setHeaders, userLayout, persistLayout });
+  const {
+    renamingKey,
+    setRenamingKey,
+    addingList,
+    setAddingList,
+    deletingList,
+    setDeletingList,
+    removeList,
+    renameColumn,
+    recolorColumn,
+    moveList,
+    addList,
+  } = useColumnActions({ headers, setHeaders, userLayout, persistLayout });
   // Ihopfällda listor: visar bara rubrik och "Add a card"
   const { collapsed, toggleColumn } = useCollapsedLists();
   const [userName, setUserName] = useState("");
@@ -88,6 +100,11 @@ export default function Home() {
     if (!admin) return;
     return onBoardAction(BOARD_ACTIONS.createColumn, () => setAddingList(true));
   }, [admin, setAddingList]);
+  // Navbarens "Delete column" (admin): dialogen där en tom lista väljs
+  useEffect(() => {
+    if (!admin) return;
+    return onBoardAction(BOARD_ACTIONS.deleteColumn, () => setDeletingList(true));
+  }, [admin, setDeletingList]);
   // Formuläret ligger sist på boarden: scrolla dit när det har ritats
   useEffect(() => {
     const board = boardScrollRef.current;
@@ -328,6 +345,16 @@ export default function Home() {
       />
 
       <DeleteCardDialog card={deletingCard} onClose={() => setDeletingCard(null)} onConfirm={removeCard} />
+
+      {admin && (
+        <DeleteListDialog
+          open={deletingList}
+          lists={headers}
+          cards={cards}
+          onClose={() => setDeletingList(false)}
+          onConfirm={removeList}
+        />
+      )}
     </div>
   );
 }

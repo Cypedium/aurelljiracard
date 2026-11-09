@@ -2,6 +2,7 @@ package se.aurell.jiraboard;
 
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasSize;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -13,6 +14,48 @@ import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.Test;
 
 class ColumnApiTest extends ApiIntegrationTest {
+
+    @Test
+    void adminDeletesAListOnceItIsEmpty() throws Exception {
+        String admin = adminAccessToken("boss");
+        mvc.perform(bearer(json(post("/column"), """
+                {"title": "Review"}"""), admin))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.key").value("review"));
+
+        mvc.perform(bearer(delete("/column/review"), accessToken("alice")))
+                .andExpect(status().isForbidden());
+
+        mvc.perform(bearer(json(post("/card"), """
+                {"rating": 3, "comment": "Check it", "productId": "AJB-1", "status": "review"}"""), admin))
+                .andExpect(status().isCreated());
+        mvc.perform(bearer(delete("/column/review"), admin))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("The list still has cards. Move or delete them first."));
+
+        String cards = mvc.perform(bearer(get("/card"), admin)).andReturn().getResponse().getContentAsString();
+        mvc.perform(bearer(delete("/card/" + JsonPath.read(cards, "$[0]._id")), admin)).andExpect(status().isOk());
+        mvc.perform(bearer(delete("/column/review"), admin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("List deleted."));
+        mvc.perform(bearer(get("/column"), admin))
+                .andExpect(jsonPath("$[*].key").value(contains("todo", "in-progress", "test", "done")));
+    }
+
+    @Test
+    void refusesToDeleteTheDefaultOrUnknownLists() throws Exception {
+        String admin = adminAccessToken("boss");
+
+        mvc.perform(bearer(delete("/column/todo"), admin))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("The default list cannot be deleted."));
+        mvc.perform(bearer(delete("/column/review"), admin))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("List not found."));
+        mvc.perform(bearer(delete("/column/backlog"), admin))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Invalid list key."));
+    }
 
     @Test
     void everyoneReadsTheDefaultLists() throws Exception {

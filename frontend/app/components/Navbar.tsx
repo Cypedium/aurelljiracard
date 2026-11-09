@@ -11,6 +11,7 @@ import { BOARD_ACTIONS, requestBoardAction } from '../utils/boardActions';
 import {
   ArrowRightStartOnRectangleIcon,
   Bars3Icon,
+  MinusIcon,
   PlusIcon,
   QueueListIcon,
   TagIcon,
@@ -204,11 +205,17 @@ const Navbar = () => {
                 Create card
               </button>
             )}
-            {/* Bara admin kan lägga till listor (backend nekar andra) */}
+            {/* Bara admin kan lägga till / ta bort kolumner (backend nekar andra) */}
             {onBoard && admin && (
               <button type="button" className={SUB_ROW_BUTTON_CLASS} onClick={() => requestBoardAction(BOARD_ACTIONS.createColumn)}>
                 <PlusIcon className={NAV_ICON_SUB_CLASS} aria-hidden />
                 Create column
+              </button>
+            )}
+            {onBoard && admin && (
+              <button type="button" className={SUB_ROW_BUTTON_CLASS} onClick={() => requestBoardAction(BOARD_ACTIONS.deleteColumn)}>
+                <MinusIcon className={NAV_ICON_SUB_CLASS} aria-hidden />
+                Delete column
               </button>
             )}
             {onIssueTypes && (

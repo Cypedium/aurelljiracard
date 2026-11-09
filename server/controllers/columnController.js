@@ -1,7 +1,8 @@
 // server/controllers/columnController.js
 const Column = require("../models/Column");
+const Card = require("../models/Card");
 const { isNonEmptyString } = require("../utils/validate");
-const { columnKeyFromTitle, isColumnKey } = require("../utils/cardStatus");
+const { DEFAULT_CARD_STATUS, columnKeyFromTitle, isColumnKey } = require("../utils/cardStatus");
 
 // Must match HEADER_TITLE_MAX_LENGTH and HEX_COLOR in frontend/app/utils/boardLayout.ts
 const TITLE_MAX_LENGTH = 50;
@@ -115,5 +116,32 @@ exports.reorder = async (req, res) => {
   } catch (error) {
     console.error("Reorder columns error:", error.message);
     res.status(500).json({ message: "Could not move the list." });
+  }
+};
+
+// Admin: removes an empty list for everyone. The default list stays: cards created without a status go there
+exports.remove = async (req, res) => {
+  const { key } = req.params;
+
+  if (!isColumnKey(key)) {
+    return res.status(400).json({ message: "Invalid list key." });
+  }
+  if (key === DEFAULT_CARD_STATUS) {
+    return res.status(400).json({ message: "The default list cannot be deleted." });
+  }
+
+  try {
+    const columns = await Column.listAll();
+    if (!columns.some((c) => c.key === key)) {
+      return res.status(404).json({ message: "List not found." });
+    }
+    if (await Card.exists({ status: key })) {
+      return res.status(409).json({ message: "The list still has cards. Move or delete them first." });
+    }
+    await Column.deleteOne({ key });
+    res.status(200).json({ message: "List deleted." });
+  } catch (error) {
+    console.error("Delete column error:", error.message);
+    res.status(500).json({ message: "Could not delete list." });
   }
 };

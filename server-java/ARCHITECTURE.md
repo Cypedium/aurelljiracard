@@ -147,6 +147,7 @@ Two things worth noticing:
 | `POST` | `/column` | token, **admin** | `ColumnService.create` | `201 column` |
 | `PUT` | `/column` | token, **admin** | `ColumnService.reorder` | `200 [column…]` in the new order |
 | `PUT` | `/column/{key}` | token, **admin** | `ColumnService.update` | `200 column` |
+| `DELETE` | `/column/{key}` | token, **admin** | `ColumnService.delete` | `200 { message }`; `409` while cards have that status, `400` for `todo` |
 | `GET` | `/issue-type` | token | `IssueTypeService.getAll` | `200 [{ key, label, color, icon, position }…]` |
 | `POST` | `/issue-type` | token, **admin** | `IssueTypeService.create` | `201 issue type` |
 | `DELETE` | `/issue-type/{key}` | token, **admin** | `IssueTypeService.delete` | `200 { message }`; `409` while cards use it, `400` for `task` |
