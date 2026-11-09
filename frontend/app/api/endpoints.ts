@@ -104,6 +104,9 @@ export const reorderColumns = (keys: CardStatus[]) => api.put<BoardColumn[]>("/c
 export const updateColumn = (key: CardStatus, changes: ColumnChanges) =>
   api.put<BoardColumn>(`/column/${encodeURIComponent(key)}`, changes);
 
+// Admin: only empty lists can be deleted (409 otherwise); the default list (todo) stays
+export const deleteColumn = (key: CardStatus) => api.delete(`/column/${encodeURIComponent(key)}`);
+
 // ⭐ ISSUE TYPES (shared by all users)
 export const getIssueTypes = () => api.get<IssueType[]>("/issue-type");
 
@@ -147,6 +150,7 @@ export default {
   getColumns,
   createColumn,
   updateColumn,
+  deleteColumn,
   reorderColumns,
   getIssueTypes,
   createIssueType,

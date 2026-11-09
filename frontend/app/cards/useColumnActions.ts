@@ -1,7 +1,7 @@
 'use client';
 import { useState, type Dispatch, type SetStateAction } from "react";
 import { toast } from "sonner";
-import { createColumn, reorderColumns, updateColumn } from "../api/endpoints";
+import { createColumn, deleteColumn, reorderColumns, updateColumn } from "../api/endpoints";
 import { apiErrorMessage } from "../utils/apiError";
 import {
   moveHeader,
@@ -21,13 +21,15 @@ type Options = {
   persistLayout: (next: UserLayout) => void;
 };
 
-// Admin: lägg till, byt namn, färga och flytta listorna (för alla).
+// Admin: lägg till, byt namn, färga, flytta och ta bort listorna (för alla).
 // Ändringen visas direkt; vid fel återställs listorna
 export function useColumnActions({ headers, setHeaders, userLayout, persistLayout }: Options) {
   // Kolumnen vars rubrik redigeras
   const [renamingKey, setRenamingKey] = useState<CardStatus | null>(null);
   // Formuläret "Add new column" är öppet
   const [addingList, setAddingList] = useState(false);
+  // Dialogen "Delete column" är öppen
+  const [deletingList, setDeletingList] = useState(false);
 
   const saveColumn = async (next: BoardHeader[], key: CardStatus) => {
     const column = next.find((h) => h.key === key);
@@ -86,7 +88,24 @@ export function useColumnActions({ headers, setHeaders, userLayout, persistLayou
     }
   };
 
+  // Bara tomma listor; servern svarar 409 om någon hann lägga ett kort där
+  const removeList = async (key: CardStatus) => {
+    const title = headers.find((h) => h.key === key)?.title ?? key;
+    try {
+      await deleteColumn(key);
+      setHeaders((prev) => prev.filter((h) => h.key !== key));
+      setDeletingList(false);
+      toast.success(`List ${title} deleted.`);
+    } catch (err: any) {
+      console.error("Error deleting list:", err.message);
+      toast.error(apiErrorMessage(err, "Could not delete the list."));
+    }
+  };
+
   return {
+    deletingList,
+    setDeletingList,
+    removeList,
     renamingKey,
     setRenamingKey,
     addingList,

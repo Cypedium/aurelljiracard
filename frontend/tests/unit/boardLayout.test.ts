@@ -1,5 +1,6 @@
 import { describe, expect, it } from "@jest/globals";
 import {
+  listDeleteBlocker,
   BOARD_UNITS,
   DEFAULT_HEADERS,
   EXPANDED_SPAN,
@@ -469,5 +470,19 @@ describe("previewHeaders", () => {
   it("keeps the order for its own slot or no slot", () => {
     expect(previewHeaders(DEFAULT_HEADERS, "todo", 0)).toBe(DEFAULT_HEADERS);
     expect(previewHeaders(DEFAULT_HEADERS, "todo", null)).toBe(DEFAULT_HEADERS);
+  });
+});
+
+describe("listDeleteBlocker", () => {
+  const cards = [{ status: "test" }, { status: "test" }, { status: "done" }, {}];
+
+  it("allows deleting an empty list", () => {
+    expect(listDeleteBlocker("in-progress", cards)).toBeNull();
+  });
+
+  it("explains why a list with cards or the default list stays", () => {
+    expect(listDeleteBlocker("test", cards)).toBe("2 cards");
+    expect(listDeleteBlocker("done", cards)).toBe("1 card");
+    expect(listDeleteBlocker("todo", [])).toBe("Default list");
   });
 });

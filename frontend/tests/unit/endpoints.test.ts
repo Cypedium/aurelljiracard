@@ -33,6 +33,7 @@ describe("API endpoints", () => {
     ["getColumns", () => endpoints.getColumns(), "get", "/column"],
     ["createColumn", () => endpoints.createColumn({ title: "Review" }), "post", "/column"],
     ["updateColumn", () => endpoints.updateColumn("in-progress", { title: "Doing", color: null }), "put", "/column/in-progress"],
+    ["deleteColumn", () => endpoints.deleteColumn("review"), "delete", "/column/review"],
     ["reorderColumns", () => endpoints.reorderColumns(["done", "todo"]), "put", "/column"],
     ["getIssueTypes", () => endpoints.getIssueTypes(), "get", "/issue-type"],
     ["createIssueType", () => endpoints.createIssueType({ label: "Story", color: "#1f845a", icon: "star" }), "post", "/issue-type"],
