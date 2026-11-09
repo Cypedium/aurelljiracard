@@ -2,12 +2,18 @@ jest.mock("../models/Column", () => ({
   listAll: jest.fn(),
   create: jest.fn(),
   findOne: jest.fn(),
-  bulkWrite: jest.fn()
+  bulkWrite: jest.fn(),
+  deleteOne: jest.fn()
+}));
+
+jest.mock("../models/Card", () => ({
+  exists: jest.fn()
 }));
 
 const request = require("supertest");
 const app = require("../app");
 const Column = require("../models/Column");
+const Card = require("../models/Card");
 const { DEFAULT_COLUMNS, columnKeyFromTitle, isColumnKey } = require("../utils/cardStatus");
 const { authHeader, USER_ID } = require("./helpers");
 
@@ -17,6 +23,8 @@ const defaultColumns = () => DEFAULT_COLUMNS.map((c, position) => ({ ...c, color
 beforeEach(() => {
   jest.clearAllMocks();
   Column.listAll.mockResolvedValue(defaultColumns());
+  Column.deleteOne.mockResolvedValue({ deletedCount: 1 });
+  Card.exists.mockResolvedValue(null);
 });
 
 describe("auth guard", () => {
@@ -24,7 +32,8 @@ describe("auth guard", () => {
     ["get", "/column"],
     ["post", "/column"],
     ["put", "/column/todo"],
-    ["put", "/column"]
+    ["put", "/column"],
+    ["delete", "/column/test"]
   ])("%s %s returns 401 without a token", async (method, path) => {
     const res = await request(app)[method](path);
 
@@ -205,5 +214,57 @@ describe("columnKeyFromTitle", () => {
     const key = columnKeyFromTitle("a very long list name that goes on and on", []);
     expect(key.length).toBeLessThanOrEqual(24);
     expect(isColumnKey(key)).toBe(true);
+  });
+});
+
+describe("DELETE /column/:key", () => {
+  const del = (key, header = adminHeader()) => request(app).delete(`/column/${key}`).set("Authorization", header);
+
+  it("deletes an empty list", async () => {
+    const res = await del("test");
+
+    expect(res.status).toBe(200);
+    expect(res.body.message).toBe("List deleted.");
+    expect(Card.exists).toHaveBeenCalledWith({ status: "test" });
+    expect(Column.deleteOne).toHaveBeenCalledWith({ key: "test" });
+  });
+
+  it("returns 403 for a regular user", async () => {
+    const res = await del("test", authHeader());
+
+    expect(res.status).toBe(403);
+    expect(Column.deleteOne).not.toHaveBeenCalled();
+  });
+
+  it("returns 409 while the list has cards", async () => {
+    Card.exists.mockResolvedValue({ _id: "c1" });
+
+    const res = await del("test");
+
+    expect(res.status).toBe(409);
+    expect(res.body.message).toBe("The list still has cards. Move or delete them first.");
+    expect(Column.deleteOne).not.toHaveBeenCalled();
+  });
+
+  it("keeps the default list", async () => {
+    const res = await del("todo");
+
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe("The default list cannot be deleted.");
+    expect(Column.listAll).not.toHaveBeenCalled();
+  });
+
+  it.each([["backlog"], ["Not%20a%20key"]])("returns 400 for %s", async (key) => {
+    const res = await del(key);
+
+    expect(res.status).toBe(400);
+    expect(Column.deleteOne).not.toHaveBeenCalled();
+  });
+
+  it("returns 404 for an unknown list", async () => {
+    const res = await del("review");
+
+    expect(res.status).toBe(404);
+    expect(Column.deleteOne).not.toHaveBeenCalled();
   });
 });

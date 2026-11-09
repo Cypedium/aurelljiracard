@@ -11,5 +11,7 @@ router.post("/", auth, requireAdmin, columnController.create);
 // Order of all lists: { keys: [...] }
 router.put("/", auth, requireAdmin, columnController.reorder);
 router.put("/:key", auth, requireAdmin, columnController.update);
+// Only empty lists; never the default list (todo)
+router.delete("/:key", auth, requireAdmin, columnController.remove);
 
 module.exports = router;

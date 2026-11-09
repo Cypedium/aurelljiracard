@@ -17,18 +17,21 @@ import se.aurell.jiraboard.entity.BoardColumn;
 import se.aurell.jiraboard.entity.CardStatus;
 import se.aurell.jiraboard.exception.ApiException;
 import se.aurell.jiraboard.repository.BoardColumnRepository;
+import se.aurell.jiraboard.repository.CardRepository;
 import se.aurell.jiraboard.security.AuthUser;
 
-/** Board columns are shared: everyone reads them, admins add, rename, recolour and move them. */
+/** Board columns are shared: everyone reads them, admins add, rename, recolour, move and delete them. */
 @Service
 public class ColumnService {
 
     static final int MAX_COLUMNS = 12;
 
     private final BoardColumnRepository columnRepository;
+    private final CardRepository cardRepository;
 
-    public ColumnService(BoardColumnRepository columnRepository) {
+    public ColumnService(BoardColumnRepository columnRepository, CardRepository cardRepository) {
         this.columnRepository = columnRepository;
+        this.cardRepository = cardRepository;
     }
 
     @Transactional(readOnly = true)
@@ -82,6 +85,23 @@ public class ColumnService {
             byKey.get(keys.get(position)).setPosition(position);
         }
         return keys.stream().map(key -> ColumnResponse.from(byKey.get(key))).toList();
+    }
+
+    /** Admin: removes an empty list for everyone. The default list stays: cards created without a status go there. */
+    @Transactional
+    public void delete(String key, AuthUser user) {
+        requireAdmin(user);
+        if (!CardStatus.isColumnKey(key)) {
+            throw ApiException.badRequest("Invalid list key.");
+        }
+        if (CardStatus.DEFAULT.equals(key)) {
+            throw ApiException.badRequest("The default list cannot be deleted.");
+        }
+        BoardColumn column = columnRepository.findById(key).orElseThrow(() -> ApiException.notFound("List not found."));
+        if (cardRepository.existsByStatus(key)) {
+            throw ApiException.conflict("The list still has cards. Move or delete them first.");
+        }
+        columnRepository.delete(column);
     }
 
     /** A card's status must be a column key or the backlog; the message lists the valid ones. */
