@@ -2,6 +2,8 @@ import leoProfanity from "leo-profanity";
 import { z } from "zod";
 import type { Card } from "../api/endpoints";
 import { CARD_TYPES, DEFAULT_CARD_TYPE, cardTypeOf, type CardType } from "./cardType";
+import { BACKLOG_STATUS } from "./backlog";
+import { columnForStatus, type BoardHeader, type CardStatus } from "./boardLayout";
 
 leoProfanity.loadDictionary();
 leoProfanity.loadDictionary("sv");
@@ -50,3 +52,8 @@ export const DUPLICATE_ERROR_TYPE = "duplicate";
 // Issue keys som andra kort använder (exakt matchning, som backend); kortet som redigeras får behålla sin
 export const takenIssueKeys = (cards: Pick<Card, "_id" | "productId">[], ownId?: string): Set<string> =>
   new Set(cards.filter((c) => c._id !== ownId).map((c) => c.productId));
+
+// Listan som formulärets dropdown visar: kortets lista (okänd eller saknad status = första listan,
+// som på boarden), eller undefined för backloggen och innan listorna har hämtats
+export const formListKey = (headers: BoardHeader[], status?: string): CardStatus | undefined =>
+  status === BACKLOG_STATUS ? undefined : headers[columnForStatus(headers, status)]?.key;

@@ -71,7 +71,8 @@ export default function BacklogList({ refreshKey = 0, onMoved }: BacklogListProp
   };
 
   const handleCardSaved = (updated: Card) => {
-    setCards((prev) => prev?.map((c) => (c._id === updated._id ? updated : c)) ?? null);
+    // Flyttat till en lista i edit-dialogen: kortet försvinner ur backloggen
+    setCards((prev) => (prev ? backlogCards(prev.map((c) => (c._id === updated._id ? updated : c))) : null));
     setEditingCard(null);
   };
 
