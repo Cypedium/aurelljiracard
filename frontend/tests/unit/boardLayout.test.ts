@@ -350,7 +350,7 @@ describe("board columns", () => {
     const columns = boardColumns(H, DEFAULT_HEADERS.map((h) => h.key));
     expect(columns.spans.map((s) => s.span)).toEqual([1, 1, 1, 1]);
     expect(columns.units).toBe(4);
-    expect(desktopBoardWidth(columns)).toBe("max(25%, 272px)");
+    expect(desktopBoardWidth(columns)).toBe("max(20%, px)");
     expect(mobileBoardWidth(columns)).toBe("100%");
   });
 
