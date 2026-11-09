@@ -2,6 +2,7 @@ import type { PointerEvent as ReactPointerEvent } from "react";
 import { EyeSlashIcon, PlusIcon } from "@heroicons/react/16/solid";
 import ColumnColorPicker from "../../components/ColumnColorPicker";
 import {
+  CARDS_TOP,
   HEADER_HEIGHT,
   HEADER_TITLE_MAX_LENGTH,
   LIST_KEY_ATTR,
@@ -53,77 +54,84 @@ export default function ListHeader({
       className={`flex flex-col px-2 ${dragging ? "[&>*]:invisible" : ""}`}
       style={{ gridColumn: `span ${span}`, height }}
     >
+      {/* Admin: dra var som helst i rubriken och raden med "Add a card" för att flytta listan (för alla).
+          Knappar har NO_LIST_DRAG_ATTR; klick på namnet byter namn, dra från det flyttar listan */}
       <div
-        // Admin: dra i rubriken för att flytta listan (för alla)
         onPointerDown={admin && !renaming ? onDragStart : undefined}
         title={admin ? "Drag to move the list (for everyone)" : undefined}
-        className={`flex items-center gap-2 pr-1 ${admin ? "pointer-events-auto cursor-grab" : ""} ${color.className}`}
-        style={{ height: HEADER_HEIGHT, ...color.style }}
+        className={`flex shrink-0 flex-col ${admin ? "pointer-events-auto cursor-grab" : ""}`}
+        style={{ height: CARDS_TOP }}
       >
-        {renaming ? (
-          <input
-            autoFocus
-            aria-label="Column name"
-            maxLength={HEADER_TITLE_MAX_LENGTH}
-            defaultValue={header.title}
-            onFocus={(e) => e.currentTarget.select()}
-            onBlur={(e) => onRename(e.currentTarget.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") e.currentTarget.blur();
-              if (e.key === "Escape") {
-                // Ångra: blur sparar då samma namn, dvs ingenting
-                e.currentTarget.value = header.title;
-                e.currentTarget.blur();
-              }
-            }}
-            className="pointer-events-auto min-w-0 flex-1 rounded-md bg-white px-2 py-1 text-sm font-semibold text-jira-text ring-2 ring-jira-focus outline-none"
-          />
-        ) : admin ? (
+        <div
+          className={`flex items-center gap-2 pr-1 ${color.className}`}
+          style={{ height: HEADER_HEIGHT, ...color.style }}
+        >
+          {renaming ? (
+            <input
+              autoFocus
+              aria-label="Column name"
+              maxLength={HEADER_TITLE_MAX_LENGTH}
+              defaultValue={header.title}
+              onFocus={(e) => e.currentTarget.select()}
+              onBlur={(e) => onRename(e.currentTarget.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") e.currentTarget.blur();
+                if (e.key === "Escape") {
+                  // Ångra: blur sparar då samma namn, dvs ingenting
+                  e.currentTarget.value = header.title;
+                  e.currentTarget.blur();
+                }
+              }}
+              className="pointer-events-auto min-w-0 flex-1 rounded-md bg-white px-2 py-1 text-sm font-semibold text-jira-text ring-2 ring-jira-focus outline-none"
+            />
+          ) : admin ? (
+            <button
+              type="button"
+              title="Click to rename (for everyone)"
+              className="pointer-events-auto min-w-0 flex-1 truncate rounded-md px-2 py-1 text-left text-sm font-semibold"
+              onClick={onStartRename}
+            >
+              <span className="inline-block hover:bg-black/10 rounded px-1">{header.title}</span>
+            </button>
+          ) : (
+            <span className="min-w-0 flex-1 truncate px-2 py-1 text-sm font-semibold" title={header.title}>
+              {header.title}
+            </span>
+          )}
+          <span className="text-sm opacity-80">{count}</span>
+          {admin && (
+            <span className="contents" {...{ [NO_LIST_DRAG_ATTR]: "" }}>
+              <ColumnColorPicker
+                title={header.title}
+                color={header.color}
+                defaultColor={defaultListColor(header.key)}
+                onChange={onRecolor}
+              />
+            </span>
+          )}
           <button
             type="button"
-            title="Click to rename (for everyone)"
-            className="pointer-events-auto min-w-0 flex-1 truncate rounded-md px-2 py-1 text-left text-sm font-semibold"
-            onClick={onStartRename}
+            aria-label={`Hide ${header.title}`}
+            aria-expanded
+            title="Hide list"
+            {...{ [NO_LIST_DRAG_ATTR]: "" }}
+            className="pointer-events-auto rounded-md p-1 opacity-70 hover:bg-black/10 hover:opacity-100"
+            onClick={onHide}
           >
-            <span className="inline-block hover:bg-black/10 rounded px-1">{header.title}</span>
+            <EyeSlashIcon className="size-4" aria-hidden />
           </button>
-        ) : (
-          <span className="min-w-0 flex-1 truncate px-2 py-1 text-sm font-semibold" title={header.title}>
-            {header.title}
-          </span>
-        )}
-        <span className="text-sm opacity-80">{count}</span>
-        {admin && (
-          <span className="contents" {...{ [NO_LIST_DRAG_ATTR]: "" }}>
-            <ColumnColorPicker
-              title={header.title}
-              color={header.color}
-              defaultColor={defaultListColor(header.key)}
-              onChange={onRecolor}
-            />
-          </span>
-        )}
+        </div>
         <button
           type="button"
-          aria-label={`Hide ${header.title}`}
-          aria-expanded
-          title="Hide list"
           {...{ [NO_LIST_DRAG_ATTR]: "" }}
-          className="pointer-events-auto rounded-md p-1 opacity-70 hover:bg-black/10 hover:opacity-100"
-          onClick={onHide}
+          className={`pointer-events-auto flex h-8 w-fit shrink-0 items-center gap-2 rounded-lg px-2 text-sm font-medium ${LIST_BUTTON_HOVER_CLASS} ${color.className}`}
+          style={color.style}
+          onClick={onAddCard}
         >
-          <EyeSlashIcon className="size-4" aria-hidden />
+          <PlusIcon className="size-4" aria-hidden />
+          Add a card
         </button>
       </div>
-      <button
-        type="button"
-        className={`pointer-events-auto flex h-8 w-fit shrink-0 items-center gap-2 rounded-lg px-2 text-sm font-medium ${LIST_BUTTON_HOVER_CLASS} ${color.className}`}
-        style={color.style}
-        onClick={onAddCard}
-      >
-        <PlusIcon className="size-4" aria-hidden />
-        Add a card
-      </button>
     </div>
   );
 }
