@@ -16,8 +16,10 @@ export const LIST_COLOR_CLASS: Record<CardStatus, string> = {
   done: "bg-list-done text-list-done-text",
 };
 
-// Mörkare vid hover även när listfärgen är en inline style (som slår hover:bg-*)
-export const LIST_BUTTON_HOVER_CLASS = "hover:shadow-[inset_0_0_0_100vmax_rgba(0,0,0,0.1)]";
+// Mörkare vid hover även när listfärgen är en inline style (som slår hover:bg-*):
+// en bakgrundsbild ritas ovanpå bakgrundsfärgen och täcker bara knappen
+export const LIST_BUTTON_HOVER_CLASS =
+  "hover:bg-[linear-gradient(rgba(0,0,0,0.1),rgba(0,0,0,0.1))]";
 
 const inlineListColor = (color: string) => ({
   className: "",
