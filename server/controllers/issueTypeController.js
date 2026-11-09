@@ -1,7 +1,9 @@
 // server/controllers/issueTypeController.js
 const IssueType = require("../models/IssueType");
+const Card = require("../models/Card");
 const { isNonEmptyString } = require("../utils/validate");
-const { ISSUE_TYPE_ICONS, issueTypeKeyFromLabel } = require("../utils/cardType");
+const { DEFAULT_CARD_TYPE, ISSUE_TYPE_ICONS, issueTypeKeyFromLabel } = require("../utils/cardType");
+const { isColumnKey } = require("../utils/cardStatus");
 
 // Must match ISSUE_TYPE_LABEL_MAX_LENGTH and HEX_COLOR in frontend/app/utils/cardType.ts
 const LABEL_MAX_LENGTH = 30;
@@ -58,5 +60,33 @@ exports.create = async (req, res) => {
     }
     console.error("Create issue type error:", error.message);
     res.status(500).json({ message: "Could not add issue type." });
+  }
+};
+
+// Admin: removes an issue type that no card uses. The default type stays: cards without a type read as it
+exports.remove = async (req, res) => {
+  const { key } = req.params;
+
+  // Issue type keys have the same format as list keys
+  if (!isColumnKey(key)) {
+    return res.status(400).json({ message: "Invalid issue type." });
+  }
+  if (key === DEFAULT_CARD_TYPE) {
+    return res.status(400).json({ message: "The default issue type cannot be deleted." });
+  }
+
+  try {
+    const type = await IssueType.findOne({ key }).lean();
+    if (!type) {
+      return res.status(404).json({ message: "Issue type not found." });
+    }
+    if (await Card.exists({ type: key })) {
+      return res.status(409).json({ message: "Cards still use this issue type. Change or delete them first." });
+    }
+    await IssueType.deleteOne({ key });
+    res.status(200).json({ message: "Issue type deleted." });
+  } catch (error) {
+    console.error("Delete issue type error:", error.message);
+    res.status(500).json({ message: "Could not delete issue type." });
   }
 };

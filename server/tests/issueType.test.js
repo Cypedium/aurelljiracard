@@ -1,11 +1,18 @@
 jest.mock("../models/IssueType", () => ({
   listAll: jest.fn(),
-  create: jest.fn()
+  create: jest.fn(),
+  findOne: jest.fn(),
+  deleteOne: jest.fn()
+}));
+
+jest.mock("../models/Card", () => ({
+  exists: jest.fn()
 }));
 
 const request = require("supertest");
 const app = require("../app");
 const IssueType = require("../models/IssueType");
+const Card = require("../models/Card");
 const { DEFAULT_ISSUE_TYPES, issueTypeKeyFromLabel } = require("../utils/cardType");
 const { authHeader, USER_ID } = require("./helpers");
 
@@ -17,11 +24,18 @@ beforeEach(() => {
   jest.clearAllMocks();
   IssueType.listAll.mockResolvedValue(defaultTypes());
   IssueType.create.mockImplementation(async (doc) => doc);
+  IssueType.findOne.mockReturnValue({ lean: () => Promise.resolve({ key: "bug", label: "Bug" }) });
+  IssueType.deleteOne.mockResolvedValue({ deletedCount: 1 });
+  Card.exists.mockResolvedValue(null);
 });
 
 describe("auth guard", () => {
-  it.each([["get"], ["post"]])("%s /issue-type returns 401 without a token", async (method) => {
-    const res = await request(app)[method]("/issue-type");
+  it.each([
+    ["get", "/issue-type"],
+    ["post", "/issue-type"],
+    ["delete", "/issue-type/bug"]
+  ])("%s %s returns 401 without a token", async (method, path) => {
+    const res = await request(app)[method](path);
 
     expect(res.status).toBe(401);
   });
@@ -31,6 +45,13 @@ describe("auth guard", () => {
 
     expect(res.status).toBe(403);
     expect(IssueType.create).not.toHaveBeenCalled();
+  });
+
+  it("DELETE /issue-type/:key returns 403 for a regular user", async () => {
+    const res = await request(app).delete("/issue-type/bug").set("Authorization", authHeader());
+
+    expect(res.status).toBe(403);
+    expect(IssueType.deleteOne).not.toHaveBeenCalled();
   });
 });
 
@@ -93,6 +114,52 @@ describe("POST /issue-type", () => {
     const res = await request(app).post("/issue-type").set("Authorization", adminHeader()).send(newType);
 
     expect(res.status).toBe(409);
+  });
+});
+
+describe("DELETE /issue-type/:key", () => {
+  const del = (key) => request(app).delete(`/issue-type/${key}`).set("Authorization", adminHeader());
+
+  it("deletes an issue type that no card uses", async () => {
+    const res = await del("bug");
+
+    expect(res.status).toBe(200);
+    expect(Card.exists).toHaveBeenCalledWith({ type: "bug" });
+    expect(IssueType.deleteOne).toHaveBeenCalledWith({ key: "bug" });
+  });
+
+  it("returns 409 while cards use the issue type", async () => {
+    Card.exists.mockResolvedValue({ _id: "c1" });
+
+    const res = await del("bug");
+
+    expect(res.status).toBe(409);
+    expect(res.body.message).toBe("Cards still use this issue type. Change or delete them first.");
+    expect(IssueType.deleteOne).not.toHaveBeenCalled();
+  });
+
+  it("keeps the default issue type", async () => {
+    const res = await del("task");
+
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe("The default issue type cannot be deleted.");
+    expect(IssueType.findOne).not.toHaveBeenCalled();
+  });
+
+  it("returns 404 for an unknown issue type", async () => {
+    IssueType.findOne.mockReturnValue({ lean: () => Promise.resolve(null) });
+
+    const res = await del("epic");
+
+    expect(res.status).toBe(404);
+    expect(IssueType.deleteOne).not.toHaveBeenCalled();
+  });
+
+  it("returns 400 for a malformed key", async () => {
+    const res = await del("Not%20a%20key");
+
+    expect(res.status).toBe(400);
+    expect(IssueType.findOne).not.toHaveBeenCalled();
   });
 });
 

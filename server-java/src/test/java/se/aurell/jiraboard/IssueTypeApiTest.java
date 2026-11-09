@@ -2,11 +2,13 @@ package se.aurell.jiraboard;
 
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasSize;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.Test;
 
 class IssueTypeApiTest extends ApiIntegrationTest {
@@ -78,6 +80,46 @@ class IssueTypeApiTest extends ApiIntegrationTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value(
                         "Icon must be one of: check, bug, doc, bolt, star, flag, wrench, light-bulb."));
+    }
+
+    @Test
+    void adminDeletesAnIssueTypeOnceNoCardUsesIt() throws Exception {
+        String admin = adminAccessToken("boss");
+        mvc.perform(bearer(json(post("/issue-type"), NEW_TYPE), admin)).andExpect(status().isCreated());
+
+        mvc.perform(bearer(delete("/issue-type/user-story"), accessToken("alice")))
+                .andExpect(status().isForbidden());
+
+        mvc.perform(bearer(json(post("/card"), """
+                {"rating": 3, "comment": "As a user", "productId": "AJB-1", "type": "user-story"}"""), admin))
+                .andExpect(status().isCreated());
+        String cards = mvc.perform(bearer(get("/card"), admin)).andReturn().getResponse().getContentAsString();
+        String cardId = JsonPath.read(cards, "$[0]._id");
+        mvc.perform(bearer(delete("/issue-type/user-story"), admin))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("Cards still use this issue type. Change or delete them first."));
+
+        mvc.perform(bearer(delete("/card/" + cardId), admin)).andExpect(status().isOk());
+        mvc.perform(bearer(delete("/issue-type/user-story"), admin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Issue type deleted."));
+        mvc.perform(bearer(get("/issue-type"), admin))
+                .andExpect(jsonPath("$[*].key").value(contains("task", "bug", "doc")));
+    }
+
+    @Test
+    void refusesToDeleteTheDefaultOrUnknownIssueTypes() throws Exception {
+        String admin = adminAccessToken("boss");
+
+        mvc.perform(bearer(delete("/issue-type/task"), admin))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("The default issue type cannot be deleted."));
+        mvc.perform(bearer(delete("/issue-type/epic"), admin))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Issue type not found."));
+        mvc.perform(bearer(delete("/issue-type/Not_a_key"), admin))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Invalid issue type."));
     }
 
     @Test
