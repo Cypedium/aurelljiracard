@@ -97,9 +97,14 @@ const Navbar = () => {
               </li>
               {/* Bara för admin; backend nekar andra (403) */}
               {admin && (
-                <li onClick={() => setMenuOpen(false)}>
-                  <Link href="/users">Users</Link>
-                </li>
+                <>
+                  <li onClick={() => setMenuOpen(false)}>
+                    <Link href="/users">Users</Link>
+                  </li>
+                  <li onClick={() => setMenuOpen(false)}>
+                    <Link href="/issue-types">Issue types</Link>
+                  </li>
+                </>
               )}
             </>
           )}

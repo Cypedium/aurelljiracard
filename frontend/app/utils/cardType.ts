@@ -60,6 +60,14 @@ export const issueTypeOf = (types: IssueType[], key?: string): IssueType =>
   types.find((t) => t.key === DEFAULT_CARD_TYPE) ??
   DEFAULT_ISSUE_TYPES[0];
 
+// Antal kort per typ; kort utan typ räknas som Task. Typer som används kan inte tas bort
+export const countCardsByType = (cards: { type?: string }[]): Record<string, number> =>
+  cards.reduce<Record<string, number>>((counts, { type }) => {
+    const key = type || DEFAULT_CARD_TYPE;
+    counts[key] = (counts[key] ?? 0) + 1;
+    return counts;
+  }, {});
+
 // Admin: formuläret för en ny typ (NewIssueTypeDialog)
 export const issueTypeFormSchema = z.object({
   label: z.string().trim().min(1, LABEL_MESSAGE).max(ISSUE_TYPE_LABEL_MAX_LENGTH, LABEL_MESSAGE),
