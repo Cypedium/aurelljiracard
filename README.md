@@ -73,7 +73,7 @@ All routes except `/auth/*` and `/health` require `Authorization: Bearer <access
 | `POST` | `/auth/refresh` | `{ refreshToken }` → new `{ accessToken, refreshToken }` |
 | `POST` | `/auth/logout` | `{ refreshToken }` → revokes all of the user's refresh tokens |
 | `GET` | `/card` | All cards, newest first |
-| `POST` | `/card` | `{ rating (1–5), comment, productId, type?, status? }` → `201`; `status: "backlog"` creates an unassigned backlog card, otherwise the author is the assignee; `productId` (issue key) must look like `MA-100` (letters, hyphen, digits; max 6 characters), `409` if it already exists. Author is taken from the token |
+| `POST` | `/card` | `{ rating (1–5), comment, productId, type?, status? }` → `201`; `type` is an issue type key from `GET /issue-type` (default `task`); `status: "backlog"` creates an unassigned backlog card, otherwise the author is the assignee; `productId` (issue key) must look like `MA-100` (letters, hyphen, digits; max 6 characters), `409` if it already exists. Author is taken from the token |
 | `PUT` | `/card/:id` | Edit a card, same body as `POST` → updated card; `403` unless it is your own or you are an admin, `409` if another card has the issue key |
 | `PATCH` | `/card/:id/status` | `{ status }` (a list key from `GET /column`, or `backlog`) → updated card. Any logged-in user can move any card; taking a card from the backlog assigns it to the caller, moving it to `backlog` unassigns it |
 | `DELETE` | `/card/:id` | Delete a card; `403` unless it is your own or you are an admin |
@@ -81,6 +81,8 @@ All routes except `/auth/*` and `/health` require `Authorization: Bearer <access
 | `POST` | `/column` | **Admin.** `{ title, color? }` → `201` new list at the end; its `key` is made from the title (`"Code review"` → `code-review`, unique). At most 12 lists |
 | `PUT` | `/column` | **Admin.** `{ keys }` — every list key exactly once, in the new order → the lists in that order. Moves lists for everyone; cards follow their list. `400` if a list is missing, unknown or repeated |
 | `PUT` | `/column/:key` | **Admin.** `{ title, color }` → updated list; renames and recolours it for everyone (`color` omitted or `null` = default colour). `404` for an unknown key |
+| `GET` | `/issue-type` | The issue types, shared by all users, in dropdown order: `[{ key, label, color, icon, position }]`. The three defaults (`task`, `bug`, `doc`) always exist |
+| `POST` | `/issue-type` | **Admin.** `{ label (≤ 30), color (#rrggbb), icon }` → `201` new issue type at the end; `icon` is one of `check`, `bug`, `doc`, `bolt`, `star`, `flag`, `wrench`, `light-bulb`; its `key` is made from the label (`"User story"` → `user-story`, unique). At most 12 types |
 | `GET` | `/user` | Users (`_id`, `username`, `pictureUrl`, `role`) |
 | `GET` | `/user/usernames` | Usernames only |
 | `GET` | `/user/layout` | Current user's board layout (the frontend only reads `cards`: the order of cards within each list) |

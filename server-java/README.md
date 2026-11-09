@@ -37,8 +37,9 @@ src/main/resources/db/migration/   Flyway SQL migrations
 | `ObjectId` `_id` | `UUID` primary key, still serialised as `_id` |
 | `User` document | `users` table, `username` UNIQUE |
 | embedded `User.layout` | `layout JSONB` column |
-| `Card` document | `cards` table with `CHECK` constraints on `rating` and `type`, FK `username → users` |
+| `Card` document | `cards` table with a `CHECK` constraint on `rating`, FK `username → users` |
 | `Column` document | `board_columns` table (`V6__board_columns.sql` seeds the four default lists) |
+| `IssueType` document | `issue_types` table (`V8__issue_types.sql` seeds `task`, `bug`, `doc`) |
 | `$inc` on `tokenVersion` | atomic `UPDATE … SET token_version = token_version + 1` |
 
 ## Running locally
