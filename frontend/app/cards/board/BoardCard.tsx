@@ -1,4 +1,5 @@
 import { PencilIcon, TrashIcon } from "@heroicons/react/16/solid";
+import type { MouseEvent } from "react";
 import type { Card } from "../../api/endpoints";
 import { avatarColor, avatarInitials } from "../../utils/avatar";
 import { assigneeOf } from "../../utils/backlog";
@@ -34,10 +35,20 @@ export default function BoardCard({ card, canEdit, canDelete, onEdit, onDelete }
       </div>
     ) : null;
 
+  // Dubbelklick öppnar edit-dialogen, för samma användare som ser edit-knappen (rapportören eller admin).
+  // Inte på knapparna: två snabba klick på delete ska inte också öppna edit
+  const editOnDoubleClick = (e: MouseEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).closest("button")) return;
+    // Dubbelklicket markerar annars ett ord i sammanfattningen
+    window.getSelection()?.removeAllRanges();
+    onEdit();
+  };
+
   return (
     <CardFace
       card={card}
       actions={actions}
+      onDoubleClick={canEdit ? editOnDoubleClick : undefined}
       className="group relative h-full cursor-grab overflow-hidden hover:ring-2 hover:ring-jira-focus hover:ring-inset"
     >
       <span

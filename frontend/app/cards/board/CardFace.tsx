@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from "react";
+import type { CSSProperties, MouseEventHandler, ReactNode } from "react";
 import IssueTypeIcon from "../../components/IssueTypeIcon";
 import type { Card } from "../../api/endpoints";
 
@@ -10,14 +10,16 @@ type Props = {
   children?: ReactNode;
   // Rad ovanför nedre raden (edit/delete)
   actions?: ReactNode;
+  onDoubleClick?: MouseEventHandler<HTMLDivElement>;
 };
 
 // Kortets yta: sammanfattning, typ och issue key. Delas av boarden och förhandsvisningen när en lista dras
-export default function CardFace({ card, className = "", style, children, actions }: Props) {
+export default function CardFace({ card, className = "", style, children, actions, onDoubleClick }: Props) {
   return (
     <div
       className={`flex flex-col gap-2 rounded-lg bg-white p-3 text-sm text-jira-text shadow-[0_1px_1px_rgba(9,30,66,0.25),0_0_1px_rgba(9,30,66,0.31)] ${className}`}
       style={style}
+      onDoubleClick={onDoubleClick}
     >
       <p className="line-clamp-3 leading-5 wrap-anywhere" title={card.comment}>
         {card.comment}
