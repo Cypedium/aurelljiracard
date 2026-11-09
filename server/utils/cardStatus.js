@@ -23,8 +23,8 @@ const isColumnKey = (value) =>
   COLUMN_KEY_PATTERN.test(value) &&
   value !== BACKLOG_STATUS;
 
-// "Code review" → "code-review"; å/ä/ö lose their accents; nothing left → "list"
-const slugify = (title) =>
+// "Code review" → "code-review"; å/ä/ö lose their accents; nothing left → fallback
+const slugify = (title, fallback) =>
   title
     .normalize("NFD")
     .replace(/[̀-ͯ]/g, "")
@@ -32,12 +32,13 @@ const slugify = (title) =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, COLUMN_KEY_BASE_LENGTH)
-    .replace(/-+$/, "") || "list";
+    .replace(/-+$/, "") || fallback;
 
-// A new column's key, unique among the taken keys (and never "backlog")
-const columnKeyFromTitle = (title, takenKeys) => {
-  const taken = new Set([...takenKeys, BACKLOG_STATUS]);
-  const base = slugify(title);
+// A key made from a name, unique among the taken keys ("done" taken → "done-2").
+// Also used for issue type keys (utils/cardType.js)
+const uniqueKeyFromTitle = (title, takenKeys, fallback) => {
+  const taken = new Set(takenKeys);
+  const base = slugify(title, fallback);
   if (!taken.has(base)) return base;
   for (let n = 2; ; n++) {
     const key = `${base}-${n}`;
@@ -45,8 +46,12 @@ const columnKeyFromTitle = (title, takenKeys) => {
   }
 };
 
+// A new column's key, unique among the taken keys (and never "backlog")
+const columnKeyFromTitle = (title, takenKeys) => uniqueKeyFromTitle(title, [...takenKeys, BACKLOG_STATUS], "list");
+
 exports.DEFAULT_COLUMNS = DEFAULT_COLUMNS;
 exports.BACKLOG_STATUS = BACKLOG_STATUS;
 exports.DEFAULT_CARD_STATUS = "todo";
 exports.isColumnKey = isColumnKey;
 exports.columnKeyFromTitle = columnKeyFromTitle;
+exports.uniqueKeyFromTitle = uniqueKeyFromTitle;

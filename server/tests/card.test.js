@@ -8,12 +8,15 @@ jest.mock("../models/Card", () => {
   return Card;
 });
 jest.mock("../models/Column", () => ({ listAll: jest.fn() }));
+jest.mock("../models/IssueType", () => ({ listAll: jest.fn() }));
 
 const request = require("supertest");
 const app = require("../app");
 const Card = require("../models/Card");
 const Column = require("../models/Column");
+const IssueType = require("../models/IssueType");
 const { DEFAULT_COLUMNS } = require("../utils/cardStatus");
+const { DEFAULT_ISSUE_TYPES } = require("../utils/cardType");
 const jwt = require("jsonwebtoken");
 const { authHeader, query, USER_ID } = require("./helpers");
 
@@ -25,6 +28,8 @@ beforeEach(() => {
   Card.exists.mockResolvedValue(null);
   // The four default lists plus one an admin added
   Column.listAll.mockResolvedValue([...DEFAULT_COLUMNS, { key: "review", title: "Review" }]);
+  // The three default issue types plus one an admin added
+  IssueType.listAll.mockResolvedValue([...DEFAULT_ISSUE_TYPES, { key: "story", label: "Story" }]);
 });
 
 describe("auth guard", () => {
@@ -110,6 +115,22 @@ describe("POST /card", () => {
     expect(Card.mock.calls[0][0].type).toBe("bug");
     // Left out so the schema default (Date.now) applies
     expect(Card.mock.calls[0][0]).not.toHaveProperty("submittedAt");
+  });
+
+  it("accepts an issue type an admin added", async () => {
+    Card.mockImplementation((doc) => ({ ...doc, save: jest.fn().mockResolvedValue({}) }));
+
+    const res = await request(app).post("/card").set("Authorization", authHeader()).send({ ...validCard, type: "story" });
+
+    expect(res.status).toBe(201);
+    expect(Card.mock.calls[0][0].type).toBe("story");
+  });
+
+  it("lists the stored issue types when the type is unknown", async () => {
+    const res = await request(app).post("/card").set("Authorization", authHeader()).send({ ...validCard, type: "epic" });
+
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe("Type must be one of: task, bug, doc, story.");
   });
 
   it("rejects a duplicate issue key with 409", async () => {

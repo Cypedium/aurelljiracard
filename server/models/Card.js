@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const { DEFAULT_CARD_STATUS } = require('../utils/cardStatus');
-const { CARD_TYPES, DEFAULT_CARD_TYPE } = require('../utils/cardType');
+const { DEFAULT_CARD_TYPE } = require('../utils/cardType');
 
 const cardSchema = new mongoose.Schema({
     rating: { type: Number, required: true },
@@ -14,8 +14,9 @@ const cardSchema = new mongoose.Schema({
     // Key of a board column (models/Column.js, shared by all users) or "backlog";
     // checked against the columns in cardController
     status: { type: String, default: DEFAULT_CARD_STATUS },
-    // Issue type; cards created before types existed read as "task"
-    type: { type: String, enum: CARD_TYPES, default: DEFAULT_CARD_TYPE }
+    // Key of an issue type (models/IssueType.js, shared by all users), checked in cardController;
+    // cards created before types existed read as "task"
+    type: { type: String, default: DEFAULT_CARD_TYPE }
 });
 
 module.exports = mongoose.model('Card', cardSchema);
