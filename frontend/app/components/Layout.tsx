@@ -24,7 +24,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   }, [router]);
 
   if (isAuthenticated === null) {
-    return <div className="text-center py-10">Loading...</div>;
+    return <div className="py-10 pt-24 text-center font-jira text-white">Loading...</div>;
   }
 
   if (!isAuthenticated) return null;
