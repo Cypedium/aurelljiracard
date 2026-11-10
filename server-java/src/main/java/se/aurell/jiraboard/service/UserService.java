@@ -18,18 +18,26 @@ import se.aurell.jiraboard.exception.ApiException;
 import se.aurell.jiraboard.repository.CardRepository;
 import se.aurell.jiraboard.repository.UserRepository;
 import se.aurell.jiraboard.security.AuthUser;
+import se.aurell.jiraboard.security.GoogleTokenVerifier;
+import se.aurell.jiraboard.security.GoogleTokenVerifier.GoogleIdentity;
 
 @Service
 public class UserService {
 
     private static final String CARD_POSITION_MESSAGE = "Each saved card position needs a valid list key as status.";
 
+    static final String GOOGLE_USED_MESSAGE = "This Google account is already connected to another user.";
+    static final String OTHER_GOOGLE_MESSAGE = "Your account is already connected to another Google account.";
+
     private final UserRepository userRepository;
     private final CardRepository cardRepository;
+    private final GoogleTokenVerifier googleTokenVerifier;
 
-    public UserService(UserRepository userRepository, CardRepository cardRepository) {
+    public UserService(UserRepository userRepository, CardRepository cardRepository,
+            GoogleTokenVerifier googleTokenVerifier) {
         this.userRepository = userRepository;
         this.cardRepository = cardRepository;
+        this.googleTokenVerifier = googleTokenVerifier;
     }
 
     /** Admins also see when each user was last active and who is online. */
@@ -129,6 +137,32 @@ public class UserService {
     public void revokeSessions(UUID id) {
         if (userRepository.revokeTokens(id, Instant.now()) == 0) {
             throw ApiException.notFound("User not found.");
+        }
+    }
+
+    /**
+     * Connects a Google account to the logged-in user, so "Sign in with Google" logs in as them.
+     * Connecting the same Google account again does nothing.
+     */
+    @Transactional
+    public void connectGoogle(AuthUser authUser, String credential) {
+        GoogleIdentity google = googleTokenVerifier.verify(credential);
+        User user = findUser(authUser);
+        boolean usedByOther = userRepository.findByGoogleSub(google.subject())
+                .filter(owner -> !owner.getId().equals(user.getId()))
+                .isPresent();
+        if (usedByOther) {
+            throw ApiException.conflict(GOOGLE_USED_MESSAGE);
+        }
+        if (user.getGoogleSub() != null && !user.getGoogleSub().equals(google.subject())) {
+            throw ApiException.conflict(OTHER_GOOGLE_MESSAGE);
+        }
+        user.connectGoogle(google.subject(), google.email());
+        try {
+            userRepository.saveAndFlush(user);
+        } catch (DataIntegrityViolationException e) {
+            // Another user connected the same Google account in between
+            throw ApiException.conflict(GOOGLE_USED_MESSAGE);
         }
     }
 

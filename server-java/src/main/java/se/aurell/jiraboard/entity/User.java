@@ -27,8 +27,16 @@ public class User {
     @Column(nullable = false, unique = true, length = 32)
     private String username;
 
-    @Column(name = "password_hash", nullable = false, length = 100)
+    // null for users created by Google sign-in
+    @Column(name = "password_hash", length = 100)
     private String passwordHash;
+
+    // Google's user id ("sub"); set by Google sign-in or by connecting Google (V10 migration)
+    @Column(name = "google_sub", unique = true)
+    private String googleSub;
+
+    @Column(length = 320)
+    private String email;
 
     @Column(name = "picture_url", nullable = false)
     private String pictureUrl = DEFAULT_PICTURE_URL;
@@ -70,6 +78,26 @@ public class User {
         if (pictureUrl != null) {
             this.pictureUrl = pictureUrl;
         }
+    }
+
+    /** A user created by Google sign-in: no password. */
+    public static User fromGoogle(String username, String googleSub, String email, String pictureUrl) {
+        User user = new User(username, null, pictureUrl);
+        user.connectGoogle(googleSub, email);
+        return user;
+    }
+
+    public void connectGoogle(String googleSub, String email) {
+        this.googleSub = googleSub;
+        this.email = email;
+    }
+
+    public String getGoogleSub() {
+        return googleSub;
+    }
+
+    public String getEmail() {
+        return email;
     }
 
     public UUID getId() {

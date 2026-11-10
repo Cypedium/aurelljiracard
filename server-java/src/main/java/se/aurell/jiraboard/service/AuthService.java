@@ -19,6 +19,8 @@ import se.aurell.jiraboard.entity.User;
 import se.aurell.jiraboard.exception.ApiException;
 import se.aurell.jiraboard.repository.RefreshTokenRepository;
 import se.aurell.jiraboard.repository.UserRepository;
+import se.aurell.jiraboard.security.GoogleTokenVerifier;
+import se.aurell.jiraboard.security.GoogleTokenVerifier.GoogleIdentity;
 import se.aurell.jiraboard.security.JwtService;
 
 @Service
@@ -32,17 +34,24 @@ public class AuthService {
 
     private static final String INVALID_REFRESH_MESSAGE = "Invalid refresh token";
 
+    // Same limit as RegisterRequest
+    private static final int USERNAME_MAX_LENGTH = 32;
+    private static final String GOOGLE_FALLBACK_USERNAME = "user";
+    static final String GOOGLE_RETRY_MESSAGE = "Could not create the account. Please try again.";
+
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final GoogleTokenVerifier googleTokenVerifier;
 
     public AuthService(UserRepository userRepository, RefreshTokenRepository refreshTokenRepository,
-            PasswordEncoder passwordEncoder, JwtService jwtService) {
+            PasswordEncoder passwordEncoder, JwtService jwtService, GoogleTokenVerifier googleTokenVerifier) {
         this.userRepository = userRepository;
         this.refreshTokenRepository = refreshTokenRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
+        this.googleTokenVerifier = googleTokenVerifier;
     }
 
     @Transactional
@@ -79,10 +88,50 @@ public class AuthService {
         // Exact name first; otherwise any casing ("mike" logs in as "Mike")
         User user = userRepository.findByUsername(request.username())
                 .or(() -> userRepository.findFirstByUsernameIgnoreCase(request.username()))
-                .filter(u -> passwordEncoder.matches(request.password(), u.getPasswordHash()))
+                // Users created by Google sign-in have no password
+                .filter(u -> u.getPasswordHash() != null
+                        && passwordEncoder.matches(request.password(), u.getPasswordHash()))
                 .orElseThrow(() -> ApiException.unauthorized("Invalid credentials."));
         // Every login starts a new token family
         return issueTokens(user, UUID.randomUUID());
+    }
+
+    /**
+     * Sign in with Google. The Google account (its "sub") finds the user: one created by an earlier
+     * Google sign-in, or a password user who connected Google (UserService.connectGoogle). Otherwise
+     * a new user is created, named after the email address ("mikael.aurell@gmail.com" → "mikael.aurell").
+     */
+    @Transactional
+    public TokenResponse googleLogin(String credential) {
+        GoogleIdentity google = googleTokenVerifier.verify(credential);
+        User user = userRepository.findByGoogleSub(google.subject()).orElseGet(() -> createGoogleUser(google));
+        return issueTokens(user, UUID.randomUUID());
+    }
+
+    private User createGoogleUser(GoogleIdentity google) {
+        String base = googleUsernameBase(google.email());
+        String username = base;
+        // "mikael.aurell" taken → "mikael.aurell2", "mikael.aurell3" …, still at most 32 characters
+        for (int n = 2; userRepository.existsByUsernameIgnoreCase(username); n++) {
+            String suffix = Integer.toString(n);
+            username = base.substring(0, Math.min(base.length(), USERNAME_MAX_LENGTH - suffix.length())) + suffix;
+        }
+        String pictureUrl = google.pictureUrl() != null && isValidPicture(google.pictureUrl()) ? google.pictureUrl() : null;
+        try {
+            return userRepository.saveAndFlush(User.fromGoogle(username, google.subject(), google.email(), pictureUrl));
+        } catch (DataIntegrityViolationException e) {
+            // Another request took the name, or signed in with the same Google account, in between
+            throw ApiException.conflict(GOOGLE_RETRY_MESSAGE);
+        }
+    }
+
+    /** The part of the email before "@", cut to the username length; "user" if empty or rude. */
+    static String googleUsernameBase(String email) {
+        String local = email.substring(0, Math.max(0, email.indexOf('@'))).strip();
+        if (local.length() > USERNAME_MAX_LENGTH) {
+            local = local.substring(0, USERNAME_MAX_LENGTH);
+        }
+        return local.isEmpty() || CredentialRules.isRudeUsername(local) ? GOOGLE_FALLBACK_USERNAME : local;
     }
 
     /** Revokes every refresh token issued to the user by bumping tokenVersion. */
