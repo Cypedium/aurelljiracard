@@ -208,20 +208,20 @@ const Navbar = () => {
           >
             {(onBoard || onBacklog) && (
               <button type="button" className={SUB_ROW_BUTTON_CLASS} onClick={() => requestBoardAction(BOARD_ACTIONS.createCard)}>
-                <PlusIcon className={NAV_ICON_SUB_CLASS} aria-hidden />
+                {/* <PlusIcon className={NAV_ICON_SUB_CLASS} aria-hidden /> */}
                 Create card
               </button>
             )}
             {/* Bara admin kan lägga till / ta bort kolumner (backend nekar andra) */}
             {onBoard && admin && (
               <button type="button" className={SUB_ROW_BUTTON_CLASS} onClick={() => requestBoardAction(BOARD_ACTIONS.createColumn)}>
-                <PlusIcon className={NAV_ICON_SUB_CLASS} aria-hidden />
+                {/* <PlusIcon className={NAV_ICON_SUB_CLASS} aria-hidden /> */}
                 Create column
               </button>
             )}
             {onBoard && admin && (
               <button type="button" className={SUB_ROW_BUTTON_CLASS} onClick={() => requestBoardAction(BOARD_ACTIONS.deleteColumn)}>
-                <MinusIcon className={NAV_ICON_SUB_CLASS} aria-hidden />
+                {/* <MinusIcon className={NAV_ICON_SUB_CLASS} aria-hidden /> */}
                 Delete column
               </button>
             )}
