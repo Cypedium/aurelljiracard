@@ -208,15 +208,15 @@ th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; colo
   <h2>Token lifecycle</h2>
   <figure>
     <div class="scroll"><svg id="seq" class="seq" viewBox="0 0 1100 560" role="img" aria-label="Sequence: login issues tokens, an expired access token gives 401, the frontend refreshes and retries, logout bumps tokenVersion so old refresh tokens fail"></svg></div>
-    <figcaption>The access token (15 min) carries <code>{ id, username, role }</code>; the refresh token (7 days) carries <code>{ id, tokenVersion }</code>. Logout, an admin “log out”, a rename and a role change all add 1 to <code>users.token_version</code>, so every refresh token issued before that is refused with 403.</figcaption>
+    <figcaption>The access token (15 min) carries <code>{ id, username, role }</code>; the refresh token (7 days) carries <code>{ id, tokenVersion, jti }</code> and works once: a refresh marks its <code>jti</code> used in <code>refresh_tokens</code> and hands out the next token of the same login. If a used token comes back (a duplicated tab or a stolen token), that login is revoked; other logins keep working. Logout, an admin “log out”, a rename and a role change all add 1 to <code>users.token_version</code>, so every refresh token issued before that is refused with 403.</figcaption>
   </figure>
 </section>
 
 <section id="data-model">
   <h2>Data model</h2>
   <figure>
-    <div class="scroll"><svg id="er" viewBox="0 0 1100 380" role="img" aria-label="Four tables: cards references users by username and assignee; status and type refer to board_columns and issue_types by key, checked in code"></svg></div>
-    <figcaption>Only <code>cards → users</code> is a real foreign key. Renaming a user cascades into <code>cards.username</code> and <code>cards.assignee</code>; deleting a user sets their assigned cards to unassigned. <code>status</code> and <code>type</code> are plain strings, validated by <code>ColumnService.requireCardStatus</code> and <code>IssueTypeService.requireCardType</code>, and a list or type can only be deleted when no card uses it (409).</figcaption>
+    <div class="scroll"><svg id="er" viewBox="0 0 1100 440" role="img" aria-label="Five tables: refresh_tokens belongs to users; cards references users by username and assignee; status and type refer to board_columns and issue_types by key, checked in code"></svg></div>
+    <figcaption>Only <code>cards → users</code> and <code>refresh_tokens → users</code> are real foreign keys; deleting a user also deletes their refresh tokens. Renaming a user cascades into <code>cards.username</code> and <code>cards.assignee</code>; deleting a user sets their assigned cards to unassigned. <code>status</code> and <code>type</code> are plain strings, validated by <code>ColumnService.requireCardStatus</code> and <code>IssueTypeService.requireCardType</code>, and a list or type can only be deleted when no card uses it (409).</figcaption>
   </figure>
   <h3>Flyway migrations</h3>
   <div class="mig">
@@ -228,6 +228,7 @@ th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; colo
     <div><b>V6</b><span><code>board_columns</code> + 4 default lists</span></div>
     <div><b>V7</b><span>Presence: <code>last_active_at</code>, <code>logged_out_at</code></span></div>
     <div><b>V8</b><span><code>issue_types</code> + 3 default types</span></div>
+    <div><b>V9</b><span><code>refresh_tokens</code>: single-use refresh tokens</span></div>
   </div>
 </section>
 
@@ -288,6 +289,8 @@ const N = {
   "t-cards": ["db", 215, "cards", "UNIQUE product_id", "data-model"],
   "t-columns": ["db", 300, "board_columns", "column_key PK", "data-model"],
   "t-types": ["db", 385, "issue_types", "type_key PK", "data-model"],
+  "r-refresh": ["repo", 470, "RefreshTokenRepository", "findForUpdate, deleteFamily", "data-model"],
+  "t-refresh": ["db", 470, "refresh_tokens", "jti PK, family_id", "data-model"],
   handler: ["err", 545, "GlobalExceptionHandler", "ApiException → status + { message }", "catalog", 44, X.ctrl, X.svc + W.svc - X.ctrl],
 };
 const box = id => { const n = N[id]; const x = n[6] ?? X[n[0] === "err" && id === "entry" ? "sec" : n[0]]; const w = n[7] ?? W[n[0] === "err" ? "sec" : n[0]]; return { x, y: n[1], w, h: n[5] || H }; };
@@ -311,6 +314,7 @@ const E = [
   ["s-card", "r-card"], ["s-column", "r-card"], ["s-type", "r-card"], ["s-user", "r-card"],
   ["s-column", "r-column"], ["s-type", "r-type"],
   ["r-user", "t-users"], ["r-card", "t-cards"], ["r-column", "t-columns"], ["r-type", "t-types"],
+  ["s-auth", "r-refresh", "single use"], ["r-refresh", "t-refresh"],
   ["t-cards", "t-users", "FK", { side: "r", lx: 1452 }],
   ["t-cards", "t-columns", "status", { side: "r", cls: "dash", lx: 1452 }],
   ["t-cards", "t-types", "type", { side: "r2", cls: "dash", lx: 1476 }],
@@ -383,11 +387,11 @@ const G = [
     { m: "POST", p: "/auth/register", acc: "public", sum: "Creates an account. The username keeps the casing it was typed with.", edges: [["c-auth","s-auth"],["s-auth","r-user"],["r-user","t-users"]],
       steps: [["authz","permitAll","/auth/** needs no token"],["c-auth","@Valid RegisterRequest","username, password, optional pictureUrl"],["s-auth","Credential rules","password 8–72 bytes, no char 3× in a row, ≥4 distinct, no rude username, picture ≤ 1.5 MB data: or http(s)"],["r-user","existsByUsernameIgnoreCase","“mike” is taken if “Mike” exists"],["s-auth","BCrypt strength 10","same hash format as the Express server"],["t-users","saveAndFlush","INSERT; a race on the unique name also becomes 409"]],
       ok: ["201","{ message }"], bad: [["400","validation message"],["409","Username is already taken"]] },
-    { m: "POST", p: "/auth/login", acc: "public", sum: "Checks the password and issues an access + refresh token pair.", edges: [["c-auth","s-auth"],["s-auth","r-user"],["r-user","t-users"],["s-auth","s-jwt"]],
-      steps: [["authz","permitAll","no token needed"],["c-auth","@Valid LoginRequest","username + password"],["r-user","findByUsername","exact name first, then findFirstByUsernameIgnoreCase"],["s-auth","passwordEncoder.matches","wrong name or password give the same 401"],["r-user","markActive","sets last_active_at for the admin user list"],["s-jwt","issue tokens","access 15 min { id, username, role }, refresh 7 d { id, tokenVersion }"]],
+    { m: "POST", p: "/auth/login", acc: "public", sum: "Checks the password and issues an access + refresh token pair. Each login starts a new token family.", edges: [["c-auth","s-auth"],["s-auth","r-user"],["r-user","t-users"],["s-auth","s-jwt"],["s-auth","r-refresh"],["r-refresh","t-refresh"]],
+      steps: [["authz","permitAll","no token needed"],["c-auth","@Valid LoginRequest","username + password"],["r-user","findByUsername","exact name first, then findFirstByUsernameIgnoreCase"],["s-auth","passwordEncoder.matches","wrong name or password give the same 401"],["r-user","markActive","sets last_active_at for the admin user list"],["s-jwt","issue tokens","access 15 min { id, username, role }, refresh 7 d { id, tokenVersion, jti }"],["t-refresh","save the jti","new family; the row lives as long as the token"]],
       ok: ["200","{ accessToken, refreshToken }"], bad: [["401","Invalid credentials."]] },
-    { m: "POST", p: "/auth/refresh", acc: "public", sum: "Trades a valid refresh token for a new pair. The frontend calls this on any 401 outside /auth.", edges: [["c-auth","s-auth"],["s-auth","s-jwt"],["s-auth","r-user"],["r-user","t-users"]],
-      steps: [["resolver","Authorization ignored","an expired access token can't cause 401 here"],["c-auth","RefreshTokenRequest","{ refreshToken }"],["s-jwt","decodeRefreshToken","bad signature or expired → 403"],["r-user","findById","token's tokenVersion must equal users.token_version"],["r-user","markActive","user counts as online again"],["s-jwt","issue tokens","new access + refresh"]],
+    { m: "POST", p: "/auth/refresh", acc: "public", sum: "Trades a refresh token for a new pair. Each refresh token works once; the frontend calls this on any 401 outside /auth.", edges: [["c-auth","s-auth"],["s-auth","s-jwt"],["s-auth","r-user"],["r-user","t-users"],["s-auth","r-refresh"],["r-refresh","t-refresh"]],
+      steps: [["resolver","Authorization ignored","an expired access token can't cause 401 here"],["c-auth","RefreshTokenRequest","{ refreshToken }"],["s-jwt","decodeRefreshToken","bad signature or expired → 403"],["r-user","findById","token's tokenVersion must equal users.token_version"],["r-refresh","findForUpdate(jti)","row lock; unknown jti → 403"],["s-auth","already used?","copied token: deleteFamily revokes that login, then 403"],["t-refresh","mark used + save next jti","same family; old tokens without a jti are accepted once"],["r-user","markActive","user counts as online again"],["s-jwt","issue tokens","new access + refresh"]],
       ok: ["200","{ accessToken, refreshToken }"], bad: [["401","No refresh token provided"],["403","Invalid refresh token"]] },
     { m: "POST", p: "/auth/logout", acc: "public", sum: "Revokes every refresh token of the user in one UPDATE.", edges: [["c-auth","s-auth"],["s-auth","s-jwt"],["s-auth","r-user"],["r-user","t-users"]],
       steps: [["resolver","Authorization ignored","logout works even with an expired access token"],["s-jwt","decodeRefreshToken","invalid token: nothing to revoke, still 200"],["r-user","revokeTokens","token_version + 1, logged_out_at = now"]],
@@ -564,6 +568,7 @@ const T = {
   cards: [430, 30, ["id UUID PK", "rating 1–5 CHECK", "comment", "product_id UNIQUE", "username FK → users", "assignee FK → users, nullable", "submitted_at (indexed DESC)", "type VARCHAR(32)", "status VARCHAR(32)"]],
   board_columns: [820, 30, ["column_key PK", "title ≤ 50", "color #rrggbb | null", "position"]],
   issue_types: [820, 210, ["type_key PK", "label ≤ 30", "color #rrggbb", "icon", "position"]],
+  refresh_tokens: [430, 270, ["id UUID PK (the jti)", "family_id (one login)", "user_id FK → users, cascade", "expires_at", "used_at (null = unused)"]],
 };
 const RH = 20, TW = 240;
 const rowY = (t, i) => T[t][1] + 34 + i * RH + RH / 2;
@@ -587,6 +592,7 @@ rel("cards", 4, "users", 1, "FK username, assignee", false, false);
 rel("cards", 5, "users", 1, "", false, false);
 rel("cards", 8, "board_columns", 0, "checked in ColumnService", true, true);
 rel("cards", 7, "issue_types", 0, "checked in IssueTypeService", true, true);
+rel("refresh_tokens", 2, "users", 0, "ON DELETE CASCADE", false, false);
 })();
 </script>
 </body>

@@ -3,6 +3,7 @@ package se.aurell.jiraboard.security;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -60,13 +61,18 @@ public class JwtService {
         return accessEncoder.encode(JwtEncoderParameters.from(HEADER, claims)).getTokenValue();
     }
 
-    // tokenVersion lets the server revoke every refresh token for a user (logout)
-    public String issueRefreshToken(User user) {
+    /**
+     * tokenVersion lets the server revoke every refresh token for a user (logout); the jti
+     * (tokenId) is the row in refresh_tokens that makes the token single-use.
+     */
+    public IssuedRefreshToken issueRefreshToken(User user, UUID tokenId) {
         JwtClaimsSet claims = baseClaims(properties.refreshTtl().toSeconds())
+                .id(tokenId.toString())
                 .claim(CLAIM_ID, user.getId().toString())
                 .claim(CLAIM_TOKEN_VERSION, user.getTokenVersion())
                 .build();
-        return refreshEncoder.encode(JwtEncoderParameters.from(HEADER, claims)).getTokenValue();
+        String value = refreshEncoder.encode(JwtEncoderParameters.from(HEADER, claims)).getTokenValue();
+        return new IssuedRefreshToken(value, claims.getExpiresAt());
     }
 
     /** @throws JwtException if the token is invalid, expired or not a refresh token */
@@ -78,17 +84,24 @@ public class JwtService {
             throw new JwtException("Not a refresh token");
         }
         try {
-            return new RefreshClaims(UUID.fromString(id), number.intValue());
+            // Tokens issued before V9 have no jti
+            UUID tokenId = jwt.getId() == null ? null : UUID.fromString(jwt.getId());
+            return new RefreshClaims(UUID.fromString(id), number.intValue(), tokenId, jwt.getExpiresAt());
         } catch (IllegalArgumentException e) {
-            throw new JwtException("Invalid user id");
+            throw new JwtException("Invalid user or token id");
         }
     }
 
-    public record RefreshClaims(UUID userId, int tokenVersion) {
+    public record IssuedRefreshToken(String value, Instant expiresAt) {
+    }
+
+    /** tokenId is null for tokens issued before single-use refresh tokens. */
+    public record RefreshClaims(UUID userId, int tokenVersion, UUID tokenId, Instant expiresAt) {
     }
 
     private static JwtClaimsSet.Builder baseClaims(long ttlSeconds) {
-        Instant now = Instant.now();
+        // JWTs store whole seconds; keeps IssuedRefreshToken.expiresAt equal to the token's exp
+        Instant now = Instant.now().truncatedTo(ChronoUnit.SECONDS);
         return JwtClaimsSet.builder().issuedAt(now).expiresAt(now.plusSeconds(ttlSeconds));
     }
 
