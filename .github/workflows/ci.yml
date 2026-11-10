@@ -43,9 +43,26 @@ jobs:
       - run: npm test
       - run: npm run build
 
+  server-java:
+    name: Spring Boot API tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server-java
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 25
+          cache: maven
+      # Testcontainers starts postgres:17-alpine on the runner's Docker
+      - run: ./mvnw -B -ntp test
+
   deploy:
     name: Deploy ${{ matrix.app }} to Fly.io
-    needs: [server, frontend]
+    # The production frontend calls server-java, so its tests gate the deploy too
+    needs: [server, frontend, server-java]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     concurrency: deploy-${{ matrix.app }}
