@@ -18,6 +18,7 @@ import se.aurell.jiraboard.dto.MessageResponse;
 import se.aurell.jiraboard.dto.UserResponse;
 import se.aurell.jiraboard.dto.UserUpdateRequest;
 import se.aurell.jiraboard.entity.Layout;
+import se.aurell.jiraboard.security.AdminOnly;
 import se.aurell.jiraboard.security.AuthUser;
 import se.aurell.jiraboard.service.UserService;
 
@@ -54,21 +55,24 @@ public class UserController {
     }
 
     // Admin: rename, change role, delete, or log a user out everywhere
+    @AdminOnly
     @PatchMapping("/{id}")
     public UserResponse update(@PathVariable UUID id, @Valid @RequestBody UserUpdateRequest request,
             @AuthenticationPrincipal AuthUser user) {
         return userService.update(id, request, user);
     }
 
+    @AdminOnly
     @DeleteMapping("/{id}")
     public MessageResponse delete(@PathVariable UUID id, @AuthenticationPrincipal AuthUser user) {
         userService.delete(id, user);
         return new MessageResponse("User deleted successfully.");
     }
 
+    @AdminOnly
     @PostMapping("/{id}/logout")
-    public MessageResponse revokeSessions(@PathVariable UUID id, @AuthenticationPrincipal AuthUser user) {
-        userService.revokeSessions(id, user);
+    public MessageResponse revokeSessions(@PathVariable UUID id) {
+        userService.revokeSessions(id);
         return new MessageResponse("User logged out from all sessions.");
     }
 }

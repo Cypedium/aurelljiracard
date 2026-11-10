@@ -18,9 +18,11 @@ import se.aurell.jiraboard.entity.CardStatus;
 import se.aurell.jiraboard.exception.ApiException;
 import se.aurell.jiraboard.repository.BoardColumnRepository;
 import se.aurell.jiraboard.repository.CardRepository;
-import se.aurell.jiraboard.security.AuthUser;
 
-/** Board columns are shared: everyone reads them, admins add, rename, recolour, move and delete them. */
+/**
+ * Board columns are shared: everyone reads them, admins add, rename, recolour, move and delete them.
+ * The admin check is {@code @AdminOnly} on {@code ColumnController}.
+ */
 @Service
 public class ColumnService {
 
@@ -41,8 +43,7 @@ public class ColumnService {
 
     /** Admin: adds a list at the end of the board, with a key made from its title. */
     @Transactional
-    public ColumnResponse create(ColumnRequest request, AuthUser user) {
-        requireAdmin(user);
+    public ColumnResponse create(ColumnRequest request) {
         List<BoardColumn> columns = findAll();
         if (columns.size() >= MAX_COLUMNS) {
             throw ApiException.badRequest("The board can have at most " + MAX_COLUMNS + " lists.");
@@ -60,8 +61,7 @@ public class ColumnService {
 
     /** Admin: renames and/or recolours a list for everyone (replaces title and color). */
     @Transactional
-    public ColumnResponse update(String key, ColumnRequest request, AuthUser user) {
-        requireAdmin(user);
+    public ColumnResponse update(String key, ColumnRequest request) {
         if (!CardStatus.isColumnKey(key)) {
             throw ApiException.badRequest("Invalid list key.");
         }
@@ -73,8 +73,7 @@ public class ColumnService {
 
     /** Admin: sets the order of all lists for everyone; keys must be every list exactly once. */
     @Transactional
-    public List<ColumnResponse> reorder(ColumnOrderRequest request, AuthUser user) {
-        requireAdmin(user);
+    public List<ColumnResponse> reorder(ColumnOrderRequest request) {
         List<String> keys = request.keys();
         Map<String, BoardColumn> byKey = findAll().stream()
                 .collect(Collectors.toMap(BoardColumn::getColumnKey, Function.identity()));
@@ -89,8 +88,7 @@ public class ColumnService {
 
     /** Admin: removes an empty list for everyone. The default list stays: cards created without a status go there. */
     @Transactional
-    public void delete(String key, AuthUser user) {
-        requireAdmin(user);
+    public void delete(String key) {
         if (!CardStatus.isColumnKey(key)) {
             throw ApiException.badRequest("Invalid list key.");
         }
@@ -120,11 +118,5 @@ public class ColumnService {
 
     private static String toColor(String color) {
         return color == null ? null : color.toLowerCase(Locale.ROOT);
-    }
-
-    private static void requireAdmin(AuthUser user) {
-        if (!user.isAdmin()) {
-            throw ApiException.forbidden("Admins only.");
-        }
     }
 }

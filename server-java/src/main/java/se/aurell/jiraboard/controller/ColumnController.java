@@ -3,7 +3,6 @@ package se.aurell.jiraboard.controller;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -17,7 +16,7 @@ import se.aurell.jiraboard.dto.ColumnOrderRequest;
 import se.aurell.jiraboard.dto.ColumnRequest;
 import se.aurell.jiraboard.dto.ColumnResponse;
 import se.aurell.jiraboard.dto.MessageResponse;
-import se.aurell.jiraboard.security.AuthUser;
+import se.aurell.jiraboard.security.AdminOnly;
 import se.aurell.jiraboard.service.ColumnService;
 
 @RestController
@@ -35,29 +34,31 @@ public class ColumnController {
         return columnService.getAll();
     }
 
+    @AdminOnly
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public ColumnResponse create(@Valid @RequestBody ColumnRequest request, @AuthenticationPrincipal AuthUser user) {
-        return columnService.create(request, user);
+    public ColumnResponse create(@Valid @RequestBody ColumnRequest request) {
+        return columnService.create(request);
     }
 
     /** Admin: moves lists; body {@code {"keys": [...]}} with every list key in the new order. */
+    @AdminOnly
     @PutMapping
-    public List<ColumnResponse> reorder(@Valid @RequestBody ColumnOrderRequest request,
-            @AuthenticationPrincipal AuthUser user) {
-        return columnService.reorder(request, user);
+    public List<ColumnResponse> reorder(@Valid @RequestBody ColumnOrderRequest request) {
+        return columnService.reorder(request);
     }
 
+    @AdminOnly
     @PutMapping("/{key}")
-    public ColumnResponse update(@PathVariable String key, @Valid @RequestBody ColumnRequest request,
-            @AuthenticationPrincipal AuthUser user) {
-        return columnService.update(key, request, user);
+    public ColumnResponse update(@PathVariable String key, @Valid @RequestBody ColumnRequest request) {
+        return columnService.update(key, request);
     }
 
     /** Admin: deletes an empty list; never the default list (todo). */
+    @AdminOnly
     @DeleteMapping("/{key}")
-    public MessageResponse delete(@PathVariable String key, @AuthenticationPrincipal AuthUser user) {
-        columnService.delete(key, user);
+    public MessageResponse delete(@PathVariable String key) {
+        columnService.delete(key);
         return new MessageResponse("List deleted.");
     }
 }

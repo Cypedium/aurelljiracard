@@ -13,9 +13,11 @@ import se.aurell.jiraboard.entity.IssueType;
 import se.aurell.jiraboard.exception.ApiException;
 import se.aurell.jiraboard.repository.CardRepository;
 import se.aurell.jiraboard.repository.IssueTypeRepository;
-import se.aurell.jiraboard.security.AuthUser;
 
-/** Issue types are shared: everyone reads them, admins add and delete them. */
+/**
+ * Issue types are shared: everyone reads them, admins add and delete them.
+ * The admin check is {@code @AdminOnly} on {@code IssueTypeController}.
+ */
 @Service
 public class IssueTypeService {
 
@@ -36,10 +38,7 @@ public class IssueTypeService {
 
     /** Admin: adds an issue type at the end of the dropdown, with a key made from its name. */
     @Transactional
-    public IssueTypeResponse create(IssueTypeRequest request, AuthUser user) {
-        if (!user.isAdmin()) {
-            throw ApiException.forbidden("Admins only.");
-        }
+    public IssueTypeResponse create(IssueTypeRequest request) {
         if (request.icon() == null || !CardType.ICONS.contains(request.icon())) {
             throw ApiException.badRequest("Icon must be one of: " + String.join(", ", CardType.ICONS) + ".");
         }
@@ -60,10 +59,7 @@ public class IssueTypeService {
 
     /** Admin: removes an issue type that no card uses. The default type stays: cards without a type read as it. */
     @Transactional
-    public void delete(String key, AuthUser user) {
-        if (!user.isAdmin()) {
-            throw ApiException.forbidden("Admins only.");
-        }
+    public void delete(String key) {
         // Issue type keys have the same format as list keys
         if (!CardStatus.isColumnKey(key)) {
             throw ApiException.badRequest("Invalid issue type.");
