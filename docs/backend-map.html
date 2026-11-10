@@ -1,0 +1,593 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Jira Board Backend Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one wide request map (layers left→right like a request travels), a live trace under it, then a catalog per controller. */
+:root {
+  --bg: #f7f8fa; --surface: #ffffff; --fg: #172b4d; --muted: #44546f; --line: #c9ced6; --lane: #f1f2f4;
+  --accent: #0c66e4; --hot: #c25100; --hot-bg: #fff3e8;
+  --fe: #44546f; --fe-bg: #f1f2f4;
+  --sec: #a54800; --sec-bg: #fff4e5;
+  --ctrl: #0c66e4; --ctrl-bg: #e9f2ff;
+  --svc: #6e5dc6; --svc-bg: #f3f0ff;
+  --repo: #206a83; --repo-bg: #e7f9ff;
+  --db: #216e4e; --db-bg: #dcfff1;
+  --err: #c9372c; --err-bg: #ffeceb;
+  --get: #216e4e; --post: #0c66e4; --put: #a54800; --del: #c9372c;
+  --sans: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #1d2125; --surface: #22272b; --fg: #dee4ea; --muted: #9fadbc; --line: #454f59; --lane: #2c333a;
+  --accent: #579dff; --hot: #fea362; --hot-bg: #3a2a1c;
+  --fe: #9fadbc; --fe-bg: #2c333a;
+  --sec: #fea362; --sec-bg: #38291b;
+  --ctrl: #579dff; --ctrl-bg: #1c2b41;
+  --svc: #b8acf6; --svc-bg: #2b273f;
+  --repo: #6cc3e0; --repo-bg: #1b3340;
+  --db: #4bce97; --db-bg: #1c3329;
+  --err: #fd9891; --err-bg: #42221f;
+  --get: #4bce97; --post: #579dff; --put: #fea362; --del: #fd9891;
+  color-scheme: dark;
+} }
+:root[data-theme="dark"] {
+  --bg: #1d2125; --surface: #22272b; --fg: #dee4ea; --muted: #9fadbc; --line: #454f59; --lane: #2c333a;
+  --accent: #579dff; --hot: #fea362; --hot-bg: #3a2a1c;
+  --fe: #9fadbc; --fe-bg: #2c333a;
+  --sec: #fea362; --sec-bg: #38291b;
+  --ctrl: #579dff; --ctrl-bg: #1c2b41;
+  --svc: #b8acf6; --svc-bg: #2b273f;
+  --repo: #6cc3e0; --repo-bg: #1b3340;
+  --db: #4bce97; --db-bg: #1c3329;
+  --err: #fd9891; --err-bg: #42221f;
+  --get: #4bce97; --post: #579dff; --put: #fea362; --del: #fd9891;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 15px; line-height: 1.55; }
+.wrap { max-width: 1240px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 32px 64px; display: flex; flex-direction: column; gap: 48px; }
+h1, h2, h3 { text-wrap: balance; margin: 0; line-height: 1.2; }
+h1 { font-size: 2rem; font-weight: 700; letter-spacing: -0.01em; }
+h2 { font-size: 1.35rem; font-weight: 700; }
+h3 { font-size: 1.05rem; font-weight: 600; }
+p { margin: 0; max-width: 68ch; }
+code, .mono { font-family: var(--mono); font-size: 0.86em; }
+a { color: var(--accent); }
+.eyebrow { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; }
+header { display: flex; flex-direction: column; gap: 10px; }
+header p { color: var(--muted); }
+section { display: flex; flex-direction: column; gap: 16px; scroll-margin-top: 16px; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 0.82rem; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 12px; height: 12px; border-radius: 3px; border: 1.5px solid; display: inline-block; }
+.scroll { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
+.scroll svg { display: block; min-width: 1100px; width: 100%; height: auto; }
+figure { margin: 0; display: flex; flex-direction: column; gap: 8px; }
+figcaption { font-size: 0.85rem; color: var(--muted); max-width: 90ch; }
+
+/* map */
+.node rect { stroke-width: 1.5; }
+.node { cursor: pointer; }
+.node:focus-visible rect { stroke-width: 3; outline: none; }
+.node text { fill: var(--fg); }
+.node .sub { fill: var(--muted); font-family: var(--mono); font-size: 10.5px; }
+.node .lbl { font-size: 13px; font-weight: 600; }
+.L-fe rect { fill: var(--fe-bg); stroke: var(--fe); }
+.L-sec rect { fill: var(--sec-bg); stroke: var(--sec); }
+.L-ctrl rect { fill: var(--ctrl-bg); stroke: var(--ctrl); }
+.L-svc rect { fill: var(--svc-bg); stroke: var(--svc); }
+.L-repo rect { fill: var(--repo-bg); stroke: var(--repo); }
+.L-db rect { fill: var(--db-bg); stroke: var(--db); }
+.L-err rect { fill: var(--err-bg); stroke: var(--err); }
+.colhead { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; fill: var(--muted); text-transform: uppercase; }
+.edge path { fill: none; stroke: var(--line); stroke-width: 1.5; }
+.edge.dash path { stroke-dasharray: 5 4; }
+.edge.err path { stroke: var(--err); opacity: 0.55; }
+.edge text { font-size: 10.5px; fill: var(--muted); font-family: var(--mono); paint-order: stroke; stroke: var(--surface); stroke-width: 4px; stroke-linejoin: round; }
+.mk-n { fill: var(--line); } .mk-h { fill: var(--hot); } .mk-e { fill: var(--err); }
+svg.tracing .node { opacity: 0.3; transition: opacity .15s; }
+svg.tracing .node.on { opacity: 1; }
+svg.tracing .node.on rect { stroke: var(--hot); stroke-width: 2.5; }
+svg.tracing .node.focus rect { fill: var(--hot-bg); stroke-width: 3.5; }
+svg.tracing .edge { opacity: 0.18; }
+svg.tracing .edge.on { opacity: 1; }
+svg.tracing .edge.on path { stroke: var(--hot); stroke-width: 2.5; opacity: 1; }
+svg.tracing .edge.on text { fill: var(--hot); }
+@media (prefers-reduced-motion: reduce) { svg.tracing .node { transition: none; } }
+
+/* trace */
+.trace { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 24px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 20px; }
+.trace > * { min-width: 0; }
+.trace-head { display: flex; flex-direction: column; gap: 10px; }
+.route { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-family: var(--mono); font-size: 1.05rem; font-weight: 500; }
+.trace ol { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; counter-reset: s; }
+.trace li { counter-increment: s; display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 10px; padding: 6px 8px; border-radius: 6px; cursor: default; }
+.trace li:hover { background: var(--lane); }
+.trace li::before { content: counter(s); font-family: var(--mono); font-size: 0.8rem; color: var(--hot); font-weight: 500; padding-top: 2px; text-align: right; }
+.trace li b { font-weight: 600; font-size: 0.82rem; display: block; }
+.trace li span { color: var(--muted); font-size: 0.9rem; }
+.codes { display: flex; flex-direction: column; gap: 4px; font-size: 0.88rem; }
+.codes div { display: flex; gap: 8px; align-items: baseline; }
+.codes .k { font-family: var(--mono); font-size: 0.8rem; min-width: 3ch; font-weight: 500; }
+.ok .k { color: var(--get); } .bad .k { color: var(--err); }
+
+.m { font-family: var(--mono); font-size: 0.72rem; font-weight: 600; padding: 2px 7px; border-radius: 4px; border: 1.5px solid currentColor; letter-spacing: 0.03em; display: inline-block; min-width: 56px; text-align: center; }
+.m-GET { color: var(--get); } .m-POST { color: var(--post); } .m-PUT, .m-PATCH { color: var(--put); } .m-DELETE { color: var(--del); }
+.chip { font-size: 0.72rem; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--lane); color: var(--muted); white-space: nowrap; font-family: var(--sans); }
+.chip.admin { background: var(--sec-bg); color: var(--sec); }
+.chip.public { background: var(--db-bg); color: var(--db); }
+.chip.owner { background: var(--svc-bg); color: var(--svc); }
+
+/* catalog */
+.cat { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 520px), 1fr)); gap: 16px; }
+.group { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 10px; scroll-margin-top: 16px; min-width: 0; }
+.group-head { display: flex; flex-direction: column; gap: 2px; }
+.files { font-family: var(--mono); font-size: 0.75rem; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; }
+.files i { font-style: normal; color: var(--line); }
+.ep { all: unset; box-sizing: border-box; display: grid; grid-template-columns: 70px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 7px 8px; border-radius: 6px; cursor: pointer; width: 100%; }
+.ep:hover { background: var(--lane); }
+.ep:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.ep.sel { background: var(--hot-bg); }
+.ep .p { font-family: var(--mono); font-size: 0.85rem; overflow-wrap: anywhere; }
+.ep .d { grid-column: 2 / 4; font-size: 0.85rem; color: var(--muted); margin-top: -4px; }
+
+/* tables */
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; }
+.tscroll { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
+.tscroll table { min-width: 640px; }
+.mig { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 8px; }
+.mig div { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 8px 12px; font-size: 0.88rem; display: flex; gap: 10px; }
+.mig b { font-family: var(--mono); font-size: 0.8rem; color: var(--db); min-width: 2.4ch; }
+.seq text { fill: var(--fg); font-size: 12px; }
+.seq .note { fill: var(--muted); font-family: var(--mono); font-size: 10.5px; }
+.seq .life { stroke: var(--line); stroke-dasharray: 3 4; }
+.seq .msg { stroke: var(--fg); stroke-width: 1.3; fill: none; }
+.seq .msg.back { stroke-dasharray: 5 4; }
+.seq .msg.bad { stroke: var(--err); }
+.seq .hd rect { fill: var(--lane); stroke: var(--line); }
+.seq .hd text { font-weight: 600; font-size: 12.5px; }
+.seq .mkf { fill: var(--fg); } .seq .mkb { fill: var(--err); }
+.seq .band { fill: var(--lane); }
+
+@media (max-width: 760px) {
+  .trace { grid-template-columns: minmax(0, 1fr); }
+  h1 { font-size: 1.6rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">server-java · Spring Boot 4.1 · PostgreSQL · Fly app aurelljiraboardjava</div>
+  <h1>Jira Board Backend Map</h1>
+  <p>Every request from the Next.js board passes through the same layers: the security filter chain, a thin controller, a service with the business rules, a Spring Data repository and a PostgreSQL table. Pick any endpoint below to light up the exact path it takes.</p>
+</header>
+
+<section id="map">
+  <h2>Request map</h2>
+  <div class="legend">
+    <span><i class="sw" style="background:var(--fe-bg);border-color:var(--fe)"></i>Frontend</span>
+    <span><i class="sw" style="background:var(--sec-bg);border-color:var(--sec)"></i>Security filter chain</span>
+    <span><i class="sw" style="background:var(--ctrl-bg);border-color:var(--ctrl)"></i>Controller</span>
+    <span><i class="sw" style="background:var(--svc-bg);border-color:var(--svc)"></i>Service</span>
+    <span><i class="sw" style="background:var(--repo-bg);border-color:var(--repo)"></i>Repository</span>
+    <span><i class="sw" style="background:var(--db-bg);border-color:var(--db)"></i>Postgres table</span>
+    <span><i class="sw" style="background:var(--err-bg);border-color:var(--err)"></i>Error path</span>
+  </div>
+  <figure>
+    <div class="scroll"><svg id="arch" role="img" aria-label="Request path from the frontend through Spring Security, controllers, services and repositories to the PostgreSQL tables"></svg></div>
+    <figcaption>Dashed red arrows are the error paths: a missing or expired token stops in the filter chain with 401, and any <code>ApiException</code> thrown by a service becomes a status code plus <code>{ message }</code>. Dashed grey links between tables are checked in code, not by a foreign key. Click a box to jump to its part of the catalog.</figcaption>
+  </figure>
+
+  <div class="trace" id="trace" aria-live="polite">
+    <div class="trace-head">
+      <div class="eyebrow">Tracing</div>
+      <div class="route" id="t-route"></div>
+      <p id="t-sum"></p>
+      <div class="codes" id="t-codes"></div>
+    </div>
+    <ol id="t-steps"></ol>
+  </div>
+</section>
+
+<section id="catalog">
+  <h2>Endpoint catalog</h2>
+  <p>Six controllers, 25 endpoints. Access is checked in two places: the filter chain lets <code>/auth/**</code> and <code>/health</code> through without a token, and admin rules live in the services (<code>requireAdmin</code> → 403).</p>
+  <div class="cat" id="cat"></div>
+</section>
+
+<section id="tokens">
+  <h2>Token lifecycle</h2>
+  <figure>
+    <div class="scroll"><svg id="seq" class="seq" viewBox="0 0 1100 560" role="img" aria-label="Sequence: login issues tokens, an expired access token gives 401, the frontend refreshes and retries, logout bumps tokenVersion so old refresh tokens fail"></svg></div>
+    <figcaption>The access token (15 min) carries <code>{ id, username, role }</code>; the refresh token (7 days) carries <code>{ id, tokenVersion }</code>. Logout, an admin “log out”, a rename and a role change all add 1 to <code>users.token_version</code>, so every refresh token issued before that is refused with 403.</figcaption>
+  </figure>
+</section>
+
+<section id="data-model">
+  <h2>Data model</h2>
+  <figure>
+    <div class="scroll"><svg id="er" viewBox="0 0 1100 380" role="img" aria-label="Four tables: cards references users by username and assignee; status and type refer to board_columns and issue_types by key, checked in code"></svg></div>
+    <figcaption>Only <code>cards → users</code> is a real foreign key. Renaming a user cascades into <code>cards.username</code> and <code>cards.assignee</code>; deleting a user sets their assigned cards to unassigned. <code>status</code> and <code>type</code> are plain strings, validated by <code>ColumnService.requireCardStatus</code> and <code>IssueTypeService.requireCardType</code>, and a list or type can only be deleted when no card uses it (409).</figcaption>
+  </figure>
+  <h3>Flyway migrations</h3>
+  <div class="mig">
+    <div><b>V1</b><span><code>users</code> and <code>cards</code> tables</span></div>
+    <div><b>V2</b><span>Unique <code>product_id</code> (issue key)</span></div>
+    <div><b>V3</b><span><code>role</code> with CHECK user | admin</span></div>
+    <div><b>V4</b><span>Backlog and <code>assignee</code></span></div>
+    <div><b>V5</b><span>Rename cascades to cards</span></div>
+    <div><b>V6</b><span><code>board_columns</code> + 4 default lists</span></div>
+    <div><b>V7</b><span>Presence: <code>last_active_at</code>, <code>logged_out_at</code></span></div>
+    <div><b>V8</b><span><code>issue_types</code> + 3 default types</span></div>
+  </div>
+</section>
+
+<section id="twin">
+  <h2>Same API, two backends</h2>
+  <p><code>server/</code> (Express + MongoDB) and <code>server-java/</code> answer the same paths with the same status codes and <code>{ message }</code> errors. Production runs the Java one. This is where each layer lives in both.</p>
+  <div class="tscroll"><table>
+    <thead><tr><th>Layer</th><th>server-java</th><th>server (Express)</th></tr></thead>
+    <tbody>
+      <tr><td>Entry</td><td><code>JiraboardApplication</code>, <code>application.yml</code></td><td><code>server.js</code> (DB + listen), <code>app.js</code> (mounts routes)</td></tr>
+      <tr><td>CORS</td><td><code>SecurityConfig.corsConfigurationSource</code></td><td><code>cors()</code> in <code>app.js</code>, origins from <code>CLIENT_URL</code></td></tr>
+      <tr><td>Token check</td><td><code>ApiBearerTokenResolver</code> → <code>JwtDecoder</code> → <code>AccessTokenConverter</code></td><td><code>middleware/authMiddleware.js</code> → <code>utils/jwt.js</code></td></tr>
+      <tr><td>Admin check</td><td><code>requireAdmin</code> inside each service</td><td><code>middleware/requireAdmin.js</code> on the route</td></tr>
+      <tr><td>Routing + input</td><td><code>controller/*</code> with <code>@Valid</code> DTO records</td><td><code>routes/*</code> → <code>controllers/*</code> with <code>utils/validate.js</code></td></tr>
+      <tr><td>Business rules</td><td><code>service/*</code>, <code>@Transactional</code></td><td>Inside <code>controllers/*</code></td></tr>
+      <tr><td>Data access</td><td><code>repository/*</code> (Spring Data JPA)</td><td><code>models/*</code> (Mongoose)</td></tr>
+      <tr><td>Storage</td><td>PostgreSQL, schema by Flyway</td><td>MongoDB, <code>sanitizeFilter</code> on</td></tr>
+      <tr><td>Errors</td><td><code>ApiException</code> → <code>GlobalExceptionHandler</code></td><td>Error handler at the end of <code>app.js</code></td></tr>
+      <tr><td>IDs</td><td>UUID</td><td>ObjectId (both sent as <code>_id</code>)</td></tr>
+    </tbody>
+  </table></div>
+</section>
+</div>
+
+<script>
+(() => {
+const NS = "http://www.w3.org/2000/svg";
+const H = 44;
+const X = { fe: 20, sec: 230, ctrl: 490, svc: 740, repo: 1000, db: 1270 };
+const W = { fe: 160, sec: 200, ctrl: 190, svc: 200, repo: 200, db: 150 };
+const R = [40, 110, 180, 250, 320, 390, 460]; // row y
+
+// id: [layer, row y, label, sub, link, height?, x override, w override]
+const N = {
+  browser: ["fe", 110, "Next.js board", "app/api/api.ts (axios)", "map", 210],
+  cors: ["sec", 110, "CORS", "CLIENT_URL origins", "twin"],
+  resolver: ["sec", 200, "ApiBearerTokenResolver", "reads Authorization", "tokens"],
+  decoder: ["sec", 290, "JwtDecoder + Converter", "HS256 → AuthUser", "tokens"],
+  authz: ["sec", 380, "authorizeHttpRequests", "permitAll | authenticated", "tokens"],
+  entry: ["err", 470, "JsonAuthEntryPoint", "401 { message }", "tokens"],
+  "c-auth": ["ctrl", 110, "AuthController", "/auth", "cat-auth"],
+  "c-card": ["ctrl", 180, "CardController", "/card", "cat-card"],
+  "c-column": ["ctrl", 250, "ColumnController", "/column", "cat-column"],
+  "c-type": ["ctrl", 320, "IssueTypeController", "/issue-type", "cat-type"],
+  "c-user": ["ctrl", 390, "UserController", "/user", "cat-user"],
+  "c-health": ["ctrl", 460, "HealthController", "/health", "cat-health"],
+  "s-jwt": ["svc", 40, "JwtService", "sign + decode tokens", "tokens"],
+  "s-auth": ["svc", 110, "AuthService", "BCrypt, tokens", "cat-auth"],
+  "s-card": ["svc", 180, "CardService", "ownership, backlog", "cat-card"],
+  "s-column": ["svc", 250, "ColumnService", "requireCardStatus", "cat-column"],
+  "s-type": ["svc", 320, "IssueTypeService", "requireCardType", "cat-type"],
+  "s-user": ["svc", 390, "UserService", "admin, layout", "cat-user"],
+  "r-user": ["repo", 110, "UserRepository", "revokeTokens, markActive", "data-model"],
+  "r-card": ["repo", 215, "CardRepository", "existsBy…", "data-model"],
+  "r-column": ["repo", 300, "BoardColumnRepository", "by position", "data-model"],
+  "r-type": ["repo", 385, "IssueTypeRepository", "by position", "data-model"],
+  "t-users": ["db", 110, "users", "UUID id, JSONB layout", "data-model"],
+  "t-cards": ["db", 215, "cards", "UNIQUE product_id", "data-model"],
+  "t-columns": ["db", 300, "board_columns", "column_key PK", "data-model"],
+  "t-types": ["db", 385, "issue_types", "type_key PK", "data-model"],
+  handler: ["err", 545, "GlobalExceptionHandler", "ApiException → status + { message }", "catalog", 44, X.ctrl, X.svc + W.svc - X.ctrl],
+};
+const box = id => { const n = N[id]; const x = n[6] ?? X[n[0] === "err" && id === "entry" ? "sec" : n[0]]; const w = n[7] ?? W[n[0] === "err" ? "sec" : n[0]]; return { x, y: n[1], w, h: n[5] || H }; };
+
+// [from, to, label, opts]
+const E = [
+  ["browser", "cors", "HTTPS JSON", { a: [180, 132] }],
+  ["cors", "resolver", "", { v: 1 }],
+  ["resolver", "decoder", "Bearer", { v: 1 }],
+  ["decoder", "authz", "AuthUser", { v: 1 }],
+  ["resolver", "authz", "public", { side: "l", lx: 205 }],
+  ["authz", "entry", "no token", { v: 1, cls: "err dash" }],
+  ["entry", "browser", "401", { d: "M230,492 C190,492 150,420 150,322", cls: "err dash", lp: [176, 440] }],
+  ["handler", "browser", "4xx { message }", { d: "M490,567 C300,567 60,567 60,322", cls: "err dash", lp: [300, 560] }],
+  ["authz", "c-auth"], ["authz", "c-card"], ["authz", "c-column"], ["authz", "c-type"], ["authz", "c-user"], ["authz", "c-health"],
+  ["c-auth", "s-auth"], ["c-card", "s-card"], ["c-column", "s-column"], ["c-type", "s-type"], ["c-user", "s-user"],
+  ["s-auth", "s-jwt", "sign", { v: 1, up: 1 }],
+  ["s-card", "s-column", "status?", { v: 1 }],
+  ["s-card", "s-type", "type?", { side: "r", lx: 978 }],
+  ["s-auth", "r-user"], ["s-user", "r-user"],
+  ["s-card", "r-card"], ["s-column", "r-card"], ["s-type", "r-card"], ["s-user", "r-card"],
+  ["s-column", "r-column"], ["s-type", "r-type"],
+  ["r-user", "t-users"], ["r-card", "t-cards"], ["r-column", "t-columns"], ["r-type", "t-types"],
+  ["t-cards", "t-users", "FK", { side: "r", lx: 1452 }],
+  ["t-cards", "t-columns", "status", { side: "r", cls: "dash", lx: 1452 }],
+  ["t-cards", "t-types", "type", { side: "r2", cls: "dash", lx: 1476 }],
+];
+const eid = (a, b) => a + ">" + b;
+
+const svg = document.getElementById("arch");
+svg.setAttribute("viewBox", "0 0 1500 610");
+const el = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
+const defs = el("defs", {}, svg);
+for (const [id, cls] of [["mn", "mk-n"], ["mh", "mk-h"], ["me", "mk-e"]]) {
+  const m = el("marker", { id, viewBox: "0 0 10 10", refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: "auto-start-reverse" }, defs);
+  el("path", { d: "M0,0 L10,5 L0,10 z", class: cls }, m);
+}
+[["Frontend", X.fe, W.fe], ["Security", X.sec, W.sec], ["Controllers", X.ctrl, W.ctrl], ["Services", X.svc, W.svc], ["Repositories", X.repo, W.repo], ["PostgreSQL", X.db, W.db]]
+  .forEach(([t, x, w]) => { const tx = el("text", { x: x + w / 2, y: 22, "text-anchor": "middle", class: "colhead" }, svg); tx.textContent = t; });
+
+const edgeEls = {};
+const gE = el("g", {}, svg);
+for (const [a, b, label, o = {}] of E) {
+  const A = box(a), B = box(b);
+  let d, lp;
+  if (o.d) { d = o.d; lp = o.lp; }
+  else if (o.v) {
+    const x = A.x + A.w / 2;
+    if (o.up) { d = `M${x},${A.y} L${x},${B.y + B.h}`; lp = [x + 6, (A.y + B.y + B.h) / 2 + 4]; }
+    else { d = `M${x},${A.y + A.h} L${x},${B.y}`; lp = [x + 6, (A.y + A.h + B.y) / 2 + 4]; }
+  } else if (o.side) {
+    const left = o.side === "l";
+    const x1 = left ? A.x : A.x + A.w, x2 = left ? B.x : B.x + B.w;
+    const bulge = o.side === "r2" ? 62 : 38;
+    const cx = left ? Math.min(x1, x2) - bulge : Math.max(x1, x2) + bulge;
+    const y1 = A.y + A.h / 2 + (left ? 0 : 6), y2 = B.y + B.h / 2;
+    d = `M${x1},${y1} C${cx},${y1} ${cx},${y2} ${x2},${y2}`;
+    lp = [o.lx ?? cx, (y1 + y2) / 2 + 4];
+  } else {
+    const x1 = (o.a ? o.a[0] : A.x + A.w), y1 = o.a ? o.a[1] : A.y + A.h / 2;
+    const x2 = B.x, y2 = B.y + B.h / 2, mx = (x1 + x2) / 2;
+    d = `M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`;
+    lp = [mx, (y1 + y2) / 2 - 6];
+  }
+  const g = el("g", { class: "edge " + (o.cls || "") }, gE);
+  const isErr = (o.cls || "").includes("err");
+  const p = el("path", { d, "marker-end": `url(#${isErr ? "me" : "mn"})` }, g);
+  if (label) { const t = el("text", { x: lp[0], y: lp[1], "text-anchor": o.side === "l" ? "middle" : (o.v ? "start" : "middle") }, g); t.textContent = label; }
+  edgeEls[eid(a, b)] = { g, p, isErr };
+}
+const nodeEls = {};
+for (const id in N) {
+  const n = N[id], B = box(id);
+  const g = el("g", { class: "node L-" + n[0], tabindex: 0, role: "link", "aria-label": n[2] }, svg);
+  el("rect", { x: B.x, y: B.y, width: B.w, height: B.h, rx: n[0] === "db" ? 3 : 6 }, g);
+  if (id === "browser") {
+    const lines = [["lbl", "Next.js board"], ["sub", "app/api/api.ts (axios)"], ["sub", ""], ["sub", "adds Bearer access"], ["sub", "token from"], ["sub", "sessionStorage"], ["sub", ""], ["sub", "on 401: POST"], ["sub", "/auth/refresh,"], ["sub", "then retries"]];
+    lines.forEach(([c, s], i) => { const t = el("text", { x: B.x + 12, y: B.y + 24 + i * 17, class: c }, g); t.textContent = s; });
+  } else {
+    const t = el("text", { x: B.x + 10, y: B.y + 18, class: "lbl" }, g); t.textContent = n[2];
+    const s = el("text", { x: B.x + 10, y: B.y + 34, class: "sub" }, g); s.textContent = n[3];
+  }
+  const go = () => { const tgt = document.getElementById(n[4]); if (tgt) tgt.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" }); };
+  g.addEventListener("click", go);
+  g.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } });
+  nodeEls[id] = g;
+}
+
+// ---------- endpoint data ----------
+// steps: [node, title, text]; edges: extra edges beyond the security chain + controller
+const G = [
+  { id: "cat-auth", name: "Auth", ctrl: "c-auth", files: ["AuthController", "AuthService", "JwtService", "UserRepository", "users"], about: "Public. Register, log in, refresh and log out. Returns tokens in the body.", eps: [
+    { m: "POST", p: "/auth/register", acc: "public", sum: "Creates an account. The username keeps the casing it was typed with.", edges: [["c-auth","s-auth"],["s-auth","r-user"],["r-user","t-users"]],
+      steps: [["authz","permitAll","/auth/** needs no token"],["c-auth","@Valid RegisterRequest","username, password, optional pictureUrl"],["s-auth","Credential rules","password 8–72 bytes, no char 3× in a row, ≥4 distinct, no rude username, picture ≤ 1.5 MB data: or http(s)"],["r-user","existsByUsernameIgnoreCase","“mike” is taken if “Mike” exists"],["s-auth","BCrypt strength 10","same hash format as the Express server"],["t-users","saveAndFlush","INSERT; a race on the unique name also becomes 409"]],
+      ok: ["201","{ message }"], bad: [["400","validation message"],["409","Username is already taken"]] },
+    { m: "POST", p: "/auth/login", acc: "public", sum: "Checks the password and issues an access + refresh token pair.", edges: [["c-auth","s-auth"],["s-auth","r-user"],["r-user","t-users"],["s-auth","s-jwt"]],
+      steps: [["authz","permitAll","no token needed"],["c-auth","@Valid LoginRequest","username + password"],["r-user","findByUsername","exact name first, then findFirstByUsernameIgnoreCase"],["s-auth","passwordEncoder.matches","wrong name or password give the same 401"],["r-user","markActive","sets last_active_at for the admin user list"],["s-jwt","issue tokens","access 15 min { id, username, role }, refresh 7 d { id, tokenVersion }"]],
+      ok: ["200","{ accessToken, refreshToken }"], bad: [["401","Invalid credentials."]] },
+    { m: "POST", p: "/auth/refresh", acc: "public", sum: "Trades a valid refresh token for a new pair. The frontend calls this on any 401 outside /auth.", edges: [["c-auth","s-auth"],["s-auth","s-jwt"],["s-auth","r-user"],["r-user","t-users"]],
+      steps: [["resolver","Authorization ignored","an expired access token can't cause 401 here"],["c-auth","RefreshTokenRequest","{ refreshToken }"],["s-jwt","decodeRefreshToken","bad signature or expired → 403"],["r-user","findById","token's tokenVersion must equal users.token_version"],["r-user","markActive","user counts as online again"],["s-jwt","issue tokens","new access + refresh"]],
+      ok: ["200","{ accessToken, refreshToken }"], bad: [["401","No refresh token provided"],["403","Invalid refresh token"]] },
+    { m: "POST", p: "/auth/logout", acc: "public", sum: "Revokes every refresh token of the user in one UPDATE.", edges: [["c-auth","s-auth"],["s-auth","s-jwt"],["s-auth","r-user"],["r-user","t-users"]],
+      steps: [["resolver","Authorization ignored","logout works even with an expired access token"],["s-jwt","decodeRefreshToken","invalid token: nothing to revoke, still 200"],["r-user","revokeTokens","token_version + 1, logged_out_at = now"]],
+      ok: ["200","{ message }"], bad: [] },
+  ]},
+  { id: "cat-card", name: "Cards", ctrl: "c-card", files: ["CardController", "CardService", "ColumnService", "IssueTypeService", "CardRepository", "cards"], about: "Shared board cards. Author and date come from the token and the server clock.", eps: [
+    { m: "GET", p: "/card", acc: "user", sum: "All cards for everyone, newest first.", edges: [["c-card","s-card"],["s-card","r-card"],["r-card","t-cards"]],
+      steps: [["decoder","token → AuthUser","any logged-in user"],["s-card","getAll (readOnly)","maps each Card to CardResponse with _id"],["r-card","findAllByOrderBySubmittedAtDesc","uses the submitted_at DESC index"]],
+      ok: ["200","[ card ]"], bad: [["401","missing or expired token"]] },
+    { m: "POST", p: "/card", acc: "user", sum: "Creates a card on the board or in the backlog.", edges: [["c-card","s-card"],["s-card","s-type"],["s-type","r-type"],["r-type","t-types"],["s-card","s-column"],["s-column","r-column"],["r-column","t-columns"],["s-card","r-card"],["r-card","t-cards"]],
+      steps: [["c-card","@Valid CardRequest","rating 1–5, comment, productId, optional type and status"],["s-type","requireCardType","type must be an issue_types key"],["s-column","requireCardStatus","status must be a list key or backlog"],["r-card","existsByProductId","issue key unique across all cards"],["s-card","author + assignee","username from the token; assignee = author unless backlog"],["t-cards","saveAndFlush","INSERT; UNIQUE product_id catches races"]],
+      ok: ["201","{ message }"], bad: [["400","Type/Status must be one of: …"],["409","Issue key already exists."]] },
+    { m: "PUT", p: "/card/{id}", acc: "owner", sum: "Edits rating, summary, issue key and type. Author, date and status never change here.", edges: [["c-card","s-card"],["s-card","s-type"],["s-type","r-type"],["s-card","r-card"],["r-card","t-cards"]],
+      steps: [["s-type","requireCardType","when type is sent"],["s-card","findOwnCard","author only, unless AuthUser is admin"],["r-card","existsByProductIdAndIdNot","new key may not belong to another card"],["t-cards","saveAndFlush","UPDATE"]],
+      ok: ["200","card"], bad: [["403","You can only edit your own card."],["404","Card not found."],["409","Issue key already exists."]] },
+    { m: "PATCH", p: "/card/{id}/status", acc: "user", sum: "Moves a card between lists. Anyone logged in may do it, like in Jira.", edges: [["c-card","s-card"],["s-card","s-column"],["s-column","r-column"],["r-column","t-columns"],["s-card","r-card"],["r-card","t-cards"]],
+      steps: [["c-card","CardStatusRequest","{ status }"],["s-column","requireCardStatus","current list keys + backlog"],["r-card","findById","404 if gone"],["s-card","assignee rule","leaving backlog assigns the caller; entering backlog unassigns"],["t-cards","dirty check","UPDATE at commit"]],
+      ok: ["200","card"], bad: [["400","Status must be one of: …"],["404","Card not found."]] },
+    { m: "DELETE", p: "/card/{id}", acc: "owner", sum: "Deletes a card.", edges: [["c-card","s-card"],["s-card","r-card"],["r-card","t-cards"]],
+      steps: [["s-card","findOwnCard","author only, unless admin"],["t-cards","delete","DELETE row"]],
+      ok: ["200","{ message }"], bad: [["403","You can only delete your own card."],["404","Card not found."]] },
+  ]},
+  { id: "cat-column", name: "Board lists", ctrl: "c-column", files: ["ColumnController", "ColumnService", "BoardColumnRepository", "board_columns"], about: "The lists on the board, shared by everyone. Admins change them.", eps: [
+    { m: "GET", p: "/column", acc: "user", sum: "All lists in board order.", edges: [["c-column","s-column"],["s-column","r-column"],["r-column","t-columns"]],
+      steps: [["r-column","findAllByOrderByPositionAscColumnKeyAsc","defaults To Do / In Progress / Test / Done from V6"]],
+      ok: ["200","[ { key, title, color, position } ]"], bad: [] },
+    { m: "POST", p: "/column", acc: "admin", sum: "Adds a list at the end of the board.", edges: [["c-column","s-column"],["s-column","r-column"],["r-column","t-columns"]],
+      steps: [["s-column","requireAdmin","403 for normal users"],["s-column","max 12 lists","400 above that"],["s-column","keyFromTitle","lowercase-hyphen key, never “backlog”, made unique"],["t-columns","saveAndFlush","position = last + 1"]],
+      ok: ["201","column"], bad: [["400","at most 12 lists"],["403","Admins only."],["409","A list with this name was just added."]] },
+    { m: "PUT", p: "/column", acc: "admin", sum: "Sets the order of all lists. The frontend sends this after a header drag.", edges: [["c-column","s-column"],["s-column","r-column"],["r-column","t-columns"]],
+      steps: [["c-column","ColumnOrderRequest","{ keys: [...] }"],["s-column","every list once","no missing, duplicate or unknown keys"],["t-columns","position = index","UPDATE per row"]],
+      ok: ["200","[ column ]"], bad: [["400","order message"],["403","Admins only."]] },
+    { m: "PUT", p: "/column/{key}", acc: "admin", sum: "Renames or recolours a list for everyone.", edges: [["c-column","s-column"],["s-column","r-column"],["r-column","t-columns"]],
+      steps: [["c-column","ColumnRequest","title ≤ 50, color #rrggbb or null"],["r-column","findById","404 if unknown"],["t-columns","dirty check","UPDATE title, color"]],
+      ok: ["200","column"], bad: [["400","Invalid list key."],["403","Admins only."],["404","List not found."]] },
+    { m: "DELETE", p: "/column/{key}", acc: "admin", sum: "Removes an empty list. To Do (todo) can never be deleted.", edges: [["c-column","s-column"],["s-column","r-column"],["s-column","r-card"],["r-card","t-cards"],["r-column","t-columns"]],
+      steps: [["s-column","not the default","todo is where new cards land"],["r-column","findById","404 if unknown"],["r-card","existsByStatus","any card in the list blocks it"],["t-columns","delete","DELETE row"]],
+      ok: ["200","{ message }"], bad: [["400","The default list cannot be deleted."],["409","The list still has cards."]] },
+  ]},
+  { id: "cat-type", name: "Issue types", ctrl: "c-type", files: ["IssueTypeController", "IssueTypeService", "IssueTypeRepository", "issue_types"], about: "Task, Bug, Story and any types admins add. Shared by everyone.", eps: [
+    { m: "GET", p: "/issue-type", acc: "user", sum: "All issue types in dropdown order.", edges: [["c-type","s-type"],["s-type","r-type"],["r-type","t-types"]],
+      steps: [["r-type","findAllByOrderByPositionAscTypeKeyAsc","defaults from V8"]],
+      ok: ["200","[ { key, label, color, icon, position } ]"], bad: [] },
+    { m: "POST", p: "/issue-type", acc: "admin", sum: "Adds an issue type at the end of the dropdown.", edges: [["c-type","s-type"],["s-type","r-type"],["r-type","t-types"]],
+      steps: [["s-type","admin only","403 otherwise"],["s-type","icon in CardType.ICONS","the icon list is code, not data"],["s-type","max 12 + keyFromLabel","label ≤ 30, color #rrggbb"],["t-types","saveAndFlush","INSERT"]],
+      ok: ["201","issue type"], bad: [["400","Icon must be one of: …"],["403","Admins only."],["409","just added by another admin"]] },
+    { m: "DELETE", p: "/issue-type/{key}", acc: "admin", sum: "Removes a type no card uses. task can never be deleted.", edges: [["c-type","s-type"],["s-type","r-type"],["s-type","r-card"],["r-card","t-cards"],["r-type","t-types"]],
+      steps: [["s-type","not the default","cards without a type read as task"],["r-card","existsByType","any card using it blocks it"],["t-types","delete","DELETE row"]],
+      ok: ["200","{ message }"], bad: [["400","The default issue type cannot be deleted."],["404","Issue type not found."],["409","Cards still use this issue type."]] },
+  ]},
+  { id: "cat-user", name: "Users", ctrl: "c-user", files: ["UserController", "UserService", "UserRepository", "CardRepository", "users"], about: "Profiles, each user's board layout, and the admin user list.", eps: [
+    { m: "GET", p: "/user", acc: "user", sum: "All users. Admins also get lastActiveAt and online.", edges: [["c-user","s-user"],["s-user","r-user"],["r-user","t-users"]],
+      steps: [["c-user","AuthUser.isAdmin","picks the query"],["r-user","findAllWithPresence","admins: online = active in last 20 min and not logged out since"],["r-user","findAllPublic","others: id, username, pictureUrl, role"]],
+      ok: ["200","[ user ]"], bad: [] },
+    { m: "GET", p: "/user/usernames", acc: "user", sum: "Just the names, for pickers.", edges: [["c-user","s-user"],["s-user","r-user"],["r-user","t-users"]],
+      steps: [["r-user","findAllUsernames","select u.username"]],
+      ok: ["200","[ string ]"], bad: [] },
+    { m: "GET", p: "/user/layout", acc: "user", sum: "The caller's saved card order within each list.", edges: [["c-user","s-user"],["s-user","r-user"],["r-user","t-users"]],
+      steps: [["s-user","findUser(AuthUser)","id from the token, never from the request"],["t-users","layout JSONB","{ cols, headers, cards }"]],
+      ok: ["200","layout"], bad: [] },
+    { m: "PUT", p: "/user/layout", acc: "user", sum: "Saves the caller's card positions. Fields left out keep their value.", edges: [["c-user","s-user"],["s-user","r-user"],["r-user","t-users"]],
+      steps: [["c-user","LayoutRequest","cols, headers (legacy), cards"],["s-user","isValidCardPosition","each position may name its list as status"],["t-users","JSONB UPDATE","dirty check at commit"]],
+      ok: ["200","{ message }"], bad: [["400","card position message"]] },
+    { m: "PATCH", p: "/user/{id}", acc: "admin", sum: "Renames a user or changes their role. Either one logs them out.", edges: [["c-user","s-user"],["s-user","r-user"],["r-user","t-users"],["t-cards","t-users"]],
+      steps: [["s-user","requireAdmin","403 otherwise"],["s-user","keep one admin","you can't drop your own admin role"],["r-user","existsByUsernameIgnoreCase","409 if the new name is taken"],["s-user","revokeTokens","token_version + 1 (old tokens have the old name/role)"],["t-cards","ON UPDATE CASCADE","cards.username and assignee follow the rename (V5)"]],
+      ok: ["200","user"], bad: [["400","You cannot remove your own admin role."],["404","User not found."],["409","Username is already taken"]] },
+    { m: "DELETE", p: "/user/{id}", acc: "admin", sum: "Deletes a user who has authored no cards.", edges: [["c-user","s-user"],["s-user","r-user"],["s-user","r-card"],["r-card","t-cards"],["r-user","t-users"]],
+      steps: [["s-user","not yourself","400"],["r-card","existsByUsername","authors can't be deleted: 409"],["t-users","delete","assigned cards get assignee = NULL"]],
+      ok: ["200","{ message }"], bad: [["400","You cannot delete yourself."],["409","This user still has cards."]] },
+    { m: "POST", p: "/user/{id}/logout", acc: "admin", sum: "Logs a user out everywhere within 15 minutes.", edges: [["c-user","s-user"],["s-user","r-user"],["r-user","t-users"]],
+      steps: [["s-user","requireAdmin","403 otherwise"],["r-user","revokeTokens","one UPDATE; 0 rows → 404"],["t-users","token_version + 1","next refresh fails; user shows offline"]],
+      ok: ["200","{ message }"], bad: [["404","User not found."]] },
+  ]},
+  { id: "cat-health", name: "Health", ctrl: "c-health", files: ["HealthController"], about: "Public liveness check for Fly.", eps: [
+    { m: "GET", p: "/health", acc: "public", sum: "Answers without touching the database.", edges: [],
+      steps: [["resolver","Authorization ignored","public"],["c-health","health()","returns a fixed map"]],
+      ok: ["200","{ status: \"ok\" }"], bad: [] },
+  ]},
+];
+const ACC = { public: "public", user: "logged in", owner: "author or admin", admin: "admin" };
+
+// ---------- trace ----------
+const $ = id => document.getElementById(id);
+let selBtn = null;
+function select(g, ep, btn) {
+  const pub = ep.acc === "public";
+  const chain = [["browser","cors"],["cors","resolver"], ...(pub ? [["resolver","authz"]] : [["resolver","decoder"],["decoder","authz"]]), ["authz", g.ctrl]];
+  const edges = [...chain, ...ep.edges];
+  const nodes = new Set(["browser", ...edges.flat()]);
+  if (ep.bad.length) { nodes.add("handler"); edges.push(["handler","browser"]); }
+  if (!pub) { nodes.add("entry"); edges.push(["authz","entry"],["entry","browser"]); }
+  svg.classList.add("tracing");
+  for (const id in nodeEls) nodeEls[id].classList.toggle("on", nodes.has(id));
+  const on = new Set(edges.map(([a, b]) => eid(a, b)));
+  for (const k in edgeEls) {
+    const e = edgeEls[k], hot = on.has(k);
+    e.g.classList.toggle("on", hot && !e.isErr);
+    e.g.style.opacity = hot && e.isErr ? 1 : "";
+    if (!e.isErr) e.p.setAttribute("marker-end", `url(#${hot ? "mh" : "mn"})`);
+  }
+  $("t-route").innerHTML = `<span class="m m-${ep.m}">${ep.m}</span><span>${ep.p}</span><span class="chip ${ep.acc}">${ACC[ep.acc]}</span>`;
+  $("t-sum").textContent = ep.sum;
+  $("t-codes").innerHTML = `<div class="ok"><span class="k">${ep.ok[0]}</span><code>${esc(ep.ok[1])}</code></div>` +
+    (pub ? "" : `<div class="bad"><span class="k">401</span><span>no or expired access token</span></div>`) +
+    ep.bad.map(([c, t]) => `<div class="bad"><span class="k">${c}</span><span>${esc(t)}</span></div>`).join("");
+  const pre = pub ? [] : [["decoder", "JWT verified", "HS256 signature + expiry → AuthUser { id, username, role }"]];
+  const steps = [["cors", "CORS", "origin must be in CLIENT_URL"], ...pre, ...ep.steps.filter(s => !(pub && s[0] === "decoder"))];
+  $("t-steps").innerHTML = steps.map(([n, b, t]) => `<li data-n="${n}"><div><b>${esc(b)} <span class="mono" style="font-weight:400">· ${esc(N[n][2])}</span></b><span>${esc(t)}</span></div></li>`).join("");
+  $("t-steps").querySelectorAll("li").forEach(li => {
+    li.addEventListener("mouseenter", () => nodeEls[li.dataset.n].classList.add("focus"));
+    li.addEventListener("mouseleave", () => nodeEls[li.dataset.n].classList.remove("focus"));
+  });
+  if (selBtn) selBtn.classList.remove("sel");
+  selBtn = btn; if (btn) btn.classList.add("sel");
+}
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+// ---------- catalog ----------
+const cat = $("cat");
+let first = null;
+for (const g of G) {
+  const box = document.createElement("div");
+  box.className = "group"; box.id = g.id;
+  box.innerHTML = `<div class="group-head"><h3>${g.name}</h3><p style="color:var(--muted);font-size:.9rem">${g.about}</p></div>
+    <div class="files">${g.files.map(f => `<span>${f}</span>`).join("<i>→</i>")}</div>`;
+  for (const ep of g.eps) {
+    const b = document.createElement("button");
+    b.className = "ep"; b.type = "button";
+    b.innerHTML = `<span class="m m-${ep.m}">${ep.m}</span><span class="p">${ep.p}</span><span class="chip ${ep.acc}">${ACC[ep.acc]}</span><span class="d">${esc(ep.sum)}</span>`;
+    b.addEventListener("click", () => { select(g, ep, b); $("map").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }); });
+    box.appendChild(b);
+    if (ep.p === "/card" && ep.m === "POST") first = [g, ep, b];
+  }
+  cat.appendChild(box);
+}
+select(...first);
+
+// ---------- sequence diagram ----------
+const seq = $("seq");
+const sd = el("defs", {}, seq);
+for (const [id, cls] of [["sf", "mkf"], ["sb", "mkb"]]) { const m = el("marker", { id, viewBox: "0 0 10 10", refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: "auto" }, sd); el("path", { d: "M0,0 L10,5 L0,10 z", class: cls }, m); }
+const L = [["Frontend (api.ts)", 110], ["/auth/*", 400], ["Protected route", 690], ["users table", 970]];
+L.forEach(([t, x]) => { const g = el("g", { class: "hd" }, seq); el("rect", { x: x - 85, y: 14, width: 170, height: 32, rx: 6 }, g); const tx = el("text", { x, y: 35, "text-anchor": "middle" }, g); tx.textContent = t; el("line", { x1: x, y1: 46, x2: x, y2: 548, class: "life" }, seq); });
+el("rect", { x: 20, y: 338, width: 1060, height: 92, rx: 6, class: "band" }, seq);
+const xs = L.map(l => l[1]);
+const msgs = [
+  [0, 1, 74, "POST /auth/login { username, password }"],
+  [1, 3, 104, "BCrypt match, markActive"],
+  [1, 0, 134, "{ accessToken 15 m, refreshToken 7 d } → sessionStorage", "back"],
+  [0, 2, 178, "GET /card  Authorization: Bearer <access>"],
+  [2, 0, 208, "200 [ cards ]", "back"],
+  [0, 2, 258, "15 minutes later: GET /card with the old access token"],
+  [2, 0, 288, "401 { message } from JsonAuthenticationEntryPoint", "back bad"],
+  [0, 1, 362, "POST /auth/refresh { refreshToken }"],
+  [1, 3, 386, "tokenVersion in token == users.token_version ?"],
+  [1, 0, 410, "new token pair; api.ts retries GET /card", "back"],
+  [0, 1, 470, "POST /auth/logout { refreshToken }"],
+  [1, 3, 496, "revokeTokens: token_version + 1, logged_out_at = now"],
+  [0, 1, 532, "later POST /auth/refresh with the old token → 403 Invalid refresh token", "bad"],
+];
+for (const [a, b, y, t, c = ""] of msgs) {
+  const x1 = xs[a], x2 = xs[b], dir = x2 > x1 ? 1 : -1;
+  el("line", { x1: x1 + dir * 4, y1: y, x2: x2 - dir * 4, y2: y, class: "msg " + c, "marker-end": `url(#${c.includes("bad") ? "sb" : "sf"})` }, seq);
+  const tx = el("text", { x: Math.min(x1, x2) + 12, y: y - 7 }, seq); tx.textContent = t;
+}
+[[56, "login"], [162, "use"], [240, "expiry"], [352, "refresh (automatic)"], [454, "logout"]].forEach(([y, t]) => { const tx = el("text", { x: 1080, y, "text-anchor": "end", class: "note" }, seq); tx.textContent = t; });
+
+// ---------- ER diagram ----------
+const er = $("er");
+const ed = el("defs", {}, er);
+const em = el("marker", { id: "ef", viewBox: "0 0 10 10", refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: "auto" }, ed); el("path", { d: "M0,0 L10,5 L0,10 z", class: "mk-n" }, em);
+const T = {
+  users: [40, 30, ["id UUID PK", "username VARCHAR(32) UNIQUE", "password_hash", "picture_url TEXT", "role user | admin", "token_version INT", "layout JSONB", "last_active_at, logged_out_at", "created_at, updated_at"]],
+  cards: [430, 30, ["id UUID PK", "rating 1–5 CHECK", "comment", "product_id UNIQUE", "username FK → users", "assignee FK → users, nullable", "submitted_at (indexed DESC)", "type VARCHAR(32)", "status VARCHAR(32)"]],
+  board_columns: [820, 30, ["column_key PK", "title ≤ 50", "color #rrggbb | null", "position"]],
+  issue_types: [820, 210, ["type_key PK", "label ≤ 30", "color #rrggbb", "icon", "position"]],
+};
+const RH = 20, TW = 240;
+const rowY = (t, i) => T[t][1] + 34 + i * RH + RH / 2;
+for (const name in T) {
+  const [x, y, cols] = T[name];
+  const g = el("g", { class: "node L-db" }, er);
+  el("rect", { x, y, width: TW, height: 34 + cols.length * RH + 8, rx: 4 }, g);
+  const h = el("text", { x: x + 12, y: y + 22, class: "lbl" }, g); h.textContent = name;
+  el("line", { x1: x, y1: y + 32, x2: x + TW, y2: y + 32, stroke: "var(--db)" }, g);
+  cols.forEach((c, i) => { const t = el("text", { x: x + 12, y: y + 34 + i * RH + 14, class: "sub" }, g); t.textContent = c; });
+}
+const rel = (from, fi, to, ti, label, dash, toLeft) => {
+  const x1 = T[from][0], y1 = rowY(from, fi), x2 = toLeft ? T[to][0] : T[to][0] + TW, y2 = rowY(to, ti);
+  const gx = toLeft ? x1 + TW : x1;
+  const mx = (gx + x2) / 2;
+  const g = el("g", { class: "edge" + (dash ? " dash" : "") }, er);
+  el("path", { d: `M${gx},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`, "marker-end": "url(#ef)" }, g);
+  const t = el("text", { x: mx, y: (y1 + y2) / 2 - 6, "text-anchor": "middle" }, g); t.textContent = label;
+};
+rel("cards", 4, "users", 1, "FK username, assignee", false, false);
+rel("cards", 5, "users", 1, "", false, false);
+rel("cards", 8, "board_columns", 0, "checked in ColumnService", true, true);
+rel("cards", 7, "issue_types", 0, "checked in IssueTypeService", true, true);
+})();
+</script>
+</body>
+</html>
