@@ -5,12 +5,21 @@ jest.mock("../models/User", () => {
   User.updateOne = jest.fn();
   return User;
 });
+jest.mock("../models/RefreshToken", () => ({
+  create: jest.fn(),
+  findOneAndUpdate: jest.fn(),
+  findOne: jest.fn(),
+  deleteMany: jest.fn(),
+  updateOne: jest.fn()
+}));
 
+const crypto = require("crypto");
 const request = require("supertest");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const app = require("../app");
 const User = require("../models/User");
+const RefreshToken = require("../models/RefreshToken");
 const { generateRefreshToken } = require("../utils/jwt");
 const { USER_ID } = require("./helpers");
 
@@ -88,8 +97,16 @@ describe("POST /auth/login", () => {
 
     expect(res.status).toBe(200);
     expect(jwt.verify(res.body.accessToken, process.env.JWT_SECRET)).toMatchObject({ id: USER_ID, username: "alice", role: "user" });
-    expect(jwt.verify(res.body.refreshToken, process.env.REFRESH_SECRET)).toMatchObject({ id: USER_ID, tokenVersion: 0 });
+    const refresh = jwt.verify(res.body.refreshToken, process.env.REFRESH_SECRET);
+    expect(refresh).toMatchObject({ id: USER_ID, tokenVersion: 0, jti: expect.any(String) });
     expect(User.updateOne).toHaveBeenCalledWith({ _id: USER_ID }, { $set: { lastActiveAt: expect.any(Date) } });
+    // The refresh token is saved so it can be traded in once; each login is a new family
+    expect(RefreshToken.create).toHaveBeenCalledWith({
+      _id: refresh.jti,
+      familyId: expect.any(String),
+      userId: USER_ID,
+      expiresAt: new Date(refresh.exp * 1000)
+    });
   });
 
   it("still logs in when marking the user active fails", async () => {
@@ -143,24 +160,77 @@ describe("POST /auth/login", () => {
 });
 
 describe("POST /auth/refresh", () => {
-  it("issues new tokens when the token version matches", async () => {
-    const user = { _id: USER_ID, username: "alice", tokenVersion: 2 };
-    User.findById.mockResolvedValue(user);
+  const user = { _id: USER_ID, username: "alice", tokenVersion: 2 };
 
-    const res = await request(app).post("/auth/refresh").send({ refreshToken: generateRefreshToken(user) });
+  beforeEach(() => {
+    User.findById.mockResolvedValue(user);
+  });
+
+  it("trades an unused token for new tokens in the same family", async () => {
+    RefreshToken.findOneAndUpdate.mockResolvedValue({ _id: "tok-1", familyId: "fam-1" });
+
+    const res = await request(app).post("/auth/refresh").send({ refreshToken: generateRefreshToken(user, "tok-1") });
 
     expect(res.status).toBe(200);
     expect(jwt.verify(res.body.accessToken, process.env.JWT_SECRET)).toMatchObject({ username: "alice" });
+    expect(RefreshToken.findOneAndUpdate).toHaveBeenCalledWith(
+      { _id: "tok-1", userId: USER_ID, usedAt: null },
+      { $set: { usedAt: expect.any(Date) } }
+    );
+    const next = jwt.verify(res.body.refreshToken, process.env.REFRESH_SECRET);
+    expect(next.jti).not.toBe("tok-1");
+    expect(RefreshToken.create).toHaveBeenCalledWith(expect.objectContaining({ _id: next.jti, familyId: "fam-1" }));
     expect(User.updateOne).toHaveBeenCalledWith({ _id: USER_ID }, { $set: { lastActiveAt: expect.any(Date) } });
   });
 
+  it("revokes the whole login when a used token comes back", async () => {
+    RefreshToken.findOneAndUpdate.mockResolvedValue(null);
+    RefreshToken.findOne.mockResolvedValue({ _id: "tok-1", familyId: "fam-1", usedAt: new Date() });
+
+    const res = await request(app).post("/auth/refresh").send({ refreshToken: generateRefreshToken(user, "tok-1") });
+
+    expect(res.status).toBe(403);
+    expect(res.body.message).toBe("Invalid refresh token");
+    expect(RefreshToken.deleteMany).toHaveBeenCalledWith({ familyId: "fam-1" });
+    expect(RefreshToken.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects an unknown token id (revoked login) without deleting anything", async () => {
+    RefreshToken.findOneAndUpdate.mockResolvedValue(null);
+    RefreshToken.findOne.mockResolvedValue(null);
+
+    const res = await request(app).post("/auth/refresh").send({ refreshToken: generateRefreshToken(user, "gone") });
+
+    expect(res.status).toBe(403);
+    expect(RefreshToken.deleteMany).not.toHaveBeenCalled();
+  });
+
+  it("accepts a token from before single-use tokens once, keyed by its hash", async () => {
+    // No jti, like tokens issued before this change
+    const oldToken = jwt.sign({ id: USER_ID, tokenVersion: 2 }, process.env.REFRESH_SECRET, { expiresIn: "7d" });
+    const hash = crypto.createHash("sha256").update(oldToken).digest("hex");
+    RefreshToken.findOneAndUpdate.mockResolvedValue({ _id: hash, familyId: "fam-old" });
+
+    const res = await request(app).post("/auth/refresh").send({ refreshToken: oldToken });
+
+    expect(res.status).toBe(200);
+    expect(RefreshToken.updateOne).toHaveBeenCalledWith(
+      { _id: hash },
+      { $setOnInsert: { familyId: expect.any(String), userId: USER_ID, expiresAt: expect.any(Date) } },
+      { upsert: true }
+    );
+    expect(RefreshToken.findOneAndUpdate.mock.calls[0][0]._id).toBe(hash);
+    expect(RefreshToken.create).toHaveBeenCalledWith(expect.objectContaining({ familyId: "fam-old" }));
+  });
+
   it("rejects a revoked refresh token with 403", async () => {
-    const refreshToken = generateRefreshToken({ _id: USER_ID, tokenVersion: 0 });
+    const refreshToken = generateRefreshToken({ _id: USER_ID, tokenVersion: 0 }, "tok-1");
     User.findById.mockResolvedValue({ _id: USER_ID, username: "alice", tokenVersion: 1 });
 
     const res = await request(app).post("/auth/refresh").send({ refreshToken });
 
     expect(res.status).toBe(403);
+    expect(RefreshToken.findOneAndUpdate).not.toHaveBeenCalled();
   });
 
   it("rejects an invalid refresh token with 403", async () => {
@@ -179,7 +249,7 @@ describe("POST /auth/refresh", () => {
 describe("POST /auth/logout", () => {
   it("revokes the user's refresh tokens and marks them logged out", async () => {
     User.updateOne.mockResolvedValue({});
-    const refreshToken = generateRefreshToken({ _id: USER_ID, tokenVersion: 0 });
+    const refreshToken = generateRefreshToken({ _id: USER_ID, tokenVersion: 0 }, "tok-1");
 
     const res = await request(app).post("/auth/logout").send({ refreshToken });
 

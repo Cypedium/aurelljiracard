@@ -12,12 +12,13 @@ exports.generateAccessToken = (user) => {
   );
 };
 
-// tokenVersion lets the server revoke every refresh token for a user (logout)
-exports.generateRefreshToken = (user) => {
+// tokenVersion lets the server revoke every refresh token for a user (logout);
+// the jti (tokenId) is the RefreshToken document that makes the token single-use
+exports.generateRefreshToken = (user, tokenId) => {
   return jwt.sign(
     { id: user._id, tokenVersion: user.tokenVersion ?? 0 },
     process.env.REFRESH_SECRET,
-    { expiresIn: REFRESH_TOKEN_TTL }
+    { expiresIn: REFRESH_TOKEN_TTL, jwtid: tokenId }
   );
 };
 
