@@ -82,7 +82,7 @@ const Navbar = () => {
   }, [onBoard, onBacklog, onIssueTypes, admin, userName]);
 
   return (
-    <header ref={headerRef} className="fixed z-[1000] w-full font-brand">
+    <header ref={headerRef} className="fixed z-1000 w-full font-brand">
       {/* z-10: mobilmenyn hamnar över raden under */}
       <nav className="relative z-10 flex w-full items-center justify-between bg-gray-600 py-[0.5%] pr-[2%] pl-[3%]">
         <button
@@ -96,7 +96,7 @@ const Navbar = () => {
 
         {/* Mobil: dold tills menyn öppnas. Desktop: alltid synlig på en rad */}
         <ul
-          className={`${menuOpen ? 'flex' : 'hidden'} absolute top-[50px] w-full flex-col gap-4 rounded-lg bg-brand p-8 text-2xl text-white md:static md:flex md:flex-1 md:flex-row md:items-center md:gap-10 md:bg-transparent md:p-0`}
+          className={`${menuOpen ? 'flex' : 'hidden'} absolute top-50px w-full flex-col gap-4 rounded-lg bg-brand p-8 text-2xl text-white md:static md:flex md:flex-1 md:flex-row md:items-center md:gap-10 md:bg-transparent md:p-0`}
         >
           {isLoggedIn && (
             <>

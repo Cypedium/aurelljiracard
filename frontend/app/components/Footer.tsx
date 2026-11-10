@@ -4,8 +4,8 @@ import React from "react";
 // skärmens höjd, så en lång board krympte annars footern till textens höjd
 export default function Footer() {
   return (
-    <footer className="flex h-[60px] w-full shrink-0 items-center justify-center bg-gray-600 font-brand">
-      <div>&copy; Mikael Aurell 2026</div>
+    <footer className="flex h-60px w-full shrink-0 items-center justify-center bg-gray-600 font-brand text-stone-400">
+      <div>© Mikael Aurell 2026</div>
     </footer>
   );
 }
