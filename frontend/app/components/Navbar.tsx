@@ -24,8 +24,9 @@ import {
 const BOARD_PATH = '/cards';
 const BACKLOG_PATH = '/backlog';
 const ISSUE_TYPES_PATH = '/issue-types';
-// Länk med ikon före texten (som Trellos sidomeny)
-const NAV_LINK_CLASS = 'flex items-center gap-2';
+// Länk med ikon före texten (som Trellos sidomeny); ljusare grå bakgrund vid hovring, som knapparna i rad två
+const NAV_LINK_CLASS =
+  'flex items-center gap-2 rounded-md px-2 py-1 transition-colors hover:bg-white/10 focus-visible:bg-white/10';
 const NAV_ICON_CLASS = 'size-5 shrink-0';
 const NAV_ICON_SUB_CLASS = 'size-4 shrink-0';
 const SUB_ROW_BUTTON_CLASS = 'flex items-center gap-1.5 rounded-md px-2 py-0.5 hover:bg-white/10';
@@ -176,7 +177,7 @@ const Navbar = () => {
                 </li>
               )}
               <li key="logout" className={userName ? undefined : 'md:ml-auto'}>
-                <button onClick={handleLogout} className="flex items-center gap-2">
+                <button onClick={handleLogout} className={NAV_LINK_CLASS}>
                   <ArrowRightStartOnRectangleIcon className={NAV_ICON_CLASS} aria-hidden />
                   Logout
                 </button>
@@ -185,10 +186,10 @@ const Navbar = () => {
           ) : (
             <>
               <li key="register" onClick={() => setMenuOpen(false)}>
-                <Link href="/register">Register User</Link>
+                <Link href="/register" className={NAV_LINK_CLASS}>Register User</Link>
               </li>
               <li key="login" onClick={() => setMenuOpen(false)}>
-                <Link href="/login">Login</Link>
+                <Link href="/login" className={NAV_LINK_CLASS}>Login</Link>
               </li>
             </>
           )}
