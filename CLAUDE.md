@@ -26,7 +26,7 @@ Two independent npm projects plus a Maven project — always `cd` into one befor
   - `routes/` → `controllers/` → `models/`; `middleware/authMiddleware.js`; `utils/jwt.js`, `utils/validate.js`
   - `tests/` — Jest + Supertest; models are `jest.mock`ed, no DB
   - `backupfiles/`, `scripts/` — one-off seed/maintenance scripts, not part of the app
-- `frontend/` — Next.js 15 App Router, React 19, TypeScript, Tailwind 4 + CSS modules
+- `frontend/` — Next.js 16 App Router, React 19, TypeScript, Tailwind 4 + CSS modules
   - `app/api/api.ts` — axios instance (attaches token, refreshes on 401 — except for `/auth/*`, where 401 means bad credentials); `app/api/endpoints.ts` — all API calls
   - `app/cards/Cards.tsx` — board: `react-grid-layout` v2, fixed columns To Do / In Progress / Test / Done, width from `useContainerWidth`
   - `app/cards/card/Card.tsx` — create form (Jira "create issue" style)
@@ -69,7 +69,7 @@ cd server-java && ./mvnw test                            # Spring Boot API tests
 cd server-java && ./mvnw spring-boot:test-run            # run on :8080 against a throwaway Postgres container
 ```
 
-CI (`.github/workflows/ci.yml`) runs all of the commands above except `spring-boot:test-run` (`server-java` tests use Docker on the runner) on pushes and PRs to `main`; run them before committing. There is no ESLint/Prettier config yet — `next lint` is not set up.
+CI (`.github/workflows/ci.yml`) runs all of the commands above except `spring-boot:test-run` (`server-java` tests use Docker on the runner) on pushes and PRs to `main`; run them before committing. There is no ESLint/Prettier config yet (Next 16 removed `next lint`).
 
 ## Conventions
 
