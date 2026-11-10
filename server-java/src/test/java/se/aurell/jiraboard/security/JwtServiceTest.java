@@ -69,15 +69,17 @@ class JwtServiceTest {
 
     @Test
     void refreshTokenRoundTrip() {
-        JwtService.RefreshClaims claims = jwtService.decodeRefreshToken(jwtService.issueRefreshToken(user()));
+        UUID tokenId = UUID.randomUUID();
+        JwtService.IssuedRefreshToken issued = jwtService.issueRefreshToken(user(), tokenId);
+        JwtService.RefreshClaims claims = jwtService.decodeRefreshToken(issued.value());
 
-        assertThat(claims).isEqualTo(new JwtService.RefreshClaims(userId, 3));
+        assertThat(claims).isEqualTo(new JwtService.RefreshClaims(userId, 3, tokenId, issued.expiresAt()));
     }
 
     @Test
     void tokensAreSignedWithSeparateSecrets() {
         String accessToken = jwtService.issueAccessToken(user());
-        String refreshToken = jwtService.issueRefreshToken(user());
+        String refreshToken = jwtService.issueRefreshToken(user(), UUID.randomUUID()).value();
 
         assertThatThrownBy(() -> jwtService.decodeRefreshToken(accessToken)).isInstanceOf(JwtException.class);
         assertThatThrownBy(() -> JwtService.decoder(ACCESS_SECRET).decode(refreshToken))
@@ -89,7 +91,7 @@ class JwtServiceTest {
         // Even if both secrets were the same, a refresh token must not authenticate API calls
         JwtService sameSecrets = new JwtService(
                 new JwtProperties(ACCESS_SECRET, ACCESS_SECRET, Duration.ofMinutes(15), Duration.ofDays(7)));
-        Jwt jwt = JwtService.decoder(ACCESS_SECRET).decode(sameSecrets.issueRefreshToken(user()));
+        Jwt jwt = JwtService.decoder(ACCESS_SECRET).decode(sameSecrets.issueRefreshToken(user(), UUID.randomUUID()).value());
 
         assertThatThrownBy(() -> new AccessTokenConverter().convert(jwt))
                 .isInstanceOf(InvalidBearerTokenException.class);
