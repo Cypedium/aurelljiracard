@@ -114,7 +114,7 @@ db.users.updateOne({ username: "<name>" }, { $set: { role: "admin" } })
 
 ## Deployment
 
-[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs server tests and the frontend type check, tests and build on every PR and push to `main`. Pushes to `main` then deploy both apps to Fly.io (requires the `FLY_API_TOKEN` repository secret).
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs the `server` tests, the `server-java` tests (Testcontainers on the runner's Docker) and the frontend type check, tests and build on every PR and push to `main`. Pushes to `main` then deploy both apps to Fly.io (requires the `FLY_API_TOKEN` repository secret).
 
 Manual deploy: `fly deploy -c fly.server.toml` in `server/`, `fly deploy -c fly.app.toml` in `frontend/` (or the `deploy-*.bat` scripts).
 
@@ -124,4 +124,4 @@ Backend secrets must be set on Fly once:
 fly secrets set -a aurelljiraboard-backend MONGO_URI=... JWT_SECRET=... REFRESH_SECRET=... CLIENT_URL=https://aurelljiraboard.fly.dev
 ```
 
-`server-java` is not deployed by CI; deploy it by hand with `fly deploy -c fly.java.toml` in `server-java/` (see [`server-java/README.md`](server-java/README.md#deployment-flyio)).
+CI tests `server-java` but does not deploy it; deploy it by hand with `fly deploy -c fly.java.toml` in `server-java/` (see [`server-java/README.md`](server-java/README.md#deployment-flyio)).
