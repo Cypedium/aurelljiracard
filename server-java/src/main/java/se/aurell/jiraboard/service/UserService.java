@@ -74,7 +74,6 @@ public class UserService {
      */
     @Transactional
     public UserResponse update(UUID id, UserUpdateRequest request, AuthUser admin) {
-        requireAdmin(admin);
         Role role = request.role() == null ? null : Role.parse(request.role())
                 .orElseThrow(() -> ApiException.badRequest("Role must be one of: " + Role.ALLOWED + "."));
         // Keeps at least one admin: the caller is always an admin
@@ -115,7 +114,6 @@ public class UserService {
     /** Admin: delete a user without cards; cards assigned to them become unassigned (ON DELETE SET NULL). */
     @Transactional
     public void delete(UUID id, AuthUser admin) {
-        requireAdmin(admin);
         if (id.equals(admin.id())) {
             throw ApiException.badRequest("You cannot delete yourself.");
         }
@@ -128,16 +126,9 @@ public class UserService {
 
     /** Admin: revoke all refresh tokens; the user must log in again within 15 minutes and shows as offline. */
     @Transactional
-    public void revokeSessions(UUID id, AuthUser admin) {
-        requireAdmin(admin);
+    public void revokeSessions(UUID id) {
         if (userRepository.revokeTokens(id, Instant.now()) == 0) {
             throw ApiException.notFound("User not found.");
-        }
-    }
-
-    private static void requireAdmin(AuthUser user) {
-        if (!user.isAdmin()) {
-            throw ApiException.forbidden("Admins only.");
         }
     }
 

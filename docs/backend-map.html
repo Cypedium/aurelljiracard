@@ -200,7 +200,7 @@ th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; colo
 
 <section id="catalog">
   <h2>Endpoint catalog</h2>
-  <p>Six controllers, 25 endpoints. Access is checked in two places: the filter chain lets <code>/auth/**</code> and <code>/health</code> through without a token, and admin rules live in the services (<code>requireAdmin</code> → 403).</p>
+  <p>Six controllers, 25 endpoints. Access is checked in two places: the filter chain lets <code>/auth/**</code> and <code>/health</code> through without a token, and admin endpoints carry <code>@AdminOnly</code>, which checks the role in the token before the controller method runs (403 <code>Admins only.</code>).</p>
   <div class="cat" id="cat"></div>
 </section>
 
@@ -240,7 +240,7 @@ th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; colo
       <tr><td>Entry</td><td><code>JiraboardApplication</code>, <code>application.yml</code></td><td><code>server.js</code> (DB + listen), <code>app.js</code> (mounts routes)</td></tr>
       <tr><td>CORS</td><td><code>SecurityConfig.corsConfigurationSource</code></td><td><code>cors()</code> in <code>app.js</code>, origins from <code>CLIENT_URL</code></td></tr>
       <tr><td>Token check</td><td><code>ApiBearerTokenResolver</code> → <code>JwtDecoder</code> → <code>AccessTokenConverter</code></td><td><code>middleware/authMiddleware.js</code> → <code>utils/jwt.js</code></td></tr>
-      <tr><td>Admin check</td><td><code>requireAdmin</code> inside each service</td><td><code>middleware/requireAdmin.js</code> on the route</td></tr>
+      <tr><td>Admin check</td><td><code>@AdminOnly</code> (<code>@PreAuthorize</code>) on the controller method</td><td><code>middleware/requireAdmin.js</code> on the route</td></tr>
       <tr><td>Routing + input</td><td><code>controller/*</code> with <code>@Valid</code> DTO records</td><td><code>routes/*</code> → <code>controllers/*</code> with <code>utils/validate.js</code></td></tr>
       <tr><td>Business rules</td><td><code>service/*</code>, <code>@Transactional</code></td><td>Inside <code>controllers/*</code></td></tr>
       <tr><td>Data access</td><td><code>repository/*</code> (Spring Data JPA)</td><td><code>models/*</code> (Mongoose)</td></tr>
@@ -415,7 +415,7 @@ const G = [
       steps: [["r-column","findAllByOrderByPositionAscColumnKeyAsc","defaults To Do / In Progress / Test / Done from V6"]],
       ok: ["200","[ { key, title, color, position } ]"], bad: [] },
     { m: "POST", p: "/column", acc: "admin", sum: "Adds a list at the end of the board.", edges: [["c-column","s-column"],["s-column","r-column"],["r-column","t-columns"]],
-      steps: [["s-column","requireAdmin","403 for normal users"],["s-column","max 12 lists","400 above that"],["s-column","keyFromTitle","lowercase-hyphen key, never “backlog”, made unique"],["t-columns","saveAndFlush","position = last + 1"]],
+      steps: [["c-column","@AdminOnly","ROLE_ADMIN from the token, else 403"],["s-column","max 12 lists","400 above that"],["s-column","keyFromTitle","lowercase-hyphen key, never “backlog”, made unique"],["t-columns","saveAndFlush","position = last + 1"]],
       ok: ["201","column"], bad: [["400","at most 12 lists"],["403","Admins only."],["409","A list with this name was just added."]] },
     { m: "PUT", p: "/column", acc: "admin", sum: "Sets the order of all lists. The frontend sends this after a header drag.", edges: [["c-column","s-column"],["s-column","r-column"],["r-column","t-columns"]],
       steps: [["c-column","ColumnOrderRequest","{ keys: [...] }"],["s-column","every list once","no missing, duplicate or unknown keys"],["t-columns","position = index","UPDATE per row"]],
@@ -432,7 +432,7 @@ const G = [
       steps: [["r-type","findAllByOrderByPositionAscTypeKeyAsc","defaults from V8"]],
       ok: ["200","[ { key, label, color, icon, position } ]"], bad: [] },
     { m: "POST", p: "/issue-type", acc: "admin", sum: "Adds an issue type at the end of the dropdown.", edges: [["c-type","s-type"],["s-type","r-type"],["r-type","t-types"]],
-      steps: [["s-type","admin only","403 otherwise"],["s-type","icon in CardType.ICONS","the icon list is code, not data"],["s-type","max 12 + keyFromLabel","label ≤ 30, color #rrggbb"],["t-types","saveAndFlush","INSERT"]],
+      steps: [["c-type","@AdminOnly","ROLE_ADMIN from the token, else 403"],["s-type","icon in CardType.ICONS","the icon list is code, not data"],["s-type","max 12 + keyFromLabel","label ≤ 30, color #rrggbb"],["t-types","saveAndFlush","INSERT"]],
       ok: ["201","issue type"], bad: [["400","Icon must be one of: …"],["403","Admins only."],["409","just added by another admin"]] },
     { m: "DELETE", p: "/issue-type/{key}", acc: "admin", sum: "Removes a type no card uses. task can never be deleted.", edges: [["c-type","s-type"],["s-type","r-type"],["s-type","r-card"],["r-card","t-cards"],["r-type","t-types"]],
       steps: [["s-type","not the default","cards without a type read as task"],["r-card","existsByType","any card using it blocks it"],["t-types","delete","DELETE row"]],
@@ -452,13 +452,13 @@ const G = [
       steps: [["c-user","LayoutRequest","cols, headers (legacy), cards"],["s-user","isValidCardPosition","each position may name its list as status"],["t-users","JSONB UPDATE","dirty check at commit"]],
       ok: ["200","{ message }"], bad: [["400","card position message"]] },
     { m: "PATCH", p: "/user/{id}", acc: "admin", sum: "Renames a user or changes their role. Either one logs them out.", edges: [["c-user","s-user"],["s-user","r-user"],["r-user","t-users"],["t-cards","t-users"]],
-      steps: [["s-user","requireAdmin","403 otherwise"],["s-user","keep one admin","you can't drop your own admin role"],["r-user","existsByUsernameIgnoreCase","409 if the new name is taken"],["s-user","revokeTokens","token_version + 1 (old tokens have the old name/role)"],["t-cards","ON UPDATE CASCADE","cards.username and assignee follow the rename (V5)"]],
+      steps: [["c-user","@AdminOnly","ROLE_ADMIN from the token, else 403"],["s-user","keep one admin","you can't drop your own admin role"],["r-user","existsByUsernameIgnoreCase","409 if the new name is taken"],["s-user","revokeTokens","token_version + 1 (old tokens have the old name/role)"],["t-cards","ON UPDATE CASCADE","cards.username and assignee follow the rename (V5)"]],
       ok: ["200","user"], bad: [["400","You cannot remove your own admin role."],["404","User not found."],["409","Username is already taken"]] },
     { m: "DELETE", p: "/user/{id}", acc: "admin", sum: "Deletes a user who has authored no cards.", edges: [["c-user","s-user"],["s-user","r-user"],["s-user","r-card"],["r-card","t-cards"],["r-user","t-users"]],
       steps: [["s-user","not yourself","400"],["r-card","existsByUsername","authors can't be deleted: 409"],["t-users","delete","assigned cards get assignee = NULL"]],
       ok: ["200","{ message }"], bad: [["400","You cannot delete yourself."],["409","This user still has cards."]] },
     { m: "POST", p: "/user/{id}/logout", acc: "admin", sum: "Logs a user out everywhere within 15 minutes.", edges: [["c-user","s-user"],["s-user","r-user"],["r-user","t-users"]],
-      steps: [["s-user","requireAdmin","403 otherwise"],["r-user","revokeTokens","one UPDATE; 0 rows → 404"],["t-users","token_version + 1","next refresh fails; user shows offline"]],
+      steps: [["c-user","@AdminOnly","ROLE_ADMIN from the token, else 403"],["r-user","revokeTokens","one UPDATE; 0 rows → 404"],["t-users","token_version + 1","next refresh fails; user shows offline"]],
       ok: ["200","{ message }"], bad: [["404","User not found."]] },
   ]},
   { id: "cat-health", name: "Health", ctrl: "c-health", files: ["HealthController"], about: "Public liveness check for Fly.", eps: [

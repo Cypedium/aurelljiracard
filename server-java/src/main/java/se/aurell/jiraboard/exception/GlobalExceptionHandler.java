@@ -6,6 +6,7 @@ import org.springframework.core.NestedExceptionUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -20,6 +21,9 @@ import se.aurell.jiraboard.dto.MessageResponse;
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    // Same message as server/middleware/requireAdmin.js
+    static final String ADMINS_ONLY_MESSAGE = "Admins only.";
 
     @ExceptionHandler(ApiException.class)
     ResponseEntity<MessageResponse> handleApi(ApiException e) {
@@ -49,6 +53,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     ResponseEntity<MessageResponse> handleTypeMismatch(MethodArgumentTypeMismatchException e) {
         return respond(HttpStatus.BAD_REQUEST, "Invalid card id.");
+    }
+
+    // @AdminOnly denied the call; without this the catch-all below would turn it into a 500
+    @ExceptionHandler(AccessDeniedException.class)
+    ResponseEntity<MessageResponse> handleAccessDenied(AccessDeniedException e) {
+        return respond(HttpStatus.FORBIDDEN, ADMINS_ONLY_MESSAGE);
     }
 
     @ExceptionHandler(NoResourceFoundException.class)

@@ -5,6 +5,7 @@ import java.util.UUID;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.InvalidBearerTokenException;
 import se.aurell.jiraboard.entity.Role;
@@ -22,7 +23,10 @@ public class AccessTokenConverter implements Converter<Jwt, AbstractAuthenticati
         // Tokens issued before roles existed have no role claim → user
         Role role = Role.fromValue(jwt.getClaimAsString(JwtService.CLAIM_ROLE));
         try {
-            return new UsernamePasswordAuthenticationToken(new AuthUser(UUID.fromString(id), username, role), jwt, List.of());
+            // ROLE_USER / ROLE_ADMIN, checked by @AdminOnly
+            List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
+            return new UsernamePasswordAuthenticationToken(
+                    new AuthUser(UUID.fromString(id), username, role), jwt, authorities);
         } catch (IllegalArgumentException e) {
             throw new InvalidBearerTokenException("Invalid user id");
         }
