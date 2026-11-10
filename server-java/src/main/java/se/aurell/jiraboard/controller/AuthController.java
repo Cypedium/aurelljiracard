@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import se.aurell.jiraboard.dto.GoogleCredentialRequest;
 import se.aurell.jiraboard.dto.LoginRequest;
 import se.aurell.jiraboard.dto.MessageResponse;
 import se.aurell.jiraboard.dto.RefreshTokenRequest;
@@ -35,6 +36,12 @@ public class AuthController {
     @PostMapping("/login")
     public TokenResponse login(@Valid @RequestBody LoginRequest request) {
         return authService.login(request);
+    }
+
+    // Sign in with Google; creates the user on first sign-in
+    @PostMapping("/google")
+    public TokenResponse google(@Valid @RequestBody GoogleCredentialRequest request) {
+        return authService.googleLogin(request.credential());
     }
 
     @PostMapping("/logout")

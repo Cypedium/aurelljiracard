@@ -20,6 +20,9 @@ app:
     refresh-secret: ${REFRESH_SECRET}
     access-ttl: 15m
     refresh-ttl: 7d
+  google:
+    # OAuth client id from Google Cloud Console; empty = "Sign in with Google" answers 503
+    client-id: ${GOOGLE_CLIENT_ID:}
   cors:
     # Comma-separated, same as CLIENT_URL in server/app.js
     allowed-origins: ${CLIENT_URL:http://localhost:3000,https://aurelljiraboard.fly.dev}

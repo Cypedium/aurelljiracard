@@ -12,10 +12,12 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import se.aurell.jiraboard.repository.CardRepository;
 import se.aurell.jiraboard.repository.UserRepository;
+import se.aurell.jiraboard.security.GoogleTokenVerifier;
 
 /**
  * Full-stack API tests: real Postgres in a Testcontainer, Flyway migrations, security filter chain.
@@ -40,6 +42,10 @@ abstract class ApiIntegrationTest {
 
     @Autowired
     JdbcTemplate jdbc;
+
+    // Declared here so every subclass shares one Spring context; GoogleTokenVerifierTest tests the real one
+    @MockitoBean
+    GoogleTokenVerifier googleTokenVerifier;
 
     @BeforeEach
     void cleanDatabase() {

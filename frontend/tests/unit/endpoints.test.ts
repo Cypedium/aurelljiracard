@@ -20,6 +20,7 @@ describe("API endpoints", () => {
   it.each([
     ["registerUser", () => endpoints.registerUser({ username: "a", password: "secret1" }), "post", "/auth/register"],
     ["loginUser", () => endpoints.loginUser({ username: "a", password: "secret1" }), "post", "/auth/login"],
+    ["googleLogin", () => endpoints.googleLogin("cred"), "post", "/auth/google"],
     ["logoutUser", () => endpoints.logoutUser("rt"), "post", "/auth/logout"],
     ["refreshToken", () => endpoints.refreshToken("rt"), "post", "/auth/refresh"],
     ["getCards", () => endpoints.getCards(), "get", "/card"],
@@ -30,6 +31,7 @@ describe("API endpoints", () => {
     ["getUsers", () => endpoints.getUsers(), "get", "/user"],
     ["getLayout", () => endpoints.getLayout(), "get", "/user/layout"],
     ["saveLayout", () => endpoints.saveLayout({ cards: [] }), "put", "/user/layout"],
+    ["connectGoogle", () => endpoints.connectGoogle("cred"), "post", "/user/google"],
     ["getColumns", () => endpoints.getColumns(), "get", "/column"],
     ["createColumn", () => endpoints.createColumn({ title: "Review" }), "post", "/column"],
     ["updateColumn", () => endpoints.updateColumn("in-progress", { title: "Doing", color: null }), "put", "/column/in-progress"],

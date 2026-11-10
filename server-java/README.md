@@ -81,6 +81,7 @@ See [`.env.example`](.env.example). Spring does not read `.env` files; export th
 | `REFRESH_SECRET` | Refresh token secret, at least 32 bytes, different from `JWT_SECRET` |
 | `PORT` | Default `8080` |
 | `CLIENT_URL` | Comma-separated CORS origins. Default `http://localhost:3000,https://aurelljiraboard.fly.dev` |
+| `GOOGLE_CLIENT_ID` | Optional. OAuth client id for Sign in with Google (same as the frontend's `NEXT_PUBLIC_GOOGLE_CLIENT_ID`). Empty = `/auth/google` and `/user/google` answer `503` |
 
 The app refuses to start if a JWT secret is missing or too short.
 
@@ -96,6 +97,8 @@ fly apps create aurelljiraboardjava
 #   DB_URL=jdbc:postgresql://<host>:5432/<db>?sslmode=require
 fly secrets set -a aurelljiraboardjava DB_URL=... DB_USERNAME=... DB_PASSWORD=... \
   JWT_SECRET=... REFRESH_SECRET=... CLIENT_URL=https://aurelljiraboard.fly.dev
+# Optional, for Sign in with Google (not a secret, but set here with the rest)
+fly secrets set -a aurelljiraboardjava GOOGLE_CLIENT_ID=<id>.apps.googleusercontent.com
 ```
 
 Deploy (not done by CI yet):
@@ -120,3 +123,7 @@ Same as the Express API; see the [root README](../README.md#api). Differences th
 
 - Ids are UUIDs instead of 24-character ObjectIds.
 - A body that is not valid JSON, or has a field of the wrong type, returns `400 { "message": "Invalid request body." }`.
+- Sign in with Google exists only here, not in the Express API:
+  - `POST /auth/google { credential }` (public) verifies Google's ID token and returns `{ accessToken, refreshToken }`. The first sign-in creates a user named after the email address (`mikael.aurell@gmail.com` → `mikael.aurell`, `mikael.aurell2` if taken) without a password.
+  - `POST /user/google { credential }` (logged in) connects a Google account to the caller. `409` if it belongs to another user or the caller already has a different one.
+  - `401 "Invalid Google credential."`, `503 "Google sign-in is not configured."` when `GOOGLE_CLIENT_ID` is not set.

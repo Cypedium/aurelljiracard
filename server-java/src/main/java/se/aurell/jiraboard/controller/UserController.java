@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import se.aurell.jiraboard.dto.GoogleCredentialRequest;
 import se.aurell.jiraboard.dto.LayoutRequest;
 import se.aurell.jiraboard.dto.MessageResponse;
 import se.aurell.jiraboard.dto.UserResponse;
@@ -52,6 +53,14 @@ public class UserController {
             @Valid @RequestBody LayoutRequest request) {
         userService.updateLayout(user, request);
         return new MessageResponse("Layout updated successfully.");
+    }
+
+    // The logged-in user connects their Google account, so they can sign in with Google
+    @PostMapping("/google")
+    public MessageResponse connectGoogle(@AuthenticationPrincipal AuthUser user,
+            @Valid @RequestBody GoogleCredentialRequest request) {
+        userService.connectGoogle(user, request.credential());
+        return new MessageResponse("Google account connected.");
     }
 
     // Admin: rename, change role, delete, or log a user out everywhere

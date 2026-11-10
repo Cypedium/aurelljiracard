@@ -20,6 +20,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     Optional<User> findFirstByUsernameIgnoreCase(String username);
 
+    Optional<User> findByGoogleSub(String googleSub);
+
     @Query("select new se.aurell.jiraboard.dto.UserResponse(u.id, u.username, u.pictureUrl, u.role) from User u")
     List<UserResponse> findAllPublic();
 

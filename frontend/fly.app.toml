@@ -6,6 +6,7 @@ primary_region = "arn"
 
 [build.args]
   NEXT_PUBLIC_API_URL = "https://aurelljiraboardjava.fly.dev"
+  NEXT_PUBLIC_GOOGLE_CLIENT_ID = "145599098308-6ha337ja2suppeeus3ila1n8odubl7k5.apps.googleusercontent.com"
 
 [http_service]
   internal_port = 3000

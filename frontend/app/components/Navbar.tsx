@@ -8,6 +8,7 @@ import { avatarColor, avatarInitials } from '../utils/avatar';
 import { handleLogout } from '../utils/logout';
 import { getUsername, hasSession, isAdmin } from '../utils/session';
 import { BOARD_ACTIONS, requestBoardAction } from '../utils/boardActions';
+import AccountDialog from './AccountDialog';
 import {
   ArrowRightStartOnRectangleIcon,
   Bars3Icon,
@@ -35,6 +36,7 @@ const Navbar = () => {
   const [userName, setUserName] = useState('');
   const [admin, setAdmin] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
 
   // Re-check on every navigation so login/logout is reflected immediately
   useEffect(() => {
@@ -157,16 +159,20 @@ const Navbar = () => {
               {/* Desktop: användare och logout längst till höger */}
               {userName && (
                 <li key="profile" className="md:ml-auto">
-                  {/* Samma avatar som på korten; namnet visas vid hovring och läses upp */}
-                  <span
-                    role="img"
-                    aria-label={`Logged in as ${userName}`}
+                  {/* Samma avatar som på korten; namnet visas vid hovring. Öppnar kontodialogen (koppla Google) */}
+                  <button
+                    type="button"
+                    aria-label={`Account (logged in as ${userName})`}
                     title={userName}
+                    onClick={() => {
+                      setMenuOpen(false);
+                      setAccountOpen(true);
+                    }}
                     className="inline-flex size-8 shrink-0 items-center justify-center rounded-full font-jira text-xs font-semibold text-white"
                     style={{ background: avatarColor(userName) }}
                   >
                     {avatarInitials(userName)}
-                  </span>
+                  </button>
                 </li>
               )}
               <li key="logout" className={userName ? undefined : 'md:ml-auto'}>
@@ -231,6 +237,8 @@ const Navbar = () => {
           </div>
         </div>
       )}
+
+      {isLoggedIn && <AccountDialog open={accountOpen} onClose={() => setAccountOpen(false)} username={userName} />}
     </header>
   );
 };
