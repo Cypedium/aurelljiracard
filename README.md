@@ -72,7 +72,7 @@ All routes except `/auth/*` and `/health` require `Authorization: Bearer <access
 |---|---|---|
 | `POST` | `/auth/register` | `{ username, password, pictureUrl? }` → `201`. Password 8–72 characters, no character three times in a row and at least 4 different characters; usernames with rude words → `400`. `409 "Username already taken."` also when the name differs only in case (`mike` vs `Mike`) |
 | `POST` | `/auth/login` | `{ username, password }` → `{ accessToken, refreshToken }`. The username is matched case-insensitively (exact match first); the token carries the stored name |
-| `POST` | `/auth/refresh` | `{ refreshToken }` → new `{ accessToken, refreshToken }` |
+| `POST` | `/auth/refresh` | `{ refreshToken }` → new `{ accessToken, refreshToken }`. Each refresh token works once; sending a used one again revokes that login (`403`), other logins keep working |
 | `POST` | `/auth/logout` | `{ refreshToken }` → revokes all of the user's refresh tokens |
 | `GET` | `/card` | All cards, newest first |
 | `POST` | `/card` | `{ rating (1–5), comment, productId, type?, status? }` → `201`; `type` is an issue type key from `GET /issue-type` (default `task`); `status: "backlog"` creates an unassigned backlog card, otherwise the author is the assignee; `productId` (issue key) must look like `MA-100` (letters, hyphen, digits; max 6 characters), `409` if it already exists. Author is taken from the token |
