@@ -68,6 +68,10 @@ export const registerUser = (user: User) => api.post("/auth/register", user);
 export const loginUser = (credentials: Credentials) =>
   api.post<Tokens>("/auth/login", credentials);
 
+// Sign in with Google: credential = the ID token from Google's button; the first sign-in creates the user
+export const googleLogin = (credential: string) =>
+  api.post<Tokens>("/auth/google", { credential });
+
 export const logoutUser = (refreshToken: string) =>
   api.post("/auth/logout", { refreshToken });
 
@@ -124,6 +128,9 @@ export const getLayout = () => api.get<Partial<UserLayout>>("/user/layout");
 
 export const saveLayout = (layout: UserLayout) => api.put("/user/layout", layout);
 
+// Connects a Google account to the logged-in user (409 if it belongs to someone else)
+export const connectGoogle = (credential: string) => api.post("/user/google", { credential });
+
 // ⭐ ADMIN (the backend returns 403 for other users)
 // Renaming or changing the role logs the user out; their cards follow the new name
 export const updateUser = (id: string, changes: UserChanges) => api.patch<PublicUser>(`/user/${id}`, changes);
@@ -137,6 +144,7 @@ export const revokeUserSessions = (id: string) => api.post(`/user/${id}/logout`)
 export default {
   registerUser,
   loginUser,
+  googleLogin,
   logoutUser,
   refreshToken,
   submitCard,
@@ -146,6 +154,7 @@ export default {
   getUsers,
   getLayout,
   saveLayout,
+  connectGoogle,
   deleteCard,
   getColumns,
   createColumn,

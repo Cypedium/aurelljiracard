@@ -3,6 +3,7 @@ export const LOADING_TOAST_ID = "loading-data";
 const LOADING_TOAST_TEXTS: Record<string, string> = {
   "/auth/register": "Creating account, please wait…",
   "/auth/login": "Logging in, please wait…",
+  "/auth/google": "Logging in, please wait…",
   "/auth/logout": "Logging out, please wait…",
 };
 export const loadingToastText = (url?: string): string | null => (url && LOADING_TOAST_TEXTS[url]) || null;

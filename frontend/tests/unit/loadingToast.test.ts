@@ -58,6 +58,7 @@ describe("loadingToastText", () => {
   it("has a text for register, login and logout", () => {
     expect(loadingToastText("/auth/register")).toBe("Creating account, please wait…");
     expect(loadingToastText("/auth/login")).toBe("Logging in, please wait…");
+    expect(loadingToastText("/auth/google")).toBe("Logging in, please wait…");
     expect(loadingToastText("/auth/logout")).toBe("Logging out, please wait…");
   });
 
