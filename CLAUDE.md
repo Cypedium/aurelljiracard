@@ -69,7 +69,7 @@ cd server-java && ./mvnw test                            # Spring Boot API tests
 cd server-java && ./mvnw spring-boot:test-run            # run on :8080 against a throwaway Postgres container
 ```
 
-CI (`.github/workflows/ci.yml`) runs the npm commands above (not `server-java` yet) on pushes and PRs to `main`; run them before committing. There is no ESLint/Prettier config yet — `next lint` is not set up.
+CI (`.github/workflows/ci.yml`) runs all of the commands above except `spring-boot:test-run` (`server-java` tests use Docker on the runner) on pushes and PRs to `main`; run them before committing. There is no ESLint/Prettier config yet — `next lint` is not set up.
 
 ## Conventions
 
@@ -94,7 +94,7 @@ CI (`.github/workflows/ci.yml`) runs the npm commands above (not `server-java` y
 
 ## Deployment
 
-Pushes to `main` deploy both Fly apps after CI passes (`fly.server.toml`, `fly.app.toml`, region `arn`). Changing Dockerfiles, Fly configs or workflows affects production — call it out in the PR. `server-java` is deployed by hand as Fly app `aurelljiraboardjava` (`fly deploy -c fly.java.toml` in `server-java/`, `Dockerfile.java`, external PostgreSQL via `DB_URL`); it has no CI job yet. The production frontend (`fly.app.toml` `NEXT_PUBLIC_API_URL`) points at `aurelljiraboardjava`, so deploy `server-java` before a change that needs it reaches `main`.
+Pushes to `main` deploy both Fly apps after CI passes (`fly.server.toml`, `fly.app.toml`, region `arn`). Changing Dockerfiles, Fly configs or workflows affects production — call it out in the PR. `server-java` is deployed by hand as Fly app `aurelljiraboardjava` (`fly deploy -c fly.java.toml` in `server-java/`, `Dockerfile.java`, external PostgreSQL via `DB_URL`); CI runs its tests (job `server-java`, which also gates the Fly deploys) but does not deploy it. The production frontend (`fly.app.toml` `NEXT_PUBLIC_API_URL`) points at `aurelljiraboardjava`, so deploy `server-java` before a change that needs it reaches `main`.
 
 ## Data model
 
