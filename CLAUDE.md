@@ -55,6 +55,7 @@ Two independent npm projects plus a Maven project — always `cd` into one befor
   - Must stay API-compatible with `server/` (paths, `_id`, `{ message }` errors, status codes, token rules); change both together. Known differences: UUID ids, `400 "Invalid request body."` for malformed JSON/wrong field types (see `server-java/README.md`)
   - Schema only via Flyway (`src/main/resources/db/migration/V<n>__*.sql`); Hibernate runs `ddl-auto: validate`. Never edit an applied migration
   - Tests use Testcontainers — Docker must be running. Dev-only secrets live in `src/test/resources/application-dev.yml`
+- `docs/backend-map.html` — standalone interactive map of `server-java` (endpoint data is hand-written in its `<script>`); update it when endpoints, services, repositories or tables change
 - `PythonTests/` — manual smoke scripts against a running API (create real data; not run in CI)
 
 `frontend/app/node_modules/` is a stray install — exclude it (and every `node_modules`) from searches.

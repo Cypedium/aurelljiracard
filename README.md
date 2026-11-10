@@ -64,6 +64,8 @@ npm run dev
 
 ## API
 
+[`docs/backend-map.html`](docs/backend-map.html) is an interactive map of `server-java`: open it in a browser and click an endpoint to see its path through security, controller, service, repository and table.
+
 All routes except `/auth/*` and `/health` require `Authorization: Bearer <accessToken>`. An expired or invalid access token returns `401`; the frontend then calls `/auth/refresh` automatically.
 
 | Method | Path | Description |
