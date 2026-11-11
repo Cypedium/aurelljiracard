@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import debounce from "lodash.debounce";
 import { toast } from "sonner";
 import { getCards, getColumns, getLayout, saveLayout, type Card } from "../api/endpoints";
@@ -9,26 +9,30 @@ import {
   DEFAULT_HEADERS,
   DEFAULT_LAYOUT,
   LAYOUT_STORAGE_KEY,
+  mergeBoardPositions,
   normalizeColumns,
   normalizeLayout,
   type BoardHeader,
   type UserLayout,
 } from "../utils/boardLayout";
 
-// Hämtar boardens kort, användarens layout och de delade listorna
-export function useBoardData() {
+// Hämtar boardens kort och listor och användarens layout. Byts boarden hämtas allt om
+export function useBoardData(boardId: string) {
   const [cards, setCards] = useState<Card[]>([]);
   const [cardsLoaded, setCardsLoaded] = useState(false);
   const [userLayout, setUserLayout] = useState<UserLayout>(DEFAULT_LAYOUT);
   const [layoutLoaded, setLayoutLoaded] = useState(false);
-  // Listorna delas av alla; admins lägger till, byter namn och färg
+  // Boardens listor, delade av dess medlemmar; boardens admin lägger till, byter namn och färg
   const [headers, setHeaders] = useState<BoardHeader[]>(DEFAULT_HEADERS);
   const [columnsLoaded, setColumnsLoaded] = useState(false);
+  // Alla kort på boarden (även backloggen): deras positioner ersätts när layouten sparas
+  const boardCardIds = useRef<Set<string>>(new Set());
 
   // 🔥 Hämta card via api.ts (token-rotation ingår)
   const fetchCards = useCallback(async () => {
     try {
-      const res = await getCards();
+      const res = await getCards(boardId);
+      boardCardIds.current = new Set((res.data || []).flatMap((c) => (c._id ? [c._id] : [])));
       // Backloggen visas på /backlog, inte på boarden
       setCards(boardCards(res.data || []));
     } catch (err: any) {
@@ -37,9 +41,11 @@ export function useBoardData() {
     } finally {
       setCardsLoaded(true);
     }
-  }, []);
+  }, [boardId]);
 
   useEffect(() => {
+    setCards([]);
+    setCardsLoaded(false);
     fetchCards();
   }, [fetchCards]);
 
@@ -67,16 +73,22 @@ export function useBoardData() {
     loadLayout().finally(() => setLayoutLoaded(true));
   }, []);
 
-  // Delade listor; om hämtningen misslyckas visas standardlistorna
+  // Boardens listor; om hämtningen misslyckas visas standardlistorna
   useEffect(() => {
-    getColumns()
-      .then((res) => setHeaders(normalizeColumns(res.data)))
+    let current = true;
+    setColumnsLoaded(false);
+    getColumns(boardId)
+      .then((res) => current && setHeaders(normalizeColumns(res.data)))
       .catch((err) => {
         console.error("Error fetching lists:", err.message);
         toast.error(apiErrorMessage(err, "Could not load the lists."));
       })
-      .finally(() => setColumnsLoaded(true));
-  }, []);
+      .finally(() => current && setColumnsLoaded(true));
+    // Ett svar för en board användaren redan har lämnat skriver inte över den nya
+    return () => {
+      current = false;
+    };
+  }, [boardId]);
 
   // 🔥 Spara layout till server via api.ts
   const saveLayoutToServer = useCallback(
@@ -92,10 +104,12 @@ export function useBoardData() {
     [],
   );
 
+  // Positionerna för kort på användarens andra boards följer med oförändrade
   const persistLayout = (next: UserLayout) => {
-    setUserLayout(next);
-    localStorage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify(next));
-    saveLayoutToServer(next);
+    const merged = { ...next, cards: mergeBoardPositions(userLayout.cards, next.cards, boardCardIds.current) };
+    setUserLayout(merged);
+    localStorage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify(merged));
+    saveLayoutToServer(merged);
   };
 
   return {

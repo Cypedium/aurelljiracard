@@ -14,11 +14,12 @@ const COLOR_MESSAGE = "Issue type color must be a hex color like #4bade8.";
 const ICON_MESSAGE = `Icon must be one of: ${ISSUE_TYPE_ICONS.join(", ")}.`;
 const DUPLICATE_KEY_ERROR = 11000;
 
+// Every handler runs after requireMember (req.boardId); changes also after requireBoardAdmin
 const toIssueType = ({ key, label, color, icon, position }) => ({ key, label, color, icon, position });
 
 exports.getAll = async (req, res) => {
   try {
-    const types = await IssueType.listAll();
+    const types = await IssueType.listAll(req.boardId);
     res.status(200).json(types.map(toIssueType));
   } catch (error) {
     console.error("Fetch issue types error:", error.message);
@@ -26,7 +27,7 @@ exports.getAll = async (req, res) => {
   }
 };
 
-// Admin: adds an issue type at the end of the dropdown for everyone
+// Board admin: adds an issue type at the end of the board's dropdown
 exports.create = async (req, res) => {
   const { label, color, icon } = req.body;
 
@@ -41,11 +42,12 @@ exports.create = async (req, res) => {
   }
 
   try {
-    const types = await IssueType.listAll();
+    const types = await IssueType.listAll(req.boardId);
     if (types.length >= MAX_ISSUE_TYPES) {
       return res.status(400).json({ message: `There can be at most ${MAX_ISSUE_TYPES} issue types.` });
     }
     const type = await IssueType.create({
+      boardId: req.boardId,
       key: issueTypeKeyFromLabel(label, types.map((t) => t.key)),
       label: label.trim(),
       color: color.toLowerCase(),
@@ -63,7 +65,7 @@ exports.create = async (req, res) => {
   }
 };
 
-// Admin: removes an issue type that no card uses. The default type stays: cards without a type read as it
+// Board admin: removes an issue type that no card on the board uses. The default type stays
 exports.remove = async (req, res) => {
   const { key } = req.params;
 
@@ -76,14 +78,14 @@ exports.remove = async (req, res) => {
   }
 
   try {
-    const type = await IssueType.findOne({ key }).lean();
+    const type = await IssueType.findOne({ boardId: req.boardId, key }).lean();
     if (!type) {
       return res.status(404).json({ message: "Issue type not found." });
     }
-    if (await Card.exists({ type: key })) {
+    if (await Card.exists({ boardId: req.boardId, type: key })) {
       return res.status(409).json({ message: "Cards still use this issue type. Change or delete them first." });
     }
-    await IssueType.deleteOne({ key });
+    await IssueType.deleteOne({ boardId: req.boardId, key });
     res.status(200).json({ message: "Issue type deleted." });
   } catch (error) {
     console.error("Delete issue type error:", error.message);

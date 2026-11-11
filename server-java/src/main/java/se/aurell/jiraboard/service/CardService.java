@@ -8,12 +8,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import se.aurell.jiraboard.dto.CardRequest;
 import se.aurell.jiraboard.dto.CardResponse;
+import se.aurell.jiraboard.entity.BoardMember;
 import se.aurell.jiraboard.entity.Card;
 import se.aurell.jiraboard.entity.CardStatus;
 import se.aurell.jiraboard.exception.ApiException;
 import se.aurell.jiraboard.repository.CardRepository;
 import se.aurell.jiraboard.security.AuthUser;
 
+/** Cards on one board: members read, create and move them; the author or the board admin edits and deletes. */
 @Service
 public class CardService {
 
@@ -22,31 +24,37 @@ public class CardService {
     private final CardRepository cardRepository;
     private final ColumnService columnService;
     private final IssueTypeService issueTypeService;
+    private final BoardService boardService;
 
-    public CardService(CardRepository cardRepository, ColumnService columnService, IssueTypeService issueTypeService) {
+    public CardService(CardRepository cardRepository, ColumnService columnService, IssueTypeService issueTypeService,
+            BoardService boardService) {
         this.cardRepository = cardRepository;
         this.columnService = columnService;
         this.issueTypeService = issueTypeService;
+        this.boardService = boardService;
     }
 
     @Transactional(readOnly = true)
-    public List<CardResponse> getAll() {
-        return cardRepository.findAllByOrderBySubmittedAtDesc().stream().map(CardResponse::from).toList();
+    public List<CardResponse> getAll(UUID boardId, AuthUser user) {
+        boardService.requireMember(boardId, user);
+        return cardRepository.findAllByBoardIdOrderBySubmittedAtDesc(boardId).stream().map(CardResponse::from).toList();
     }
 
     /** Author comes from the token and the date is always now, never from the request body. */
     @Transactional
-    public void create(CardRequest request, AuthUser user) {
+    public void create(UUID boardId, CardRequest request, AuthUser user) {
+        boardService.requireMember(boardId, user);
         if (request.type() != null) {
-            issueTypeService.requireCardType(request.type());
+            issueTypeService.requireCardType(boardId, request.type());
         }
         if (request.status() != null) {
-            columnService.requireCardStatus(request.status());
+            columnService.requireCardStatus(boardId, request.status());
         }
-        if (cardRepository.existsByProductId(request.productId())) {
+        if (cardRepository.existsByBoardIdAndProductId(boardId, request.productId())) {
             throw ApiException.conflict(DUPLICATE_KEY_MESSAGE);
         }
-        Card card = new Card(request.rating(), request.comment(), request.productId(), user.username(), Instant.now());
+        Card card = new Card(boardId, request.rating(), request.comment(), request.productId(), user.username(),
+                Instant.now());
         if (request.type() != null) {
             card.setType(request.type());
         }
@@ -59,14 +67,15 @@ public class CardService {
         saveUnique(card);
     }
 
-    /** The author or an admin may edit; author, date and status are never changed by an edit. */
+    /** The author or the board admin may edit; author, date and status are never changed by an edit. */
     @Transactional
-    public CardResponse update(UUID id, CardRequest request, AuthUser user) {
+    public CardResponse update(UUID boardId, UUID id, CardRequest request, AuthUser user) {
+        BoardMember member = boardService.requireMember(boardId, user);
         if (request.type() != null) {
-            issueTypeService.requireCardType(request.type());
+            issueTypeService.requireCardType(boardId, request.type());
         }
-        Card card = user.isAdmin() ? findCard(id) : findOwnCard(id, user, "You can only edit your own card.");
-        if (cardRepository.existsByProductIdAndIdNot(request.productId(), id)) {
+        Card card = findEditableCard(boardId, id, member, user, "You can only edit your own card.");
+        if (cardRepository.existsByBoardIdAndProductIdAndIdNot(boardId, request.productId(), id)) {
             throw ApiException.conflict(DUPLICATE_KEY_MESSAGE);
         }
         card.setRating(request.rating());
@@ -79,13 +88,14 @@ public class CardService {
     }
 
     /**
-     * Any logged-in user may move a card between columns, like in Jira. Taking a card from the
+     * Any board member may move a card between columns, like in Jira. Taking a card from the
      * backlog assigns it to the caller; moving it to the backlog unassigns it.
      */
     @Transactional
-    public CardResponse updateStatus(UUID id, String status, AuthUser user) {
-        columnService.requireCardStatus(status);
-        Card card = findCard(id);
+    public CardResponse updateStatus(UUID boardId, UUID id, String status, AuthUser user) {
+        boardService.requireMember(boardId, user);
+        columnService.requireCardStatus(boardId, status);
+        Card card = findCard(boardId, id);
         if (isBacklog(status)) {
             card.setAssignee(null);
         } else if (isBacklog(card.getStatus())) {
@@ -95,10 +105,11 @@ public class CardService {
         return CardResponse.from(card);
     }
 
-    /** The author or an admin may delete. */
+    /** The author or the board admin may delete. */
     @Transactional
-    public void delete(UUID id, AuthUser user) {
-        Card card = user.isAdmin() ? findCard(id) : findOwnCard(id, user, "You can only delete your own card.");
+    public void delete(UUID boardId, UUID id, AuthUser user) {
+        BoardMember member = boardService.requireMember(boardId, user);
+        Card card = findEditableCard(boardId, id, member, user, "You can only delete your own card.");
         cardRepository.delete(card);
     }
 
@@ -115,13 +126,14 @@ public class CardService {
         }
     }
 
-    private Card findCard(UUID id) {
-        return cardRepository.findById(id).orElseThrow(() -> ApiException.notFound("Card not found."));
+    // A card on another board is "not found", like a board you are not on
+    private Card findCard(UUID boardId, UUID id) {
+        return cardRepository.findByIdAndBoardId(id, boardId).orElseThrow(() -> ApiException.notFound("Card not found."));
     }
 
-    private Card findOwnCard(UUID id, AuthUser user, String forbiddenMessage) {
-        Card card = findCard(id);
-        if (!card.getUsername().equals(user.username())) {
+    private Card findEditableCard(UUID boardId, UUID id, BoardMember member, AuthUser user, String forbiddenMessage) {
+        Card card = findCard(boardId, id);
+        if (!member.isAdmin() && !card.getUsername().equals(user.username())) {
             throw ApiException.forbidden(forbiddenMessage);
         }
         return card;

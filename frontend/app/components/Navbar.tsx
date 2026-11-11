@@ -7,8 +7,11 @@ import logo from '../icon.png';
 import { avatarColor, avatarInitials } from '../utils/avatar';
 import { handleLogout } from '../utils/logout';
 import { getUsername, hasSession, isAdmin } from '../utils/session';
-import { BOARD_ACTIONS, requestBoardAction, type BoardAction } from '../utils/boardActions';
+import { BOARD_ACTIONS, onBoardAction, requestBoardAction, type BoardAction } from '../utils/boardActions';
+import { useBoards } from '../cards/useBoards';
 import AccountDialog from './AccountDialog';
+import BoardSwitcher from './BoardSwitcher';
+import ShareBoardDialog from './ShareBoardDialog';
 import {
   ArrowRightStartOnRectangleIcon,
   Bars3Icon,
@@ -52,9 +55,14 @@ const Navbar = () => {
   const pathname = usePathname();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userName, setUserName] = useState('');
+  // Global admin (sajtens): hanterar användare. Boardens admin (ägaren): listor, ärendetyper, inbjudningar
   const [admin, setAdmin] = useState(false);
+  const { current: board, boardAdmin } = useBoards();
   const [menuOpen, setMenuOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+
+  useEffect(() => onBoardAction(BOARD_ACTIONS.shareBoard, () => setShareOpen(true)), []);
 
   // Re-check on every navigation so login/logout is reflected immediately
   useEffect(() => {
@@ -65,17 +73,19 @@ const Navbar = () => {
 
   const onBoard = isLoggedIn && pathname === BOARD_PATH;
   const onBacklog = isLoggedIn && pathname === BACKLOG_PATH;
-  const onIssueTypes = isLoggedIn && admin && pathname === ISSUE_TYPES_PATH;
+  const onIssueTypes = isLoggedIn && boardAdmin && pathname === ISSUE_TYPES_PATH;
 
-  // Rad tvås knappar för aktuell sida. Bara admin kan lägga till / ta bort kolumner (backend nekar andra)
+  // Rad tvås knappar för aktuell sida. Bara boardens admin lägger till / tar bort kolumner (backend nekar andra)
   const subActions: SubAction[] = [
     ...(onBoard || onBacklog ? [{ label: 'Create card', action: BOARD_ACTIONS.createCard }] : []),
-    ...(onBoard && admin
+    ...(onBoard && boardAdmin
       ? [
           { label: 'Create column', action: BOARD_ACTIONS.createColumn },
           { label: 'Delete column', action: BOARD_ACTIONS.deleteColumn },
         ]
       : []),
+    // Ägaren bjuder in; medarbetare ser vilka som är med och kan lämna
+    ...(onBoard && board ? [{ label: boardAdmin ? 'Share' : 'Members', action: BOARD_ACTIONS.shareBoard }] : []),
     ...(onIssueTypes ? [{ label: 'Create Issue type', action: BOARD_ACTIONS.createIssueType, icon: true }] : []),
   ];
 
@@ -109,7 +119,7 @@ const Navbar = () => {
     observer.observe(link);
     observer.observe(header);
     return () => observer.disconnect();
-  }, [onBoard, onBacklog, onIssueTypes, admin, userName]);
+  }, [onBoard, onBacklog, onIssueTypes, admin, boardAdmin, board, userName]);
 
   return (
     <header ref={headerRef} className="fixed z-1000 w-full font-brand">
@@ -168,28 +178,35 @@ const Navbar = () => {
                 </Link>
                 {onBacklog && <MobileSubActions actions={subActions} />}
               </li>
-              {/* Bara för admin; backend nekar andra (403) */}
+              {/* Bara för sajtens admin; backend nekar andra (403) */}
               {admin && (
-                <>
-                  <li onClick={() => setMenuOpen(false)}>
-                    <Link href="/users" className={NAV_LINK_CLASS}>
-                      <UsersIcon className={NAV_ICON_CLASS} aria-hidden />
-                      Users
-                    </Link>
-                  </li>
-                  <li onClick={() => setMenuOpen(false)}>
-                    <Link
-                      ref={issueTypesLinkRef}
-                      href={ISSUE_TYPES_PATH}
-                      aria-current={pathname === ISSUE_TYPES_PATH ? 'page' : undefined}
-                      className={`${NAV_LINK_CLASS} underline-offset-8 aria-[current=page]:underline`}
-                    >
-                      <TagIcon className={NAV_ICON_CLASS} aria-hidden />
-                      Issue types
-                    </Link>
-                    {onIssueTypes && <MobileSubActions actions={subActions} />}
-                  </li>
-                </>
+                <li onClick={() => setMenuOpen(false)}>
+                  <Link href="/users" className={NAV_LINK_CLASS}>
+                    <UsersIcon className={NAV_ICON_CLASS} aria-hidden />
+                    Users
+                  </Link>
+                </li>
+              )}
+              {/* Den valda boardens ärendetyper: bara dess admin */}
+              {boardAdmin && (
+                <li onClick={() => setMenuOpen(false)}>
+                  <Link
+                    ref={issueTypesLinkRef}
+                    href={ISSUE_TYPES_PATH}
+                    aria-current={pathname === ISSUE_TYPES_PATH ? 'page' : undefined}
+                    className={`${NAV_LINK_CLASS} underline-offset-8 aria-[current=page]:underline`}
+                  >
+                    <TagIcon className={NAV_ICON_CLASS} aria-hidden />
+                    Issue types
+                  </Link>
+                  {onIssueTypes && <MobileSubActions actions={subActions} />}
+                </li>
+              )}
+              {/* Vilken board som visas; desktop: längst till höger, före avataren */}
+              {board && (
+                <li className="md:ml-auto">
+                  <BoardSwitcher onSelected={() => setMenuOpen(false)} />
+                </li>
               )}
             </>
           )}
@@ -198,7 +215,7 @@ const Navbar = () => {
             <>
               {/* Desktop: användare och logout längst till höger */}
               {userName && (
-                <li key="profile" className="md:ml-auto">
+                <li key="profile" className={board ? undefined : 'md:ml-auto'}>
                   {/* Samma avatar som på korten; namnet visas vid hovring. Öppnar kontodialogen (koppla Google) */}
                   <button
                     type="button"
@@ -215,7 +232,7 @@ const Navbar = () => {
                   </button>
                 </li>
               )}
-              <li key="logout" className={userName ? undefined : 'md:ml-auto'}>
+              <li key="logout" className={userName || board ? undefined : 'md:ml-auto'}>
                 <button onClick={handleLogout} className={NAV_LINK_CLASS}>
                   <ArrowRightStartOnRectangleIcon className={NAV_ICON_CLASS} aria-hidden />
                   Logout
@@ -257,6 +274,7 @@ const Navbar = () => {
       )}
 
       {isLoggedIn && <AccountDialog open={accountOpen} onClose={() => setAccountOpen(false)} username={userName} />}
+      {isLoggedIn && board && <ShareBoardDialog board={board} open={shareOpen} onClose={() => setShareOpen(false)} />}
     </header>
   );
 };

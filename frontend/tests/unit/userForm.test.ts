@@ -1,5 +1,5 @@
 import { describe, expect, it } from "@jest/globals";
-import { changedUserFields, countCardsByAuthor, editUserSchema } from "../../app/utils/userForm";
+import { changedUserFields, editUserSchema } from "../../app/utils/userForm";
 
 const firstError = (form: object) => {
   const result = editUserSchema.safeParse(form);
@@ -31,12 +31,5 @@ describe("changedUserFields", () => {
     expect(changedUserFields(current, { username: "robert", role: "user" })).toEqual({ username: "robert" });
     expect(changedUserFields(current, { username: "bob", role: "admin" })).toEqual({ role: "admin" });
     expect(changedUserFields(current, current)).toEqual({});
-  });
-});
-
-describe("countCardsByAuthor", () => {
-  it("counts cards per author", () => {
-    expect(countCardsByAuthor([{ username: "a" }, { username: "b" }, { username: "a" }])).toEqual({ a: 2, b: 1 });
-    expect(countCardsByAuthor([])).toEqual({});
   });
 });

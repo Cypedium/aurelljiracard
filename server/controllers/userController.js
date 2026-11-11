@@ -1,6 +1,10 @@
 // server/controllers/userController.js
 const User = require("../models/User");
 const Card = require("../models/Card");
+const Board = require("../models/Board");
+const BoardMember = require("../models/BoardMember");
+const Column = require("../models/Column");
+const IssueType = require("../models/IssueType");
 const { isNonEmptyString, isObjectId } = require("../utils/validate");
 const { isColumnKey } = require("../utils/cardStatus");
 const { ADMIN_ROLE, ROLES } = require("../utils/role");
@@ -214,7 +218,19 @@ exports.remove = async (req, res) => {
     if (await Card.exists({ username: user.username })) {
       return res.status(409).json({ message: "This user still has cards. Delete them first." });
     }
+    const board = await Board.findOne({ ownerId: id }).lean();
+    if (board && (await Card.exists({ boardId: board._id }))) {
+      return res.status(409).json({ message: "This user's board still has cards. Delete them first." });
+    }
     await Card.updateMany({ assignee: user.username }, { assignee: null });
+    // Their board with its lists, issue types and members, and their place on other boards (Postgres: ON DELETE CASCADE)
+    if (board) {
+      await Column.deleteMany({ boardId: board._id });
+      await IssueType.deleteMany({ boardId: board._id });
+      await BoardMember.deleteMany({ boardId: board._id });
+      await Board.deleteOne({ _id: board._id });
+    }
+    await BoardMember.deleteMany({ userId: id });
     await User.deleteOne({ _id: id });
     res.status(200).json({ message: "User deleted successfully." });
   } catch (error) {

@@ -25,8 +25,11 @@ public class Card {
     @Column(nullable = false, length = 2000)
     private String comment;
 
-    // "Issue key", unique across all cards
-    @Column(name = "product_id", nullable = false, unique = true, length = 200)
+    @Column(name = "board_id", nullable = false, updatable = false)
+    private UUID boardId;
+
+    // "Issue key", unique on its board
+    @Column(name = "product_id", nullable = false, length = 200)
     private String productId;
 
     // Author, always taken from the access token
@@ -52,7 +55,8 @@ public class Card {
     protected Card() {
     }
 
-    public Card(int rating, String comment, String productId, String username, Instant submittedAt) {
+    public Card(UUID boardId, int rating, String comment, String productId, String username, Instant submittedAt) {
+        this.boardId = boardId;
         this.rating = rating;
         this.comment = comment;
         this.productId = productId;
@@ -62,6 +66,10 @@ public class Card {
 
     public UUID getId() {
         return id;
+    }
+
+    public UUID getBoardId() {
+        return boardId;
     }
 
     public int getRating() {

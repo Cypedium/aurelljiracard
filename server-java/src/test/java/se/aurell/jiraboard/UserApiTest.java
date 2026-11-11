@@ -47,7 +47,8 @@ class UserApiTest extends ApiIntegrationTest {
         String bobLogin = registerAndLogin("bob");
         String bob = JsonPath.read(bobLogin, "$.accessToken");
         String bobRefresh = JsonPath.read(bobLogin, "$.refreshToken");
-        mvc.perform(bearer(json(post("/card"), """
+        String bobBoard = boardId(bob);
+        mvc.perform(bearer(json(post(on(bobBoard, "/card")), """
                 {"rating": 3, "comment": "Mine", "productId": "AJB-1"}"""), bob))
                 .andExpect(status().isCreated());
         String admin = adminToken();
@@ -58,9 +59,13 @@ class UserApiTest extends ApiIntegrationTest {
                 .andExpect(jsonPath("$.username").value("robert"))
                 .andExpect(jsonPath("$.role").value("admin"));
 
-        mvc.perform(bearer(get("/card"), admin))
+        // bob's access token still works until it expires; membership is by user id
+        mvc.perform(bearer(get(on(bobBoard, "/card")), bob))
                 .andExpect(jsonPath("$[0].username").value("robert"))
                 .andExpect(jsonPath("$[0].assignee").value("robert"));
+        mvc.perform(bearer(get("/board"), bob))
+                .andExpect(jsonPath("$[0].name").value("robert's board"))
+                .andExpect(jsonPath("$[0].owner").value("robert"));
         // Old refresh token (old name and role) is revoked
         mvc.perform(json(post("/auth/refresh"), """
                 {"refreshToken": "%s"}""".formatted(bobRefresh)))
@@ -107,9 +112,10 @@ class UserApiTest extends ApiIntegrationTest {
     @Test
     void adminDeletesOnlyUsersWithoutCards() throws Exception {
         String bob = accessToken("bob");
-        register("carol");
-        mvc.perform(bearer(json(post("/card"), """
-                {"rating": 3, "comment": "Mine", "productId": "AJB-1"}"""), bob))
+        String carolToken = accessToken("carol");
+        String bobBoard = joinBoard(bob, carolToken);
+        mvc.perform(bearer(json(post(on(bobBoard, "/card")), """
+                {"rating": 3, "comment": "Mine", "productId": "AJB-1", "status": "backlog"}"""), bob))
                 .andExpect(status().isCreated());
         String admin = adminToken();
 
@@ -120,22 +126,50 @@ class UserApiTest extends ApiIntegrationTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("You cannot delete yourself."));
 
-        // carol is assignee of bob's card after taking it from the backlog
+        // carol (a collaborator) is assignee of bob's card after taking it from the backlog
         String cardId = cardRepository.findAll().get(0).getId().toString();
-        mvc.perform(bearer(json(patch("/card/" + cardId + "/status"), """
-                {"status": "backlog"}"""), admin));
-        String carolToken = JsonPath.read(mvc.perform(json(post("/auth/login"), """
-                {"username": "carol", "password": "%s"}""".formatted(PASSWORD)))
-                .andReturn().getResponse().getContentAsString(), "$.accessToken");
-        mvc.perform(bearer(json(patch("/card/" + cardId + "/status"), """
+        mvc.perform(bearer(json(patch(on(bobBoard, "/card/" + cardId + "/status")), """
                 {"status": "todo"}"""), carolToken))
                 .andExpect(jsonPath("$.assignee").value("carol"));
 
         mvc.perform(bearer(delete("/user/" + idOf("carol")), admin))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("User deleted successfully."));
-        mvc.perform(bearer(get("/card"), admin))
+        mvc.perform(bearer(get(on(bobBoard, "/card")), bob))
                 .andExpect(jsonPath("$[0].assignee").doesNotExist());
+    }
+
+    @Test
+    void aUserWhoseBoardHasCardsCannotBeDeleted() throws Exception {
+        String bob = accessToken("bob");
+        String carol = accessToken("carol");
+        // carol writes a card on bob's board; bob himself has none
+        String bobBoard = joinBoard(bob, carol);
+        mvc.perform(bearer(json(post(on(bobBoard, "/card")), """
+                {"rating": 3, "comment": "Carol's", "productId": "AJB-1"}"""), carol))
+                .andExpect(status().isCreated());
+        String admin = adminToken();
+
+        mvc.perform(bearer(delete("/user/" + idOf("bob")), admin))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("This user's board still has cards. Delete them first."));
+    }
+
+    @Test
+    void deletingAUserRemovesTheirBoardAndMemberships() throws Exception {
+        String bob = accessToken("bob");
+        String carol = accessToken("carol");
+        joinBoard(bob, carol);
+        joinBoard(carol, bob);
+        String admin = adminToken();
+
+        mvc.perform(bearer(delete("/user/" + idOf("bob")), admin)).andExpect(status().isOk());
+
+        mvc.perform(bearer(get("/board"), carol))
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].owner").value("carol"));
+        mvc.perform(bearer(get(on(boardId(carol), "/member")), carol))
+                .andExpect(jsonPath("$", hasSize(1)));
     }
 
     @Test

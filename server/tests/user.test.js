@@ -14,14 +14,25 @@ jest.mock("../models/Card", () => ({
   updateMany: jest.fn()
 }));
 
+jest.mock("../models/Board", () => ({ findOne: jest.fn(), deleteOne: jest.fn() }));
+jest.mock("../models/BoardMember", () => ({ deleteMany: jest.fn() }));
+jest.mock("../models/Column", () => ({ deleteMany: jest.fn() }));
+jest.mock("../models/IssueType", () => ({ deleteMany: jest.fn() }));
+
 const request = require("supertest");
 const app = require("../app");
 const User = require("../models/User");
 const Card = require("../models/Card");
+const Board = require("../models/Board");
+const BoardMember = require("../models/BoardMember");
+const Column = require("../models/Column");
+const IssueType = require("../models/IssueType");
 const { authHeader, query, USER_ID } = require("./helpers");
 
 beforeEach(() => {
   jest.clearAllMocks();
+  // No board yet (it is created on the first GET /board)
+  Board.findOne.mockReturnValue(query(null));
 });
 
 describe("user routes", () => {
@@ -300,7 +311,39 @@ describe("admin user management", () => {
 
     expect(res.status).toBe(200);
     expect(Card.updateMany).toHaveBeenCalledWith({ assignee: "bob" }, { assignee: null });
+    expect(BoardMember.deleteMany).toHaveBeenCalledWith({ userId: OTHER_ID });
     expect(User.deleteOne).toHaveBeenCalledWith({ _id: OTHER_ID });
+  });
+
+  it("also deletes the user's empty board with its lists, issue types and members", async () => {
+    const BOARD = "64d000000000000000000009";
+    User.findById.mockResolvedValue(storedUser());
+    Board.findOne.mockReturnValue(query({ _id: BOARD }));
+    Card.exists.mockResolvedValue(null);
+
+    const res = await request(app).delete(`/user/${OTHER_ID}`).set("Authorization", admin());
+
+    expect(res.status).toBe(200);
+    expect(Card.exists).toHaveBeenCalledWith({ boardId: BOARD });
+    expect(Column.deleteMany).toHaveBeenCalledWith({ boardId: BOARD });
+    expect(IssueType.deleteMany).toHaveBeenCalledWith({ boardId: BOARD });
+    expect(BoardMember.deleteMany).toHaveBeenCalledWith({ boardId: BOARD });
+    expect(Board.deleteOne).toHaveBeenCalledWith({ _id: BOARD });
+    expect(User.deleteOne).toHaveBeenCalledWith({ _id: OTHER_ID });
+  });
+
+  it("does not delete a user whose board still has other people's cards", async () => {
+    User.findById.mockResolvedValue(storedUser());
+    Board.findOne.mockReturnValue(query({ _id: "64d000000000000000000009" }));
+    // None authored by bob, but one on his board
+    Card.exists.mockImplementation(async (filter) => (filter.boardId ? { _id: "c1" } : null));
+
+    const res = await request(app).delete(`/user/${OTHER_ID}`).set("Authorization", admin());
+
+    expect(res.status).toBe(409);
+    expect(res.body.message).toBe("This user's board still has cards. Delete them first.");
+    expect(Board.deleteOne).not.toHaveBeenCalled();
+    expect(User.deleteOne).not.toHaveBeenCalled();
   });
 
   it("does not delete a user who still has cards", async () => {

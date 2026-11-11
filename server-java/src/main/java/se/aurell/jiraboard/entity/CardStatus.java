@@ -3,17 +3,26 @@ package se.aurell.jiraboard.entity;
 import java.text.Normalizer;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 /**
- * A card's status: the key of a {@link BoardColumn} (shared by all users) or {@link #BACKLOG}.
+ * A card's status: the key of a {@link BoardColumn} on the card's board or {@link #BACKLOG}.
  * Backlog cards are listed on /backlog and have no assignee. Must match server/utils/cardStatus.js.
  */
 public final class CardStatus {
 
     public static final String BACKLOG = "backlog";
     public static final String DEFAULT = "todo";
+
+    /** The lists a new board starts with (key → title); must match DEFAULT_COLUMNS in server/utils/cardStatus.js and V11. */
+    public static final List<Map.Entry<String, String>> DEFAULT_COLUMNS = List.of(
+            Map.entry("todo", "To Do"),
+            Map.entry("in-progress", "In Progress"),
+            Map.entry("test", "Test"),
+            Map.entry("done", "Done"));
 
     /** Column keys: lowercase letters and digits joined by single hyphens, e.g. "in-progress". */
     public static final String KEY_PATTERN = "^[a-z0-9]+(-[a-z0-9]+)*$";

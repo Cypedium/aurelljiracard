@@ -15,6 +15,7 @@ import se.aurell.jiraboard.entity.Layout;
 import se.aurell.jiraboard.entity.Role;
 import se.aurell.jiraboard.entity.User;
 import se.aurell.jiraboard.exception.ApiException;
+import se.aurell.jiraboard.repository.BoardRepository;
 import se.aurell.jiraboard.repository.CardRepository;
 import se.aurell.jiraboard.repository.UserRepository;
 import se.aurell.jiraboard.security.AuthUser;
@@ -31,12 +32,14 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final CardRepository cardRepository;
+    private final BoardRepository boardRepository;
     private final GoogleTokenVerifier googleTokenVerifier;
 
-    public UserService(UserRepository userRepository, CardRepository cardRepository,
+    public UserService(UserRepository userRepository, CardRepository cardRepository, BoardRepository boardRepository,
             GoogleTokenVerifier googleTokenVerifier) {
         this.userRepository = userRepository;
         this.cardRepository = cardRepository;
+        this.boardRepository = boardRepository;
         this.googleTokenVerifier = googleTokenVerifier;
     }
 
@@ -119,7 +122,10 @@ public class UserService {
         return UserResponse.from(user);
     }
 
-    /** Admin: delete a user without cards; cards assigned to them become unassigned (ON DELETE SET NULL). */
+    /**
+     * Admin: delete a user without cards, whose own board has no cards either. Cards assigned to them become
+     * unassigned (ON DELETE SET NULL); their board, its lists and issue types and their memberships go too (V11).
+     */
     @Transactional
     public void delete(UUID id, AuthUser admin) {
         if (id.equals(admin.id())) {
@@ -128,6 +134,12 @@ public class UserService {
         User user = userRepository.findById(id).orElseThrow(() -> ApiException.notFound("User not found."));
         if (cardRepository.existsByUsername(user.getUsername())) {
             throw ApiException.conflict("This user still has cards. Delete them first.");
+        }
+        boolean boardHasCards = boardRepository.findByOwnerId(id)
+                .map(board -> cardRepository.existsByBoardId(board.getId()))
+                .orElse(false);
+        if (boardHasCards) {
+            throw ApiException.conflict("This user's board still has cards. Delete them first.");
         }
         userRepository.delete(user);
     }

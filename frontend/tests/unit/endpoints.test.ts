@@ -11,6 +11,8 @@ const spies = {
   delete: jest.spyOn(api, "delete"),
 };
 
+const B = "b1";
+
 // Paths must match the backend mounts in server/app.js
 describe("API endpoints", () => {
   beforeEach(() => {
@@ -23,23 +25,29 @@ describe("API endpoints", () => {
     ["googleLogin", () => endpoints.googleLogin("cred"), "post", "/auth/google"],
     ["logoutUser", () => endpoints.logoutUser("rt"), "post", "/auth/logout"],
     ["refreshToken", () => endpoints.refreshToken("rt"), "post", "/auth/refresh"],
-    ["getCards", () => endpoints.getCards(), "get", "/card"],
-    ["submitCard", () => endpoints.submitCard({ rating: 3, comment: "c", productId: "p" }), "post", "/card"],
-    ["updateCard", () => endpoints.updateCard("abc", { rating: 3, comment: "c", productId: "p" }), "put", "/card/abc"],
-    ["updateCardStatus", () => endpoints.updateCardStatus("abc", "done"), "patch", "/card/abc/status"],
-    ["deleteCard", () => endpoints.deleteCard("abc"), "delete", "/card/abc"],
+    ["getBoards", () => endpoints.getBoards(), "get", "/board"],
+    ["createInvite", () => endpoints.createInvite(B), "post", "/board/b1/invite"],
+    ["deleteInvite", () => endpoints.deleteInvite(B), "delete", "/board/b1/invite"],
+    ["joinBoard", () => endpoints.joinBoard("t-1_x"), "post", "/invite/t-1_x"],
+    ["getMembers", () => endpoints.getMembers(B), "get", "/board/b1/member"],
+    ["removeMember", () => endpoints.removeMember(B, "u1"), "delete", "/board/b1/member/u1"],
+    ["getCards", () => endpoints.getCards(B), "get", "/board/b1/card"],
+    ["submitCard", () => endpoints.submitCard(B, { rating: 3, comment: "c", productId: "p" }), "post", "/board/b1/card"],
+    ["updateCard", () => endpoints.updateCard(B, "abc", { rating: 3, comment: "c", productId: "p" }), "put", "/board/b1/card/abc"],
+    ["updateCardStatus", () => endpoints.updateCardStatus(B, "abc", "done"), "patch", "/board/b1/card/abc/status"],
+    ["deleteCard", () => endpoints.deleteCard(B, "abc"), "delete", "/board/b1/card/abc"],
     ["getUsers", () => endpoints.getUsers(), "get", "/user"],
     ["getLayout", () => endpoints.getLayout(), "get", "/user/layout"],
     ["saveLayout", () => endpoints.saveLayout({ cards: [] }), "put", "/user/layout"],
     ["connectGoogle", () => endpoints.connectGoogle("cred"), "post", "/user/google"],
-    ["getColumns", () => endpoints.getColumns(), "get", "/column"],
-    ["createColumn", () => endpoints.createColumn({ title: "Review" }), "post", "/column"],
-    ["updateColumn", () => endpoints.updateColumn("in-progress", { title: "Doing", color: null }), "put", "/column/in-progress"],
-    ["deleteColumn", () => endpoints.deleteColumn("review"), "delete", "/column/review"],
-    ["reorderColumns", () => endpoints.reorderColumns(["done", "todo"]), "put", "/column"],
-    ["getIssueTypes", () => endpoints.getIssueTypes(), "get", "/issue-type"],
-    ["createIssueType", () => endpoints.createIssueType({ label: "Story", color: "#1f845a", icon: "star" }), "post", "/issue-type"],
-    ["deleteIssueType", () => endpoints.deleteIssueType("story"), "delete", "/issue-type/story"],
+    ["getColumns", () => endpoints.getColumns(B), "get", "/board/b1/column"],
+    ["createColumn", () => endpoints.createColumn(B, { title: "Review" }), "post", "/board/b1/column"],
+    ["updateColumn", () => endpoints.updateColumn(B, "in-progress", { title: "Doing", color: null }), "put", "/board/b1/column/in-progress"],
+    ["deleteColumn", () => endpoints.deleteColumn(B, "review"), "delete", "/board/b1/column/review"],
+    ["reorderColumns", () => endpoints.reorderColumns(B, ["done", "todo"]), "put", "/board/b1/column"],
+    ["getIssueTypes", () => endpoints.getIssueTypes(B), "get", "/board/b1/issue-type"],
+    ["createIssueType", () => endpoints.createIssueType(B, { label: "Story", color: "#1f845a", icon: "star" }), "post", "/board/b1/issue-type"],
+    ["deleteIssueType", () => endpoints.deleteIssueType(B, "story"), "delete", "/board/b1/issue-type/story"],
     ["updateUser", () => endpoints.updateUser("u1", { role: "admin" }), "patch", "/user/u1"],
     ["deleteUser", () => endpoints.deleteUser("u1"), "delete", "/user/u1"],
     ["revokeUserSessions", () => endpoints.revokeUserSessions("u1"), "post", "/user/u1/logout"],
@@ -50,19 +58,19 @@ describe("API endpoints", () => {
   });
 
   it("submitCard never sends a username", async () => {
-    await endpoints.submitCard({ rating: 3, comment: "c", productId: "p" });
+    await endpoints.submitCard(B, { rating: 3, comment: "c", productId: "p" });
 
     expect(spies.post.mock.calls[0][1]).not.toHaveProperty("username");
   });
 
   it("submitCard sends the board column when given", async () => {
-    await endpoints.submitCard({ rating: 3, comment: "c", productId: "p", status: "test" });
+    await endpoints.submitCard(B, { rating: 3, comment: "c", productId: "p", status: "test" });
 
     expect(spies.post.mock.calls[0][1]).toHaveProperty("status", "test");
   });
 
   it("updateCard never sends a username", async () => {
-    await endpoints.updateCard("abc", { rating: 3, comment: "c", productId: "p" });
+    await endpoints.updateCard(B, "abc", { rating: 3, comment: "c", productId: "p" });
 
     expect(spies.put.mock.calls[0][1]).not.toHaveProperty("username");
   });

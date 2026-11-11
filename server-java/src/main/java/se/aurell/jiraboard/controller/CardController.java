@@ -22,8 +22,9 @@ import se.aurell.jiraboard.dto.MessageResponse;
 import se.aurell.jiraboard.security.AuthUser;
 import se.aurell.jiraboard.service.CardService;
 
+/** Cards on one board; access is checked in CardService. */
 @RestController
-@RequestMapping("/card")
+@RequestMapping("/board/{boardId}/card")
 public class CardController {
 
     private final CardService cardService;
@@ -33,32 +34,34 @@ public class CardController {
     }
 
     @GetMapping
-    public List<CardResponse> getAll() {
-        return cardService.getAll();
+    public List<CardResponse> getAll(@PathVariable UUID boardId, @AuthenticationPrincipal AuthUser user) {
+        return cardService.getAll(boardId, user);
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public MessageResponse create(@Valid @RequestBody CardRequest request, @AuthenticationPrincipal AuthUser user) {
-        cardService.create(request, user);
+    public MessageResponse create(@PathVariable UUID boardId, @Valid @RequestBody CardRequest request,
+            @AuthenticationPrincipal AuthUser user) {
+        cardService.create(boardId, request, user);
         return new MessageResponse("Card saved successfully!");
     }
 
     @PutMapping("/{id}")
-    public CardResponse update(@PathVariable UUID id, @Valid @RequestBody CardRequest request,
-            @AuthenticationPrincipal AuthUser user) {
-        return cardService.update(id, request, user);
+    public CardResponse update(@PathVariable UUID boardId, @PathVariable UUID id,
+            @Valid @RequestBody CardRequest request, @AuthenticationPrincipal AuthUser user) {
+        return cardService.update(boardId, id, request, user);
     }
 
     @PatchMapping("/{id}/status")
-    public CardResponse updateStatus(@PathVariable UUID id, @Valid @RequestBody CardStatusRequest request,
-            @AuthenticationPrincipal AuthUser user) {
-        return cardService.updateStatus(id, request.status(), user);
+    public CardResponse updateStatus(@PathVariable UUID boardId, @PathVariable UUID id,
+            @Valid @RequestBody CardStatusRequest request, @AuthenticationPrincipal AuthUser user) {
+        return cardService.updateStatus(boardId, id, request.status(), user);
     }
 
     @DeleteMapping("/{id}")
-    public MessageResponse delete(@PathVariable UUID id, @AuthenticationPrincipal AuthUser user) {
-        cardService.delete(id, user);
+    public MessageResponse delete(@PathVariable UUID boardId, @PathVariable UUID id,
+            @AuthenticationPrincipal AuthUser user) {
+        cardService.delete(boardId, id, user);
         return new MessageResponse("Card deleted successfully.");
     }
 }

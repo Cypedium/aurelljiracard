@@ -15,15 +15,16 @@ import {
 } from "../utils/boardLayout";
 
 type Options = {
+  boardId: string;
   headers: BoardHeader[];
   setHeaders: Dispatch<SetStateAction<BoardHeader[]>>;
   userLayout: UserLayout;
   persistLayout: (next: UserLayout) => void;
 };
 
-// Admin: lägg till, byt namn, färga, flytta och ta bort listorna (för alla).
+// Boardens admin: lägg till, byt namn, färga, flytta och ta bort listorna (för alla på boarden).
 // Ändringen visas direkt; vid fel återställs listorna
-export function useColumnActions({ headers, setHeaders, userLayout, persistLayout }: Options) {
+export function useColumnActions({ boardId, headers, setHeaders, userLayout, persistLayout }: Options) {
   // Kolumnen vars rubrik redigeras
   const [renamingKey, setRenamingKey] = useState<CardStatus | null>(null);
   // Formuläret "Add new column" är öppet
@@ -37,7 +38,7 @@ export function useColumnActions({ headers, setHeaders, userLayout, persistLayou
     const previous = headers;
     setHeaders(next);
     try {
-      await updateColumn(key, { title: column.title, color: column.color ?? null });
+      await updateColumn(boardId, key, { title: column.title, color: column.color ?? null });
     } catch (err: any) {
       console.error("Error updating list:", err.message);
       setHeaders(previous);
@@ -64,7 +65,7 @@ export function useColumnActions({ headers, setHeaders, userLayout, persistLayou
     const previous = headers;
     setHeaders(next);
     try {
-      await reorderColumns(next.map((h) => h.key));
+      await reorderColumns(boardId, next.map((h) => h.key));
     } catch (err: any) {
       console.error("Error moving list:", err.message);
       setHeaders(previous);
@@ -79,7 +80,7 @@ export function useColumnActions({ headers, setHeaders, userLayout, persistLayou
       return;
     }
     try {
-      const res = await createColumn({ title: title.trim() });
+      const res = await createColumn(boardId, { title: title.trim() });
       setHeaders((prev) => normalizeColumns([...prev, res.data]));
       setAddingList(false);
     } catch (err: any) {
@@ -92,7 +93,7 @@ export function useColumnActions({ headers, setHeaders, userLayout, persistLayou
   const removeList = async (key: CardStatus) => {
     const title = headers.find((h) => h.key === key)?.title ?? key;
     try {
-      await deleteColumn(key);
+      await deleteColumn(boardId, key);
       setHeaders((prev) => prev.filter((h) => h.key !== key));
       setDeletingList(false);
       toast.success(`List ${title} deleted.`);

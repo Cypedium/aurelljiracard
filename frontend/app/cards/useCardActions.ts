@@ -7,13 +7,14 @@ import type { AnyCardStatus } from "../utils/backlog";
 import type { CardStatus } from "../utils/boardLayout";
 
 type Options = {
+  boardId: string;
   cards: Card[];
   setCards: Dispatch<SetStateAction<Card[]>>;
   fetchCards: () => void;
 };
 
 // Skapa, redigera, ta bort och flytta kort, plus dialogernas tillstånd
-export function useCardActions({ cards, setCards, fetchCards }: Options) {
+export function useCardActions({ boardId, cards, setCards, fetchCards }: Options) {
   const [editingCard, setEditingCard] = useState<Card | null>(null);
   // Kortet som väntar på bekräftelse i delete-dialogen
   const [deletingCard, setDeletingCard] = useState<Card | null>(null);
@@ -28,7 +29,7 @@ export function useCardActions({ cards, setCards, fetchCards }: Options) {
 
     setStatus(status);
     try {
-      await updateCardStatus(id, status);
+      await updateCardStatus(boardId, id, status);
     } catch (err: any) {
       console.error("Error moving card:", err.message);
       setStatus(previous);
@@ -53,7 +54,7 @@ export function useCardActions({ cards, setCards, fetchCards }: Options) {
 
   const removeCard = async (id: string) => {
     try {
-      await deleteCard(id);
+      await deleteCard(boardId, id);
       setCards((prev) => prev.filter((fb) => fb._id !== id));
     } catch (err: any) {
       console.error("Error deleting card:", err.message);

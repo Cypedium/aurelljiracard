@@ -9,7 +9,8 @@ import { avatarColor, avatarInitials } from '../utils/avatar';
 import { backlogCards } from '../utils/backlog';
 import { DEFAULT_HEADERS } from '../utils/boardLayout';
 import { formatShortDate } from '../utils/date';
-import { canDeleteCard, canEditCard, getUsername, isAdmin } from '../utils/session';
+import { canDeleteCard, canEditCard, getUsername } from '../utils/session';
+import { useBoards } from '../cards/useBoards';
 import { CARD_ACTION_CLASS, TABLE_CELL_CLASS as TD_CLASS, TABLE_HEAD_CLASS as TH_CLASS, TABLE_THEAD_CLASS, TABLE_ROW_CLASS, TABLE_WRAPPER_CLASS } from '../utils/styles';
 import IssueTypeIcon from './IssueTypeIcon';
 import TableSkeleton from './TableSkeleton';
@@ -32,33 +33,35 @@ export default function BacklogList({ refreshKey = 0, onMoved }: BacklogListProp
   const [editingCard, setEditingCard] = useState<Card | null>(null);
   const [deletingCard, setDeletingCard] = useState<Card | null>(null);
   const [userName, setUserName] = useState('');
-  const [admin, setAdmin] = useState(false);
+  // Den valda boardens backlog; boardens admin får redigera och ta bort alla kort
+  const { current, boardAdmin: admin } = useBoards();
+  const boardId = current?._id ?? null;
 
   useEffect(() => {
     setUserName(getUsername());
-    setAdmin(isAdmin());
   }, []);
 
   const fetchBacklog = useCallback(async () => {
+    if (!boardId) return;
     try {
-      const res = await getCards();
+      const res = await getCards(boardId);
       setCards(backlogCards(res.data || []));
     } catch (err: any) {
       console.error('Error fetching backlog:', err.message);
       toast.error(apiErrorMessage(err, 'Could not load the backlog.'));
       setCards([]);
     }
-  }, []);
+  }, [boardId]);
 
   useEffect(() => {
     fetchBacklog();
   }, [fetchBacklog, refreshKey]);
 
   const moveToBoard = async (card: Card) => {
-    if (!card._id) return;
+    if (!card._id || !boardId) return;
     setMovingId(card._id);
     try {
-      const res = await updateCardStatus(card._id, TARGET_STATUS);
+      const res = await updateCardStatus(boardId, card._id, TARGET_STATUS);
       setCards((prev) => prev?.filter((c) => c._id !== card._id) ?? null);
       toast.success(`${card.productId} moved to the board and assigned to you.`);
       onMoved?.(res.data);
@@ -77,8 +80,9 @@ export default function BacklogList({ refreshKey = 0, onMoved }: BacklogListProp
   };
 
   const removeCard = async (id: string) => {
+    if (!boardId) return;
     try {
-      await deleteCard(id);
+      await deleteCard(boardId, id);
       setCards((prev) => prev?.filter((c) => c._id !== id) ?? null);
     } catch (err: any) {
       console.error('Error deleting card:', err.message);

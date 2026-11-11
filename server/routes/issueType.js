@@ -2,12 +2,12 @@
 const express = require("express");
 const router = express.Router();
 const issueTypeController = require("../controllers/issueTypeController");
-const auth = require("../middleware/authMiddleware");
-const requireAdmin = require("../middleware/requireAdmin");
+const { requireBoardAdmin } = require("../middleware/boardAccess");
 
-// Mounted at /issue-type in app.js. Issue types are shared: everyone reads them, admins add and delete them
-router.get("/", auth, issueTypeController.getAll);
-router.post("/", auth, requireAdmin, issueTypeController.create);
-router.delete("/:key", auth, requireAdmin, issueTypeController.remove);
+// Mounted at /board/:boardId/issue-type in routes/board.js, after auth and requireMember.
+// Members read the board's issue types, the board admin adds and deletes them
+router.get("/", issueTypeController.getAll);
+router.post("/", requireBoardAdmin, issueTypeController.create);
+router.delete("/:key", requireBoardAdmin, issueTypeController.remove);
 
 module.exports = router;

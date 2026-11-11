@@ -1,5 +1,6 @@
 // app/api/endpoints.ts
-// Paths must match the backend mounts in server/app.js: /auth, /card, /column, /issue-type, /user
+// Paths must match the backend mounts in server/app.js: /auth, /board, /invite, /user.
+// Cards, lists and issue types belong to a board: /board/:boardId/card|column|issue-type
 import api from "./api";
 import type { CardStatus, UserLayout } from "../utils/boardLayout";
 import type { CardType, IssueType, IssueTypeIconName } from "../utils/cardType";
@@ -62,6 +63,14 @@ export type NewIssueType = { label: string; color: string; icon: IssueTypeIconNa
 // Admin: fields left out keep their value
 export type UserChanges = { username?: string; role?: Role };
 
+// A board the user owns (role "admin") or collaborates on (role "user"); name = "<owner>'s board"
+export type Board = { _id: string; name: string; owner: string; role: Role };
+
+// A member of a board; _id is the user's id
+export type BoardMember = { _id: string; username: string; pictureUrl?: string; role: Role };
+
+const onBoard = (boardId: string, path: string) => `/board/${encodeURIComponent(boardId)}${path}`;
+
 // ⭐ AUTH
 export const registerUser = (user: User) => api.post("/auth/register", user);
 
@@ -78,47 +87,70 @@ export const logoutUser = (refreshToken: string) =>
 export const refreshToken = (refreshToken: string) =>
   api.post("/auth/refresh", { refreshToken });
 
-// ⭐ CARDS
-export const submitCard = (card: NewCard) =>
-  api.post("/card", card);
+// ⭐ BOARDS (the backend creates the user's own board on the first call)
+export const getBoards = () => api.get<Board[]>("/board");
 
-export const getCards = () => api.get<Card[]>("/card");
+// Board admin: a new invite link (the old one stops working); the token is only shown here
+export const createInvite = (boardId: string) => api.post<{ token: string }>(onBoard(boardId, "/invite"));
 
-// The author or an admin may edit a card; the backend returns the updated card
-export const updateCard = (id: string, card: NewCard) =>
-  api.put<Card>(`/card/${id}`, card);
+// Board admin: turns the invite link off; collaborators who joined stay
+export const deleteInvite = (boardId: string) => api.delete(onBoard(boardId, "/invite"));
 
-// Any logged-in user may move a card to another column; taking one from the backlog assigns it to you
-export const updateCardStatus = (id: string, status: AnyCardStatus) =>
-  api.patch<Card>(`/card/${id}/status`, { status });
+// Joins the board behind an invite link as a collaborator; returns the board
+export const joinBoard = (token: string) => api.post<Board>(`/invite/${encodeURIComponent(token)}`);
 
-export const deleteCard = (id: string) =>
-  api.delete(`/card/${id}`);
+export const getMembers = (boardId: string) => api.get<BoardMember[]>(onBoard(boardId, "/member"));
 
-// ⭐ COLUMNS (lists, shared by all users)
-export const getColumns = () => api.get<BoardColumn[]>("/column");
+// Board admin: removes a collaborator. With your own id: leave the board
+export const removeMember = (boardId: string, userId: string) =>
+  api.delete(onBoard(boardId, `/member/${encodeURIComponent(userId)}`));
 
-// Admin: adds a list at the end of the board; the backend makes its key from the title
-export const createColumn = (changes: ColumnChanges) => api.post<BoardColumn>("/column", changes);
+// ⭐ CARDS (on one board; members only)
+export const submitCard = (boardId: string, card: NewCard) =>
+  api.post(onBoard(boardId, "/card"), card);
 
-// Admin: renames and/or recolours a list for everyone
-// Admin: listornas ordning för alla; keys = alla listor, i den nya ordningen
-export const reorderColumns = (keys: CardStatus[]) => api.put<BoardColumn[]>("/column", { keys });
+export const getCards = (boardId: string) => api.get<Card[]>(onBoard(boardId, "/card"));
 
-export const updateColumn = (key: CardStatus, changes: ColumnChanges) =>
-  api.put<BoardColumn>(`/column/${encodeURIComponent(key)}`, changes);
+// The author or the board admin may edit a card; the backend returns the updated card
+export const updateCard = (boardId: string, id: string, card: NewCard) =>
+  api.put<Card>(onBoard(boardId, `/card/${id}`), card);
 
-// Admin: only empty lists can be deleted (409 otherwise); the default list (todo) stays
-export const deleteColumn = (key: CardStatus) => api.delete(`/column/${encodeURIComponent(key)}`);
+// Any member may move a card to another column; taking one from the backlog assigns it to you
+export const updateCardStatus = (boardId: string, id: string, status: AnyCardStatus) =>
+  api.patch<Card>(onBoard(boardId, `/card/${id}/status`), { status });
 
-// ⭐ ISSUE TYPES (shared by all users)
-export const getIssueTypes = () => api.get<IssueType[]>("/issue-type");
+export const deleteCard = (boardId: string, id: string) =>
+  api.delete(onBoard(boardId, `/card/${id}`));
 
-// Admin: adds an issue type at the end of the dropdown
-export const createIssueType = (type: NewIssueType) => api.post<IssueType>("/issue-type", type);
+// ⭐ COLUMNS (the board's lists; members read them, the board admin changes them)
+export const getColumns = (boardId: string) => api.get<BoardColumn[]>(onBoard(boardId, "/column"));
 
-// Admin: only issue types that no card uses can be deleted (409 otherwise); the default type (task) stays
-export const deleteIssueType = (key: CardType) => api.delete(`/issue-type/${encodeURIComponent(key)}`);
+// Board admin: adds a list at the end of the board; the backend makes its key from the title
+export const createColumn = (boardId: string, changes: ColumnChanges) =>
+  api.post<BoardColumn>(onBoard(boardId, "/column"), changes);
+
+// Board admin: listornas ordning; keys = alla listor, i den nya ordningen
+export const reorderColumns = (boardId: string, keys: CardStatus[]) =>
+  api.put<BoardColumn[]>(onBoard(boardId, "/column"), { keys });
+
+// Board admin: renames and/or recolours a list
+export const updateColumn = (boardId: string, key: CardStatus, changes: ColumnChanges) =>
+  api.put<BoardColumn>(onBoard(boardId, `/column/${encodeURIComponent(key)}`), changes);
+
+// Board admin: only empty lists can be deleted (409 otherwise); the default list (todo) stays
+export const deleteColumn = (boardId: string, key: CardStatus) =>
+  api.delete(onBoard(boardId, `/column/${encodeURIComponent(key)}`));
+
+// ⭐ ISSUE TYPES (the board's; members read them, the board admin changes them)
+export const getIssueTypes = (boardId: string) => api.get<IssueType[]>(onBoard(boardId, "/issue-type"));
+
+// Board admin: adds an issue type at the end of the dropdown
+export const createIssueType = (boardId: string, type: NewIssueType) =>
+  api.post<IssueType>(onBoard(boardId, "/issue-type"), type);
+
+// Board admin: only issue types that no card uses can be deleted (409 otherwise); the default type (task) stays
+export const deleteIssueType = (boardId: string, key: CardType) =>
+  api.delete(onBoard(boardId, `/issue-type/${encodeURIComponent(key)}`));
 
 // ⭐ USERS
 export const getUsers = () => api.get<PublicUser[]>("/user");
@@ -147,6 +179,12 @@ export default {
   googleLogin,
   logoutUser,
   refreshToken,
+  getBoards,
+  createInvite,
+  deleteInvite,
+  joinBoard,
+  getMembers,
+  removeMember,
   submitCard,
   getCards,
   updateCard,

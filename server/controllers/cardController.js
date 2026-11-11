@@ -6,6 +6,9 @@ const { isNonEmptyString, isObjectId } = require("../utils/validate");
 const { BACKLOG_STATUS } = require("../utils/cardStatus");
 const { ADMIN_ROLE } = require("../utils/role");
 
+// Every handler runs after requireMember (middleware/boardAccess.js): req.boardId is the board,
+// req.boardRole the caller's role on it. A card on another board is "not found"
+
 const COMMENT_MAX_LENGTH = 2000;
 // Issue key in Jira format, e.g. MA-100 (same rule as frontend/app/utils/cardForm.ts)
 const PRODUCT_ID_MAX_LENGTH = 6;
@@ -14,20 +17,20 @@ const PRODUCT_ID_MESSAGE = `Issue key must look like MA-100: letters, a hyphen a
 const DUPLICATE_KEY_MESSAGE = "Issue key already exists.";
 const DUPLICATE_KEY_ERROR = 11000;
 
-// Valid statuses: the board columns' keys, then the backlog
-const cardStatuses = async () => [...(await Column.listAll()).map((c) => c.key), BACKLOG_STATUS];
+// Valid statuses: the board's column keys, then the backlog
+const cardStatuses = async (boardId) => [...(await Column.listAll(boardId)).map((c) => c.key), BACKLOG_STATUS];
 const statusMessage = (statuses) => `Status must be one of: ${statuses.join(", ")}.`;
 
-// Optional type: an issue type's key. Returns an error message, or null when valid or missing
-const checkType = async (type) => {
+// Optional type: an issue type's key on the board. Returns an error message, or null when valid or missing
+const checkType = async (boardId, type) => {
   if (type === undefined) return null;
-  const types = (await IssueType.listAll()).map((t) => t.key);
+  const types = (await IssueType.listAll(boardId)).map((t) => t.key);
   return typeof type === "string" && types.includes(type) ? null : `Type must be one of: ${types.join(", ")}.`;
 };
 
 exports.getAll = async (req, res) => {
   try {
-    const cards = await Card.find().sort({ submittedAt: -1 }).lean();
+    const cards = await Card.find({ boardId: req.boardId }).sort({ submittedAt: -1 }).lean();
     res.status(200).json(cards);
   } catch (error) {
     console.error("Fetch cards error:", error.message);
@@ -58,25 +61,27 @@ exports.create = async (req, res) => {
   }
 
   try {
-    const invalidType = await checkType(type);
+    const invalidType = await checkType(req.boardId, type);
     if (invalidType) {
       return res.status(400).json({ message: invalidType });
     }
     // Optional: lets the board create a card directly in a column
     if (status !== undefined) {
-      const statuses = await cardStatuses();
+      const statuses = await cardStatuses(req.boardId);
       if (typeof status !== "string" || !statuses.includes(status)) {
         return res.status(400).json({ message: statusMessage(statuses) });
       }
     }
-    if (await Card.exists({ productId })) {
+    if (await Card.exists({ boardId: req.boardId, productId })) {
       return res.status(409).json({ message: DUPLICATE_KEY_MESSAGE });
     }
     // Author always comes from the verified token, never from the request body.
     // submittedAt is always today (schema default), never from the body.
     // Cards on the board are assigned to their author; backlog cards to no one
     const assignee = status === BACKLOG_STATUS ? null : req.user.username;
-    const newCard = new Card({ rating, comment, productId, username: req.user.username, assignee, status, type });
+    const newCard = new Card({
+      boardId: req.boardId, rating, comment, productId, username: req.user.username, assignee, status, type
+    });
     await newCard.save();
     res.status(201).json({ message: "Card saved successfully!" });
   } catch (error) {
@@ -102,20 +107,20 @@ exports.update = async (req, res) => {
   }
 
   try {
-    const invalidType = await checkType(type);
+    const invalidType = await checkType(req.boardId, type);
     if (invalidType) {
       return res.status(400).json({ message: invalidType });
     }
-    const card = await Card.findById(id);
+    const card = await Card.findOne({ _id: id, boardId: req.boardId });
     if (!card) {
       return res.status(404).json({ message: "Card not found." });
     }
-    // The author or an admin may edit; the author never changes
-    if (card.username !== req.user.username && req.user.role !== ADMIN_ROLE) {
+    // The author or the board admin may edit; the author never changes
+    if (card.username !== req.user.username && req.boardRole !== ADMIN_ROLE) {
       return res.status(403).json({ message: "You can only edit your own card." });
     }
     // Keeping the card's own key is fine (no $ne: sanitizeFilter would neutralise it)
-    const duplicate = await Card.exists({ productId });
+    const duplicate = await Card.exists({ boardId: req.boardId, productId });
     if (duplicate && String(duplicate._id) !== id) {
       return res.status(409).json({ message: DUPLICATE_KEY_MESSAGE });
     }
@@ -136,7 +141,7 @@ exports.update = async (req, res) => {
   }
 };
 
-// Any logged-in user may move a card between columns, like in Jira.
+// Any board member may move a card between columns, like in Jira.
 // Taking a card from the backlog assigns it to the caller; moving it to the backlog unassigns it.
 exports.updateStatus = async (req, res) => {
   const { id } = req.params;
@@ -147,11 +152,11 @@ exports.updateStatus = async (req, res) => {
   }
 
   try {
-    const statuses = await cardStatuses();
+    const statuses = await cardStatuses(req.boardId);
     if (typeof status !== "string" || !statuses.includes(status)) {
       return res.status(400).json({ message: statusMessage(statuses) });
     }
-    const card = await Card.findById(id);
+    const card = await Card.findOne({ _id: id, boardId: req.boardId });
     if (!card) {
       return res.status(404).json({ message: "Card not found." });
     }
@@ -177,12 +182,12 @@ exports.remove = async (req, res) => {
   }
 
   try {
-    const card = await Card.findById(id);
+    const card = await Card.findOne({ _id: id, boardId: req.boardId });
     if (!card) {
       return res.status(404).json({ message: "Card not found." });
     }
-    // Admins may delete any card
-    if (card.username !== req.user.username && req.user.role !== ADMIN_ROLE) {
+    // The board admin may delete any card on the board
+    if (card.username !== req.user.username && req.boardRole !== ADMIN_ROLE) {
       return res.status(403).json({ message: "You can only delete your own card." });
     }
 
