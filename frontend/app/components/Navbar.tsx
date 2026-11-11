@@ -115,8 +115,15 @@ const Navbar = () => {
     <header ref={headerRef} className="fixed z-1000 w-full font-brand">
       {/* z-10: mobilmenyn hamnar över raden under */}
       <nav className="relative z-10 flex w-full items-center justify-between bg-gray-600 py-[0.5%] pr-[2%] pl-[3%]">
+        {/* Mobil: logga och namn till vänster i raden, hamburgaren till höger. Desktop: loggan ligger i listan */}
+        {isLoggedIn && (
+          <Link href={BOARD_PATH} className={`${NAV_LINK_CLASS} -ml-2 text-xl text-white md:hidden`}>
+            <Image src={logo} alt="" className="size-7 shrink-0" priority />
+            Aurello
+          </Link>
+        )}
         <button
-          className="block text-white md:hidden"
+          className="ml-auto block text-white md:hidden"
           onClick={() => setMenuOpen(!menuOpen)}
           aria-label={menuOpen ? 'Close menu' : 'Open menu'}
           aria-expanded={menuOpen}
@@ -130,8 +137,8 @@ const Navbar = () => {
         >
           {isLoggedIn && (
             <>
-              <li onClick={() => setMenuOpen(false)}>
-                <Link href="/cards" className={NAV_LINK_CLASS}>
+              <li className="hidden md:block">
+                <Link href={BOARD_PATH} className={NAV_LINK_CLASS}>
                   {/* Samma bild som favicon (app/icon.png) */}
                   <Image src={logo} alt="" className="size-7 shrink-0" priority />
                   Aurello
