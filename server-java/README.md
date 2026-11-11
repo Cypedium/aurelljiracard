@@ -19,10 +19,10 @@ Classic layered Spring application:
 
 ```
 src/main/java/se/aurell/jiraboard/
-  controller/   REST endpoints (/auth, /card, /user, /health)
-  service/      business rules, ownership checks, @Transactional
+  controller/   REST endpoints (/auth, /board/{boardId}/card|column|issue-type, /board, /invite, /user, /health)
+  service/      business rules, board membership (BoardService), ownership checks, @Transactional
   repository/   Spring Data JPA interfaces
-  entity/       JPA entities (User, Card), enums, the JSONB Layout record
+  entity/       JPA entities (User, Board, BoardMember, Card, BoardColumn, IssueType), enums, the JSONB Layout record
   dto/          request/response records with Bean Validation
   security/     JwtService, Bearer token handling, 401 { message } responses
   config/       SecurityConfig, CORS and JWT properties
@@ -40,6 +40,7 @@ src/main/resources/db/migration/   Flyway SQL migrations
 | `Card` document | `cards` table with a `CHECK` constraint on `rating`, FK `username → users` |
 | `Column` document | `board_columns` table (`V6__board_columns.sql` seeds the four default lists) |
 | `IssueType` document | `issue_types` table (`V8__issue_types.sql` seeds `task`, `bug`, `doc`) |
+| `Board`, `BoardMember` documents | `boards` and `board_members` tables (`V11__boards.sql`); cards, lists and issue types get a `board_id` and per-board unique keys. Mongo seeds a board's lists and types on first read, Postgres when the board is created |
 | `$inc` on `tokenVersion` | atomic `UPDATE … SET token_version = token_version + 1` |
 
 ## Running locally

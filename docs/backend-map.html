@@ -122,6 +122,8 @@ svg.tracing .edge.on text { fill: var(--hot); }
 .chip.admin { background: var(--sec-bg); color: var(--sec); }
 .chip.public { background: var(--db-bg); color: var(--db); }
 .chip.owner { background: var(--svc-bg); color: var(--svc); }
+.chip.member { background: var(--ctrl-bg); color: var(--ctrl); }
+.chip.badmin { background: var(--sec-bg); color: var(--sec); }
 
 /* catalog */
 .cat { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 520px), 1fr)); gap: 16px; }
@@ -215,7 +217,7 @@ th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; colo
 <section id="data-model">
   <h2>Data model</h2>
   <figure>
-    <div class="scroll"><svg id="er" viewBox="0 0 1100 440" role="img" aria-label="Five tables: refresh_tokens belongs to users; cards references users by username and assignee; status and type refer to board_columns and issue_types by key, checked in code"></svg></div>
+    <div class="scroll"><svg id="er" viewBox="0 0 1100 560" role="img" aria-label="Seven tables: each user owns one board; board_members links users to boards with a role; cards, board_columns and issue_types belong to a board; cards reference users by username and assignee; refresh_tokens belongs to users"></svg></div>
     <figcaption>Only <code>cards → users</code> and <code>refresh_tokens → users</code> are real foreign keys; deleting a user also deletes their refresh tokens. Renaming a user cascades into <code>cards.username</code> and <code>cards.assignee</code>; deleting a user sets their assigned cards to unassigned. <code>status</code> and <code>type</code> are plain strings, validated by <code>ColumnService.requireCardStatus</code> and <code>IssueTypeService.requireCardType</code>, and a list or type can only be deleted when no card uses it (409).</figcaption>
   </figure>
   <h3>Flyway migrations</h3>
@@ -276,23 +278,27 @@ const N = {
   "c-type": ["ctrl", 320, "IssueTypeController", "/issue-type", "cat-type"],
   "c-user": ["ctrl", 390, "UserController", "/user", "cat-user"],
   "c-health": ["ctrl", 460, "HealthController", "/health", "cat-health"],
+  "c-board": ["ctrl", 530, "BoardController", "/board, /invite", "cat-board"],
   "s-jwt": ["svc", 40, "JwtService", "sign + decode tokens", "tokens"],
   "s-auth": ["svc", 110, "AuthService", "BCrypt, tokens", "cat-auth"],
   "s-card": ["svc", 180, "CardService", "ownership, backlog", "cat-card"],
   "s-column": ["svc", 250, "ColumnService", "requireCardStatus", "cat-column"],
   "s-type": ["svc", 320, "IssueTypeService", "requireCardType", "cat-type"],
   "s-user": ["svc", 390, "UserService", "admin, layout", "cat-user"],
+  "s-board": ["svc", 460, "BoardService", "membership, invites", "cat-board"],
   "r-user": ["repo", 110, "UserRepository", "revokeTokens, markActive", "data-model"],
   "r-card": ["repo", 215, "CardRepository", "existsBy…", "data-model"],
   "r-column": ["repo", 300, "BoardColumnRepository", "by position", "data-model"],
   "r-type": ["repo", 385, "IssueTypeRepository", "by position", "data-model"],
   "t-users": ["db", 110, "users", "UUID id, JSONB layout", "data-model"],
-  "t-cards": ["db", 215, "cards", "UNIQUE product_id", "data-model"],
-  "t-columns": ["db", 300, "board_columns", "column_key PK", "data-model"],
-  "t-types": ["db", 385, "issue_types", "type_key PK", "data-model"],
+  "t-cards": ["db", 215, "cards", "UNIQUE (board, key)", "data-model"],
+  "t-columns": ["db", 300, "board_columns", "(board, key) PK", "data-model"],
+  "t-types": ["db", 385, "issue_types", "(board, key) PK", "data-model"],
   "r-refresh": ["repo", 470, "RefreshTokenRepository", "findForUpdate, deleteFamily", "data-model"],
   "t-refresh": ["db", 470, "refresh_tokens", "jti PK, family_id", "data-model"],
-  handler: ["err", 545, "GlobalExceptionHandler", "ApiException → status + { message }", "catalog", 44, X.ctrl, X.svc + W.svc - X.ctrl],
+  "r-board": ["repo", 555, "Board(Member)Repository", "findBoardsOf, findMembers", "data-model"],
+  "t-boards": ["db", 555, "boards, members", "owner_id UNIQUE", "data-model"],
+  handler: ["err", 625, "GlobalExceptionHandler", "ApiException → status + { message }", "catalog", 44, X.ctrl, X.svc + W.svc - X.ctrl],
 };
 const box = id => { const n = N[id]; const x = n[6] ?? X[n[0] === "err" && id === "entry" ? "sec" : n[0]]; const w = n[7] ?? W[n[0] === "err" ? "sec" : n[0]]; return { x, y: n[1], w, h: n[5] || H }; };
 
@@ -305,9 +311,9 @@ const E = [
   ["resolver", "authz", "public", { side: "l", lx: 205 }],
   ["authz", "entry", "no token", { v: 1, cls: "err dash" }],
   ["entry", "browser", "401", { d: "M230,492 C190,492 150,420 150,322", cls: "err dash", lp: [176, 440] }],
-  ["handler", "browser", "4xx { message }", { d: "M490,567 C300,567 60,567 60,322", cls: "err dash", lp: [300, 560] }],
-  ["authz", "c-auth"], ["authz", "c-card"], ["authz", "c-column"], ["authz", "c-type"], ["authz", "c-user"], ["authz", "c-health"],
-  ["c-auth", "s-auth"], ["c-card", "s-card"], ["c-column", "s-column"], ["c-type", "s-type"], ["c-user", "s-user"],
+  ["handler", "browser", "4xx { message }", { d: "M490,647 C300,647 60,647 60,322", cls: "err dash", lp: [300, 640] }],
+  ["authz", "c-auth"], ["authz", "c-card"], ["authz", "c-column"], ["authz", "c-type"], ["authz", "c-user"], ["authz", "c-health"], ["authz", "c-board"],
+  ["c-auth", "s-auth"], ["c-card", "s-card"], ["c-column", "s-column"], ["c-type", "s-type"], ["c-user", "s-user"], ["c-board", "s-board"],
   ["s-auth", "s-jwt", "sign", { v: 1, up: 1 }],
   ["s-card", "s-column", "status?", { v: 1 }],
   ["s-card", "s-type", "type?", { side: "r", lx: 978 }],
@@ -316,6 +322,9 @@ const E = [
   ["s-column", "r-column"], ["s-type", "r-type"],
   ["r-user", "t-users"], ["r-card", "t-cards"], ["r-column", "t-columns"], ["r-type", "t-types"],
   ["s-auth", "r-refresh", "single use"], ["r-refresh", "t-refresh"],
+  ["s-card", "s-board", "member?", { side: "l", lx: 712 }], ["s-column", "s-board", "", { side: "l" }], ["s-type", "s-board", "", { side: "l" }],
+  ["s-auth", "s-board", "new board", { side: "l", lx: 712 }],
+  ["s-board", "r-board"], ["r-board", "t-boards"],
   ["t-cards", "t-users", "FK", { side: "r", lx: 1452 }],
   ["t-cards", "t-columns", "status", { side: "r", cls: "dash", lx: 1452 }],
   ["t-cards", "t-types", "type", { side: "r2", cls: "dash", lx: 1476 }],
@@ -323,7 +332,7 @@ const E = [
 const eid = (a, b) => a + ">" + b;
 
 const svg = document.getElementById("arch");
-svg.setAttribute("viewBox", "0 0 1500 610");
+svg.setAttribute("viewBox", "0 0 1500 690");
 const el = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
 const defs = el("defs", {}, svg);
 for (const [id, cls] of [["mn", "mk-n"], ["mh", "mk-h"], ["me", "mk-e"]]) {
@@ -401,49 +410,49 @@ const G = [
       steps: [["resolver","Authorization ignored","logout works even with an expired access token"],["s-jwt","decodeRefreshToken","invalid token: nothing to revoke, still 200"],["r-user","revokeTokens","token_version + 1, logged_out_at = now"]],
       ok: ["200","{ message }"], bad: [] },
   ]},
-  { id: "cat-card", name: "Cards", ctrl: "c-card", files: ["CardController", "CardService", "ColumnService", "IssueTypeService", "CardRepository", "cards"], about: "Shared board cards. Author and date come from the token and the server clock.", eps: [
-    { m: "GET", p: "/card", acc: "user", sum: "All cards for everyone, newest first.", edges: [["c-card","s-card"],["s-card","r-card"],["r-card","t-cards"]],
-      steps: [["decoder","token → AuthUser","any logged-in user"],["s-card","getAll (readOnly)","maps each Card to CardResponse with _id"],["r-card","findAllByOrderBySubmittedAtDesc","uses the submitted_at DESC index"]],
-      ok: ["200","[ card ]"], bad: [["401","missing or expired token"]] },
-    { m: "POST", p: "/card", acc: "user", sum: "Creates a card on the board or in the backlog.", edges: [["c-card","s-card"],["s-card","s-type"],["s-type","r-type"],["r-type","t-types"],["s-card","s-column"],["s-column","r-column"],["r-column","t-columns"],["s-card","r-card"],["r-card","t-cards"]],
-      steps: [["c-card","@Valid CardRequest","rating 1–5, comment, productId, optional type and status"],["s-type","requireCardType","type must be an issue_types key"],["s-column","requireCardStatus","status must be a list key or backlog"],["r-card","existsByProductId","issue key unique across all cards"],["s-card","author + assignee","username from the token; assignee = author unless backlog"],["t-cards","saveAndFlush","INSERT; UNIQUE product_id catches races"]],
-      ok: ["201","{ message }"], bad: [["400","Type/Status must be one of: …"],["409","Issue key already exists."]] },
-    { m: "PUT", p: "/card/{id}", acc: "owner", sum: "Edits rating, summary, issue key and type. Author, date and status never change here.", edges: [["c-card","s-card"],["s-card","s-type"],["s-type","r-type"],["s-card","r-card"],["r-card","t-cards"]],
-      steps: [["s-type","requireCardType","when type is sent"],["s-card","findOwnCard","author only, unless AuthUser is admin"],["r-card","existsByProductIdAndIdNot","new key may not belong to another card"],["t-cards","saveAndFlush","UPDATE"]],
-      ok: ["200","card"], bad: [["403","You can only edit your own card."],["404","Card not found."],["409","Issue key already exists."]] },
-    { m: "PATCH", p: "/card/{id}/status", acc: "user", sum: "Moves a card between lists. Anyone logged in may do it, like in Jira.", edges: [["c-card","s-card"],["s-card","s-column"],["s-column","r-column"],["r-column","t-columns"],["s-card","r-card"],["r-card","t-cards"]],
-      steps: [["c-card","CardStatusRequest","{ status }"],["s-column","requireCardStatus","current list keys + backlog"],["r-card","findById","404 if gone"],["s-card","assignee rule","leaving backlog assigns the caller; entering backlog unassigns"],["t-cards","dirty check","UPDATE at commit"]],
+  { id: "cat-card", name: "Cards", ctrl: "c-card", files: ["CardController", "CardService", "BoardService", "ColumnService", "IssueTypeService", "CardRepository", "cards"], about: "The cards on one board, for its members. Author and date come from the token and the server clock.", eps: [
+    { m: "GET", p: "/board/{boardId}/card", acc: "member", sum: "All cards on the board, newest first.", edges: [["s-card","s-board"],["s-board","r-board"],["r-board","t-boards"],["c-card","s-card"],["s-card","r-card"],["r-card","t-cards"]],
+      steps: [["s-board","requireMember","not on the board → 404 Board not found."],["s-card","getAll (readOnly)","maps each Card to CardResponse with _id"],["r-card","findAllByBoardIdOrderBySubmittedAtDesc","uses the (board_id, submitted_at DESC) index"]],
+      ok: ["200","[ card ]"], bad: [["400","Invalid board id."],["404","Board not found."]] },
+    { m: "POST", p: "/board/{boardId}/card", acc: "member", sum: "Creates a card on the board or in its backlog.", edges: [["s-card","s-board"],["s-board","r-board"],["r-board","t-boards"],["c-card","s-card"],["s-card","s-type"],["s-type","r-type"],["r-type","t-types"],["s-card","s-column"],["s-column","r-column"],["r-column","t-columns"],["s-card","r-card"],["r-card","t-cards"]],
+      steps: [["c-card","@Valid CardRequest","rating 1–5, comment, productId, optional type and status"],["s-board","requireMember","not on the board → 404 Board not found."],["s-type","requireCardType","type must be one of the board's issue types"],["s-column","requireCardStatus","status must be one of the board's lists or backlog"],["r-card","existsByBoardIdAndProductId","issue key unique on the board"],["s-card","author + assignee","username from the token; assignee = author unless backlog"],["t-cards","saveAndFlush","INSERT; UNIQUE (board_id, product_id) catches races"]],
+      ok: ["201","{ message }"], bad: [["400","Type/Status must be one of: …"],["404","Board not found."],["409","Issue key already exists."]] },
+    { m: "PUT", p: "/board/{boardId}/card/{id}", acc: "owner", sum: "Edits rating, summary, issue key and type. Author, date and status never change here.", edges: [["s-card","s-board"],["s-board","r-board"],["r-board","t-boards"],["c-card","s-card"],["s-card","s-type"],["s-type","r-type"],["s-card","r-card"],["r-card","t-cards"]],
+      steps: [["s-board","requireMember","not on the board → 404 Board not found."],["s-type","requireCardType","when type is sent"],["s-card","findEditableCard","the card on this board; author only, unless the caller is the board admin"],["r-card","existsByBoardIdAndProductIdAndIdNot","new key may not belong to another card on the board"],["t-cards","saveAndFlush","UPDATE"]],
+      ok: ["200","card"], bad: [["403","You can only edit your own card."],["404","Board / Card not found."],["409","Issue key already exists."]] },
+    { m: "PATCH", p: "/board/{boardId}/card/{id}/status", acc: "member", sum: "Moves a card between lists. Any member may do it, like in Jira.", edges: [["s-card","s-board"],["s-board","r-board"],["r-board","t-boards"],["c-card","s-card"],["s-card","s-column"],["s-column","r-column"],["r-column","t-columns"],["s-card","r-card"],["r-card","t-cards"]],
+      steps: [["c-card","CardStatusRequest","{ status }"],["s-board","requireMember","not on the board → 404 Board not found."],["s-column","requireCardStatus","the board's list keys + backlog"],["r-card","findByIdAndBoardId","404 if gone or on another board"],["s-card","assignee rule","leaving backlog assigns the caller; entering backlog unassigns"],["t-cards","dirty check","UPDATE at commit"]],
       ok: ["200","card"], bad: [["400","Status must be one of: …"],["404","Card not found."]] },
-    { m: "DELETE", p: "/card/{id}", acc: "owner", sum: "Deletes a card.", edges: [["c-card","s-card"],["s-card","r-card"],["r-card","t-cards"]],
-      steps: [["s-card","findOwnCard","author only, unless admin"],["t-cards","delete","DELETE row"]],
+    { m: "DELETE", p: "/board/{boardId}/card/{id}", acc: "owner", sum: "Deletes a card.", edges: [["s-card","s-board"],["s-board","r-board"],["r-board","t-boards"],["c-card","s-card"],["s-card","r-card"],["r-card","t-cards"]],
+      steps: [["s-board","requireMember","not on the board → 404 Board not found."],["s-card","findEditableCard","author only, unless the board admin"],["t-cards","delete","DELETE row"]],
       ok: ["200","{ message }"], bad: [["403","You can only delete your own card."],["404","Card not found."]] },
   ]},
-  { id: "cat-column", name: "Board lists", ctrl: "c-column", files: ["ColumnController", "ColumnService", "BoardColumnRepository", "board_columns"], about: "The lists on the board, shared by everyone. Admins change them.", eps: [
-    { m: "GET", p: "/column", acc: "user", sum: "All lists in board order.", edges: [["c-column","s-column"],["s-column","r-column"],["r-column","t-columns"]],
-      steps: [["r-column","findAllByOrderByPositionAscColumnKeyAsc","defaults To Do / In Progress / Test / Done from V6"]],
+  { id: "cat-column", name: "Board lists", ctrl: "c-column", files: ["ColumnController", "ColumnService", "BoardColumnRepository", "board_columns"], about: "The lists on one board, seen by its members. The board admin (its owner) changes them.", eps: [
+    { m: "GET", p: "/board/{boardId}/column", acc: "member", sum: "The board's lists in board order.", edges: [["s-column","s-board"],["s-board","r-board"],["r-board","t-boards"],["c-column","s-column"],["s-column","r-column"],["r-column","t-columns"]],
+      steps: [["s-board","requireMember","not on the board → 404 Board not found."],["r-column","findAllByBoardIdOrderBy…","a new board gets To Do / In Progress / Test / Done"]],
       ok: ["200","[ { key, title, color, position } ]"], bad: [] },
-    { m: "POST", p: "/column", acc: "admin", sum: "Adds a list at the end of the board.", edges: [["c-column","s-column"],["s-column","r-column"],["r-column","t-columns"]],
-      steps: [["c-column","@AdminOnly","ROLE_ADMIN from the token, else 403"],["s-column","max 12 lists","400 above that"],["s-column","keyFromTitle","lowercase-hyphen key, never “backlog”, made unique"],["t-columns","saveAndFlush","position = last + 1"]],
-      ok: ["201","column"], bad: [["400","at most 12 lists"],["403","Admins only."],["409","A list with this name was just added."]] },
-    { m: "PUT", p: "/column", acc: "admin", sum: "Sets the order of all lists. The frontend sends this after a header drag.", edges: [["c-column","s-column"],["s-column","r-column"],["r-column","t-columns"]],
-      steps: [["c-column","ColumnOrderRequest","{ keys: [...] }"],["s-column","every list once","no missing, duplicate or unknown keys"],["t-columns","position = index","UPDATE per row"]],
-      ok: ["200","[ column ]"], bad: [["400","order message"],["403","Admins only."]] },
-    { m: "PUT", p: "/column/{key}", acc: "admin", sum: "Renames or recolours a list for everyone.", edges: [["c-column","s-column"],["s-column","r-column"],["r-column","t-columns"]],
-      steps: [["c-column","ColumnRequest","title ≤ 50, color #rrggbb or null"],["r-column","findById","404 if unknown"],["t-columns","dirty check","UPDATE title, color"]],
-      ok: ["200","column"], bad: [["400","Invalid list key."],["403","Admins only."],["404","List not found."]] },
-    { m: "DELETE", p: "/column/{key}", acc: "admin", sum: "Removes an empty list. To Do (todo) can never be deleted.", edges: [["c-column","s-column"],["s-column","r-column"],["s-column","r-card"],["r-card","t-cards"],["r-column","t-columns"]],
-      steps: [["s-column","not the default","todo is where new cards land"],["r-column","findById","404 if unknown"],["r-card","existsByStatus","any card in the list blocks it"],["t-columns","delete","DELETE row"]],
+    { m: "POST", p: "/board/{boardId}/column", acc: "badmin", sum: "Adds a list at the end of the board.", edges: [["s-column","s-board"],["s-board","r-board"],["r-board","t-boards"],["c-column","s-column"],["s-column","r-column"],["r-column","t-columns"]],
+      steps: [["s-board","requireAdmin","the board's admin (its owner), else 403 Board admins only."],["s-column","max 12 lists","400 above that"],["s-column","keyFromTitle","lowercase-hyphen key, never “backlog”, made unique"],["t-columns","saveAndFlush","position = last + 1"]],
+      ok: ["201","column"], bad: [["400","at most 12 lists"],["403","Board admins only."],["409","A list with this name was just added."]] },
+    { m: "PUT", p: "/board/{boardId}/column", acc: "badmin", sum: "Sets the order of all lists. The frontend sends this after a header drag.", edges: [["s-column","s-board"],["s-board","r-board"],["r-board","t-boards"],["c-column","s-column"],["s-column","r-column"],["r-column","t-columns"]],
+      steps: [["c-column","ColumnOrderRequest","{ keys: [...] }"],["s-board","requireAdmin","the board's admin (its owner), else 403 Board admins only."],["s-column","every list once","no missing, duplicate or unknown keys"],["t-columns","position = index","UPDATE per row"]],
+      ok: ["200","[ column ]"], bad: [["400","order message"],["403","Board admins only."]] },
+    { m: "PUT", p: "/board/{boardId}/column/{key}", acc: "badmin", sum: "Renames or recolours a list for everyone on the board.", edges: [["s-column","s-board"],["s-board","r-board"],["r-board","t-boards"],["c-column","s-column"],["s-column","r-column"],["r-column","t-columns"]],
+      steps: [["c-column","ColumnRequest","title ≤ 50, color #rrggbb or null"],["s-board","requireAdmin","the board's admin (its owner), else 403 Board admins only."],["r-column","findByBoardIdAndColumnKey","404 if unknown"],["t-columns","dirty check","UPDATE title, color"]],
+      ok: ["200","column"], bad: [["400","Invalid list key."],["403","Board admins only."],["404","List not found."]] },
+    { m: "DELETE", p: "/board/{boardId}/column/{key}", acc: "badmin", sum: "Removes an empty list. To Do (todo) can never be deleted.", edges: [["s-column","s-board"],["s-board","r-board"],["r-board","t-boards"],["c-column","s-column"],["s-column","r-column"],["s-column","r-card"],["r-card","t-cards"],["r-column","t-columns"]],
+      steps: [["s-board","requireAdmin","the board's admin (its owner), else 403 Board admins only."],["s-column","not the default","todo is where new cards land"],["r-column","findByBoardIdAndColumnKey","404 if unknown"],["r-card","existsByBoardIdAndStatus","any card in the list blocks it"],["t-columns","delete","DELETE row"]],
       ok: ["200","{ message }"], bad: [["400","The default list cannot be deleted."],["409","The list still has cards."]] },
   ]},
-  { id: "cat-type", name: "Issue types", ctrl: "c-type", files: ["IssueTypeController", "IssueTypeService", "IssueTypeRepository", "issue_types"], about: "Task, Bug, Story and any types admins add. Shared by everyone.", eps: [
-    { m: "GET", p: "/issue-type", acc: "user", sum: "All issue types in dropdown order.", edges: [["c-type","s-type"],["s-type","r-type"],["r-type","t-types"]],
-      steps: [["r-type","findAllByOrderByPositionAscTypeKeyAsc","defaults from V8"]],
+  { id: "cat-type", name: "Issue types", ctrl: "c-type", files: ["IssueTypeController", "IssueTypeService", "IssueTypeRepository", "issue_types"], about: "Task, Bug, Doc and any types the board admin adds. Per board.", eps: [
+    { m: "GET", p: "/board/{boardId}/issue-type", acc: "member", sum: "The board's issue types in dropdown order.", edges: [["s-type","s-board"],["s-board","r-board"],["r-board","t-boards"],["c-type","s-type"],["s-type","r-type"],["r-type","t-types"]],
+      steps: [["s-board","requireMember","not on the board → 404 Board not found."],["r-type","findAllByBoardIdOrderBy…","a new board gets task, bug, doc"]],
       ok: ["200","[ { key, label, color, icon, position } ]"], bad: [] },
-    { m: "POST", p: "/issue-type", acc: "admin", sum: "Adds an issue type at the end of the dropdown.", edges: [["c-type","s-type"],["s-type","r-type"],["r-type","t-types"]],
-      steps: [["c-type","@AdminOnly","ROLE_ADMIN from the token, else 403"],["s-type","icon in CardType.ICONS","the icon list is code, not data"],["s-type","max 12 + keyFromLabel","label ≤ 30, color #rrggbb"],["t-types","saveAndFlush","INSERT"]],
-      ok: ["201","issue type"], bad: [["400","Icon must be one of: …"],["403","Admins only."],["409","just added by another admin"]] },
-    { m: "DELETE", p: "/issue-type/{key}", acc: "admin", sum: "Removes a type no card uses. task can never be deleted.", edges: [["c-type","s-type"],["s-type","r-type"],["s-type","r-card"],["r-card","t-cards"],["r-type","t-types"]],
-      steps: [["s-type","not the default","cards without a type read as task"],["r-card","existsByType","any card using it blocks it"],["t-types","delete","DELETE row"]],
+    { m: "POST", p: "/board/{boardId}/issue-type", acc: "badmin", sum: "Adds an issue type at the end of the dropdown.", edges: [["s-type","s-board"],["s-board","r-board"],["r-board","t-boards"],["c-type","s-type"],["s-type","r-type"],["r-type","t-types"]],
+      steps: [["s-board","requireAdmin","the board's admin (its owner), else 403 Board admins only."],["s-type","icon in CardType.ICONS","the icon list is code, not data"],["s-type","max 12 + keyFromLabel","label ≤ 30, color #rrggbb"],["t-types","saveAndFlush","INSERT"]],
+      ok: ["201","issue type"], bad: [["400","Icon must be one of: …"],["403","Board admins only."],["409","just added in another tab"]] },
+    { m: "DELETE", p: "/board/{boardId}/issue-type/{key}", acc: "badmin", sum: "Removes a type no card on the board uses. task can never be deleted.", edges: [["s-type","s-board"],["s-board","r-board"],["r-board","t-boards"],["c-type","s-type"],["s-type","r-type"],["s-type","r-card"],["r-card","t-cards"],["r-type","t-types"]],
+      steps: [["s-board","requireAdmin","the board's admin (its owner), else 403 Board admins only."],["s-type","not the default","cards without a type read as task"],["r-card","existsByBoardIdAndType","any card on the board using it blocks it"],["t-types","delete","DELETE row"]],
       ok: ["200","{ message }"], bad: [["400","The default issue type cannot be deleted."],["404","Issue type not found."],["409","Cards still use this issue type."]] },
   ]},
   { id: "cat-user", name: "Users", ctrl: "c-user", files: ["UserController", "UserService", "UserRepository", "CardRepository", "users"], about: "Profiles, each user's board layout, and the admin user list.", eps: [
@@ -465,12 +474,32 @@ const G = [
     { m: "PATCH", p: "/user/{id}", acc: "admin", sum: "Renames a user or changes their role. Either one logs them out.", edges: [["c-user","s-user"],["s-user","r-user"],["r-user","t-users"],["t-cards","t-users"]],
       steps: [["c-user","@AdminOnly","ROLE_ADMIN from the token, else 403"],["s-user","keep one admin","you can't drop your own admin role"],["r-user","existsByUsernameIgnoreCase","409 if the new name is taken"],["s-user","revokeTokens","token_version + 1 (old tokens have the old name/role)"],["t-cards","ON UPDATE CASCADE","cards.username and assignee follow the rename (V5)"]],
       ok: ["200","user"], bad: [["400","You cannot remove your own admin role."],["404","User not found."],["409","Username is already taken"]] },
-    { m: "DELETE", p: "/user/{id}", acc: "admin", sum: "Deletes a user who has authored no cards.", edges: [["c-user","s-user"],["s-user","r-user"],["s-user","r-card"],["r-card","t-cards"],["r-user","t-users"]],
-      steps: [["s-user","not yourself","400"],["r-card","existsByUsername","authors can't be deleted: 409"],["t-users","delete","assigned cards get assignee = NULL"]],
-      ok: ["200","{ message }"], bad: [["400","You cannot delete yourself."],["409","This user still has cards."]] },
+    { m: "DELETE", p: "/user/{id}", acc: "admin", sum: "Deletes a user who has authored no cards and whose board is empty.", edges: [["c-user","s-user"],["s-user","r-user"],["s-user","r-card"],["r-card","t-cards"],["r-user","t-users"],["t-boards","t-users"]],
+      steps: [["s-user","not yourself","400"],["r-card","existsByUsername","authors can't be deleted: 409"],["r-card","existsByBoardId","cards on their own board (by others) block it too"],["t-users","delete","assigned cards get assignee = NULL; their board, lists, issue types and memberships go with ON DELETE CASCADE"]],
+      ok: ["200","{ message }"], bad: [["400","You cannot delete yourself."],["409","This user (or their board) still has cards."]] },
     { m: "POST", p: "/user/{id}/logout", acc: "admin", sum: "Logs a user out everywhere within 15 minutes.", edges: [["c-user","s-user"],["s-user","r-user"],["r-user","t-users"]],
       steps: [["c-user","@AdminOnly","ROLE_ADMIN from the token, else 403"],["r-user","revokeTokens","one UPDATE; 0 rows → 404"],["t-users","token_version + 1","next refresh fails; user shows offline"]],
       ok: ["200","{ message }"], bad: [["404","User not found."]] },
+  ]},
+  { id: "cat-board", name: "Boards", ctrl: "c-board", files: ["BoardController", "BoardService", "BoardRepository", "BoardMemberRepository", "boards", "board_members"], about: "Every user owns one board and is its admin. Others join through an invite link as collaborators (role user). The global admin role gives no rights on boards.", eps: [
+    { m: "GET", p: "/board", acc: "user", sum: "The caller's boards: their own first, then the ones they collaborate on.", edges: [["c-board","s-board"],["s-board","r-board"],["r-board","t-boards"]],
+      steps: [["s-board","getMine (readOnly)","the caller's own board is created at register / first Google sign-in"],["r-board","findBoardsOf","joins board_members, boards and the owner's name"],["s-board","sort","role admin (own board) first"]],
+      ok: ["200","[ { _id, name, owner, role } ]"], bad: [] },
+    { m: "POST", p: "/board/{boardId}/invite", acc: "badmin", sum: "A new invite link. The old one stops working.", edges: [["c-board","s-board"],["s-board","r-board"],["r-board","t-boards"]],
+      steps: [["s-board","requireAdmin","the board's admin (its owner), else 403 Board admins only."],["s-board","32 random bytes","base64url token, returned only here"],["t-boards","invite_token_hash","only the SHA-256 is stored, UNIQUE"]],
+      ok: ["201","{ token }"], bad: [["403","Board admins only."],["404","Board not found."]] },
+    { m: "DELETE", p: "/board/{boardId}/invite", acc: "badmin", sum: "Turns the invite link off. Collaborators who joined stay.", edges: [["c-board","s-board"],["s-board","r-board"],["r-board","t-boards"]],
+      steps: [["s-board","requireAdmin","the board's admin (its owner), else 403 Board admins only."],["t-boards","invite_token_hash = NULL","dirty check at commit"]],
+      ok: ["200","{ message }"], bad: [["403","Board admins only."]] },
+    { m: "POST", p: "/invite/{token}", acc: "user", sum: "Joins the board behind the link as a collaborator. Joining again, or your own board, changes nothing.", edges: [["c-board","s-board"],["s-board","r-board"],["r-board","t-boards"]],
+      steps: [["s-board","hash the token","≤ 100 characters, else 404"],["r-board","findByInviteTokenHash","unknown or turned off → 404"],["t-boards","board_members INSERT","role user, unless already a member"]],
+      ok: ["200","{ _id, name, owner, role }"], bad: [["404","This invite link is invalid or has been turned off."]] },
+    { m: "GET", p: "/board/{boardId}/member", acc: "member", sum: "Everyone on the board, the owner first.", edges: [["c-board","s-board"],["s-board","r-board"],["r-board","t-boards"]],
+      steps: [["s-board","requireMember","not on the board → 404 Board not found."],["r-board","findMembers","board_members joined with users"]],
+      ok: ["200","[ { _id, username, pictureUrl, role } ]"], bad: [["404","Board not found."]] },
+    { m: "DELETE", p: "/board/{boardId}/member/{userId}", acc: "member", sum: "The board admin removes a collaborator, or a collaborator leaves. The owner can't leave.", edges: [["c-board","s-board"],["s-board","r-board"],["r-board","t-boards"]],
+      steps: [["s-board","requireMember","not on the board → 404 Board not found."],["s-board","yourself?","collaborator: leaves; owner: 400"],["s-board","someone else","board admin only, else 403"],["t-boards","board_members DELETE","they get 404 on the board right away"]],
+      ok: ["200","{ message }"], bad: [["400","You cannot leave your own board."],["403","Board admins only."],["404","Member not found."]] },
   ]},
   { id: "cat-health", name: "Health", ctrl: "c-health", files: ["HealthController"], about: "Public liveness check for Fly.", eps: [
     { m: "GET", p: "/health", acc: "public", sum: "Answers without touching the database.", edges: [],
@@ -478,7 +507,7 @@ const G = [
       ok: ["200","{ status: \"ok\" }"], bad: [] },
   ]},
 ];
-const ACC = { public: "public", user: "logged in", owner: "author or admin", admin: "admin" };
+const ACC = { public: "public", user: "logged in", member: "board member", owner: "author or board admin", badmin: "board admin", admin: "site admin" };
 
 // ---------- trace ----------
 const $ = id => document.getElementById(id);
@@ -530,7 +559,7 @@ for (const g of G) {
     b.innerHTML = `<span class="m m-${ep.m}">${ep.m}</span><span class="p">${ep.p}</span><span class="chip ${ep.acc}">${ACC[ep.acc]}</span><span class="d">${esc(ep.sum)}</span>`;
     b.addEventListener("click", () => { select(g, ep, b); $("map").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }); });
     box.appendChild(b);
-    if (ep.p === "/card" && ep.m === "POST") first = [g, ep, b];
+    if (ep.p === "/board/{boardId}/card" && ep.m === "POST") first = [g, ep, b];
   }
   cat.appendChild(box);
 }
@@ -548,13 +577,13 @@ const msgs = [
   [0, 1, 74, "POST /auth/login { username, password }"],
   [1, 3, 104, "BCrypt match, markActive"],
   [1, 0, 134, "{ accessToken 15 m, refreshToken 7 d } → sessionStorage", "back"],
-  [0, 2, 178, "GET /card  Authorization: Bearer <access>"],
+  [0, 2, 178, "GET /board/{id}/card  Authorization: Bearer <access>"],
   [2, 0, 208, "200 [ cards ]", "back"],
-  [0, 2, 258, "15 minutes later: GET /card with the old access token"],
+  [0, 2, 258, "15 minutes later: GET /board/{id}/card with the old access token"],
   [2, 0, 288, "401 { message } from JsonAuthenticationEntryPoint", "back bad"],
   [0, 1, 362, "POST /auth/refresh { refreshToken }"],
   [1, 3, 386, "tokenVersion in token == users.token_version ?"],
-  [1, 0, 410, "new token pair; api.ts retries GET /card", "back"],
+  [1, 0, 410, "new token pair; api.ts retries the request", "back"],
   [0, 1, 470, "POST /auth/logout { refreshToken }"],
   [1, 3, 496, "revokeTokens: token_version + 1, logged_out_at = now"],
   [0, 1, 532, "later POST /auth/refresh with the old token → 403 Invalid refresh token", "bad"],
@@ -572,10 +601,12 @@ const ed = el("defs", {}, er);
 const em = el("marker", { id: "ef", viewBox: "0 0 10 10", refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: "auto" }, ed); el("path", { d: "M0,0 L10,5 L0,10 z", class: "mk-n" }, em);
 const T = {
   users: [40, 30, ["id UUID PK", "username VARCHAR(32) UNIQUE", "password_hash, nullable", "google_sub UNIQUE, email", "picture_url TEXT", "role user | admin", "token_version INT", "layout JSONB", "last_active_at, logged_out_at", "created_at, updated_at"]],
-  cards: [430, 30, ["id UUID PK", "rating 1–5 CHECK", "comment", "product_id UNIQUE", "username FK → users", "assignee FK → users, nullable", "submitted_at (indexed DESC)", "type VARCHAR(32)", "status VARCHAR(32)"]],
-  board_columns: [820, 30, ["column_key PK", "title ≤ 50", "color #rrggbb | null", "position"]],
-  issue_types: [820, 210, ["type_key PK", "label ≤ 30", "color #rrggbb", "icon", "position"]],
-  refresh_tokens: [430, 270, ["id UUID PK (the jti)", "family_id (one login)", "user_id FK → users, cascade", "expires_at", "used_at (null = unused)"]],
+  cards: [430, 30, ["id UUID PK", "rating 1–5 CHECK", "comment", "UNIQUE (board_id, product_id)", "username FK → users", "assignee FK → users, nullable", "submitted_at", "type VARCHAR(32)", "status VARCHAR(32)", "board_id FK → boards"]],
+  board_columns: [820, 30, ["PK (board_id, column_key)", "title ≤ 50", "color #rrggbb | null", "position"]],
+  issue_types: [820, 210, ["PK (board_id, type_key)", "label ≤ 30", "color #rrggbb", "icon", "position"]],
+  refresh_tokens: [430, 300, ["id UUID PK (the jti)", "family_id (one login)", "user_id FK → users, cascade", "expires_at", "used_at (null = unused)"]],
+  boards: [820, 400, ["id UUID PK", "owner_id FK → users UNIQUE", "invite_token_hash UNIQUE", "created_at"]],
+  board_members: [40, 300, ["PK (board_id, user_id)", "board_id FK → boards, cascade", "user_id FK → users, cascade", "role user | admin", "joined_at"]],
 };
 const RH = 20, TW = 240;
 const rowY = (t, i) => T[t][1] + 34 + i * RH + RH / 2;
@@ -600,6 +631,8 @@ rel("cards", 5, "users", 1, "", false, false);
 rel("cards", 8, "board_columns", 0, "checked in ColumnService", true, true);
 rel("cards", 7, "issue_types", 0, "checked in IssueTypeService", true, true);
 rel("refresh_tokens", 2, "users", 0, "ON DELETE CASCADE", false, false);
+rel("cards", 9, "boards", 0, "FK board_id", false, true);
+rel("boards", 1, "users", 0, "owner, cascade", false, false);
 })();
 </script>
 </body>
