@@ -129,7 +129,7 @@ const Navbar = () => {
         {isLoggedIn && (
           <Link href={BOARD_PATH} className={`${NAV_LINK_CLASS} -ml-2 text-xl text-white md:hidden`}>
             <Image src={logo} alt="" className="size-7 shrink-0" priority />
-            Aurello
+            AURELLO
           </Link>
         )}
         <button
@@ -143,7 +143,7 @@ const Navbar = () => {
 
         {/* Mobil: dold tills menyn öppnas. Desktop: alltid synlig på en rad */}
         <ul
-          className={`${menuOpen ? 'flex' : 'hidden'} absolute top-full left-0 max-h-[calc(100dvh-4rem)] w-full flex-col overflow-y-auto gap-4 rounded-lg bg-brand p-8 text-2xl text-white md:static md:flex md:max-h-none md:overflow-visible md:flex-1 md:flex-row md:items-center md:gap-10 md:bg-transparent md:p-0`}
+          className={`${menuOpen ? 'flex' : 'hidden'} absolute top-full left-0 max-h-[calc(100dvh-4rem)] w-full flex-col overflow-y-auto gap-4 rounded-lg bg-brand p-8 text-xl text-white md:static md:flex md:max-h-none md:overflow-visible md:flex-1 md:flex-row md:items-center md:gap-10 md:bg-transparent md:p-0`}
         >
           {isLoggedIn && (
             <>
@@ -151,7 +151,7 @@ const Navbar = () => {
                 <Link href={BOARD_PATH} className={NAV_LINK_CLASS}>
                   {/* Samma bild som favicon (app/icon.png) */}
                   <Image src={logo} alt="" className="size-7 shrink-0" priority />
-                  Aurello
+                  AURELLO
                 </Link>
               </li>
               <li onClick={() => setMenuOpen(false)}>
