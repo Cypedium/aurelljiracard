@@ -7,12 +7,11 @@ import logo from '../icon.png';
 import { avatarColor, avatarInitials } from '../utils/avatar';
 import { handleLogout } from '../utils/logout';
 import { getUsername, hasSession, isAdmin } from '../utils/session';
-import { BOARD_ACTIONS, requestBoardAction } from '../utils/boardActions';
+import { BOARD_ACTIONS, requestBoardAction, type BoardAction } from '../utils/boardActions';
 import AccountDialog from './AccountDialog';
 import {
   ArrowRightStartOnRectangleIcon,
   Bars3Icon,
-  MinusIcon,
   PlusIcon,
   QueueListIcon,
   TagIcon,
@@ -30,6 +29,24 @@ const NAV_LINK_CLASS =
 const NAV_ICON_CLASS = 'size-5 shrink-0';
 const NAV_ICON_SUB_CLASS = 'size-4 shrink-0';
 const SUB_ROW_BUTTON_CLASS = 'flex items-center gap-1.5 rounded-md px-2 py-0.5 hover:bg-white/10';
+// Mobil: rad tvås knappar visas i hamburgermenyn, indragna under sidans länk
+const MOBILE_SUB_LIST_CLASS = 'mt-2 ml-7 flex flex-col gap-2 text-lg md:hidden';
+
+type SubAction = { label: string; action: BoardAction; icon?: boolean };
+
+const MobileSubActions = ({ actions }: { actions: SubAction[] }) =>
+  actions.length > 0 && (
+    <ul className={MOBILE_SUB_LIST_CLASS}>
+      {actions.map(({ label, action }) => (
+        <li key={action}>
+          {/* Klicket bubblar till länkens <li>, som stänger menyn */}
+          <button type="button" className={SUB_ROW_BUTTON_CLASS} onClick={() => requestBoardAction(action)}>
+            {label}
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
 
 const Navbar = () => {
   const pathname = usePathname();
@@ -49,6 +66,18 @@ const Navbar = () => {
   const onBoard = isLoggedIn && pathname === BOARD_PATH;
   const onBacklog = isLoggedIn && pathname === BACKLOG_PATH;
   const onIssueTypes = isLoggedIn && admin && pathname === ISSUE_TYPES_PATH;
+
+  // Rad tvås knappar för aktuell sida. Bara admin kan lägga till / ta bort kolumner (backend nekar andra)
+  const subActions: SubAction[] = [
+    ...(onBoard || onBacklog ? [{ label: 'Create card', action: BOARD_ACTIONS.createCard }] : []),
+    ...(onBoard && admin
+      ? [
+          { label: 'Create column', action: BOARD_ACTIONS.createColumn },
+          { label: 'Delete column', action: BOARD_ACTIONS.deleteColumn },
+        ]
+      : []),
+    ...(onIssueTypes ? [{ label: 'Create Issue type', action: BOARD_ACTIONS.createIssueType, icon: true }] : []),
+  ];
 
   // Rad två centreras under sin länk (The Board / Backlog / Issue types). null = vänsterställd (mobil, där länken är dold)
   const headerRef = useRef<HTMLElement>(null);
@@ -118,6 +147,7 @@ const Navbar = () => {
                   <ViewColumnsIcon className={NAV_ICON_CLASS} aria-hidden />
                   Board
                 </Link>
+                {onBoard && <MobileSubActions actions={subActions} />}
               </li>
               <li onClick={() => setMenuOpen(false)}>
                 <Link
@@ -129,6 +159,7 @@ const Navbar = () => {
                   <QueueListIcon className={NAV_ICON_CLASS} aria-hidden />
                   Backlog
                 </Link>
+                {onBacklog && <MobileSubActions actions={subActions} />}
               </li>
               {/* Bara för admin; backend nekar andra (403) */}
               {admin && (
@@ -149,6 +180,7 @@ const Navbar = () => {
                       <TagIcon className={NAV_ICON_CLASS} aria-hidden />
                       Issue types
                     </Link>
+                    {onIssueTypes && <MobileSubActions actions={subActions} />}
                   </li>
                 </>
               )}
@@ -196,45 +228,23 @@ const Navbar = () => {
         </ul>
       </nav>
 
-      {/* Rad två, på boarden, backloggen och Issue types: öppnar sidans formulär. Lite mörkare än raden ovanför */}
-      {(onBoard || onBacklog || onIssueTypes) && (
+      {/* Rad två (desktop), på boarden, backloggen och Issue types: öppnar sidans formulär. Lite mörkare än raden ovanför.
+          På mobil ligger knapparna i hamburgermenyn i stället */}
+      {subActions.length > 0 && (
         <div
-          className={`flex items-center bg-gray-700 py-1.5 pr-[2%] text-base text-white ${subRowCenter === null ? 'pl-[3%]' : ''}`}
+          className={`hidden items-center bg-gray-700 py-1.5 pr-[2%] text-base text-white md:flex ${subRowCenter === null ? 'pl-[3%]' : ''}`}
         >
           {/* Mittpunkten läggs på länkens mitt; translate flyttar tillbaka halva bredden */}
           <div
             className={`flex w-fit shrink-0 items-center gap-4 ${subRowCenter === null ? '' : '-translate-x-1/2'}`}
             style={subRowCenter === null ? undefined : { marginLeft: subRowCenter }}
           >
-            {(onBoard || onBacklog) && (
-              <button type="button" className={SUB_ROW_BUTTON_CLASS} onClick={() => requestBoardAction(BOARD_ACTIONS.createCard)}>
-                {/* <PlusIcon className={NAV_ICON_SUB_CLASS} aria-hidden /> */}
-                Create card
+            {subActions.map(({ label, action, icon }) => (
+              <button key={action} type="button" className={SUB_ROW_BUTTON_CLASS} onClick={() => requestBoardAction(action)}>
+                {icon && <PlusIcon className={NAV_ICON_SUB_CLASS} aria-hidden />}
+                {label}
               </button>
-            )}
-            {/* Bara admin kan lägga till / ta bort kolumner (backend nekar andra) */}
-            {onBoard && admin && (
-              <button type="button" className={SUB_ROW_BUTTON_CLASS} onClick={() => requestBoardAction(BOARD_ACTIONS.createColumn)}>
-                {/* <PlusIcon className={NAV_ICON_SUB_CLASS} aria-hidden /> */}
-                Create column
-              </button>
-            )}
-            {onBoard && admin && (
-              <button type="button" className={SUB_ROW_BUTTON_CLASS} onClick={() => requestBoardAction(BOARD_ACTIONS.deleteColumn)}>
-                {/* <MinusIcon className={NAV_ICON_SUB_CLASS} aria-hidden /> */}
-                Delete column
-              </button>
-            )}
-            {onIssueTypes && (
-              <button
-                type="button"
-                className={SUB_ROW_BUTTON_CLASS}
-                onClick={() => requestBoardAction(BOARD_ACTIONS.createIssueType)}
-              >
-                <PlusIcon className={NAV_ICON_SUB_CLASS} aria-hidden />
-                Create Issue type
-              </button>
-            )}
+            ))}
           </div>
         </div>
       )}
