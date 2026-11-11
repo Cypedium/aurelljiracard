@@ -126,7 +126,7 @@ const Navbar = () => {
 
         {/* Mobil: dold tills menyn öppnas. Desktop: alltid synlig på en rad */}
         <ul
-          className={`${menuOpen ? 'flex' : 'hidden'} absolute top-50px w-full flex-col gap-4 rounded-lg bg-brand p-8 text-2xl text-white md:static md:flex md:flex-1 md:flex-row md:items-center md:gap-10 md:bg-transparent md:p-0`}
+          className={`${menuOpen ? 'flex' : 'hidden'} absolute top-full left-0 max-h-[calc(100dvh-4rem)] w-full flex-col overflow-y-auto gap-4 rounded-lg bg-brand p-8 text-2xl text-white md:static md:flex md:max-h-none md:overflow-visible md:flex-1 md:flex-row md:items-center md:gap-10 md:bg-transparent md:p-0`}
         >
           {isLoggedIn && (
             <>
