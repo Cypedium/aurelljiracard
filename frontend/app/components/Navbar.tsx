@@ -123,6 +123,14 @@ const Navbar = () => {
 
   return (
     <header ref={headerRef} className="fixed z-1000 w-full font-brand">
+      {/* Mobil: suddar sidan bakom den öppna menyn; tryck utanför stänger. Navraden (z-10) ligger ovanpå */}
+      {menuOpen && (
+        <div
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm md:hidden"
+          onClick={() => setMenuOpen(false)}
+          aria-hidden
+        />
+      )}
       {/* z-10: mobilmenyn hamnar över raden under */}
       <nav className="relative z-10 flex w-full items-center justify-between bg-gray-600 py-[0.5%] pr-[2%] pl-[3%]">
         {/* Mobil: logga och namn till vänster i raden, hamburgaren till höger. Desktop: loggan ligger i listan */}
@@ -132,19 +140,27 @@ const Navbar = () => {
             AURELLO
           </Link>
         )}
+        {/* invisible när menyn är öppen: krysset ligger i menyns hörn, raden behåller sin höjd */}
         <button
-          className="ml-auto block text-white md:hidden"
-          onClick={() => setMenuOpen(!menuOpen)}
-          aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+          className={`ml-auto block text-white md:hidden ${menuOpen ? 'invisible' : ''}`}
+          onClick={() => setMenuOpen(true)}
+          aria-label="Open menu"
           aria-expanded={menuOpen}
         >
-          {menuOpen ? <XMarkIcon className="size-8" aria-hidden /> : <Bars3Icon className="size-8" aria-hidden />}
+          <Bars3Icon className="size-8" aria-hidden />
         </button>
 
-        {/* Mobil: dold tills menyn öppnas. Desktop: alltid synlig på en rad */}
+        {/* Mobil: dold tills menyn öppnas, fyller sedan skärmen under raden med 12px kant runt om
+            (100% = navraden, absolut positionerad). Desktop: alltid synlig på en rad */}
         <ul
-          className={`${menuOpen ? 'flex' : 'hidden'} absolute top-full left-0 max-h-[calc(100dvh-4rem)] w-full flex-col overflow-y-auto gap-4 rounded-lg bg-brand p-8 text-xl text-white md:static md:flex md:max-h-none md:overflow-visible md:flex-1 md:flex-row md:items-center md:gap-10 md:bg-transparent md:p-0`}
+          className={`${menuOpen ? 'flex' : 'hidden'} absolute top-full inset-x-3 mt-3 h-[calc(100dvh-100%-1.5rem)] flex-col overflow-y-auto gap-4 rounded-lg bg-brand p-8 text-xl text-white shadow-2xl md:static md:mt-0 md:flex md:h-auto md:overflow-visible md:flex-1 md:flex-row md:items-center md:gap-10 md:bg-transparent md:p-0 md:shadow-none`}
         >
+          {/* Mobil: stäng-krysset i menyns övre högra hörn */}
+          <li className="absolute top-3 right-3 md:hidden">
+            <button type="button" className="block rounded-md text-white hover:bg-white/10" onClick={() => setMenuOpen(false)} aria-label="Close menu">
+              <XMarkIcon className="size-8" aria-hidden />
+            </button>
+          </li>
           {isLoggedIn && (
             <>
               <li className="hidden md:block">
