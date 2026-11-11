@@ -121,6 +121,17 @@ export const readableTextColor = (background: string): string =>
 // Bara kortpositionerna används; äldre layouter har även cols och headers
 export const normalizeLayout = (raw: Partial<UserLayout>): UserLayout => ({ cards: raw.cards });
 
+// Layouten är en per användare, för alla boards hen är med på. När en board sparas ersätts dess kort
+// (boardCardIds) av next; positionerna för kort på andra boards behålls
+export const mergeBoardPositions = (
+  saved: SavedCardPosition[] = [],
+  next: SavedCardPosition[] = [],
+  boardCardIds: ReadonlySet<string>,
+): SavedCardPosition[] => {
+  const nextIds = new Set(next.map((p) => p.id));
+  return [...saved.filter((p) => !boardCardIds.has(p.id) && !nextIds.has(p.id)), ...next];
+};
+
 // Listnycklar som servern skapar dem: små bokstäver och siffror med bindestreck
 const COLUMN_KEY = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 

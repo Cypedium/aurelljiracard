@@ -18,10 +18,3 @@ export const changedUserFields = (
   ...(next.username !== current.username ? { username: next.username } : {}),
   ...(next.role !== current.role ? { role: next.role } : {}),
 });
-
-// Antal kort per författare; användare med kort kan inte tas bort
-export const countCardsByAuthor = (cards: { username: string }[]): Record<string, number> =>
-  cards.reduce<Record<string, number>>((counts, { username }) => {
-    counts[username] = (counts[username] ?? 0) + 1;
-    return counts;
-  }, {});

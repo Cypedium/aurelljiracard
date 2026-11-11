@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { getCards, getColumns, submitCard, updateCard, updateCardStatus, type Card as CardData } from '../../api/endpoints';
 import { toast } from 'sonner';
+import { useBoards } from '../useBoards';
 import {
   DUPLICATE_ERROR_TYPE,
   DUPLICATE_PRODUCT_ID_MESSAGE,
@@ -46,6 +47,8 @@ const required = <span className="text-jira-danger">*</span>;
 export default function Card({ card, onSaved, onCancel, status, onCreated }: CardProps = {}) {
   const isEdit = Boolean(card?._id);
   const router = useRouter();
+  // The form is only shown on a board page, once the board has loaded
+  const boardId = useBoards().current?._id ?? null;
   const form = useForm<CardFormValues>({
     resolver: zodResolver(cardFormSchema),
     defaultValues: card ? cardToFormValues(card) : EMPTY_CARD_FORM,
@@ -55,19 +58,21 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
   // If they can't be loaded, the server's 409 still catches duplicates
   const [takenKeys, setTakenKeys] = useState<Set<string>>(() => new Set());
   useEffect(() => {
-    getCards()
+    if (!boardId) return;
+    getCards(boardId)
       .then((res) => setTakenKeys(takenIssueKeys(res.data || [], card?._id)))
       .catch((err) => console.error('Fetch issue keys error:', err.message));
-  }, [card?._id]);
+  }, [boardId, card?._id]);
 
   // Boardens listor till dropdownen bredvid Issue type. Kortet flyttas när man sparar
   // och hamnar då överst i den nya listan (se buildCardLayout)
   const [lists, setLists] = useState<BoardHeader[]>([]);
   useEffect(() => {
-    getColumns()
+    if (!boardId) return;
+    getColumns(boardId)
       .then((res) => setLists(normalizeColumns(res.data)))
       .catch((err) => console.error('Fetch lists error:', err.message));
-  }, []);
+  }, [boardId]);
   // null = inte ändrad: kortet stannar där det är (nytt kort: listan det skapas i)
   const [movedTo, setMovedTo] = useState<CardStatus | null>(null);
   const currentStatus = card ? card.status : status;
@@ -101,17 +106,18 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
 
   // The backend sets the date (today) when the card is created
   const onSubmit = async (fields: CardFormValues) => {
+    if (!boardId) return;
     if (takenKeys.has(fields.productId)) {
       showDuplicateKey(DUPLICATE_PRODUCT_ID_MESSAGE, true);
       return;
     }
     if (isEdit && card?._id) {
       try {
-        const res = await updateCard(card._id, fields);
+        const res = await updateCard(boardId, card._id, fields);
         let saved = res.data;
         if (movedTo && movedTo !== card.status) {
           try {
-            saved = (await updateCardStatus(card._id, movedTo)).data;
+            saved = (await updateCardStatus(boardId, card._id, movedTo)).data;
           } catch (error) {
             // Ändringarna är sparade, bara flytten misslyckades
             console.error('Move error:', (error as Error).message);
@@ -131,7 +137,7 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
 
     try {
       // Author is taken from the access token by the backend
-      const res = await submitCard({ ...fields, status: movedTo ?? status });
+      const res = await submitCard(boardId, { ...fields, status: movedTo ?? status });
 
       if (onCreated) {
         onCreated();

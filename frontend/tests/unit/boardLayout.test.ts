@@ -1,6 +1,7 @@
 import { describe, expect, it } from "@jest/globals";
 import {
   listDeleteBlocker,
+  mergeBoardPositions,
   BOARD_UNITS,
   DEFAULT_HEADERS,
   EXPANDED_SPAN,
@@ -67,6 +68,22 @@ describe("normalizeLayout", () => {
     const cards = [{ id: "a", x: 1, y: 0, w: 1, h: 1 }];
     expect(normalizeLayout({ cols: 12, headers: [], cards } as any)).toEqual({ ...DEFAULT_LAYOUT, cards });
     expect(normalizeLayout({})).toEqual({ ...DEFAULT_LAYOUT, cards: undefined });
+  });
+});
+
+describe("mergeBoardPositions", () => {
+  const pos = (id: string, y = 0) => ({ id, x: 0, y, w: 1, h: 1, status: "todo" });
+
+  it("replaces this board's cards and keeps the positions of cards on other boards", () => {
+    const saved = [pos("other-board", 3), pos("here", 0), pos("moved-to-backlog", 1)];
+    const next = [pos("here", 2)];
+
+    expect(mergeBoardPositions(saved, next, new Set(["here", "moved-to-backlog"]))).toEqual([pos("other-board", 3), pos("here", 2)]);
+  });
+
+  it("handles a first save and a new card that wasn't fetched yet", () => {
+    expect(mergeBoardPositions(undefined, [pos("new")], new Set())).toEqual([pos("new")]);
+    expect(mergeBoardPositions([pos("new", 1)], [pos("new", 0)], new Set())).toEqual([pos("new", 0)]);
   });
 });
 

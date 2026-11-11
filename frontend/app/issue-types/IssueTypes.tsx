@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { TrashIcon } from '@heroicons/react/16/solid';
 import { deleteIssueType, getCards, getIssueTypes } from '../api/endpoints';
 import { removeIssueType } from '../cards/useIssueTypes';
+import { useBoards } from '../cards/useBoards';
 import { apiErrorMessage } from '../utils/apiError';
 import { BOARD_ACTIONS, onBoardAction } from '../utils/boardActions';
 import { countCardsByType, DEFAULT_CARD_TYPE, MAX_ISSUE_TYPES, normalizeIssueTypes, type IssueType } from '../utils/cardType';
@@ -25,16 +26,18 @@ import {
 const ACTION_CLASS =
   'rounded-[3px] p-1.5 text-jira-secondary hover:bg-jira-neutral disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent';
 
-// Admin: alla ärendetyper med antal kort. Nya läggs till här eller i kortformuläret; oanvända kan tas bort
+// Boardens admin: boardens ärendetyper med antal kort. Nya läggs till här eller i kortformuläret; oanvända kan tas bort
 export default function IssueTypes() {
+  const boardId = useBoards().current?._id ?? null;
   const [types, setTypes] = useState<IssueType[] | null>(null);
   const [cardCounts, setCardCounts] = useState<Record<string, number>>({});
   const [creating, setCreating] = useState(false);
   const [deletingType, setDeletingType] = useState<IssueType | null>(null);
 
   const fetchTypes = useCallback(async () => {
+    if (!boardId) return;
     try {
-      const [typesRes, cardsRes] = await Promise.all([getIssueTypes(), getCards()]);
+      const [typesRes, cardsRes] = await Promise.all([getIssueTypes(boardId), getCards(boardId)]);
       setTypes(normalizeIssueTypes(typesRes.data));
       setCardCounts(countCardsByType(cardsRes.data || []));
     } catch (err: any) {
@@ -42,15 +45,16 @@ export default function IssueTypes() {
       toast.error(apiErrorMessage(err, 'Could not load issue types.'));
       setTypes([]);
     }
-  }, []);
+  }, [boardId]);
 
   useEffect(() => {
     fetchTypes();
   }, [fetchTypes]);
 
   const removeType = async (type: IssueType) => {
+    if (!boardId) return;
     try {
-      await deleteIssueType(type.key);
+      await deleteIssueType(boardId, type.key);
       setTypes((prev) => prev?.filter((t) => t.key !== type.key) ?? null);
       removeIssueType(type.key);
       toast.success(`Issue type ${type.label} deleted.`);

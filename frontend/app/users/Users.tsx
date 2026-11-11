@@ -3,14 +3,13 @@ import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { PencilIcon, TrashIcon } from '@heroicons/react/16/solid';
 import { ArrowRightStartOnRectangleIcon } from '@heroicons/react/24/outline';
-import { deleteUser, getCards, getUsers, revokeUserSessions, type PublicUser } from '../api/endpoints';
+import { deleteUser, getUsers, revokeUserSessions, type PublicUser } from '../api/endpoints';
 import { apiErrorMessage } from '../utils/apiError';
 import { avatarColor, avatarInitials } from '../utils/avatar';
 import { handleLogout } from '../utils/logout';
 import { getUsername } from '../utils/session';
 import { lastSeenLabel } from '../utils/presence';
 import { TABLE_CELL_CLASS as TD_CLASS, TABLE_HEAD_CLASS as TH_CLASS, TABLE_THEAD_CLASS, TABLE_ROW_CLASS, TABLE_WRAPPER_CLASS } from '../utils/styles';
-import { countCardsByAuthor } from '../utils/userForm';
 import EditUserForm from './EditUserForm';
 import TableSkeleton from '../components/TableSkeleton';
 import { Dialog, DialogContent, DialogTitle } from '../components/ui/dialog';
@@ -30,16 +29,15 @@ const ACTION_CLASS =
 
 export default function Users() {
   const [users, setUsers] = useState<PublicUser[] | null>(null);
-  const [cardCounts, setCardCounts] = useState<Record<string, number>>({});
   const [editingUser, setEditingUser] = useState<PublicUser | null>(null);
   const [deletingUser, setDeletingUser] = useState<PublicUser | null>(null);
   const me = getUsername();
 
   const fetchUsers = useCallback(async () => {
     try {
-      const [usersRes, cardsRes] = await Promise.all([getUsers(), getCards()]);
+      // Cards are per board now, so the admin can't count them; deleting a user with cards answers 409
+      const usersRes = await getUsers();
       setUsers([...usersRes.data].sort((a, b) => a.username.localeCompare(b.username)));
-      setCardCounts(countCardsByAuthor(cardsRes.data || []));
     } catch (err: any) {
       console.error('Error fetching users:', err.message);
       toast.error(apiErrorMessage(err, 'Could not load users.'));
@@ -98,19 +96,13 @@ export default function Users() {
               <th scope="col" className={TH_CLASS}>User</th>
               <th scope="col" className={TH_CLASS}>Role</th>
               <th scope="col" className={TH_CLASS}>Status</th>
-              <th scope="col" className={`${TH_CLASS} text-right max-[480px]:hidden`}>Cards</th>
               <th scope="col" className={`${TH_CLASS} text-right`}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {users.map((user) => {
               const isSelf = user.username === me;
-              const cards = cardCounts[user.username] ?? 0;
-              const deleteBlocked = isSelf
-                ? 'You cannot delete yourself'
-                : cards > 0
-                  ? `Delete their ${cards} card${cards === 1 ? '' : 's'} first`
-                  : null;
+              const deleteBlocked = isSelf ? 'You cannot delete yourself' : null;
 
               return (
                 <tr key={user._id} className={TABLE_ROW_CLASS}>
@@ -154,7 +146,6 @@ export default function Users() {
                       )}
                     </span>
                   </td>
-                  <td className={`${TD_CLASS} text-right text-jira-secondary tabular-nums max-[480px]:hidden`}>{cards}</td>
                   <td className={`${TD_CLASS} w-px whitespace-nowrap`}>
                     <div className="flex items-center justify-end">
                       <button

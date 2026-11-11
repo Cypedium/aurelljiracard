@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { createIssueType } from '../api/endpoints';
+import { useBoards } from '../cards/useBoards';
 import { addIssueType, useIssueTypes } from '../cards/useIssueTypes';
 import { apiErrorMessage, isConflictError } from '../utils/apiError';
 import { DUPLICATE_ERROR_TYPE, ISSUE_KEY_CHECK_DELAY_MS } from '../utils/cardForm';
@@ -51,6 +52,7 @@ export default function NewIssueTypeDialog({ open, onClose, onCreated }: Props) 
 
   // Samma kontroll som för Issue key i kortformuläret: ett namn som redan finns visas under fältet medan man skriver
   const types = useIssueTypes();
+  const boardId = useBoards().current?._id ?? null;
   const showDuplicate = (message = DUPLICATE_ISSUE_TYPE_MESSAGE, focus = false) =>
     form.setError('label', { type: DUPLICATE_ERROR_TYPE, message }, { shouldFocus: focus });
 
@@ -67,12 +69,13 @@ export default function NewIssueTypeDialog({ open, onClose, onCreated }: Props) 
   }, [label, types]);
 
   const onSubmit = async (values: IssueTypeFormValues) => {
+    if (!boardId) return;
     if (isTakenIssueTypeLabel(types, values.label)) {
       showDuplicate(DUPLICATE_ISSUE_TYPE_MESSAGE, true);
       return;
     }
     try {
-      const res = await createIssueType({ ...values, label: values.label.trim() });
+      const res = await createIssueType(boardId, { ...values, label: values.label.trim() });
       addIssueType(res.data);
       toast.success(`Issue type ${res.data.label} added.`);
       onCreated(res.data);

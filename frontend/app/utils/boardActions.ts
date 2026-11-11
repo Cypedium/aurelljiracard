@@ -6,6 +6,8 @@ export const BOARD_ACTIONS = {
   createColumn: "create-column",
   deleteColumn: "delete-column",
   createIssueType: "create-issue-type",
+  // "Share" (boardens admin) / "Members" (medarbetare): dialogen med inbjudningslänk och medlemmar
+  shareBoard: "share-board",
 } as const;
 
 export type BoardAction = (typeof BOARD_ACTIONS)[keyof typeof BOARD_ACTIONS];
