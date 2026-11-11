@@ -1,9 +1,10 @@
 const mongoose = require('mongoose');
 const { DEFAULT_ISSUE_TYPES } = require('../utils/cardType');
 
-// Issue type, shared by all users. Cards point at it with type = key
+// An issue type on one board. Cards on the board point at it with type = key
 const issueTypeSchema = new mongoose.Schema({
-  key: { type: String, required: true, unique: true },
+  boardId: { type: mongoose.Schema.Types.ObjectId, ref: 'Board', required: true },
+  key: { type: String, required: true },
   label: { type: String, required: true },
   // Icon background (#rrggbb, lowercase)
   color: { type: String, required: true },
@@ -13,17 +14,20 @@ const issueTypeSchema = new mongoose.Schema({
   position: { type: Number, required: true }
 }, { timestamps: true });
 
-// All issue types in dropdown order. The first call seeds the defaults;
+// Keys are unique per board
+issueTypeSchema.index({ boardId: 1, key: 1 }, { unique: true });
+
+// The board's issue types in dropdown order. The first call for a board seeds the defaults;
 // upserts make concurrent first calls safe
-issueTypeSchema.statics.listAll = async function () {
-  if ((await this.estimatedDocumentCount()) === 0) {
+issueTypeSchema.statics.listAll = async function (boardId) {
+  if ((await this.countDocuments({ boardId })) === 0) {
     await this.bulkWrite(
       DEFAULT_ISSUE_TYPES.map((type, position) => ({
-        updateOne: { filter: { key: type.key }, update: { $setOnInsert: { ...type, position } }, upsert: true }
+        updateOne: { filter: { boardId, key: type.key }, update: { $setOnInsert: { ...type, position } }, upsert: true }
       }))
     );
   }
-  return this.find().sort({ position: 1, key: 1 }).lean();
+  return this.find({ boardId }).sort({ position: 1, key: 1 }).lean();
 };
 
 module.exports = mongoose.model('IssueType', issueTypeSchema);

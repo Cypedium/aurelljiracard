@@ -8,20 +8,24 @@ jest.mock("../models/IssueType", () => ({
 jest.mock("../models/Card", () => ({
   exists: jest.fn()
 }));
+jest.mock("../models/BoardMember", () => ({ findOne: jest.fn() }));
 
 const request = require("supertest");
 const app = require("../app");
 const IssueType = require("../models/IssueType");
 const Card = require("../models/Card");
+const BoardMember = require("../models/BoardMember");
 const { DEFAULT_ISSUE_TYPES, issueTypeKeyFromLabel } = require("../utils/cardType");
-const { authHeader, USER_ID } = require("./helpers");
+const { authHeader, boardAdminHeader, mockMembership, BOARD_ID } = require("./helpers");
 
-const adminHeader = () => authHeader("admin", USER_ID, "admin");
+const adminHeader = () => boardAdminHeader();
+const TYPES = `/board/${BOARD_ID}/issue-type`;
 const defaultTypes = () => DEFAULT_ISSUE_TYPES.map((t, position) => ({ ...t, position, _id: "x", __v: 0 }));
 const newType = { label: " User story ", color: "#22A06B", icon: "star" };
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockMembership(BoardMember);
   IssueType.listAll.mockResolvedValue(defaultTypes());
   IssueType.create.mockImplementation(async (doc) => doc);
   IssueType.findOne.mockReturnValue({ lean: () => Promise.resolve({ key: "bug", label: "Bug" }) });
@@ -31,9 +35,9 @@ beforeEach(() => {
 
 describe("auth guard", () => {
   it.each([
-    ["get", "/issue-type"],
-    ["post", "/issue-type"],
-    ["delete", "/issue-type/bug"]
+    ["get", TYPES],
+    ["post", TYPES],
+    ["delete", `${TYPES}/bug`]
   ])("%s %s returns 401 without a token", async (method, path) => {
     const res = await request(app)[method](path);
 
@@ -41,14 +45,14 @@ describe("auth guard", () => {
   });
 
   it("POST /issue-type returns 403 for a regular user", async () => {
-    const res = await request(app).post("/issue-type").set("Authorization", authHeader()).send(newType);
+    const res = await request(app).post(TYPES).set("Authorization", authHeader()).send(newType);
 
     expect(res.status).toBe(403);
     expect(IssueType.create).not.toHaveBeenCalled();
   });
 
   it("DELETE /issue-type/:key returns 403 for a regular user", async () => {
-    const res = await request(app).delete("/issue-type/bug").set("Authorization", authHeader());
+    const res = await request(app).delete(`${TYPES}/bug`).set("Authorization", authHeader());
 
     expect(res.status).toBe(403);
     expect(IssueType.deleteOne).not.toHaveBeenCalled();
@@ -57,7 +61,7 @@ describe("auth guard", () => {
 
 describe("GET /issue-type", () => {
   it("returns the shared issue types in order, without database fields", async () => {
-    const res = await request(app).get("/issue-type").set("Authorization", authHeader());
+    const res = await request(app).get(TYPES).set("Authorization", authHeader());
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual(DEFAULT_ISSUE_TYPES.map((t, position) => ({ ...t, position })));
@@ -66,7 +70,7 @@ describe("GET /issue-type", () => {
 
 describe("POST /issue-type", () => {
   it("adds an issue type at the end with a key made from the name", async () => {
-    const res = await request(app).post("/issue-type").set("Authorization", adminHeader()).send(newType);
+    const res = await request(app).post(TYPES).set("Authorization", adminHeader()).send(newType);
 
     expect(res.status).toBe(201);
     expect(res.body).toEqual({ key: "user-story", label: "User story", color: "#22a06b", icon: "star", position: 3 });
@@ -74,7 +78,7 @@ describe("POST /issue-type", () => {
 
   it("gives an issue type with a taken name a unique key", async () => {
     const res = await request(app)
-      .post("/issue-type")
+      .post(TYPES)
       .set("Authorization", adminHeader())
       .send({ ...newType, label: "Bug" });
 
@@ -86,7 +90,7 @@ describe("POST /issue-type", () => {
       Array.from({ length: 12 }, (_, i) => ({ key: `t${i}`, label: `T${i}`, position: i }))
     );
 
-    const res = await request(app).post("/issue-type").set("Authorization", adminHeader()).send(newType);
+    const res = await request(app).post(TYPES).set("Authorization", adminHeader()).send(newType);
 
     expect(res.status).toBe(400);
     expect(res.body.message).toBe("There can be at most 12 issue types.");
@@ -102,7 +106,7 @@ describe("POST /issue-type", () => {
     [{ ...newType, icon: "rocket" }],
     [{ ...newType, icon: undefined }]
   ])("rejects invalid issue type %j with 400", async (body) => {
-    const res = await request(app).post("/issue-type").set("Authorization", adminHeader()).send(body);
+    const res = await request(app).post(TYPES).set("Authorization", adminHeader()).send(body);
 
     expect(res.status).toBe(400);
     expect(IssueType.create).not.toHaveBeenCalled();
@@ -111,21 +115,21 @@ describe("POST /issue-type", () => {
   it("returns 409 when the same key was just added", async () => {
     IssueType.create.mockRejectedValue(Object.assign(new Error("dup"), { code: 11000 }));
 
-    const res = await request(app).post("/issue-type").set("Authorization", adminHeader()).send(newType);
+    const res = await request(app).post(TYPES).set("Authorization", adminHeader()).send(newType);
 
     expect(res.status).toBe(409);
   });
 });
 
 describe("DELETE /issue-type/:key", () => {
-  const del = (key) => request(app).delete(`/issue-type/${key}`).set("Authorization", adminHeader());
+  const del = (key) => request(app).delete(`${TYPES}/${key}`).set("Authorization", adminHeader());
 
   it("deletes an issue type that no card uses", async () => {
     const res = await del("bug");
 
     expect(res.status).toBe(200);
-    expect(Card.exists).toHaveBeenCalledWith({ type: "bug" });
-    expect(IssueType.deleteOne).toHaveBeenCalledWith({ key: "bug" });
+    expect(Card.exists).toHaveBeenCalledWith({ boardId: BOARD_ID, type: "bug" });
+    expect(IssueType.deleteOne).toHaveBeenCalledWith({ boardId: BOARD_ID, key: "bug" });
   });
 
   it("returns 409 while cards use the issue type", async () => {

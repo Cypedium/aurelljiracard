@@ -7,9 +7,8 @@ const mongoose = require('mongoose');
 mongoose.set('sanitizeFilter', true);
 
 const authRoutes = require('./routes/auth');
-const cardRoutes = require('./routes/card');
-const columnRoutes = require('./routes/column');
-const issueTypeRoutes = require('./routes/issueType');
+const boardRoutes = require('./routes/board');
+const inviteRoutes = require('./routes/invite');
 const userRoutes = require('./routes/user');
 
 const DEFAULT_CLIENT_URLS = 'http://localhost:3000,https://aurelljiraboard.fly.dev';
@@ -28,9 +27,9 @@ app.use(cors({
 }));
 
 app.use('/auth', authRoutes);
-app.use('/card', cardRoutes);
-app.use('/column', columnRoutes);
-app.use('/issue-type', issueTypeRoutes);
+// Cards, lists and issue types live under /board/:boardId (routes/board.js)
+app.use('/board', boardRoutes);
+app.use('/invite', inviteRoutes);
 app.use('/user', userRoutes);
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));

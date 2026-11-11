@@ -9,19 +9,23 @@ jest.mock("../models/Column", () => ({
 jest.mock("../models/Card", () => ({
   exists: jest.fn()
 }));
+jest.mock("../models/BoardMember", () => ({ findOne: jest.fn() }));
 
 const request = require("supertest");
 const app = require("../app");
 const Column = require("../models/Column");
 const Card = require("../models/Card");
+const BoardMember = require("../models/BoardMember");
 const { DEFAULT_COLUMNS, columnKeyFromTitle, isColumnKey } = require("../utils/cardStatus");
-const { authHeader, USER_ID } = require("./helpers");
+const { authHeader, boardAdminHeader, mockMembership, BOARD_ID } = require("./helpers");
 
-const adminHeader = () => authHeader("admin", USER_ID, "admin");
+const adminHeader = () => boardAdminHeader();
+const COLUMNS = `/board/${BOARD_ID}/column`;
 const defaultColumns = () => DEFAULT_COLUMNS.map((c, position) => ({ ...c, color: null, position, _id: "x", __v: 0 }));
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockMembership(BoardMember);
   Column.listAll.mockResolvedValue(defaultColumns());
   Column.deleteOne.mockResolvedValue({ deletedCount: 1 });
   Card.exists.mockResolvedValue(null);
@@ -29,11 +33,11 @@ beforeEach(() => {
 
 describe("auth guard", () => {
   it.each([
-    ["get", "/column"],
-    ["post", "/column"],
-    ["put", "/column/todo"],
-    ["put", "/column"],
-    ["delete", "/column/test"]
+    ["get", COLUMNS],
+    ["post", COLUMNS],
+    ["put", `${COLUMNS}/todo`],
+    ["put", COLUMNS],
+    ["delete", `${COLUMNS}/test`]
   ])("%s %s returns 401 without a token", async (method, path) => {
     const res = await request(app)[method](path);
 
@@ -41,9 +45,9 @@ describe("auth guard", () => {
   });
 
   it.each([
-    ["post", "/column"],
-    ["put", "/column/todo"],
-    ["put", "/column"]
+    ["post", COLUMNS],
+    ["put", `${COLUMNS}/todo`],
+    ["put", COLUMNS]
   ])("%s %s returns 403 for a regular user", async (method, path) => {
     const res = await request(app)[method](path).set("Authorization", authHeader()).send({ title: "Review", keys: [] });
 
@@ -56,7 +60,7 @@ describe("auth guard", () => {
 
 describe("GET /column", () => {
   it("returns the shared lists in board order, without database fields", async () => {
-    const res = await request(app).get("/column").set("Authorization", authHeader());
+    const res = await request(app).get(COLUMNS).set("Authorization", authHeader());
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual(DEFAULT_COLUMNS.map((c, position) => ({ ...c, color: null, position })));
@@ -68,7 +72,7 @@ describe("POST /column", () => {
     Column.create.mockImplementation(async (doc) => doc);
 
     const res = await request(app)
-      .post("/column")
+      .post(COLUMNS)
       .set("Authorization", adminHeader())
       .send({ title: " Code review ", color: "#FDD0EC" });
 
@@ -79,7 +83,7 @@ describe("POST /column", () => {
   it("gives a list with a taken name a unique key", async () => {
     Column.create.mockImplementation(async (doc) => doc);
 
-    const res = await request(app).post("/column").set("Authorization", adminHeader()).send({ title: "Test" });
+    const res = await request(app).post(COLUMNS).set("Authorization", adminHeader()).send({ title: "Test" });
 
     expect(res.body).toMatchObject({ key: "test-2", title: "Test", color: null });
   });
@@ -89,7 +93,7 @@ describe("POST /column", () => {
       Array.from({ length: 12 }, (_, i) => ({ key: `l${i}`, title: `L${i}`, position: i }))
     );
 
-    const res = await request(app).post("/column").set("Authorization", adminHeader()).send({ title: "One more" });
+    const res = await request(app).post(COLUMNS).set("Authorization", adminHeader()).send({ title: "One more" });
 
     expect(res.status).toBe(400);
     expect(Column.create).not.toHaveBeenCalled();
@@ -98,7 +102,7 @@ describe("POST /column", () => {
   it("returns 409 when the same key was added in between", async () => {
     Column.create.mockRejectedValue(Object.assign(new Error("dup"), { code: 11000 }));
 
-    const res = await request(app).post("/column").set("Authorization", adminHeader()).send({ title: "Review" });
+    const res = await request(app).post(COLUMNS).set("Authorization", adminHeader()).send({ title: "Review" });
 
     expect(res.status).toBe(409);
   });
@@ -112,7 +116,7 @@ describe("POST /column", () => {
     [{ title: "Review", color: "#fff" }],
     [{ title: "Review", color: { $ne: null } }]
   ])("rejects %j with 400", async (body) => {
-    const res = await request(app).post("/column").set("Authorization", adminHeader()).send(body);
+    const res = await request(app).post(COLUMNS).set("Authorization", adminHeader()).send(body);
 
     expect(res.status).toBe(400);
     expect(Column.create).not.toHaveBeenCalled();
@@ -127,7 +131,7 @@ describe("PUT /column/:key", () => {
     Column.findOne.mockResolvedValue(column);
 
     const res = await request(app)
-      .put("/column/todo")
+      .put(`${COLUMNS}/todo`)
       .set("Authorization", adminHeader())
       .send({ title: " Ready ", color: "#1F845A", key: "hijack", position: 9 });
 
@@ -139,7 +143,7 @@ describe("PUT /column/:key", () => {
   it("resets the colour when color is null", async () => {
     Column.findOne.mockResolvedValue(storedColumn({ color: "#fdd0ec" }));
 
-    const res = await request(app).put("/column/todo").set("Authorization", adminHeader()).send({ title: "To Do", color: null });
+    const res = await request(app).put(`${COLUMNS}/todo`).set("Authorization", adminHeader()).send({ title: "To Do", color: null });
 
     expect(res.body.color).toBeNull();
   });
@@ -147,7 +151,7 @@ describe("PUT /column/:key", () => {
   it("returns 404 for an unknown list", async () => {
     Column.findOne.mockResolvedValue(null);
 
-    const res = await request(app).put("/column/nope").set("Authorization", adminHeader()).send({ title: "Nope" });
+    const res = await request(app).put(`${COLUMNS}/nope`).set("Authorization", adminHeader()).send({ title: "Nope" });
 
     expect(res.status).toBe(404);
   });
@@ -158,7 +162,7 @@ describe("PUT /column/:key", () => {
     ["a missing title", "todo", {}],
     ["an invalid colour", "todo", { title: "Ready", color: "blue" }]
   ])("returns 400 for %s", async (_name, key, body) => {
-    const res = await request(app).put(`/column/${key}`).set("Authorization", adminHeader()).send(body);
+    const res = await request(app).put(`${COLUMNS}/${key}`).set("Authorization", adminHeader()).send(body);
 
     expect(res.status).toBe(400);
     expect(Column.findOne).not.toHaveBeenCalled();
@@ -169,14 +173,14 @@ describe("PUT /column", () => {
   it("moves lists for everyone and returns them in the new order", async () => {
     const keys = ["done", "todo", "in-progress", "test"];
 
-    const res = await request(app).put("/column").set("Authorization", adminHeader()).send({ keys });
+    const res = await request(app).put(COLUMNS).set("Authorization", adminHeader()).send({ keys });
 
     expect(res.status).toBe(200);
     expect(res.body.map((c) => c.key)).toEqual(keys);
     expect(res.body.map((c) => c.position)).toEqual([0, 1, 2, 3]);
     expect(res.body[0]).toEqual({ key: "done", title: "Done", color: null, position: 0 });
     expect(Column.bulkWrite).toHaveBeenCalledWith(
-      keys.map((key, position) => ({ updateOne: { filter: { key }, update: { $set: { position } } } }))
+      keys.map((key, position) => ({ updateOne: { filter: { boardId: BOARD_ID, key }, update: { $set: { position } } } }))
     );
   });
 
@@ -187,7 +191,7 @@ describe("PUT /column", () => {
     ["an unknown list", { keys: ["todo", "in-progress", "test", "nope"] }],
     ["a list twice", { keys: ["todo", "todo", "test", "done"] }]
   ])("returns 400 for %s", async (_name, body) => {
-    const res = await request(app).put("/column").set("Authorization", adminHeader()).send(body);
+    const res = await request(app).put(COLUMNS).set("Authorization", adminHeader()).send(body);
 
     expect(res.status).toBe(400);
     expect(res.body.message).toBe("List order must contain every list exactly once.");
@@ -218,15 +222,15 @@ describe("columnKeyFromTitle", () => {
 });
 
 describe("DELETE /column/:key", () => {
-  const del = (key, header = adminHeader()) => request(app).delete(`/column/${key}`).set("Authorization", header);
+  const del = (key, header = adminHeader()) => request(app).delete(`${COLUMNS}/${key}`).set("Authorization", header);
 
   it("deletes an empty list", async () => {
     const res = await del("test");
 
     expect(res.status).toBe(200);
     expect(res.body.message).toBe("List deleted.");
-    expect(Card.exists).toHaveBeenCalledWith({ status: "test" });
-    expect(Column.deleteOne).toHaveBeenCalledWith({ key: "test" });
+    expect(Card.exists).toHaveBeenCalledWith({ boardId: BOARD_ID, status: "test" });
+    expect(Column.deleteOne).toHaveBeenCalledWith({ boardId: BOARD_ID, key: "test" });
   });
 
   it("returns 403 for a regular user", async () => {

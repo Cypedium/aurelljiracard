@@ -13,6 +13,7 @@ const COLOR_MESSAGE = "List color must be a hex color like #eed7fc.";
 const DUPLICATE_KEY_ERROR = 11000;
 const ORDER_MESSAGE = "List order must contain every list exactly once.";
 
+// Every handler runs after requireMember (req.boardId); changes also after requireBoardAdmin
 const toColumn = ({ key, title, color, position }) => ({ key, title, color: color ?? null, position });
 
 // Returns an error message, or null when title and color are valid. color null or missing = default colour
@@ -26,7 +27,7 @@ const validateColumnFields = ({ title, color }) => {
 
 exports.getAll = async (req, res) => {
   try {
-    const columns = await Column.listAll();
+    const columns = await Column.listAll(req.boardId);
     res.status(200).json(columns.map(toColumn));
   } catch (error) {
     console.error("Fetch columns error:", error.message);
@@ -34,7 +35,7 @@ exports.getAll = async (req, res) => {
   }
 };
 
-// Admin: adds a list at the end of the board for everyone
+// Board admin: adds a list at the end of the board
 exports.create = async (req, res) => {
   const { title, color } = req.body;
 
@@ -44,11 +45,12 @@ exports.create = async (req, res) => {
   }
 
   try {
-    const columns = await Column.listAll();
+    const columns = await Column.listAll(req.boardId);
     if (columns.length >= MAX_COLUMNS) {
       return res.status(400).json({ message: `The board can have at most ${MAX_COLUMNS} lists.` });
     }
     const column = await Column.create({
+      boardId: req.boardId,
       key: columnKeyFromTitle(title, columns.map((c) => c.key)),
       title: title.trim(),
       color: color ? color.toLowerCase() : null,
@@ -65,7 +67,7 @@ exports.create = async (req, res) => {
   }
 };
 
-// Admin: renames and/or recolours a list for everyone (replaces title and color)
+// Board admin: renames and/or recolours a list (replaces title and color)
 exports.update = async (req, res) => {
   const { key } = req.params;
   const { title, color } = req.body;
@@ -80,8 +82,8 @@ exports.update = async (req, res) => {
 
   try {
     // Seeds the default columns, so they can be renamed before anyone has opened the board
-    await Column.listAll();
-    const column = await Column.findOne({ key });
+    await Column.listAll(req.boardId);
+    const column = await Column.findOne({ boardId: req.boardId, key });
     if (!column) {
       return res.status(404).json({ message: "List not found." });
     }
@@ -95,7 +97,7 @@ exports.update = async (req, res) => {
   }
 };
 
-// Admin: sets the order of all lists for everyone; keys must be every list exactly once
+// Board admin: sets the order of all lists; keys must be every list exactly once
 exports.reorder = async (req, res) => {
   const { keys } = req.body;
 
@@ -104,13 +106,13 @@ exports.reorder = async (req, res) => {
   }
 
   try {
-    const columns = await Column.listAll();
+    const columns = await Column.listAll(req.boardId);
     const byKey = new Map(columns.map((c) => [c.key, c]));
     if (keys.length !== columns.length || new Set(keys).size !== keys.length || !keys.every((key) => byKey.has(key))) {
       return res.status(400).json({ message: ORDER_MESSAGE });
     }
     await Column.bulkWrite(
-      keys.map((key, position) => ({ updateOne: { filter: { key }, update: { $set: { position } } } }))
+      keys.map((key, position) => ({ updateOne: { filter: { boardId: req.boardId, key }, update: { $set: { position } } } }))
     );
     res.status(200).json(keys.map((key, position) => toColumn({ ...byKey.get(key), position })));
   } catch (error) {
@@ -119,7 +121,7 @@ exports.reorder = async (req, res) => {
   }
 };
 
-// Admin: removes an empty list for everyone. The default list stays: cards created without a status go there
+// Board admin: removes an empty list. The default list stays: cards created without a status go there
 exports.remove = async (req, res) => {
   const { key } = req.params;
 
@@ -131,14 +133,14 @@ exports.remove = async (req, res) => {
   }
 
   try {
-    const columns = await Column.listAll();
+    const columns = await Column.listAll(req.boardId);
     if (!columns.some((c) => c.key === key)) {
       return res.status(404).json({ message: "List not found." });
     }
-    if (await Card.exists({ status: key })) {
+    if (await Card.exists({ boardId: req.boardId, status: key })) {
       return res.status(409).json({ message: "The list still has cards. Move or delete them first." });
     }
-    await Column.deleteOne({ key });
+    await Column.deleteOne({ boardId: req.boardId, key });
     res.status(200).json({ message: "List deleted." });
   } catch (error) {
     console.error("Delete column error:", error.message);

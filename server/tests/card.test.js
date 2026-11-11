@@ -1,30 +1,34 @@
 jest.mock("../models/Card", () => {
   const Card = jest.fn();
   Card.find = jest.fn();
-  Card.findById = jest.fn();
+  Card.findOne = jest.fn();
   Card.exists = jest.fn();
-  Card.findByIdAndUpdate = jest.fn();
+  Card.findOneAndUpdate = jest.fn();
   Card.deleteOne = jest.fn();
   return Card;
 });
 jest.mock("../models/Column", () => ({ listAll: jest.fn() }));
 jest.mock("../models/IssueType", () => ({ listAll: jest.fn() }));
+jest.mock("../models/BoardMember", () => ({ findOne: jest.fn() }));
 
 const request = require("supertest");
 const app = require("../app");
 const Card = require("../models/Card");
 const Column = require("../models/Column");
 const IssueType = require("../models/IssueType");
+const BoardMember = require("../models/BoardMember");
 const { DEFAULT_COLUMNS } = require("../utils/cardStatus");
 const { DEFAULT_ISSUE_TYPES } = require("../utils/cardType");
 const jwt = require("jsonwebtoken");
-const { authHeader, query, USER_ID } = require("./helpers");
+const { authHeader, boardAdminHeader, mockMembership, query, BOARD_ID, USER_ID } = require("./helpers");
 
 const CARD_ID = "64c000000000000000000001";
+const CARDS = `/board/${BOARD_ID}/card`;
 const validCard = { rating: 4, comment: "Looks good", productId: "AUR-1" };
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockMembership(BoardMember);
   Card.exists.mockResolvedValue(null);
   // The four default lists plus one an admin added
   Column.listAll.mockResolvedValue([...DEFAULT_COLUMNS, { key: "review", title: "Review" }]);
@@ -34,11 +38,11 @@ beforeEach(() => {
 
 describe("auth guard", () => {
   it.each([
-    ["get", "/card"],
-    ["post", "/card"],
-    ["put", `/card/${CARD_ID}`],
-    ["patch", `/card/${CARD_ID}/status`],
-    ["delete", `/card/${CARD_ID}`]
+    ["get", CARDS],
+    ["post", CARDS],
+    ["put", `${CARDS}/${CARD_ID}`],
+    ["patch", `${CARDS}/${CARD_ID}/status`],
+    ["delete", `${CARDS}/${CARD_ID}`]
   ])("%s %s returns 401 without a token", async (method, path) => {
     const res = await request(app)[method](path);
 
@@ -46,7 +50,7 @@ describe("auth guard", () => {
   });
 
   it("returns 401 for an invalid token so the client can refresh", async () => {
-    const res = await request(app).get("/card").set("Authorization", "Bearer not-a-jwt");
+    const res = await request(app).get(CARDS).set("Authorization", "Bearer not-a-jwt");
 
     expect(res.status).toBe(401);
   });
@@ -56,7 +60,7 @@ describe("GET /card", () => {
   it("returns all cards", async () => {
     Card.find.mockReturnValue(query([{ ...validCard, username: "alice" }]));
 
-    const res = await request(app).get("/card").set("Authorization", authHeader());
+    const res = await request(app).get(CARDS).set("Authorization", authHeader());
 
     expect(res.status).toBe(200);
     expect(res.body).toHaveLength(1);
@@ -69,7 +73,7 @@ describe("POST /card", () => {
     Card.mockImplementation((doc) => ({ ...doc, save }));
 
     const res = await request(app)
-      .post("/card")
+      .post(CARDS)
       .set("Authorization", authHeader("alice"))
       .send({ ...validCard, username: "mallory" });
 
@@ -82,7 +86,7 @@ describe("POST /card", () => {
     Card.mockImplementation((doc) => ({ ...doc, save: jest.fn().mockResolvedValue({}) }));
 
     const res = await request(app)
-      .post("/card")
+      .post(CARDS)
       .set("Authorization", authHeader())
       .send({ ...validCard, status: "test" });
 
@@ -95,7 +99,7 @@ describe("POST /card", () => {
     Card.mockImplementation((doc) => ({ ...doc, save: jest.fn().mockResolvedValue({}) }));
 
     const res = await request(app)
-      .post("/card")
+      .post(CARDS)
       .set("Authorization", authHeader("alice"))
       .send({ ...validCard, status: "backlog" });
 
@@ -107,7 +111,7 @@ describe("POST /card", () => {
     Card.mockImplementation((doc) => ({ ...doc, save: jest.fn().mockResolvedValue({}) }));
 
     const res = await request(app)
-      .post("/card")
+      .post(CARDS)
       .set("Authorization", authHeader())
       .send({ ...validCard, type: "bug", submittedAt: "2020-01-01T00:00:00.000Z" });
 
@@ -120,14 +124,14 @@ describe("POST /card", () => {
   it("accepts an issue type an admin added", async () => {
     Card.mockImplementation((doc) => ({ ...doc, save: jest.fn().mockResolvedValue({}) }));
 
-    const res = await request(app).post("/card").set("Authorization", authHeader()).send({ ...validCard, type: "story" });
+    const res = await request(app).post(CARDS).set("Authorization", authHeader()).send({ ...validCard, type: "story" });
 
     expect(res.status).toBe(201);
     expect(Card.mock.calls[0][0].type).toBe("story");
   });
 
   it("lists the stored issue types when the type is unknown", async () => {
-    const res = await request(app).post("/card").set("Authorization", authHeader()).send({ ...validCard, type: "epic" });
+    const res = await request(app).post(CARDS).set("Authorization", authHeader()).send({ ...validCard, type: "epic" });
 
     expect(res.status).toBe(400);
     expect(res.body.message).toBe("Type must be one of: task, bug, doc, story.");
@@ -136,11 +140,11 @@ describe("POST /card", () => {
   it("rejects a duplicate issue key with 409", async () => {
     Card.exists.mockResolvedValue({ _id: CARD_ID });
 
-    const res = await request(app).post("/card").set("Authorization", authHeader()).send(validCard);
+    const res = await request(app).post(CARDS).set("Authorization", authHeader()).send(validCard);
 
     expect(res.status).toBe(409);
     expect(res.body.message).toBe("Issue key already exists.");
-    expect(Card.exists).toHaveBeenCalledWith({ productId: validCard.productId });
+    expect(Card.exists).toHaveBeenCalledWith({ boardId: BOARD_ID, productId: validCard.productId });
     expect(Card).not.toHaveBeenCalled();
   });
 
@@ -148,7 +152,7 @@ describe("POST /card", () => {
     const save = jest.fn().mockRejectedValue(Object.assign(new Error("E11000 duplicate key"), { code: 11000 }));
     Card.mockImplementation((doc) => ({ ...doc, save }));
 
-    const res = await request(app).post("/card").set("Authorization", authHeader()).send(validCard);
+    const res = await request(app).post(CARDS).set("Authorization", authHeader()).send(validCard);
 
     expect(res.status).toBe(409);
     expect(res.body.message).toBe("Issue key already exists.");
@@ -167,7 +171,7 @@ describe("POST /card", () => {
     [{ ...validCard, type: "epic" }],
     [{ ...validCard, type: { $ne: null } }]
   ])("rejects invalid card %j with 400", async (body) => {
-    const res = await request(app).post("/card").set("Authorization", authHeader()).send(body);
+    const res = await request(app).post(CARDS).set("Authorization", authHeader()).send(body);
 
     expect(res.status).toBe(400);
     expect(Card).not.toHaveBeenCalled();
@@ -177,10 +181,10 @@ describe("POST /card", () => {
 describe("PUT /card/:id", () => {
   it("updates the user's own card and returns it", async () => {
     const save = jest.fn().mockResolvedValue({});
-    Card.findById.mockResolvedValue({ _id: CARD_ID, username: "alice", ...validCard, save });
+    Card.findOne.mockResolvedValue({ _id: CARD_ID, username: "alice", ...validCard, save });
 
     const res = await request(app)
-      .put(`/card/${CARD_ID}`)
+      .put(`${CARDS}/${CARD_ID}`)
       .set("Authorization", authHeader("alice"))
       .send({ ...validCard, comment: "Edited", rating: 2, username: "mallory" });
 
@@ -191,10 +195,10 @@ describe("PUT /card/:id", () => {
 
   it("changes the issue type but never the creation date", async () => {
     const submittedAt = "2026-10-01T00:00:00.000Z";
-    Card.findById.mockResolvedValue({ _id: CARD_ID, username: "alice", ...validCard, type: "task", submittedAt, save: jest.fn() });
+    Card.findOne.mockResolvedValue({ _id: CARD_ID, username: "alice", ...validCard, type: "task", submittedAt, save: jest.fn() });
 
     const res = await request(app)
-      .put(`/card/${CARD_ID}`)
+      .put(`${CARDS}/${CARD_ID}`)
       .set("Authorization", authHeader("alice"))
       .send({ ...validCard, type: "doc", submittedAt: "2020-01-01T00:00:00.000Z" });
 
@@ -203,21 +207,21 @@ describe("PUT /card/:id", () => {
   });
 
   it("lets a card keep its own issue key", async () => {
-    Card.findById.mockResolvedValue({ _id: CARD_ID, username: "alice", ...validCard, save: jest.fn() });
+    Card.findOne.mockResolvedValue({ _id: CARD_ID, username: "alice", ...validCard, save: jest.fn() });
     Card.exists.mockResolvedValue({ _id: CARD_ID });
 
-    const res = await request(app).put(`/card/${CARD_ID}`).set("Authorization", authHeader("alice")).send(validCard);
+    const res = await request(app).put(`${CARDS}/${CARD_ID}`).set("Authorization", authHeader("alice")).send(validCard);
 
     expect(res.status).toBe(200);
   });
 
   it("rejects an issue key used by another card with 409", async () => {
     const save = jest.fn();
-    Card.findById.mockResolvedValue({ _id: CARD_ID, username: "alice", ...validCard, save });
+    Card.findOne.mockResolvedValue({ _id: CARD_ID, username: "alice", ...validCard, save });
     Card.exists.mockResolvedValue({ _id: "64c000000000000000000002" });
 
     const res = await request(app)
-      .put(`/card/${CARD_ID}`)
+      .put(`${CARDS}/${CARD_ID}`)
       .set("Authorization", authHeader("alice"))
       .send({ ...validCard, productId: "AUR-2" });
 
@@ -228,24 +232,24 @@ describe("PUT /card/:id", () => {
 
   it("refuses to edit another user's card with 403", async () => {
     const save = jest.fn();
-    Card.findById.mockResolvedValue({ _id: CARD_ID, username: "bob", save });
+    Card.findOne.mockResolvedValue({ _id: CARD_ID, username: "bob", save });
 
-    const res = await request(app).put(`/card/${CARD_ID}`).set("Authorization", authHeader("alice")).send(validCard);
+    const res = await request(app).put(`${CARDS}/${CARD_ID}`).set("Authorization", authHeader("alice")).send(validCard);
 
     expect(res.status).toBe(403);
     expect(save).not.toHaveBeenCalled();
   });
 
   it("returns 404 for a missing card", async () => {
-    Card.findById.mockResolvedValue(null);
+    Card.findOne.mockResolvedValue(null);
 
-    const res = await request(app).put(`/card/${CARD_ID}`).set("Authorization", authHeader()).send(validCard);
+    const res = await request(app).put(`${CARDS}/${CARD_ID}`).set("Authorization", authHeader()).send(validCard);
 
     expect(res.status).toBe(404);
   });
 
   it("returns 400 for a malformed id", async () => {
-    const res = await request(app).put("/card/not-an-id").set("Authorization", authHeader()).send(validCard);
+    const res = await request(app).put(`${CARDS}/not-an-id`).set("Authorization", authHeader()).send(validCard);
 
     expect(res.status).toBe(400);
   });
@@ -256,10 +260,10 @@ describe("PUT /card/:id", () => {
     [{ ...validCard, productId: { $ne: null } }],
     [{ ...validCard, type: "epic" }]
   ])("rejects invalid card %j with 400", async (body) => {
-    const res = await request(app).put(`/card/${CARD_ID}`).set("Authorization", authHeader()).send(body);
+    const res = await request(app).put(`${CARDS}/${CARD_ID}`).set("Authorization", authHeader()).send(body);
 
     expect(res.status).toBe(400);
-    expect(Card.findById).not.toHaveBeenCalled();
+    expect(Card.findOne).not.toHaveBeenCalled();
   });
 });
 
@@ -268,10 +272,10 @@ describe("PATCH /card/:id/status", () => {
 
   it("lets any logged-in user move a card and returns it", async () => {
     const card = storedCard();
-    Card.findById.mockResolvedValue(card);
+    Card.findOne.mockResolvedValue(card);
 
     const res = await request(app)
-      .patch(`/card/${CARD_ID}/status`)
+      .patch(`${CARDS}/${CARD_ID}/status`)
       .set("Authorization", authHeader("alice"))
       .send({ status: "done" });
 
@@ -281,10 +285,10 @@ describe("PATCH /card/:id/status", () => {
   });
 
   it("only updates the status, ignoring other fields in the body", async () => {
-    Card.findById.mockResolvedValue(storedCard());
+    Card.findOne.mockResolvedValue(storedCard());
 
     const res = await request(app)
-      .patch(`/card/${CARD_ID}/status`)
+      .patch(`${CARDS}/${CARD_ID}/status`)
       .set("Authorization", authHeader())
       .send({ status: "test", comment: "hijack", username: "mallory", assignee: "mallory" });
 
@@ -293,10 +297,10 @@ describe("PATCH /card/:id/status", () => {
   });
 
   it("assigns a card taken from the backlog to the caller", async () => {
-    Card.findById.mockResolvedValue(storedCard({ status: "backlog", assignee: null }));
+    Card.findOne.mockResolvedValue(storedCard({ status: "backlog", assignee: null }));
 
     const res = await request(app)
-      .patch(`/card/${CARD_ID}/status`)
+      .patch(`${CARDS}/${CARD_ID}/status`)
       .set("Authorization", authHeader("alice"))
       .send({ status: "todo", assignee: "mallory" });
 
@@ -304,10 +308,10 @@ describe("PATCH /card/:id/status", () => {
   });
 
   it("unassigns a card moved to the backlog", async () => {
-    Card.findById.mockResolvedValue(storedCard({ status: "in-progress" }));
+    Card.findOne.mockResolvedValue(storedCard({ status: "in-progress" }));
 
     const res = await request(app)
-      .patch(`/card/${CARD_ID}/status`)
+      .patch(`${CARDS}/${CARD_ID}/status`)
       .set("Authorization", authHeader("alice"))
       .send({ status: "backlog" });
 
@@ -315,24 +319,24 @@ describe("PATCH /card/:id/status", () => {
   });
 
   it("returns 404 for a missing card", async () => {
-    Card.findById.mockResolvedValue(null);
+    Card.findOne.mockResolvedValue(null);
 
-    const res = await request(app).patch(`/card/${CARD_ID}/status`).set("Authorization", authHeader()).send({ status: "todo" });
+    const res = await request(app).patch(`${CARDS}/${CARD_ID}/status`).set("Authorization", authHeader()).send({ status: "todo" });
 
     expect(res.status).toBe(404);
   });
 
   it("accepts a list an admin added", async () => {
-    Card.findById.mockResolvedValue(storedCard());
+    Card.findOne.mockResolvedValue(storedCard());
 
-    const res = await request(app).patch(`/card/${CARD_ID}/status`).set("Authorization", authHeader()).send({ status: "review" });
+    const res = await request(app).patch(`${CARDS}/${CARD_ID}/status`).set("Authorization", authHeader()).send({ status: "review" });
 
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({ status: "review" });
   });
 
   it("lists the current lists in the error message", async () => {
-    const res = await request(app).patch(`/card/${CARD_ID}/status`).set("Authorization", authHeader()).send({ status: "archived" });
+    const res = await request(app).patch(`${CARDS}/${CARD_ID}/status`).set("Authorization", authHeader()).send({ status: "archived" });
 
     expect(res.body.message).toBe("Status must be one of: todo, in-progress, test, done, review, backlog.");
   });
@@ -343,52 +347,52 @@ describe("PATCH /card/:id/status", () => {
     ["a missing status", CARD_ID, {}],
     ["a malformed id", "not-an-id", { status: "todo" }]
   ])("returns 400 for %s", async (_name, id, body) => {
-    const res = await request(app).patch(`/card/${id}/status`).set("Authorization", authHeader()).send(body);
+    const res = await request(app).patch(`${CARDS}/${id}/status`).set("Authorization", authHeader()).send(body);
 
     expect(res.status).toBe(400);
-    expect(Card.findById).not.toHaveBeenCalled();
+    expect(Card.findOne).not.toHaveBeenCalled();
   });
 });
 
 describe("DELETE /card/:id", () => {
   it("deletes the user's own card", async () => {
-    Card.findById.mockResolvedValue({ _id: CARD_ID, username: "alice" });
+    Card.findOne.mockResolvedValue({ _id: CARD_ID, username: "alice" });
     Card.deleteOne.mockResolvedValue({});
 
-    const res = await request(app).delete(`/card/${CARD_ID}`).set("Authorization", authHeader("alice"));
+    const res = await request(app).delete(`${CARDS}/${CARD_ID}`).set("Authorization", authHeader("alice"));
 
     expect(res.status).toBe(200);
     expect(Card.deleteOne).toHaveBeenCalledWith({ _id: CARD_ID });
   });
 
   it("refuses to delete another user's card with 403", async () => {
-    Card.findById.mockResolvedValue({ _id: CARD_ID, username: "bob" });
+    Card.findOne.mockResolvedValue({ _id: CARD_ID, username: "bob" });
 
-    const res = await request(app).delete(`/card/${CARD_ID}`).set("Authorization", authHeader("alice"));
+    const res = await request(app).delete(`${CARDS}/${CARD_ID}`).set("Authorization", authHeader("alice"));
 
     expect(res.status).toBe(403);
     expect(Card.deleteOne).not.toHaveBeenCalled();
   });
 
-  it("lets an admin delete another user's card", async () => {
-    Card.findById.mockResolvedValue({ _id: CARD_ID, username: "bob" });
+  it("lets the board admin delete another user's card", async () => {
+    Card.findOne.mockResolvedValue({ _id: CARD_ID, username: "bob" });
     Card.deleteOne.mockResolvedValue({});
 
     const res = await request(app)
-      .delete(`/card/${CARD_ID}`)
-      .set("Authorization", authHeader("alice", undefined, "admin"));
+      .delete(`${CARDS}/${CARD_ID}`)
+      .set("Authorization", boardAdminHeader("alice"));
 
     expect(res.status).toBe(200);
     expect(Card.deleteOne).toHaveBeenCalledWith({ _id: CARD_ID });
   });
 
-  it("lets an admin edit another user's card without changing the author", async () => {
+  it("lets the board admin edit another user's card without changing the author", async () => {
     const save = jest.fn().mockResolvedValue({});
-    Card.findById.mockResolvedValue({ _id: CARD_ID, username: "bob", ...validCard, save });
+    Card.findOne.mockResolvedValue({ _id: CARD_ID, username: "bob", ...validCard, save });
 
     const res = await request(app)
-      .put(`/card/${CARD_ID}`)
-      .set("Authorization", authHeader("alice", undefined, "admin"))
+      .put(`${CARDS}/${CARD_ID}`)
+      .set("Authorization", boardAdminHeader("alice"))
       .send({ ...validCard, comment: "Fixed by admin" });
 
     expect(res.status).toBe(200);
@@ -397,25 +401,25 @@ describe("DELETE /card/:id", () => {
   });
 
   it("treats a token without a role claim as a normal user", async () => {
-    Card.findById.mockResolvedValue({ _id: CARD_ID, username: "bob" });
+    Card.findOne.mockResolvedValue({ _id: CARD_ID, username: "bob" });
     const legacyToken = jwt.sign({ id: USER_ID, username: "alice" }, process.env.JWT_SECRET, { expiresIn: "15m" });
 
-    const res = await request(app).delete(`/card/${CARD_ID}`).set("Authorization", `Bearer ${legacyToken}`);
+    const res = await request(app).delete(`${CARDS}/${CARD_ID}`).set("Authorization", `Bearer ${legacyToken}`);
 
     expect(res.status).toBe(403);
     expect(Card.deleteOne).not.toHaveBeenCalled();
   });
 
   it("returns 404 for a missing card", async () => {
-    Card.findById.mockResolvedValue(null);
+    Card.findOne.mockResolvedValue(null);
 
-    const res = await request(app).delete(`/card/${CARD_ID}`).set("Authorization", authHeader());
+    const res = await request(app).delete(`${CARDS}/${CARD_ID}`).set("Authorization", authHeader());
 
     expect(res.status).toBe(404);
   });
 
   it("returns 400 for a malformed id", async () => {
-    const res = await request(app).delete("/card/not-an-id").set("Authorization", authHeader());
+    const res = await request(app).delete(`${CARDS}/not-an-id`).set("Authorization", authHeader());
 
     expect(res.status).toBe(400);
   });
