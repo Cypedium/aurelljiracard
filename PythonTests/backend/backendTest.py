@@ -68,9 +68,16 @@ def refresh_access_token():
 
 
 
+def cards_url():
+    # Kort ligger på en board: användarens egen board är först i GET /board
+    headers = {"Authorization": f"Bearer {access_token}"}
+    board_id = requests.get(f"{BASE_URL}/board", headers=headers).json()[0]["_id"]
+    return f"{BASE_URL}/board/{board_id}/card"
+
+
 def get_all_cards():
     print("\n--- GET ALL FEEDBACKS (protected) ---")
-    url = f"{BASE_URL}/card"
+    url = cards_url()
     headers = {"Authorization": f"Bearer {access_token}"}
     res = requests.get(url, headers=headers)
     pretty(res)
@@ -78,7 +85,7 @@ def get_all_cards():
 
 def create_card():
     print("\n--- CREATE FEEDBACK (protected) ---")
-    url = f"{BASE_URL}/card"
+    url = cards_url()
     headers = {"Authorization": f"Bearer {access_token}"}
     payload = {
         "rating": 4,

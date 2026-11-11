@@ -52,9 +52,14 @@ def test_private_routes(access_token):
 
     headers = {"Authorization": f"Bearer {access_token}"}
 
+    # Kort ligger på en board: användarens egen board är först i GET /board
+    print("\nGET /board")
+    board_id = requests.get(f"{BASE_URL}/board", headers=headers).json()[0]["_id"]
+    cards_url = f"{BASE_URL}/board/{board_id}/card"
+
     # GET cards
-    print("\nGET /cards (or /card depending on backend)")
-    res = requests.get(f"{BASE_URL}/card", headers=headers)
+    print("\nGET /board/{id}/card")
+    res = requests.get(cards_url, headers=headers)
     print("Status:", res.status_code)
     try:
         print_json(res.json())
@@ -62,8 +67,8 @@ def test_private_routes(access_token):
         print(res.text)
 
     # POST card
-    print("\nPOST /card")
-    res = requests.post(f"{BASE_URL}/card", json={
+    print("\nPOST /board/{id}/card")
+    res = requests.post(cards_url, json={
         "message": "Python test card",
         "rating": 5
     }, headers=headers)
@@ -75,8 +80,8 @@ def test_private_routes(access_token):
 
     # DELETE card
     if card_id:
-        print(f"\nDELETE /card/{card_id}")
-        res = requests.delete(f"{BASE_URL}/card/{card_id}", headers=headers)
+        print(f"\nDELETE /board/{board_id}/card/{card_id}")
+        res = requests.delete(f"{cards_url}/{card_id}", headers=headers)
         print("Status:", res.status_code)
         try:
             print_json(res.json())
