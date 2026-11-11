@@ -1,5 +1,6 @@
 package se.aurell.jiraboard;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -50,15 +51,30 @@ abstract class ApiIntegrationTest {
     @BeforeEach
     void cleanDatabase() {
         cardRepository.deleteAll();
+        // Boards, their members, lists and issue types go with their owner (ON DELETE CASCADE, V11)
         userRepository.deleteAll();
-        // Back to the four lists seeded by V6__board_columns.sql
-        jdbc.update("DELETE FROM board_columns WHERE column_key NOT IN ('todo', 'in-progress', 'test', 'done')");
-        jdbc.update("""
-                UPDATE board_columns SET color = NULL, title = CASE column_key
-                    WHEN 'todo' THEN 'To Do' WHEN 'in-progress' THEN 'In Progress' WHEN 'test' THEN 'Test' ELSE 'Done' END,
-                    position = CASE column_key WHEN 'todo' THEN 0 WHEN 'in-progress' THEN 1 WHEN 'test' THEN 2 ELSE 3 END""");
-        // Back to the three issue types seeded by V8__issue_types.sql
-        jdbc.update("DELETE FROM issue_types WHERE type_key NOT IN ('task', 'bug', 'doc')");
+    }
+
+    /** The user's own board (GET /board lists it first). */
+    String boardId(String token) throws Exception {
+        return JsonPath.read(mvc.perform(bearer(get("/board"), token))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString(), "$[0]._id");
+    }
+
+    /** The owner creates an invite link and the other user joins with it; returns the owner's board id. */
+    String joinBoard(String ownerToken, String memberToken) throws Exception {
+        String board = boardId(ownerToken);
+        String token = JsonPath.read(mvc.perform(bearer(post("/board/" + board + "/invite"), ownerToken))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString(), "$.token");
+        mvc.perform(bearer(post("/invite/" + token), memberToken)).andExpect(status().isOk());
+        return board;
+    }
+
+    /** "/board/{board}" + rest, e.g. on(board, "/card"). */
+    static String on(String board, String rest) {
+        return "/board/" + board + rest;
     }
 
     /** Registers a user, makes them admin (set directly in the database, like in production) and returns their access token. */

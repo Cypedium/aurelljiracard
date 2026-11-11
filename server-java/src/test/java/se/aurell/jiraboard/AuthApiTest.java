@@ -163,11 +163,11 @@ class AuthApiTest extends ApiIntegrationTest {
 
     @Test
     void protectedRoutesRequireValidAccessToken() throws Exception {
-        mvc.perform(get("/card"))
+        mvc.perform(get("/board"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.message").value("No token provided"));
 
-        mvc.perform(bearer(get("/card"), "not-a-jwt"))
+        mvc.perform(bearer(get("/board"), "not-a-jwt"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.message").value("Invalid or expired token"));
     }
@@ -176,7 +176,7 @@ class AuthApiTest extends ApiIntegrationTest {
     void refreshTokenIsNotAcceptedAsAccessToken() throws Exception {
         String refreshToken = JsonPath.read(registerAndLogin("alice"), "$.refreshToken");
 
-        mvc.perform(bearer(get("/card"), refreshToken))
+        mvc.perform(bearer(get("/board"), refreshToken))
                 .andExpect(status().isUnauthorized());
     }
 

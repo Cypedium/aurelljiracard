@@ -49,10 +49,15 @@ public class GlobalExceptionHandler {
         return respond(HttpStatus.BAD_REQUEST, "Invalid request body.");
     }
 
-    // The only path variable is a card id
+    // UUID path variables: boardId, a card id or a user id
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     ResponseEntity<MessageResponse> handleTypeMismatch(MethodArgumentTypeMismatchException e) {
-        return respond(HttpStatus.BAD_REQUEST, "Invalid card id.");
+        String message = switch (e.getName()) {
+            case "boardId" -> "Invalid board id.";
+            case "userId" -> "Invalid user id.";
+            default -> "Invalid card id.";
+        };
+        return respond(HttpStatus.BAD_REQUEST, message);
     }
 
     // @AdminOnly denied the call; without this the catch-all below would turn it into a 500

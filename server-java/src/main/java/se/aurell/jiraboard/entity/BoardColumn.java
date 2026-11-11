@@ -3,12 +3,26 @@ package se.aurell.jiraboard.entity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.IdClass;
 import jakarta.persistence.Table;
+import java.io.Serializable;
+import java.util.UUID;
 
-/** A board column (list), shared by all users. Cards point at it with status = key. */
+/** A list on one board, seen by its members. Cards on the board point at it with status = key. */
 @Entity
 @Table(name = "board_columns")
+@IdClass(BoardColumn.Key.class)
 public class BoardColumn {
+
+    public record Key(UUID boardId, String columnKey) implements Serializable {
+        public Key() {
+            this(null, null);
+        }
+    }
+
+    @Id
+    @Column(name = "board_id")
+    private UUID boardId;
 
     @Id
     @Column(name = "column_key", length = 32)
@@ -28,11 +42,16 @@ public class BoardColumn {
     protected BoardColumn() {
     }
 
-    public BoardColumn(String columnKey, String title, String color, int position) {
+    public BoardColumn(UUID boardId, String columnKey, String title, String color, int position) {
+        this.boardId = boardId;
         this.columnKey = columnKey;
         this.title = title;
         this.color = color;
         this.position = position;
+    }
+
+    public UUID getBoardId() {
+        return boardId;
     }
 
     public String getColumnKey() {

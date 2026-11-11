@@ -44,14 +44,17 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final GoogleTokenVerifier googleTokenVerifier;
+    private final BoardService boardService;
 
     public AuthService(UserRepository userRepository, RefreshTokenRepository refreshTokenRepository,
-            PasswordEncoder passwordEncoder, JwtService jwtService, GoogleTokenVerifier googleTokenVerifier) {
+            PasswordEncoder passwordEncoder, JwtService jwtService, GoogleTokenVerifier googleTokenVerifier,
+            BoardService boardService) {
         this.userRepository = userRepository;
         this.refreshTokenRepository = refreshTokenRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.googleTokenVerifier = googleTokenVerifier;
+        this.boardService = boardService;
     }
 
     @Transactional
@@ -74,13 +77,15 @@ public class AuthService {
             throw ApiException.conflict(CredentialRules.USERNAME_TAKEN_MESSAGE);
         }
 
+        User user;
         try {
-            userRepository.saveAndFlush(
+            user = userRepository.saveAndFlush(
                     new User(request.username(), passwordEncoder.encode(request.password()), pictureUrl));
         } catch (DataIntegrityViolationException e) {
             // Another request registered the same username in between
             throw ApiException.conflict(CredentialRules.USERNAME_TAKEN_MESSAGE);
         }
+        boardService.createFor(user.getId());
     }
 
     @Transactional
@@ -117,12 +122,15 @@ public class AuthService {
             username = base.substring(0, Math.min(base.length(), USERNAME_MAX_LENGTH - suffix.length())) + suffix;
         }
         String pictureUrl = google.pictureUrl() != null && isValidPicture(google.pictureUrl()) ? google.pictureUrl() : null;
+        User user;
         try {
-            return userRepository.saveAndFlush(User.fromGoogle(username, google.subject(), google.email(), pictureUrl));
+            user = userRepository.saveAndFlush(User.fromGoogle(username, google.subject(), google.email(), pictureUrl));
         } catch (DataIntegrityViolationException e) {
             // Another request took the name, or signed in with the same Google account, in between
             throw ApiException.conflict(GOOGLE_RETRY_MESSAGE);
         }
+        boardService.createFor(user.getId());
+        return user;
     }
 
     /** The part of the email before "@", cut to the username length; "user" if empty or rude. */

@@ -3,12 +3,26 @@ package se.aurell.jiraboard.entity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.IdClass;
 import jakarta.persistence.Table;
+import java.io.Serializable;
+import java.util.UUID;
 
-/** An issue type, shared by all users. Cards point at it with type = key. */
+/** An issue type on one board. Cards on the board point at it with type = key. */
 @Entity
 @Table(name = "issue_types")
+@IdClass(IssueType.Key.class)
 public class IssueType {
+
+    public record Key(UUID boardId, String typeKey) implements Serializable {
+        public Key() {
+            this(null, null);
+        }
+    }
+
+    @Id
+    @Column(name = "board_id")
+    private UUID boardId;
 
     @Id
     @Column(name = "type_key", length = 32)
@@ -32,12 +46,17 @@ public class IssueType {
     protected IssueType() {
     }
 
-    public IssueType(String typeKey, String label, String color, String icon, int position) {
+    public IssueType(UUID boardId, String typeKey, String label, String color, String icon, int position) {
+        this.boardId = boardId;
         this.typeKey = typeKey;
         this.label = label;
         this.color = color;
         this.icon = icon;
         this.position = position;
+    }
+
+    public UUID getBoardId() {
+        return boardId;
     }
 
     public String getTypeKey() {
