@@ -2,7 +2,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type ComponentType, type SVGProps } from 'react';
 import logo from '../icon.png';
 import { avatarColor, avatarInitials } from '../utils/avatar';
 import { handleLogout } from '../utils/logout';
@@ -15,9 +15,13 @@ import ShareBoardDialog from './ShareBoardDialog';
 import {
   ArrowRightStartOnRectangleIcon,
   Bars3Icon,
+  PencilSquareIcon,
   PlusIcon,
   QueueListIcon,
+  ShareIcon,
   TagIcon,
+  TrashIcon,
+  UserGroupIcon,
   UsersIcon,
   ViewColumnsIcon,
   XMarkIcon,
@@ -35,15 +39,16 @@ const SUB_ROW_BUTTON_CLASS = 'flex items-center gap-1.5 rounded-md px-2 py-0.5 h
 // Mobil: rad tvås knappar visas i hamburgermenyn, indragna under sidans länk
 const MOBILE_SUB_LIST_CLASS = 'mt-2 ml-7 flex flex-col gap-2 text-lg md:hidden';
 
-type SubAction = { label: string; action: BoardAction; icon?: boolean };
+type SubAction = { label: string; action: BoardAction; Icon: ComponentType<SVGProps<SVGSVGElement>> };
 
 const MobileSubActions = ({ actions }: { actions: SubAction[] }) =>
   actions.length > 0 && (
     <ul className={MOBILE_SUB_LIST_CLASS}>
-      {actions.map(({ label, action }) => (
+      {actions.map(({ label, action, Icon }) => (
         <li key={action}>
           {/* Klicket bubblar till länkens <li>, som stänger menyn */}
           <button type="button" className={SUB_ROW_BUTTON_CLASS} onClick={() => requestBoardAction(action)}>
+            <Icon className={NAV_ICON_SUB_CLASS} aria-hidden />
             {label}
           </button>
         </li>
@@ -77,16 +82,16 @@ const Navbar = () => {
 
   // Rad tvås knappar för aktuell sida. Bara boardens admin lägger till / tar bort kolumner (backend nekar andra)
   const subActions: SubAction[] = [
-    ...(onBoard || onBacklog ? [{ label: 'Create card', action: BOARD_ACTIONS.createCard }] : []),
+    ...(onBoard || onBacklog ? [{ label: 'Create card', action: BOARD_ACTIONS.createCard, Icon: PencilSquareIcon }] : []),
     ...(onBoard && boardAdmin
       ? [
-          { label: 'Create column', action: BOARD_ACTIONS.createColumn },
-          { label: 'Delete column', action: BOARD_ACTIONS.deleteColumn },
+          { label: 'Create column', action: BOARD_ACTIONS.createColumn, Icon: PlusIcon },
+          { label: 'Delete column', action: BOARD_ACTIONS.deleteColumn, Icon: TrashIcon },
         ]
       : []),
     // Ägaren bjuder in; medarbetare ser vilka som är med och kan lämna
-    ...(onBoard && board ? [{ label: boardAdmin ? 'Share' : 'Members', action: BOARD_ACTIONS.shareBoard }] : []),
-    ...(onIssueTypes ? [{ label: 'Create Issue type', action: BOARD_ACTIONS.createIssueType, icon: true }] : []),
+    ...(onBoard && board ? [{ label: boardAdmin ? 'Share' : 'Members', action: BOARD_ACTIONS.shareBoard, Icon: boardAdmin ? ShareIcon : UserGroupIcon }] : []),
+    ...(onIssueTypes ? [{ label: 'Create Issue type', action: BOARD_ACTIONS.createIssueType, Icon: PlusIcon }] : []),
   ];
 
   // Boardväljaren visas bara på boarden: sist i rad två (desktop), i hamburgermenyn (mobil)
@@ -282,9 +287,9 @@ const Navbar = () => {
             className="flex w-fit shrink-0 items-center gap-4"
             style={subRowStart === null ? undefined : { marginLeft: subRowStart }}
           >
-            {subActions.map(({ label, action, icon }) => (
+            {subActions.map(({ label, action, Icon }) => (
               <button key={action} type="button" className={SUB_ROW_BUTTON_CLASS} onClick={() => requestBoardAction(action)}>
-                {icon && <PlusIcon className={NAV_ICON_SUB_CLASS} aria-hidden />}
+                <Icon className={NAV_ICON_SUB_CLASS} aria-hidden />
                 {label}
               </button>
             ))}

@@ -1,5 +1,6 @@
 import type { PointerEvent as ReactPointerEvent } from "react";
-import { EyeSlashIcon, PlusIcon } from "@heroicons/react/16/solid";
+import { EyeSlashIcon } from "@heroicons/react/16/solid";
+import { PencilSquareIcon } from "@heroicons/react/24/outline";
 import ColumnColorPicker from "../../components/ColumnColorPicker";
 import {
   CARDS_TOP,
@@ -128,7 +129,8 @@ export default function ListHeader({
           style={color.style}
           onClick={onAddCard}
         >
-          <PlusIcon className="size-4" aria-hidden />
+          {/* Samma ikon som "Create card" i navbaren */}
+          <PencilSquareIcon className="size-4" aria-hidden />
           Add a card
         </button>
       </div>
