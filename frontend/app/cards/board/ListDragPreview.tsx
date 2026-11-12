@@ -1,5 +1,5 @@
 import type { CSSProperties, Ref } from "react";
-import { PlusIcon } from "@heroicons/react/16/solid";
+import { PencilSquareIcon } from "@heroicons/react/24/outline";
 import type { Card } from "../../api/endpoints";
 import { HEADER_HEIGHT, ROW_HEIGHT, type BoardHeader } from "../../utils/boardLayout";
 import { listColor } from "../../utils/styles";
@@ -32,7 +32,8 @@ export default function ListDragPreview({ ref, header, count, cards, style }: Pr
       </div>
       {/* Samma ordning som listan: rubrik, "Add a card", korten */}
       <div className="flex h-8 w-fit shrink-0 items-center gap-2 px-2 text-sm font-medium">
-        <PlusIcon className="size-4" aria-hidden />
+        {/* Samma ikon som "Create card" i navbaren */}
+        <PencilSquareIcon className="size-4" aria-hidden />
         Add a card
       </div>
       {cards.map((card) => (
