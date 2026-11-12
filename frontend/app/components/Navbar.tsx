@@ -92,12 +92,12 @@ const Navbar = () => {
   // Desktop: boardväljaren ligger sist i rad två när den finns, annars längst till höger i raden ovanför
   const switcherInSubRow = Boolean(board) && subActions.length > 0;
 
-  // Rad två centreras under sin länk (The Board / Backlog / Issue types). null = vänsterställd (mobil, där länken är dold)
+  // Rad två börjar under sin länk (Board / Backlog / Issue types). null = vänsterställd (mobil, där länken är dold)
   const headerRef = useRef<HTMLElement>(null);
   const boardLinkRef = useRef<HTMLAnchorElement>(null);
   const backlogLinkRef = useRef<HTMLAnchorElement>(null);
   const issueTypesLinkRef = useRef<HTMLAnchorElement>(null);
-  const [subRowCenter, setSubRowCenter] = useState<number | null>(null);
+  const [subRowStart, setSubRowStart] = useState<number | null>(null);
 
   useLayoutEffect(() => {
     const link = onBoard
@@ -109,12 +109,12 @@ const Navbar = () => {
           : null;
     const header = headerRef.current;
     if (!link || !header) {
-      setSubRowCenter(null);
+      setSubRowStart(null);
       return;
     }
     const measure = () => {
       const rect = link.getBoundingClientRect();
-      setSubRowCenter(rect.width ? rect.left + rect.width / 2 - header.getBoundingClientRect().left : null);
+      setSubRowStart(rect.width ? rect.left - header.getBoundingClientRect().left : null);
     };
     measure();
     // Bredden ändras med fönstret, typsnittsladdning och när menyn byter läge
@@ -275,12 +275,12 @@ const Navbar = () => {
           På mobil ligger knapparna i hamburgermenyn i stället */}
       {subActions.length > 0 && (
         <div
-          className={`hidden items-center bg-gray-700 py-1.5 pr-[2%] text-base text-white md:flex ${subRowCenter === null ? 'pl-[3%]' : ''}`}
+          className={`hidden items-center bg-gray-700 py-1.5 pr-[2%] text-base text-white md:flex ${subRowStart === null ? 'pl-[3%]' : ''}`}
         >
-          {/* Mittpunkten läggs på länkens mitt; translate flyttar tillbaka halva bredden */}
+          {/* Vänsterkanten läggs under länkens vänsterkant */}
           <div
-            className={`flex w-fit shrink-0 items-center gap-4 ${subRowCenter === null ? '' : '-translate-x-1/2'}`}
-            style={subRowCenter === null ? undefined : { marginLeft: subRowCenter }}
+            className="flex w-fit shrink-0 items-center gap-4"
+            style={subRowStart === null ? undefined : { marginLeft: subRowStart }}
           >
             {subActions.map(({ label, action, icon }) => (
               <button key={action} type="button" className={SUB_ROW_BUTTON_CLASS} onClick={() => requestBoardAction(action)}>
