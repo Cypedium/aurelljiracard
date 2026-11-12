@@ -89,12 +89,15 @@ const Navbar = () => {
     ...(onIssueTypes ? [{ label: 'Create Issue type', action: BOARD_ACTIONS.createIssueType, icon: true }] : []),
   ];
 
-  // Rad två centreras under sin länk (The Board / Backlog / Issue types). null = vänsterställd (mobil, där länken är dold)
+  // Boardväljaren visas bara på boarden: sist i rad två (desktop), i hamburgermenyn (mobil)
+  const showSwitcher = onBoard && Boolean(board);
+
+  // Rad två börjar under sin länk (Board / Backlog / Issue types). null = vänsterställd (mobil, där länken är dold)
   const headerRef = useRef<HTMLElement>(null);
   const boardLinkRef = useRef<HTMLAnchorElement>(null);
   const backlogLinkRef = useRef<HTMLAnchorElement>(null);
   const issueTypesLinkRef = useRef<HTMLAnchorElement>(null);
-  const [subRowCenter, setSubRowCenter] = useState<number | null>(null);
+  const [subRowStart, setSubRowStart] = useState<number | null>(null);
 
   useLayoutEffect(() => {
     const link = onBoard
@@ -106,12 +109,12 @@ const Navbar = () => {
           : null;
     const header = headerRef.current;
     if (!link || !header) {
-      setSubRowCenter(null);
+      setSubRowStart(null);
       return;
     }
     const measure = () => {
       const rect = link.getBoundingClientRect();
-      setSubRowCenter(rect.width ? rect.left + rect.width / 2 - header.getBoundingClientRect().left : null);
+      setSubRowStart(rect.width ? rect.left - header.getBoundingClientRect().left : null);
     };
     measure();
     // Bredden ändras med fönstret, typsnittsladdning och när menyn byter läge
@@ -218,9 +221,9 @@ const Navbar = () => {
                   {onIssueTypes && <MobileSubActions actions={subActions} />}
                 </li>
               )}
-              {/* Vilken board som visas; desktop: längst till höger, före avataren */}
-              {board && (
-                <li className="md:ml-auto">
+              {/* Vilken board som visas; mobil här, desktop i rad två */}
+              {showSwitcher && (
+                <li className="md:hidden">
                   <BoardSwitcher onSelected={() => setMenuOpen(false)} />
                 </li>
               )}
@@ -231,7 +234,7 @@ const Navbar = () => {
             <>
               {/* Desktop: användare och logout längst till höger */}
               {userName && (
-                <li key="profile" className={board ? undefined : 'md:ml-auto'}>
+                <li key="profile" className="md:ml-auto">
                   {/* Samma avatar som på korten; namnet visas vid hovring. Öppnar kontodialogen (koppla Google) */}
                   <button
                     type="button"
@@ -248,7 +251,7 @@ const Navbar = () => {
                   </button>
                 </li>
               )}
-              <li key="logout" className={userName || board ? undefined : 'md:ml-auto'}>
+              <li key="logout" className={userName ? undefined : 'md:ml-auto'}>
                 <button onClick={handleLogout} className={NAV_LINK_CLASS}>
                   <ArrowRightStartOnRectangleIcon className={NAV_ICON_CLASS} aria-hidden />
                   Logout
@@ -272,12 +275,12 @@ const Navbar = () => {
           På mobil ligger knapparna i hamburgermenyn i stället */}
       {subActions.length > 0 && (
         <div
-          className={`hidden items-center bg-gray-700 py-1.5 pr-[2%] text-base text-white md:flex ${subRowCenter === null ? 'pl-[3%]' : ''}`}
+          className={`hidden items-center bg-gray-700 py-1.5 pr-[2%] text-base text-white md:flex ${subRowStart === null ? 'pl-[3%]' : ''}`}
         >
-          {/* Mittpunkten läggs på länkens mitt; translate flyttar tillbaka halva bredden */}
+          {/* Vänsterkanten läggs under länkens vänsterkant */}
           <div
-            className={`flex w-fit shrink-0 items-center gap-4 ${subRowCenter === null ? '' : '-translate-x-1/2'}`}
-            style={subRowCenter === null ? undefined : { marginLeft: subRowCenter }}
+            className="flex w-fit shrink-0 items-center gap-4"
+            style={subRowStart === null ? undefined : { marginLeft: subRowStart }}
           >
             {subActions.map(({ label, action, icon }) => (
               <button key={action} type="button" className={SUB_ROW_BUTTON_CLASS} onClick={() => requestBoardAction(action)}>
@@ -285,6 +288,7 @@ const Navbar = () => {
                 {label}
               </button>
             ))}
+            {showSwitcher && <BoardSwitcher className="h-7" />}
           </div>
         </div>
       )}

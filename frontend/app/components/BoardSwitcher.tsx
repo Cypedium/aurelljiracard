@@ -1,9 +1,10 @@
 'use client';
 import { selectBoard, useBoards } from '../cards/useBoards';
+import { cn } from '../lib/utils';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger, SelectValue } from './ui/select';
 
 // Navbaren: vilken board som visas. Den egna först, sedan de man är medarbetare på (backend sorterar)
-export default function BoardSwitcher({ onSelected }: { onSelected?: () => void }) {
+export default function BoardSwitcher({ onSelected, className }: { onSelected?: () => void; className?: string }) {
   const { boards, current } = useBoards();
   if (!current) return null;
 
@@ -20,7 +21,10 @@ export default function BoardSwitcher({ onSelected }: { onSelected?: () => void 
     >
       <SelectTrigger
         aria-label="Board"
-        className="h-8 max-w-[220px] border-white/30 bg-white/10 font-jira text-sm text-white hover:bg-white/20 data-[placeholder]:text-white [&_svg]:text-white!"
+        className={cn(
+          'h-8 max-w-[220px] border-white/30 bg-white/10 font-jira text-sm text-white hover:bg-white/20 data-[placeholder]:text-white [&_svg]:text-white!',
+          className,
+        )}
       >
         <SelectValue />
       </SelectTrigger>
