@@ -32,15 +32,17 @@ import {
   desktopBoardWidth,
   buildCardLayout,
   cardKey,
+  cardDragGridX,
   columnAtGridX,
   eventPoint,
   HIDDEN_LIST_ATTR,
+  LIST_KEY_ATTR,
+  nearestListIndexAtX,
   countCardsPerColumn,
   fromGridLayout,
   listHeight,
   mobileBoardWidth,
   rowsPerColumn,
-  snapGridX,
   splitByCollapsed,
   statusForColumn,
   toGridLayout,
@@ -158,16 +160,40 @@ function BoardView({ boardId, admin }: { boardId: string; admin: boolean }) {
     () => boardColumns(boardHeaders, collapsed, showAddList ? EXPANDED_SPAN : 0),
     [boardHeaders, collapsed, showAddList],
   );
-  // Kort snäpper till närmaste synliga lista medan de dras
+  // Pekarens x-position. pointermove/pointerdown kommer före react-draggables mus-/touch-event,
+  // så den är aktuell när gridden räknar ut kortets plats
+  const pointerXRef = useRef<number | null>(null);
+  useEffect(() => {
+    const track = (e: PointerEvent) => {
+      pointerXRef.current = e.clientX;
+    };
+    window.addEventListener("pointerdown", track, true);
+    window.addEventListener("pointermove", track, true);
+    return () => {
+      window.removeEventListener("pointerdown", track, true);
+      window.removeEventListener("pointermove", track, true);
+    };
+  }, []);
+  // Ett draget kort hamnar i listan pekaren är över, som när en lista dras (inte där kortets vänsterkant är)
   const constraints = useMemo<LayoutConstraint[]>(
     () => [
       gridBounds,
-      { name: "boardColumn", constrainPosition: (_item, x, y) => ({ x: snapGridX(columns, x), y }) },
+      {
+        name: "boardColumn",
+        constrainPosition: (_item, x, y) => {
+          const pointerX = pointerXRef.current;
+          const lists = Array.from(document.querySelectorAll(`[${LIST_KEY_ATTR}]`), (el) => el.getBoundingClientRect());
+          return { x: cardDragGridX(columns, x, pointerX === null ? null : nearestListIndexAtX(lists, pointerX)), y };
+        },
+      },
     ],
     [columns],
   );
   // Dold lista som ett draget kort är över (remsan markeras); släpps kortet där flyttas det dit
   const [dropTarget, setDropTarget] = useState<CardStatus | null>(null);
+  // react-grid-layout ritar bara om ett kort när dess props ändras (GridItem är memo), så ett draget kort
+  // står still tills det byter ruta. En ny render per dragsteg ger nya children, så kortet följer pekaren
+  const [, setDragFrame] = useState(0);
   const hiddenListAt = (e: Event): CardStatus | null => {
     const point = eventPoint(e);
     if (!point) return null;
@@ -290,7 +316,10 @@ function BoardView({ boardId, admin }: { boardId: string; admin: boolean }) {
                 if (listDrag) return;
                 persistLayout({ ...userLayout, cards: savedPositions(currentLayout) });
               }}
-              onDrag={(_layout, _oldItem, _newItem, _placeholder, e) => setDropTarget(hiddenListAt(e))}
+              onDrag={(_layout, _oldItem, _newItem, _placeholder, e) => {
+                setDropTarget(hiddenListAt(e));
+                setDragFrame((n) => n + 1);
+              }}
               onDragStop={(currentLayout, oldItem, newItem, _placeholder, e) => {
                 if (!oldItem || !newItem) return;
                 // Släppt på en dold lista: kortet flyttas dit och hamnar överst
