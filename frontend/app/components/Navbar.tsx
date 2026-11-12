@@ -240,7 +240,7 @@ const Navbar = () => {
               {/* Desktop: användare och logout längst till höger */}
               {userName && (
                 <li key="profile" className="md:ml-auto">
-                  {/* Initialer som på korten, men ljusgrå (lite ljusare än navraden) med kortens textfärg; namnet visas vid hovring. Öppnar kontodialogen (koppla Google) */}
+                  {/* Initialer som på korten, men ljusgrå (lite ljusare än navraden) med vit text; namnet visas vid hovring. Öppnar kontodialogen (koppla Google) */}
                   <button
                     type="button"
                     aria-label={`Account (logged in as ${userName})`}
@@ -249,7 +249,7 @@ const Navbar = () => {
                       setMenuOpen(false);
                       setAccountOpen(true);
                     }}
-                    className="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-gray-500 font-jira text-xs font-semibold text-jira-text"
+                    className="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-gray-500 font-jira text-xs font-semibold text-white"
                   >
                     {avatarInitials(userName)}
                   </button>
