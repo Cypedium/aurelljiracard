@@ -89,6 +89,9 @@ const Navbar = () => {
     ...(onIssueTypes ? [{ label: 'Create Issue type', action: BOARD_ACTIONS.createIssueType, icon: true }] : []),
   ];
 
+  // Desktop: boardväljaren ligger sist i rad två när den finns, annars längst till höger i raden ovanför
+  const switcherInSubRow = Boolean(board) && subActions.length > 0;
+
   // Rad två centreras under sin länk (The Board / Backlog / Issue types). null = vänsterställd (mobil, där länken är dold)
   const headerRef = useRef<HTMLElement>(null);
   const boardLinkRef = useRef<HTMLAnchorElement>(null);
@@ -218,9 +221,9 @@ const Navbar = () => {
                   {onIssueTypes && <MobileSubActions actions={subActions} />}
                 </li>
               )}
-              {/* Vilken board som visas; desktop: längst till höger, före avataren */}
+              {/* Vilken board som visas; desktop: i rad två, eller längst till höger före avataren */}
               {board && (
-                <li className="md:ml-auto">
+                <li className={switcherInSubRow ? 'md:hidden' : 'md:ml-auto'}>
                   <BoardSwitcher onSelected={() => setMenuOpen(false)} />
                 </li>
               )}
@@ -231,7 +234,7 @@ const Navbar = () => {
             <>
               {/* Desktop: användare och logout längst till höger */}
               {userName && (
-                <li key="profile" className={board ? undefined : 'md:ml-auto'}>
+                <li key="profile" className={board && !switcherInSubRow ? undefined : 'md:ml-auto'}>
                   {/* Samma avatar som på korten; namnet visas vid hovring. Öppnar kontodialogen (koppla Google) */}
                   <button
                     type="button"
@@ -248,7 +251,7 @@ const Navbar = () => {
                   </button>
                 </li>
               )}
-              <li key="logout" className={userName || board ? undefined : 'md:ml-auto'}>
+              <li key="logout" className={userName || (board && !switcherInSubRow) ? undefined : 'md:ml-auto'}>
                 <button onClick={handleLogout} className={NAV_LINK_CLASS}>
                   <ArrowRightStartOnRectangleIcon className={NAV_ICON_CLASS} aria-hidden />
                   Logout
@@ -285,6 +288,7 @@ const Navbar = () => {
                 {label}
               </button>
             ))}
+            {switcherInSubRow && <BoardSwitcher className="h-7" />}
           </div>
         </div>
       )}
