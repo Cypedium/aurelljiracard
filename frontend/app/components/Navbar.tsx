@@ -76,6 +76,7 @@ const Navbar = () => {
     setAdmin(isAdmin());
   }, [pathname]);
 
+  const logoHref = isLoggedIn ? BOARD_PATH : '/';
   const onBoard = isLoggedIn && pathname === BOARD_PATH;
   const onBacklog = isLoggedIn && pathname === BACKLOG_PATH;
   const onIssueTypes = isLoggedIn && boardAdmin && pathname === ISSUE_TYPES_PATH;
@@ -141,13 +142,12 @@ const Navbar = () => {
       )}
       {/* z-10: mobilmenyn hamnar över raden under */}
       <nav className="relative z-10 flex w-full items-center justify-between bg-gray-600 py-[0.5%] pr-[2%] pl-[3%]">
-        {/* Mobil: logga och namn till vänster i raden, hamburgaren till höger. Desktop: loggan ligger i listan */}
-        {isLoggedIn && (
-          <Link href={BOARD_PATH} className={`${NAV_LINK_CLASS} -ml-2 text-xl text-white md:hidden`}>
-            <Image src={logo} alt="" className="size-7 shrink-0" priority />
-            AURELLO
-          </Link>
-        )}
+        {/* Mobil: logga och namn till vänster i raden, hamburgaren till höger. Desktop: loggan ligger i listan.
+            Utloggad (Login/Register) leder den till startsidan, som skickar vidare */}
+        <Link href={logoHref} className={`${NAV_LINK_CLASS} -ml-2 text-xl text-white md:hidden`}>
+          <Image src={logo} alt="" className="size-7 shrink-0" priority />
+          AURELLO
+        </Link>
         {/* invisible när menyn är öppen: krysset ligger i menyns hörn, raden behåller sin höjd */}
         <button
           className={`ml-auto block text-white md:hidden ${menuOpen ? 'invisible' : ''}`}
@@ -169,15 +169,15 @@ const Navbar = () => {
               <XMarkIcon className="size-8" aria-hidden />
             </button>
           </li>
+          <li className="hidden md:block">
+            <Link href={logoHref} className={NAV_LINK_CLASS}>
+              {/* Samma bild som favicon (app/icon.png) */}
+              <Image src={logo} alt="" className="size-7 shrink-0" priority />
+              AURELLO
+            </Link>
+          </li>
           {isLoggedIn && (
             <>
-              <li className="hidden md:block">
-                <Link href={BOARD_PATH} className={NAV_LINK_CLASS}>
-                  {/* Samma bild som favicon (app/icon.png) */}
-                  <Image src={logo} alt="" className="size-7 shrink-0" priority />
-                  AURELLO
-                </Link>
-              </li>
               <li onClick={() => setMenuOpen(false)}>
                 <Link
                   ref={boardLinkRef}
