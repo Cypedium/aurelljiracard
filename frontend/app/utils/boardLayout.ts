@@ -274,6 +274,11 @@ export const eventPoint = (e: Event): { x: number; y: number } | null => {
 export const snapGridX = (columns: BoardColumns, x: number): number =>
   columns.spans[Math.max(0, columnAtGridX(columns, x))].start;
 
+// Ett draget kort hamnar i listan pekaren är över (index i boardens ordning, som när en lista dras);
+// över en remsa: närmaste utfällda lista. Utan pekare (null): kortets egen x-position
+export const cardDragGridX = (columns: BoardColumns, x: number, listIndex: number | null): number =>
+  snapGridX(columns, listIndex === null || !columns.spans[listIndex] ? x : columns.spans[listIndex].start);
+
 // Listindex → grid-enheter och tillbaka
 export const toGridLayout = <T extends { x: number; w: number }>(layout: readonly T[], columns: BoardColumns): T[] =>
   layout.map((l) => ({ ...l, x: columns.spans[l.x].start, w: columns.expandedSpan }));

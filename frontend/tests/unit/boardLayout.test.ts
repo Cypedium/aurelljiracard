@@ -18,6 +18,7 @@ import {
   MOBILE_GUTTER,
   MIN_LIST_WIDTH,
   snapGridX,
+  cardDragGridX,
   toGridLayout,
   DEFAULT_LAYOUT,
   COLLAPSED_STORAGE_KEY,
@@ -382,6 +383,18 @@ describe("board columns", () => {
     expect(columnAtGridX(columns, 4)).toBe(2); // remsan hoppas över
     expect(columnAtGridX(columns, 8)).toBe(3);
     expect(snapGridX(columns, 6)).toBe(5);
+  });
+
+  it("places a dragged card in the list under the pointer", () => {
+    const columns = boardColumns(H, ["in-progress"]);
+    // Kortets vänsterkant nära lista 0, men pekaren över lista 2
+    expect(cardDragGridX(columns, 1, 2)).toBe(5);
+    expect(cardDragGridX(columns, 8, 0)).toBe(0);
+    // Över remsan (lista 1): närmaste utfällda lista
+    expect(cardDragGridX(columns, 0, 1)).toBe(5);
+    // Ingen pekare eller okänt index: kortets egen position
+    expect(cardDragGridX(columns, 6, null)).toBe(5);
+    expect(cardDragGridX(columns, 6, 9)).toBe(5);
   });
 
   it("converts card positions to grid units and back", () => {
