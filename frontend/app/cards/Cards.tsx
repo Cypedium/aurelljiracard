@@ -341,8 +341,11 @@ function BoardView({ boardId, admin }: { boardId: string; admin: boolean }) {
                 .map(({ fb, id }) => (
                   <div
                     key={fb._id || fb.username + fb.submittedAt}
-                    // Luft mellan kortet och kolumnens kanter. Korten i en lyft lista visas i förhandsvisningen
-                    className={`px-2 ${draggedCardIds.has(id) ? "invisible" : ""}`}
+                    // Luft mellan kortet och kolumnens kanter. Korten i en lyft lista visas i förhandsvisningen.
+                    // select-none + onDragStart: markerad text startar annars webbläsarens egen dra-och-släpp,
+                    // som stoppar mus-eventen så att kortet fastnar mitt i en dragning
+                    className={`select-none px-2 ${draggedCardIds.has(id) ? "invisible" : ""}`}
+                    onDragStart={(e) => e.preventDefault()}
                   >
                     <BoardCard
                       card={fb}
