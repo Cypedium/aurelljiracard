@@ -191,6 +191,9 @@ function BoardView({ boardId, admin }: { boardId: string; admin: boolean }) {
   );
   // Dold lista som ett draget kort är över (remsan markeras); släpps kortet där flyttas det dit
   const [dropTarget, setDropTarget] = useState<CardStatus | null>(null);
+  // react-grid-layout ritar bara om ett kort när dess props ändras (GridItem är memo), så ett draget kort
+  // står still tills det byter ruta. En ny render per dragsteg ger nya children, så kortet följer pekaren
+  const [, setDragFrame] = useState(0);
   const hiddenListAt = (e: Event): CardStatus | null => {
     const point = eventPoint(e);
     if (!point) return null;
@@ -313,7 +316,10 @@ function BoardView({ boardId, admin }: { boardId: string; admin: boolean }) {
                 if (listDrag) return;
                 persistLayout({ ...userLayout, cards: savedPositions(currentLayout) });
               }}
-              onDrag={(_layout, _oldItem, _newItem, _placeholder, e) => setDropTarget(hiddenListAt(e))}
+              onDrag={(_layout, _oldItem, _newItem, _placeholder, e) => {
+                setDropTarget(hiddenListAt(e));
+                setDragFrame((n) => n + 1);
+              }}
               onDragStop={(currentLayout, oldItem, newItem, _placeholder, e) => {
                 if (!oldItem || !newItem) return;
                 // Släppt på en dold lista: kortet flyttas dit och hamnar överst
