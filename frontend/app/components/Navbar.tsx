@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useLayoutEffect, useRef, useState, type ComponentType, type SVGProps } from 'react';
 import logo from '../icon.png';
-import { avatarColor, avatarInitials } from '../utils/avatar';
+import { avatarInitials } from '../utils/avatar';
 import { handleLogout } from '../utils/logout';
 import { getUsername, hasSession, isAdmin } from '../utils/session';
 import { BOARD_ACTIONS, onBoardAction, requestBoardAction, type BoardAction } from '../utils/boardActions';
@@ -240,7 +240,7 @@ const Navbar = () => {
               {/* Desktop: användare och logout längst till höger */}
               {userName && (
                 <li key="profile" className="md:ml-auto">
-                  {/* Samma avatar som på korten; namnet visas vid hovring. Öppnar kontodialogen (koppla Google) */}
+                  {/* Initialer som på korten, men ljusgrå (lite ljusare än navraden) med kortens textfärg; namnet visas vid hovring. Öppnar kontodialogen (koppla Google) */}
                   <button
                     type="button"
                     aria-label={`Account (logged in as ${userName})`}
@@ -249,8 +249,7 @@ const Navbar = () => {
                       setMenuOpen(false);
                       setAccountOpen(true);
                     }}
-                    className="inline-flex size-8 shrink-0 items-center justify-center rounded-full font-jira text-xs font-semibold text-white"
-                    style={{ background: avatarColor(userName) }}
+                    className="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-gray-500 font-jira text-xs font-semibold text-jira-text"
                   >
                     {avatarInitials(userName)}
                   </button>
