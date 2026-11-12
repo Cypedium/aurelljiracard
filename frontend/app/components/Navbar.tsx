@@ -292,7 +292,8 @@ const Navbar = () => {
                 {label}
               </button>
             ))}
-            {showSwitcher && <BoardSwitcher className="h-7" />}
+            {/* Samma typsnitt och storlek som länkarna i rad två (! går före BoardSwitchers font-jira) */}
+            {showSwitcher && <BoardSwitcher className="h-7 font-brand! text-base" />}
           </div>
         </div>
       )}
