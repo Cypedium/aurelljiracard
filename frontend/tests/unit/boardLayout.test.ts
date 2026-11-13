@@ -29,7 +29,6 @@ import {
   HEADER_HEIGHT,
   HEADER_TITLE_MAX_LENGTH,
   LIST_SWATCHES,
-  contrastRatio,
   ROW_HEIGHT,
   buildCardLayout,
   cardKey,
@@ -41,7 +40,6 @@ import {
   normalizeCollapsed,
   normalizeLayout,
   toggleCollapsed,
-  readableTextColor,
   recolorHeader,
   renameHeader,
   rowsPerColumn,
@@ -51,6 +49,7 @@ import {
   moveHeader,
   withListKeys,
 } from "../../app/utils/boardLayout";
+import { contrastRatio, readableTextColor } from "../../app/utils/color";
 
 const H = DEFAULT_HEADERS;
 describe("storage keys", () => {
@@ -150,14 +149,7 @@ describe("recolorHeader", () => {
   });
 });
 
-describe("readableTextColor", () => {
-  it("uses dark text on light colors and white on dark ones", () => {
-    expect(readableTextColor("#eed7fc")).toBe("#172b4d");
-    expect(readableTextColor("#ffffff")).toBe("#172b4d");
-    expect(readableTextColor("#0c66e4")).toBe("#ffffff");
-    expect(readableTextColor("#000000")).toBe("#ffffff");
-  });
-
+describe("LIST_SWATCHES", () => {
   it("gives every swatch a readable text color (contrast at least 4.5:1)", () => {
     for (const { color } of LIST_SWATCHES) {
       expect(contrastRatio(color, readableTextColor(color))).toBeGreaterThanOrEqual(4.5);

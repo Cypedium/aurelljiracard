@@ -1,4 +1,4 @@
-import { HEX_COLOR, contrastRatio, readableTextColor } from "./boardLayout";
+import { HEX_COLOR, contrastRatio, mixHex, readableTextColor } from "./color";
 
 // Utseende (boardens bakgrund och navbarens färg). Sparas per webbläsare, som dolda listor
 export const APPEARANCE_STORAGE_KEY = "appearance";
@@ -9,14 +9,6 @@ export type BoardBackground = { key: string; name: string; from: string; via: st
 export type NavbarTheme = { key: string; name: string; top: string; sub: string };
 // background/navbar: ett förval (key) eller en egen färg (#rrggbb, gemener)
 export type Appearance = { background: string; navbar: string };
-
-// Blandar två #rrggbb-färger; amount 0 = a, 1 = b
-export const mixHex = (a: string, b: string, amount: number): string => {
-  const channel = (hex: string, i: number) => parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16);
-  return `#${[0, 1, 2]
-    .map((i) => Math.round(channel(a, i) + (channel(b, i) - channel(a, i)) * amount).toString(16).padStart(2, "0"))
-    .join("")}`;
-};
 
 export const isCustomColor = (value: unknown): value is string => typeof value === "string" && HEX_COLOR.test(value);
 

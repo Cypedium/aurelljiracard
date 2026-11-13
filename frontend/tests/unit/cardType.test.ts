@@ -10,7 +10,7 @@ import {
   issueTypeOf,
   normalizeIssueTypes,
 } from "../../app/utils/cardType";
-import { HEX_COLOR } from "../../app/utils/boardLayout";
+import { HEX_COLOR } from "../../app/utils/color";
 
 describe("issue type defaults", () => {
   it("has the same default types and icons as the server", () => {

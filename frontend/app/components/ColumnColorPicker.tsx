@@ -1,7 +1,8 @@
 'use client';
 import { useState } from 'react';
 import { CheckIcon, PaintBrushIcon } from '@heroicons/react/16/solid';
-import { LIST_SWATCHES, readableTextColor } from '../utils/boardLayout';
+import { LIST_SWATCHES } from '../utils/boardLayout';
+import { readableTextColor } from '../utils/color';
 import { Button } from './ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 

@@ -9,7 +9,8 @@ import {
   StarIcon,
   WrenchIcon,
 } from "@heroicons/react/16/solid";
-import { NEW_LIST_COLOR, readableTextColor, type BoardHeader, type CardStatus } from "./boardLayout";
+import { NEW_LIST_COLOR, type BoardHeader, type CardStatus } from "./boardLayout";
+import { readableTextColor } from "./color";
 import type { IssueTypeIconName } from "./cardType";
 import type { PasswordStrength } from "./checkPasswordStrength";
 
