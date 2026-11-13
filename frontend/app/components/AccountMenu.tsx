@@ -14,18 +14,10 @@ import { handleLogout } from '../utils/logout';
 import { AppearancePicker, CloseButton, NavbarPreview, PanelHeader, type AppearanceView } from './AppearancePicker';
 import GoogleButton from './GoogleButton';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { ACCOUNT_AVATAR_CLASS, ACCOUNT_MENU_ACTIVE_ITEM_CLASS, ACCOUNT_MENU_HEADING_CLASS, ACCOUNT_MENU_ITEM_CLASS } from '../utils/styles';
 
 // Panelen som är öppen bredvid menyn: en av färgväljarna eller Google-kopplingen
 type Panel = AppearanceView | 'google';
-
-// Samma avatar som tidigare i navbaren: ljusgrå med vit text
-const AVATAR_CLASS =
-  'inline-flex shrink-0 items-center justify-center rounded-full bg-gray-500 font-jira font-semibold text-white';
-const SECTION_HEADING_CLASS = 'px-4 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-jira-secondary';
-const ITEM_CLASS =
-  'flex w-full items-center gap-3 px-4 py-2 text-left text-sm hover:bg-jira-hover focus-visible:bg-jira-hover focus-visible:outline-none';
-// Vald rad (panelen öppen): blå med en kant till vänster, som i Trello
-const ACTIVE_ITEM_CLASS = 'bg-jira-info text-jira-primary shadow-[inset_2px_0_0_var(--color-jira-primary)] hover:bg-jira-info';
 
 type MenuItemProps = {
   Icon: ComponentType<SVGProps<SVGSVGElement>>;
@@ -36,7 +28,7 @@ type MenuItemProps = {
 };
 
 const MenuItem = ({ Icon, label, end, active = false, onClick }: MenuItemProps) => (
-  <button type="button" onClick={onClick} aria-expanded={active} className={`${ITEM_CLASS} ${active ? ACTIVE_ITEM_CLASS : ''}`}>
+  <button type="button" onClick={onClick} aria-expanded={active} className={`${ACCOUNT_MENU_ITEM_CLASS} ${active ? ACCOUNT_MENU_ACTIVE_ITEM_CLASS : ''}`}>
     <Icon className="size-5 shrink-0 text-jira-secondary" aria-hidden />
     <span className="flex-1">{label}</span>
     {end}
@@ -83,7 +75,7 @@ export default function AccountMenu({ username }: { username: string }) {
       <PopoverTrigger
         aria-label={`Account (logged in as ${username})`}
         title={username}
-        className={`${AVATAR_CLASS} size-8 text-xs`}
+        className={`${ACCOUNT_AVATAR_CLASS} size-8 text-xs`}
       >
         {avatarInitials(username)}
       </PopoverTrigger>
@@ -95,11 +87,11 @@ export default function AccountMenu({ username }: { username: string }) {
       >
         <div className={`${panel ? 'hidden md:block' : ''} py-2`}>
           <div className="flex items-start justify-between pr-2">
-            <h2 className={SECTION_HEADING_CLASS}>Account</h2>
+            <h2 className={ACCOUNT_MENU_HEADING_CLASS}>Account</h2>
             <CloseButton onClose={close} className="mt-1" />
           </div>
           <div className="flex items-center gap-3 px-4 py-2">
-            <span className={`${AVATAR_CLASS} size-10 text-sm`} aria-hidden>
+            <span className={`${ACCOUNT_AVATAR_CLASS} size-10 text-sm`} aria-hidden>
               {avatarInitials(username)}
             </span>
             <span className="min-w-0 truncate text-sm font-medium">{username}</span>
@@ -112,7 +104,7 @@ export default function AccountMenu({ username }: { username: string }) {
           />
 
           <hr className="my-2 border-jira-neutral" />
-          <h2 className={`${SECTION_HEADING_CLASS} flex items-center gap-1.5`}>
+          <h2 className={`${ACCOUNT_MENU_HEADING_CLASS} flex items-center gap-1.5`}>
             <Image src={logo} alt="" className="size-4" />
             Aurello
           </h2>
@@ -138,7 +130,7 @@ export default function AccountMenu({ username }: { username: string }) {
           />
 
           <hr className="my-2 border-jira-neutral" />
-          <button type="button" onClick={handleLogout} className={ITEM_CLASS}>
+          <button type="button" onClick={handleLogout} className={ACCOUNT_MENU_ITEM_CLASS}>
             <ArrowRightStartOnRectangleIcon className="size-5 shrink-0 text-jira-secondary" aria-hidden />
             Log out
           </button>

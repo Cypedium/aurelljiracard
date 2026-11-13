@@ -1,3 +1,5 @@
+import { sanitizeHexColor } from "./color";
+
 // Ett korts status = nyckeln till en lista. Listorna delas av alla (GET /column) och
 // admins kan lägga till fler; nycklar som i server/utils/cardStatus.js
 export type CardStatus = string;
@@ -59,12 +61,6 @@ export const HEADER_TITLE_MAX_LENGTH = 50;
 const sanitizeTitle = (title: unknown): string =>
   typeof title === "string" ? title.trim().slice(0, HEADER_TITLE_MAX_LENGTH) : "";
 
-// Måste matcha HEX_COLOR i server/controllers/columnController.js
-export const HEX_COLOR = /^#[0-9a-f]{6}$/i;
-
-const sanitizeColor = (color: unknown): string | undefined =>
-  typeof color === "string" && HEX_COLOR.test(color) ? color.toLowerCase() : undefined;
-
 // Standardfärg per lista; samma som --color-list-* i app/root.css
 export const DEFAULT_LIST_COLORS: Record<CardStatus, string> = {
   todo: "#eed7fc",
@@ -96,28 +92,6 @@ export const LIST_SWATCHES: { name: string; color: string }[] = [
   { name: "Slate", color: "#44546f" },
 ];
 
-// Relativ luminans enligt WCAG
-const luminance = (hex: string): number => {
-  const [r, g, b] = [1, 3, 5].map((i) => {
-    const c = parseInt(hex.slice(i, i + 2), 16) / 255;
-    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
-  });
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-};
-
-const DARK_TEXT = "#172b4d";
-const LIGHT_TEXT = "#ffffff";
-
-// WCAG-kontrast mellan två färger, 1–21
-export const contrastRatio = (a: string, b: string): number => {
-  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
-  return (hi + 0.05) / (lo + 0.05);
-};
-
-// Mörk eller vit text, den som ger högst kontrast mot listfärgen
-export const readableTextColor = (background: string): string =>
-  contrastRatio(background, DARK_TEXT) >= contrastRatio(background, LIGHT_TEXT) ? DARK_TEXT : LIGHT_TEXT;
-
 // Bara kortpositionerna används; äldre layouter har även cols och headers
 export const normalizeLayout = (raw: unknown): UserLayout => ({ cards: (raw as Partial<UserLayout> | null)?.cards });
 
@@ -142,7 +116,7 @@ export const normalizeColumns = (raw: unknown): BoardHeader[] => {
   for (const c of raw) {
     const key = c?.key;
     if (typeof key !== "string" || !COLUMN_KEY.test(key) || headers.some((h) => h.key === key)) continue;
-    const color = sanitizeColor(c.color);
+    const color = sanitizeHexColor(c.color);
     headers.push({ key, title: sanitizeTitle(c.title) || key, ...(color ? { color } : {}) });
   }
   return headers.length ? headers : DEFAULT_HEADERS;
@@ -166,7 +140,7 @@ export const recolorHeader = (
   key: CardStatus,
   color: string | null,
 ): BoardHeader[] => {
-  const clean = color === null ? undefined : sanitizeColor(color);
+  const clean = color === null ? undefined : sanitizeHexColor(color);
   const current = headers.find((h) => h.key === key);
   if ((color !== null && !clean) || !current || current.color === clean) return headers;
   return headers.map((h) => {

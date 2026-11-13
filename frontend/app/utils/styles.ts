@@ -9,7 +9,8 @@ import {
   StarIcon,
   WrenchIcon,
 } from "@heroicons/react/16/solid";
-import { NEW_LIST_COLOR, readableTextColor, type BoardHeader, type CardStatus } from "./boardLayout";
+import { NEW_LIST_COLOR, type BoardHeader, type CardStatus } from "./boardLayout";
+import { readableTextColor } from "./color";
 import type { IssueTypeIconName } from "./cardType";
 import type { PasswordStrength } from "./checkPasswordStrength";
 
@@ -86,7 +87,7 @@ export const TABLE_ACTION_CLASS =
 export const TABLE_THEAD_CLASS = "bg-gray-600";
 export const TABLE_HEAD_CLASS = "px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-white";
 export const TABLE_CELL_CLASS = "px-4 py-3";
-export const TABLE_ROW_CLASS = "border-b border-jira-neutral last:border-b-0 hover:bg-[#f7f8f9]";
+export const TABLE_ROW_CLASS = "border-b border-jira-neutral last:border-b-0 hover:bg-jira-hover";
 
 // Navbarens boardväljare (öppen lista): samma tema som navbaren (raden under, navbarens textfärg).
 // ! går före shadcn-standardfärgerna (bg-popover, focus:bg-accent, text-muted-foreground)
@@ -94,3 +95,28 @@ export const NAV_MENU_CLASS = "border-white/20 bg-nav-sub! font-jira text-nav-te
 export const NAV_MENU_ITEM_CLASS = "focus:bg-white/15! focus:text-nav-text!";
 export const NAV_MENU_LABEL_CLASS = "text-xs text-nav-text/70!";
 export const NAV_MENU_SEPARATOR_CLASS = "bg-white/20!";
+
+// Navbarens länkar: ikon före texten (som Trellos sidomeny); ljusare bakgrund vid hovring, som knapparna i rad två
+export const NAV_LINK_CLASS =
+  "flex items-center gap-2 rounded-md px-2 py-1 transition-colors hover:bg-white/10 focus-visible:bg-white/10";
+export const NAV_ICON_CLASS = "size-5 shrink-0";
+export const NAV_ICON_SUB_CLASS = "size-4 shrink-0";
+export const NAV_SUB_ROW_BUTTON_CLASS = "flex items-center gap-1.5 rounded-md px-2 py-0.5 hover:bg-white/10";
+// Mobil: rad tvås knappar visas i hamburgermenyn, indragna under sidans länk
+export const NAV_MOBILE_SUB_LIST_CLASS = "mt-2 ml-7 flex flex-col gap-2 text-lg md:hidden";
+
+// Kontomenyn (avataren i navbaren). Avataren: ljusgrå med vit text
+export const ACCOUNT_AVATAR_CLASS =
+  "inline-flex shrink-0 items-center justify-center rounded-full bg-gray-500 font-jira font-semibold text-white";
+export const ACCOUNT_MENU_HEADING_CLASS =
+  "px-4 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-jira-secondary";
+export const ACCOUNT_MENU_ITEM_CLASS =
+  "flex w-full items-center gap-3 px-4 py-2 text-left text-sm hover:bg-jira-hover focus-visible:bg-jira-hover focus-visible:outline-none";
+// Vald rad (panelen öppen): blå med en kant till vänster, som i Trello
+export const ACCOUNT_MENU_ACTIVE_ITEM_CLASS =
+  "bg-jira-info text-jira-primary shadow-[inset_2px_0_0_var(--color-jira-primary)] hover:bg-jira-info";
+
+// Färgväljarna i kontomenyn (boardens bakgrund, navbarens färg)
+export const PICKER_GROUP_HEADING_CLASS = "text-xs font-semibold uppercase text-jira-secondary";
+export const PICKER_SWATCH_CLASS =
+  "relative rounded-md shadow-[inset_0_0_0_1px_rgba(9,30,66,0.15)] transition-[filter] hover:brightness-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jira-focus";

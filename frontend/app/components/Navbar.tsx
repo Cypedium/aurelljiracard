@@ -26,25 +26,17 @@ import {
   XMarkIcon,
 } from '@heroicons/react/24/outline';
 import { ROUTES } from '../utils/routes';
-
-// Länk med ikon före texten (som Trellos sidomeny); ljusare grå bakgrund vid hovring, som knapparna i rad två
-const NAV_LINK_CLASS =
-  'flex items-center gap-2 rounded-md px-2 py-1 transition-colors hover:bg-white/10 focus-visible:bg-white/10';
-const NAV_ICON_CLASS = 'size-5 shrink-0';
-const NAV_ICON_SUB_CLASS = 'size-4 shrink-0';
-const SUB_ROW_BUTTON_CLASS = 'flex items-center gap-1.5 rounded-md px-2 py-0.5 hover:bg-white/10';
-// Mobil: rad tvås knappar visas i hamburgermenyn, indragna under sidans länk
-const MOBILE_SUB_LIST_CLASS = 'mt-2 ml-7 flex flex-col gap-2 text-lg md:hidden';
+import { NAV_ICON_CLASS, NAV_ICON_SUB_CLASS, NAV_LINK_CLASS, NAV_MOBILE_SUB_LIST_CLASS, NAV_SUB_ROW_BUTTON_CLASS } from '../utils/styles';
 
 type SubAction = { label: string; action: BoardAction; Icon: ComponentType<SVGProps<SVGSVGElement>> };
 
 const MobileSubActions = ({ actions }: { actions: SubAction[] }) =>
   actions.length > 0 && (
-    <ul className={MOBILE_SUB_LIST_CLASS}>
+    <ul className={NAV_MOBILE_SUB_LIST_CLASS}>
       {actions.map(({ label, action, Icon }) => (
         <li key={action}>
           {/* Klicket bubblar till länkens <li>, som stänger menyn */}
-          <button type="button" className={SUB_ROW_BUTTON_CLASS} onClick={() => requestBoardAction(action)}>
+          <button type="button" className={NAV_SUB_ROW_BUTTON_CLASS} onClick={() => requestBoardAction(action)}>
             <Icon className={NAV_ICON_SUB_CLASS} aria-hidden />
             {label}
           </button>
@@ -273,7 +265,7 @@ const Navbar = () => {
             style={subRowStart === null ? undefined : { marginLeft: subRowStart }}
           >
             {subActions.map(({ label, action, Icon }) => (
-              <button key={action} type="button" className={SUB_ROW_BUTTON_CLASS} onClick={() => requestBoardAction(action)}>
+              <button key={action} type="button" className={NAV_SUB_ROW_BUTTON_CLASS} onClick={() => requestBoardAction(action)}>
                 <Icon className={NAV_ICON_SUB_CLASS} aria-hidden />
                 {label}
               </button>

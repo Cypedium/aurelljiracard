@@ -71,7 +71,7 @@ export type BoardMember = { _id: string; username: string; pictureUrl?: string; 
 
 const onBoard = (boardId: string, path: string) => `/board/${encodeURIComponent(boardId)}${path}`;
 
-// ⭐ AUTH
+// Auth
 export const registerUser = (user: User) => api.post("/auth/register", user);
 
 export const loginUser = (credentials: Credentials) =>
@@ -84,10 +84,7 @@ export const googleLogin = (credential: string) =>
 export const logoutUser = (refreshToken: string) =>
   api.post("/auth/logout", { refreshToken });
 
-export const refreshToken = (refreshToken: string) =>
-  api.post("/auth/refresh", { refreshToken });
-
-// ⭐ BOARDS (the backend creates the user's own board on the first call)
+// Boards (the backend creates the user's own board on the first call)
 export const getBoards = () => api.get<Board[]>("/board");
 
 // Board admin: a new invite link (the old one stops working); the token is only shown here
@@ -105,7 +102,7 @@ export const getMembers = (boardId: string) => api.get<BoardMember[]>(onBoard(bo
 export const removeMember = (boardId: string, userId: string) =>
   api.delete(onBoard(boardId, `/member/${encodeURIComponent(userId)}`));
 
-// ⭐ CARDS (on one board; members only)
+// Cards (on one board; members only)
 export const submitCard = (boardId: string, card: NewCard) =>
   api.post(onBoard(boardId, "/card"), card);
 
@@ -122,7 +119,7 @@ export const updateCardStatus = (boardId: string, id: string, status: AnyCardSta
 export const deleteCard = (boardId: string, id: string) =>
   api.delete(onBoard(boardId, `/card/${id}`));
 
-// ⭐ COLUMNS (the board's lists; members read them, the board admin changes them)
+// Columns (the board's lists; members read them, the board admin changes them)
 export const getColumns = (boardId: string) => api.get<BoardColumn[]>(onBoard(boardId, "/column"));
 
 // Board admin: adds a list at the end of the board; the backend makes its key from the title
@@ -141,7 +138,7 @@ export const updateColumn = (boardId: string, key: CardStatus, changes: ColumnCh
 export const deleteColumn = (boardId: string, key: CardStatus) =>
   api.delete(onBoard(boardId, `/column/${encodeURIComponent(key)}`));
 
-// ⭐ ISSUE TYPES (the board's; members read them, the board admin changes them)
+// Issue types (the board's; members read them, the board admin changes them)
 export const getIssueTypes = (boardId: string) => api.get<IssueType[]>(onBoard(boardId, "/issue-type"));
 
 // Board admin: adds an issue type at the end of the dropdown
@@ -152,7 +149,7 @@ export const createIssueType = (boardId: string, type: NewIssueType) =>
 export const deleteIssueType = (boardId: string, key: CardType) =>
   api.delete(onBoard(boardId, `/issue-type/${encodeURIComponent(key)}`));
 
-// ⭐ USERS
+// Users
 export const getUsers = () => api.get<PublicUser[]>("/user");
 
 // The logged-in user's board layout (card order within the lists)
@@ -163,7 +160,7 @@ export const saveLayout = (layout: UserLayout) => api.put("/user/layout", layout
 // Connects a Google account to the logged-in user (409 if it belongs to someone else)
 export const connectGoogle = (credential: string) => api.post("/user/google", { credential });
 
-// ⭐ ADMIN (the backend returns 403 for other users)
+// Admin (the backend returns 403 for other users)
 // Renaming or changing the role logs the user out; their cards follow the new name
 export const updateUser = (id: string, changes: UserChanges) => api.patch<PublicUser>(`/user/${id}`, changes);
 
@@ -172,37 +169,3 @@ export const deleteUser = (id: string) => api.delete(`/user/${id}`);
 
 // Revokes all the user's refresh tokens
 export const revokeUserSessions = (id: string) => api.post(`/user/${id}/logout`);
-
-export default {
-  registerUser,
-  loginUser,
-  googleLogin,
-  logoutUser,
-  refreshToken,
-  getBoards,
-  createInvite,
-  deleteInvite,
-  joinBoard,
-  getMembers,
-  removeMember,
-  submitCard,
-  getCards,
-  updateCard,
-  updateCardStatus,
-  getUsers,
-  getLayout,
-  saveLayout,
-  connectGoogle,
-  deleteCard,
-  getColumns,
-  createColumn,
-  updateColumn,
-  deleteColumn,
-  reorderColumns,
-  getIssueTypes,
-  createIssueType,
-  deleteIssueType,
-  updateUser,
-  deleteUser,
-  revokeUserSessions,
-};

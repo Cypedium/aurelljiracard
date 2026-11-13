@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { HEX_COLOR } from "./boardLayout";
+import { HEX_COLOR, sanitizeHexColor } from "./color";
 
 // Ärendetyper delas av alla (GET /issue-type); admins lägger till nya. Kortets type = typens key
 export type CardType = string;
@@ -48,7 +48,7 @@ export const normalizeIssueTypes = (raw: unknown): IssueType[] => {
     const key = t?.key;
     if (typeof key !== "string" || !key || types.some((x) => x.key === key)) continue;
     const label = typeof t.label === "string" && t.label.trim() ? t.label.trim().slice(0, ISSUE_TYPE_LABEL_MAX_LENGTH) : key;
-    const color = typeof t.color === "string" && HEX_COLOR.test(t.color) ? t.color.toLowerCase() : DEFAULT_ISSUE_TYPES[0].color;
+    const color = sanitizeHexColor(t.color) ?? DEFAULT_ISSUE_TYPES[0].color;
     types.push({ key, label, color, icon: isIconName(t.icon) ? t.icon : "check" });
   }
   return types.length ? types : DEFAULT_ISSUE_TYPES;

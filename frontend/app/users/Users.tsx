@@ -118,7 +118,7 @@ export default function Users() {
                   <td className={TD_CLASS}>
                     <span
                       className={`rounded-[3px] px-1.5 text-xs/5 font-bold uppercase ${
-                        user.role === 'admin' ? 'bg-[#e9f2ff] text-[#0c66e4]' : 'bg-jira-neutral text-jira-secondary'
+                        user.role === 'admin' ? 'bg-jira-info text-jira-primary' : 'bg-jira-neutral text-jira-secondary'
                       }`}
                     >
                       {user.role}

@@ -8,13 +8,12 @@ import {
   NAVBAR_THEMES,
   NAV_TEXT_MIN_CONTRAST,
   appearanceVars,
-  mixHex,
   boardBackground,
   navbarTextColor,
   navbarTheme,
   normalizeAppearance,
 } from "../../app/utils/appearance";
-import { contrastRatio } from "../../app/utils/boardLayout";
+import { contrastRatio, mixHex } from "../../app/utils/color";
 
 const HEX = /^#[0-9a-f]{6}$/;
 
@@ -66,12 +65,6 @@ describe("appearance", () => {
     expect(boardBackground("#ff00aa")).toMatchObject({ from: "#ff00aa", via: "#ff00aa", to: "#ff00aa" });
     expect(boardBackground("#ff00aa").text).toBe(mixHex("#ff00aa", "#ffffff", 0.6));
     expect(navbarTheme("#123456")).toMatchObject({ top: "#123456", sub: mixHex("#123456", "#000000", 0.25) });
-  });
-
-  it("mixes hex colours", () => {
-    expect(mixHex("#000000", "#ffffff", 0)).toBe("#000000");
-    expect(mixHex("#000000", "#ffffff", 1)).toBe("#ffffff");
-    expect(mixHex("#000000", "#ffffff", 0.5)).toBe("#808080");
   });
 
   it("uses readable text when the board and a coloured navbar are the same colour", () => {
