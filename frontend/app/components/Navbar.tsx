@@ -4,12 +4,11 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useLayoutEffect, useRef, useState, type ComponentType, type SVGProps } from 'react';
 import logo from '../icon.png';
-import { avatarInitials } from '../utils/avatar';
 import { handleLogout } from '../utils/logout';
 import { getUsername, hasSession, isAdmin } from '../utils/session';
 import { BOARD_ACTIONS, onBoardAction, requestBoardAction, type BoardAction } from '../utils/boardActions';
 import { useBoards } from '../cards/useBoards';
-import AccountDialog from './AccountDialog';
+import AccountMenu from './AccountMenu';
 import BoardSwitcher from './BoardSwitcher';
 import ShareBoardDialog from './ShareBoardDialog';
 import {
@@ -64,7 +63,6 @@ const Navbar = () => {
   const [admin, setAdmin] = useState(false);
   const { current: board, boardAdmin } = useBoards();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [accountOpen, setAccountOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
 
   useEffect(() => onBoardAction(BOARD_ACTIONS.shareBoard, () => setShareOpen(true)), []);
@@ -238,29 +236,19 @@ const Navbar = () => {
           {isLoggedIn ? (
             <>
               {/* Desktop: användare och logout längst till höger */}
-              {userName && (
+              {/* Avataren öppnar kontomenyn (konto, utseende, Log out) */}
+              {userName ? (
                 <li key="profile" className="md:ml-auto">
-                  {/* Initialer som på korten, men ljusgrå (lite ljusare än navraden) med vit text; namnet visas vid hovring. Öppnar kontodialogen (koppla Google) */}
-                  <button
-                    type="button"
-                    aria-label={`Account (logged in as ${userName})`}
-                    title={userName}
-                    onClick={() => {
-                      setMenuOpen(false);
-                      setAccountOpen(true);
-                    }}
-                    className="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-gray-500 font-jira text-xs font-semibold text-white"
-                  >
-                    {avatarInitials(userName)}
+                  <AccountMenu username={userName} />
+                </li>
+              ) : (
+                <li key="logout" className="md:ml-auto">
+                  <button onClick={handleLogout} className={NAV_LINK_CLASS}>
+                    <ArrowRightStartOnRectangleIcon className={NAV_ICON_CLASS} aria-hidden />
+                    Logout
                   </button>
                 </li>
               )}
-              <li key="logout" className={userName ? undefined : 'md:ml-auto'}>
-                <button onClick={handleLogout} className={NAV_LINK_CLASS}>
-                  <ArrowRightStartOnRectangleIcon className={NAV_ICON_CLASS} aria-hidden />
-                  Logout
-                </button>
-              </li>
             </>
           ) : (
             <>
@@ -298,7 +286,6 @@ const Navbar = () => {
         </div>
       )}
 
-      {isLoggedIn && <AccountDialog open={accountOpen} onClose={() => setAccountOpen(false)} username={userName} />}
       {isLoggedIn && board && <ShareBoardDialog board={board} open={shareOpen} onClose={() => setShareOpen(false)} />}
     </header>
   );

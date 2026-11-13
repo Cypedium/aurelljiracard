@@ -1,13 +1,5 @@
 'use client';
-import type { ComponentType, ReactNode, SVGProps } from 'react';
-import {
-  Bars2Icon,
-  CheckIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  Cog6ToothIcon,
-  PhotoIcon,
-} from '@heroicons/react/24/outline';
+import { CheckIcon, ChevronLeftIcon } from '@heroicons/react/24/outline';
 import {
   BOARD_COLORS,
   BOARD_GRADIENTS,
@@ -22,7 +14,6 @@ import {
   type BoardBackground,
   type NavbarTheme,
 } from '../utils/appearance';
-import { DialogTitle } from './ui/dialog';
 
 export type AppearanceView = 'background' | 'navbar';
 
@@ -39,7 +30,7 @@ const Selected = () => (
 );
 
 // Navbarens två rader i miniatyr, med textfärgen den får ihop med boardens bakgrund
-const NavbarPreview = ({ appearance, themeKey }: { appearance: Appearance; themeKey: string }) => {
+export const NavbarPreview = ({ appearance, themeKey }: { appearance: Appearance; themeKey: string }) => {
   const theme = navbarTheme(themeKey);
   const color = navbarTextColor(boardBackground(appearance.background), theme);
   return (
@@ -69,55 +60,20 @@ const CustomColor = ({ value, selected, onChange }: { value: string; selected: b
   </label>
 );
 
-type SettingButtonProps = {
-  Icon: ComponentType<SVGProps<SVGSVGElement>>;
-  label: string;
-  preview: ReactNode;
-  onClick: () => void;
-};
-
-const SettingButton = ({ Icon, label, preview, onClick }: SettingButtonProps) => (
-  <button
-    type="button"
-    onClick={onClick}
-    className="flex items-center gap-3 rounded-md px-2 py-2 text-left text-sm hover:bg-jira-hover focus-visible:outline-2 focus-visible:outline-jira-focus"
-  >
-    <Icon className="size-5 shrink-0 text-jira-secondary" aria-hidden />
-    <span className="flex-1 font-medium">{label}</span>
-    {preview}
-    <ChevronRightIcon className="size-4 shrink-0 text-jira-secondary" aria-hidden />
-  </button>
+// Rubrik på en panel i kontomenyn; tillbaka-pilen bara på mobil, där panelen ersätter menyn
+export const PanelHeader = ({ title, onBack }: { title: string; onBack: () => void }) => (
+  <div className="relative flex min-h-7 items-center justify-center">
+    <button
+      type="button"
+      onClick={onBack}
+      className="absolute left-0 rounded-md p-1 text-jira-secondary hover:bg-jira-hover md:hidden"
+      aria-label="Back to the menu"
+    >
+      <ChevronLeftIcon className="size-5" aria-hidden />
+    </button>
+    <h2 className="text-sm font-semibold text-jira-secondary">{title}</h2>
+  </div>
 );
-
-// Account-dialogens Settings: knappar till de två väljarna
-export function AppearanceSettings({ appearance, onOpen }: { appearance: Appearance; onOpen: (view: AppearanceView) => void }) {
-  return (
-    <section className="flex flex-col gap-1">
-      <h3 className="mb-1 flex items-center gap-1.5 text-sm font-semibold">
-        <Cog6ToothIcon className="size-4" aria-hidden />
-        Settings
-      </h3>
-      <SettingButton
-        Icon={PhotoIcon}
-        label="Board background"
-        preview={
-          <span
-            className="h-6 w-10 shrink-0 rounded"
-            style={{ background: backgroundSwatch(boardBackground(appearance.background)) }}
-            aria-hidden
-          />
-        }
-        onClick={() => onOpen('background')}
-      />
-      <SettingButton
-        Icon={Bars2Icon}
-        label="Navbar colour"
-        preview={<NavbarPreview appearance={appearance} themeKey={appearance.navbar} />}
-        onClick={() => onOpen('navbar')}
-      />
-    </section>
-  );
-}
 
 type PickerProps = {
   view: AppearanceView;
@@ -126,7 +82,8 @@ type PickerProps = {
   onBack: () => void;
 };
 
-// En väljare i dialogen, med tillbaka-pil som i Trello. Valet gäller direkt
+// En väljare i kontomenyn. Desktop: en panel till vänster om menyn (som Trellos "Tema").
+// Mobil: i menyns ställe, med tillbaka-pil. Valet gäller direkt
 export function AppearancePicker({ view, appearance, onChange, onBack }: PickerProps) {
   const backgroundButton = (b: BoardBackground, sizeClass: string) => (
     <button
@@ -159,17 +116,7 @@ export function AppearancePicker({ view, appearance, onChange, onBack }: PickerP
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="relative flex items-center justify-center">
-        <button
-          type="button"
-          onClick={onBack}
-          className="absolute left-0 rounded-md p-1 text-jira-secondary hover:bg-jira-hover"
-          aria-label="Back to account"
-        >
-          <ChevronLeftIcon className="size-5" aria-hidden />
-        </button>
-        <DialogTitle className="text-base">{view === 'background' ? 'Board background' : 'Navbar colour'}</DialogTitle>
-      </div>
+      <PanelHeader title={view === 'background' ? 'Board background' : 'Navbar colour'} onBack={onBack} />
 
       {view === 'background' ? (
         <>
