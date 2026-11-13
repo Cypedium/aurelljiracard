@@ -1,10 +1,15 @@
 "use client";
 
+import { useLayoutEffect } from "react";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import { Toaster } from "./components/ui/sonner";
+import { applyAppearance, loadAppearance } from "./utils/appearanceStore";
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
+  // Sparat utseende (boardens bakgrund, navbarens färg) före första ritningen i webbläsaren
+  useLayoutEffect(() => applyAppearance(loadAppearance()), []);
+
   return (
     <>
       <Navbar />
