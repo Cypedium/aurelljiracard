@@ -1,4 +1,4 @@
-import { contrastRatio, readableTextColor } from "./boardLayout";
+import { HEX_COLOR, contrastRatio, readableTextColor } from "./boardLayout";
 
 // Utseende (boardens bakgrund och navbarens färg). Sparas per webbläsare, som dolda listor
 export const APPEARANCE_STORAGE_KEY = "appearance";
@@ -7,7 +7,18 @@ export const APPEARANCE_STORAGE_KEY = "appearance";
 export type BoardBackground = { key: string; name: string; from: string; via: string; to: string; text: string };
 // top: navbarens översta rad, sub: raden under (lite mörkare)
 export type NavbarTheme = { key: string; name: string; top: string; sub: string };
+// background/navbar: ett förval (key) eller en egen färg (#rrggbb, gemener)
 export type Appearance = { background: string; navbar: string };
+
+// Blandar två #rrggbb-färger; amount 0 = a, 1 = b
+export const mixHex = (a: string, b: string, amount: number): string => {
+  const channel = (hex: string, i: number) => parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16);
+  return `#${[0, 1, 2]
+    .map((i) => Math.round(channel(a, i) + (channel(b, i) - channel(a, i)) * amount).toString(16).padStart(2, "0"))
+    .join("")}`;
+};
+
+export const isCustomColor = (value: unknown): value is string => typeof value === "string" && HEX_COLOR.test(value);
 
 const solid = (key: string, name: string, color: string, text: string): BoardBackground => ({
   key,
@@ -46,8 +57,8 @@ export const BOARD_COLORS: BoardBackground[] = [
 
 export const BOARD_BACKGROUNDS = [...BOARD_GRADIENTS, ...BOARD_COLORS];
 
-// Två gråtoner per tema; det första är navbarens ursprungliga (Tailwinds gray-600/700)
-export const NAVBAR_THEMES: NavbarTheme[] = [
+// Två toner per tema (raden under är mörkare); det första är navbarens ursprungliga (Tailwinds gray-600/700)
+export const NAVBAR_GREYS: NavbarTheme[] = [
   { key: "grey", name: "Grey", top: "#4a5565", sub: "#364153" },
   { key: "slate", name: "Slate", top: "#45556c", sub: "#314158" },
   { key: "zinc", name: "Zinc", top: "#52525c", sub: "#3f3f46" },
@@ -55,23 +66,46 @@ export const NAVBAR_THEMES: NavbarTheme[] = [
   { key: "charcoal", name: "Charcoal", top: "#27272a", sub: "#18181b" },
 ];
 
-export const DEFAULT_APPEARANCE: Appearance = { background: BOARD_GRADIENTS[0].key, navbar: NAVBAR_THEMES[0].key };
+export const NAVBAR_COLORS: NavbarTheme[] = [
+  { key: "navy", name: "Navy", top: "#1c2b41", sub: "#101a2a" },
+  { key: "blue", name: "Blue", top: "#0c66e4", sub: "#0055cc" },
+  { key: "teal", name: "Teal", top: "#227d9b", sub: "#206a83" },
+  { key: "green", name: "Green", top: "#216e4e", sub: "#164b35" },
+  { key: "purple", name: "Purple", top: "#6e5dc6", sub: "#5e4db2" },
+  { key: "pink", name: "Pink", top: "#ae4787", sub: "#943d73" },
+  { key: "red", name: "Red", top: "#ae2e24", sub: "#8f231a" },
+  { key: "orange", name: "Orange", top: "#a54800", sub: "#873800" },
+];
+
+export const NAVBAR_THEMES = [...NAVBAR_GREYS, ...NAVBAR_COLORS];
+
+export const DEFAULT_APPEARANCE: Appearance = { background: BOARD_GRADIENTS[0].key, navbar: NAVBAR_GREYS[0].key };
 
 // Okända eller saknade val (gammal eller ändrad localStorage) blir standard
 export const normalizeAppearance = (raw: unknown): Appearance => {
   const value = (raw ?? {}) as Partial<Record<keyof Appearance, unknown>>;
+  const pick = (raw: unknown, presets: { key: string }[], fallback: string) =>
+    isCustomColor(raw) ? raw.toLowerCase() : presets.some((p) => p.key === raw) ? (raw as string) : fallback;
   return {
-    background: BOARD_BACKGROUNDS.some((b) => b.key === value.background)
-      ? (value.background as string)
-      : DEFAULT_APPEARANCE.background,
-    navbar: NAVBAR_THEMES.some((n) => n.key === value.navbar) ? (value.navbar as string) : DEFAULT_APPEARANCE.navbar,
+    background: pick(value.background, BOARD_BACKGROUNDS, DEFAULT_APPEARANCE.background),
+    navbar: pick(value.navbar, NAVBAR_THEMES, DEFAULT_APPEARANCE.navbar),
   };
 };
 
-export const boardBackground = (key: string): BoardBackground =>
-  BOARD_BACKGROUNDS.find((b) => b.key === key) ?? BOARD_GRADIENTS[0];
+// Egen färg: enfärgad bakgrund; navbarens text blir en ljus ton av den
+const CUSTOM_TEXT_TINT = 0.6;
+// Egen navbarfärg: raden under är så här mycket mörkare
+const CUSTOM_SUB_SHADE = 0.25;
 
-export const navbarTheme = (key: string): NavbarTheme => NAVBAR_THEMES.find((n) => n.key === key) ?? NAVBAR_THEMES[0];
+export const boardBackground = (value: string): BoardBackground =>
+  isCustomColor(value)
+    ? solid(value, "Custom", value, mixHex(value, "#ffffff", CUSTOM_TEXT_TINT))
+    : (BOARD_BACKGROUNDS.find((b) => b.key === value) ?? BOARD_GRADIENTS[0]);
+
+export const navbarTheme = (value: string): NavbarTheme =>
+  isCustomColor(value)
+    ? { key: value, name: "Custom", top: value, sub: mixHex(value, "#000000", CUSTOM_SUB_SHADE) }
+    : (NAVBAR_THEMES.find((n) => n.key === value) ?? NAVBAR_GREYS[0]);
 
 // Navbarens text följer boardens färg, utom när den är för lik navbaren för att läsas: då vit eller mörk
 export const NAV_TEXT_MIN_CONTRAST = 3;

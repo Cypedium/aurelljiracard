@@ -8,6 +8,7 @@ import {
   NAVBAR_THEMES,
   NAV_TEXT_MIN_CONTRAST,
   appearanceVars,
+  mixHex,
   boardBackground,
   navbarTextColor,
   navbarTheme,
@@ -53,6 +54,30 @@ describe("appearance", () => {
     });
     expect(boardBackground("nope")).toBe(BOARD_GRADIENTS[0]);
     expect(navbarTheme("nope")).toBe(NAVBAR_THEMES[0]);
+    expect(navbarTheme("#zzzzzz")).toBe(NAVBAR_THEMES[0]);
+  });
+
+  it("accepts any custom colour for the background and the navbar", () => {
+    expect(normalizeAppearance({ background: "#FF00AA", navbar: "#123456" })).toEqual({
+      background: "#ff00aa",
+      navbar: "#123456",
+    });
+    expect(normalizeAppearance({ background: "#fff", navbar: "crimson" })).toEqual(DEFAULT_APPEARANCE);
+    expect(boardBackground("#ff00aa")).toMatchObject({ from: "#ff00aa", via: "#ff00aa", to: "#ff00aa" });
+    expect(boardBackground("#ff00aa").text).toBe(mixHex("#ff00aa", "#ffffff", 0.6));
+    expect(navbarTheme("#123456")).toMatchObject({ top: "#123456", sub: mixHex("#123456", "#000000", 0.25) });
+  });
+
+  it("mixes hex colours", () => {
+    expect(mixHex("#000000", "#ffffff", 0)).toBe("#000000");
+    expect(mixHex("#000000", "#ffffff", 1)).toBe("#ffffff");
+    expect(mixHex("#000000", "#ffffff", 0.5)).toBe("#808080");
+  });
+
+  it("uses readable text when the board and a coloured navbar are the same colour", () => {
+    const pink = navbarTheme("#cd5a91");
+    expect(contrastRatio(navbarTextColor(boardBackground("#cd5a91"), pink), pink.top)).toBeGreaterThanOrEqual(3);
+    expect(navbarTextColor(boardBackground("#ffffff"), navbarTheme("#ffffff"))).toBe("#172b4d");
   });
 
   it("colours the navbar text like the board, unless it is too close to the navbar", () => {
