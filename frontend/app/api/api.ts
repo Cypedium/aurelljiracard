@@ -1,5 +1,6 @@
 import axios from "axios";
 import { toast } from "sonner";
+import { logError } from "../utils/apiError";
 import { clearSession, getAccessToken, getRefreshToken, saveTokens } from "../utils/session";
 import {
   LOADING_TOAST_DELAY_MS,
@@ -7,6 +8,7 @@ import {
   createLoadingTracker,
   loadingToastText,
 } from "../utils/loadingToast";
+import { ROUTES } from "../utils/routes";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -61,7 +63,7 @@ const handleResponseError = async (error: any) => {
 
       const refreshToken = getRefreshToken();
       if (!refreshToken) {
-        window.location.href = "/login";
+        window.location.href = ROUTES.login;
         return Promise.reject(error);
       }
 
@@ -99,13 +101,13 @@ const handleResponseError = async (error: any) => {
 
       } catch (refreshError) {
         // Bara meddelandet: axios-felet innehåller requesten, med refresh-tokenet
-        console.error("Refresh token failed:", (refreshError as Error).message);
+        logError("Refresh token failed", refreshError);
 
         processQueue(refreshError, null);
 
         // Tokens ogiltiga → logga ut (även användarnamnet)
         clearSession();
-        window.location.href = "/login";
+        window.location.href = ROUTES.login;
 
         return Promise.reject(refreshError);
 

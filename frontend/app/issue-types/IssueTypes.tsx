@@ -5,10 +5,10 @@ import { TrashIcon } from '@heroicons/react/16/solid';
 import { deleteIssueType, getCards, getIssueTypes } from '../api/endpoints';
 import { removeIssueType } from '../cards/useIssueTypes';
 import { useBoards } from '../cards/useBoards';
-import { apiErrorMessage } from '../utils/apiError';
+import { reportError } from '../utils/apiError';
 import { BOARD_ACTIONS, onBoardAction } from '../utils/boardActions';
 import { countCardsByType, DEFAULT_CARD_TYPE, MAX_ISSUE_TYPES, normalizeIssueTypes, type IssueType } from '../utils/cardType';
-import { TABLE_CELL_CLASS as TD_CLASS, TABLE_HEAD_CLASS as TH_CLASS, TABLE_THEAD_CLASS, TABLE_ROW_CLASS, TABLE_WRAPPER_CLASS } from '../utils/styles';
+import { TABLE_CELL_CLASS as TD_CLASS, TABLE_HEAD_CLASS as TH_CLASS, TABLE_THEAD_CLASS, TABLE_ROW_CLASS, TABLE_WRAPPER_CLASS, TABLE_ACTION_CLASS as ACTION_CLASS } from '../utils/styles';
 import IssueTypeIcon from '../components/IssueTypeIcon';
 import NewIssueTypeDialog from '../components/NewIssueTypeDialog';
 import TableSkeleton from '../components/TableSkeleton';
@@ -22,9 +22,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '../components/ui/alert-dialog';
-
-const ACTION_CLASS =
-  'rounded-[3px] p-1.5 text-jira-secondary hover:bg-jira-neutral disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent';
 
 // Boardens admin: boardens ärendetyper med antal kort. Nya läggs till här eller i kortformuläret; oanvända kan tas bort
 export default function IssueTypes() {
@@ -40,9 +37,8 @@ export default function IssueTypes() {
       const [typesRes, cardsRes] = await Promise.all([getIssueTypes(boardId), getCards(boardId)]);
       setTypes(normalizeIssueTypes(typesRes.data));
       setCardCounts(countCardsByType(cardsRes.data || []));
-    } catch (err: any) {
-      console.error('Error fetching issue types:', err.message);
-      toast.error(apiErrorMessage(err, 'Could not load issue types.'));
+    } catch (err) {
+      reportError('Error fetching issue types', err, 'Could not load issue types.');
       setTypes([]);
     }
   }, [boardId]);
@@ -58,9 +54,8 @@ export default function IssueTypes() {
       setTypes((prev) => prev?.filter((t) => t.key !== type.key) ?? null);
       removeIssueType(type.key);
       toast.success(`Issue type ${type.label} deleted.`);
-    } catch (err: any) {
-      console.error('Error deleting issue type:', err.message);
-      toast.error(apiErrorMessage(err, 'Could not delete issue type.'));
+    } catch (err) {
+      reportError('Error deleting issue type', err, 'Could not delete issue type.');
     }
   };
 

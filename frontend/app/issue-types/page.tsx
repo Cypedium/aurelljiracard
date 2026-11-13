@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import Layout from "../components/Layout";
 import IssueTypes from "./IssueTypes";
 import { useBoards } from "../cards/useBoards";
+import { ROUTES } from "../utils/routes";
 
 export default function IssueTypesPage() {
   const router = useRouter();
@@ -11,7 +12,7 @@ export default function IssueTypesPage() {
   const { current, loaded, boardAdmin: allowed } = useBoards();
 
   useEffect(() => {
-    if (loaded && !allowed) router.replace("/cards");
+    if (loaded && !allowed) router.replace(ROUTES.board);
   }, [loaded, allowed, router]);
 
   return (

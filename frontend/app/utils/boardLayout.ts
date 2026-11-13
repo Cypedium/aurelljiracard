@@ -119,7 +119,7 @@ export const readableTextColor = (background: string): string =>
   contrastRatio(background, DARK_TEXT) >= contrastRatio(background, LIGHT_TEXT) ? DARK_TEXT : LIGHT_TEXT;
 
 // Bara kortpositionerna används; äldre layouter har även cols och headers
-export const normalizeLayout = (raw: Partial<UserLayout>): UserLayout => ({ cards: raw.cards });
+export const normalizeLayout = (raw: unknown): UserLayout => ({ cards: (raw as Partial<UserLayout> | null)?.cards });
 
 // Layouten är en per användare, för alla boards hen är med på. När en board sparas ersätts dess kort
 // (boardCardIds) av next; positionerna för kort på andra boards behålls

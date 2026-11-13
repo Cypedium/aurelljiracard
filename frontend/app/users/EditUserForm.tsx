@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { updateUser, type PublicUser } from '../api/endpoints';
-import { apiErrorMessage, isConflictError } from '../utils/apiError';
+import { apiErrorMessage, isConflictError, logError } from '../utils/apiError';
 import { ROLES, type Role } from '../utils/session';
 import { changedUserFields, editUserSchema, type EditUserValues } from '../utils/userForm';
 import { FIELD_ERROR_CLASS, FORM_ITEM_CLASS, LABEL_CLASS, SECTION_PADDING } from '../utils/styles';
@@ -39,7 +39,7 @@ export default function EditUserForm({ user, isSelf, onSaved, onCancel }: EditUs
       const res = await updateUser(user._id, changes);
       onSaved(res.data);
     } catch (error) {
-      console.error('Update user error:', (error as Error).message);
+      logError('Update user error', error);
       // Upptaget namn (409) visas under fältet
       if (isConflictError(error)) {
         form.setError('username', { message: apiErrorMessage(error, 'Username already taken.') }, { shouldFocus: true });

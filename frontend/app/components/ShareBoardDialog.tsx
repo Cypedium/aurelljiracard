@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { TrashIcon } from '@heroicons/react/16/solid';
 import { createInvite, deleteInvite, getMembers, removeMember, type Board, type BoardMember } from '../api/endpoints';
 import { reloadBoards } from '../cards/useBoards';
-import { apiErrorMessage } from '../utils/apiError';
+import { reportError } from '../utils/apiError';
 import { avatarColor, avatarInitials } from '../utils/avatar';
 import { inviteUrl, isBoardAdmin } from '../utils/currentBoard';
 import { getUsername } from '../utils/session';
@@ -30,9 +30,8 @@ export default function ShareBoardDialog({ board, open, onClose }: Props) {
   const fetchMembers = useCallback(async () => {
     try {
       setMembers((await getMembers(board._id)).data);
-    } catch (err: any) {
-      console.error('Fetch members error:', err.message);
-      toast.error(apiErrorMessage(err, 'Could not load the members.'));
+    } catch (err) {
+      reportError('Fetch members error', err, 'Could not load the members.');
       setMembers([]);
     }
   }, [board._id]);
@@ -46,9 +45,8 @@ export default function ShareBoardDialog({ board, open, onClose }: Props) {
     setBusy(true);
     try {
       await action();
-    } catch (err: any) {
-      console.error('Share board error:', err.message);
-      toast.error(apiErrorMessage(err, fallback));
+    } catch (err) {
+      reportError('Share board error', err, fallback);
     } finally {
       setBusy(false);
     }

@@ -12,6 +12,7 @@ import GoogleButton from "./GoogleButton";
 import { Button } from "./ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "./ui/form";
 import { Input } from "./ui/input";
+import { ROUTES } from "../utils/routes";
 
 export default function LoginForm() {
   const form = useForm<LoginValues>({
@@ -24,7 +25,7 @@ export default function LoginForm() {
       const { data } = await loginUser({ username, password });
       // Inloggning ignorerar skiftläge; spara namnet som backend har det, annars matchar inte korten
       saveSession(tokenUsername(data.accessToken) ?? username, data.accessToken, data.refreshToken);
-      window.location.href = "/cards";
+      window.location.href = ROUTES.board;
     } catch (error) {
       // Backendens meddelande (t.ex. 401 "Invalid credentials."), annars nådde vi inte servern
       toast.error(apiErrorMessage(error, "Could not reach the server. Please try again."));
@@ -36,7 +37,7 @@ export default function LoginForm() {
     try {
       const { data } = await googleLogin(credential);
       saveSession(tokenUsername(data.accessToken) ?? "", data.accessToken, data.refreshToken);
-      window.location.href = "/cards";
+      window.location.href = ROUTES.board;
     } catch (error) {
       toast.error(apiErrorMessage(error, "Could not sign in with Google. Please try again."));
     }

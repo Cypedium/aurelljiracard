@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { createIssueType } from '../api/endpoints';
 import { useBoards } from '../cards/useBoards';
 import { addIssueType, useIssueTypes } from '../cards/useIssueTypes';
-import { apiErrorMessage, isConflictError } from '../utils/apiError';
+import { apiErrorMessage, isConflictError, logError } from '../utils/apiError';
 import { DUPLICATE_ERROR_TYPE, ISSUE_KEY_CHECK_DELAY_MS } from '../utils/cardForm';
 import {
   DUPLICATE_ISSUE_TYPE_MESSAGE,
@@ -80,7 +80,7 @@ export default function NewIssueTypeDialog({ open, onClose, onCreated }: Props) 
       toast.success(`Issue type ${res.data.label} added.`);
       onCreated(res.data);
     } catch (error) {
-      console.error('Create issue type error:', (error as Error).message);
+      logError('Create issue type error', error);
       if (isConflictError(error)) {
         showDuplicate(apiErrorMessage(error, DUPLICATE_ISSUE_TYPE_MESSAGE), true);
         return;

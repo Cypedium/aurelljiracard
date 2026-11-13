@@ -1,27 +1,18 @@
 'use client';
 import { useEffect, useState } from "react";
 import { COLLAPSED_STORAGE_KEY, normalizeCollapsed, toggleCollapsed, type CardStatus } from "../utils/boardLayout";
+import { readJson, writeJson } from "../utils/storage";
 
 // Ihopfällda listor visar bara en smal remsa. Sparas per webbläsare i localStorage
 export function useCollapsedLists() {
   const [collapsed, setCollapsed] = useState<CardStatus[]>([]);
 
-  useEffect(() => {
-    try {
-      setCollapsed(normalizeCollapsed(JSON.parse(localStorage.getItem(COLLAPSED_STORAGE_KEY) ?? "[]")));
-    } catch {
-      setCollapsed([]);
-    }
-  }, []);
+  useEffect(() => setCollapsed(readJson(COLLAPSED_STORAGE_KEY, normalizeCollapsed, [])), []);
 
   const toggleColumn = (key: CardStatus) => {
     const next = toggleCollapsed(collapsed, key);
     setCollapsed(next);
-    try {
-      localStorage.setItem(COLLAPSED_STORAGE_KEY, JSON.stringify(next));
-    } catch {
-      // Sparas inte, men fungerar tills sidan laddas om
-    }
+    writeJson(COLLAPSED_STORAGE_KEY, next);
   };
 
   return { collapsed, toggleColumn };

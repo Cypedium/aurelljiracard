@@ -1,13 +1,9 @@
-import { APPEARANCE_STORAGE_KEY, appearanceVars, normalizeAppearance, type Appearance } from "./appearance";
+import { APPEARANCE_STORAGE_KEY, DEFAULT_APPEARANCE, appearanceVars, normalizeAppearance, type Appearance } from "./appearance";
+import { readJson, writeJson } from "./storage";
 
 // Läser valet ur localStorage (standard om det saknas eller är trasigt)
-export const loadAppearance = (): Appearance => {
-  try {
-    return normalizeAppearance(JSON.parse(localStorage.getItem(APPEARANCE_STORAGE_KEY) ?? "null"));
-  } catch {
-    return normalizeAppearance(null);
-  }
-};
+export const loadAppearance = (): Appearance =>
+  readJson(APPEARANCE_STORAGE_KEY, normalizeAppearance, DEFAULT_APPEARANCE);
 
 // Sätter CSS-variablerna på <html>; de går före standardvärdena i root.css
 export const applyAppearance = (appearance: Appearance) => {
@@ -17,9 +13,5 @@ export const applyAppearance = (appearance: Appearance) => {
 
 export const saveAppearance = (appearance: Appearance) => {
   applyAppearance(appearance);
-  try {
-    localStorage.setItem(APPEARANCE_STORAGE_KEY, JSON.stringify(appearance));
-  } catch {
-    // Privat läge o.s.v.: valet gäller tills sidan laddas om
-  }
+  writeJson(APPEARANCE_STORAGE_KEY, appearance);
 };

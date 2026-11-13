@@ -12,6 +12,7 @@ import { AUTH_FORM_CLASS, FIELD_ERROR_CLASS, FORM_ITEM_CLASS, LABEL_CLASS, PASSW
 import { Button } from "./ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "./ui/form";
 import { Input } from "./ui/input";
+import { ROUTES } from "../utils/routes";
 
 export default function RegisterForm() {
   const router = useRouter();
@@ -30,7 +31,7 @@ export default function RegisterForm() {
 
       // Toastern ligger i layouten, så den syns kvar på /login
       toast.success(res.data.message);
-      router.push("/login");
+      router.push(ROUTES.login);
     } catch (err) {
       // Taget namn (409, även med annan skiftläge: "mike" när "Mike" finns) visas under fältet, som issue key
       if (isConflictError(err)) {

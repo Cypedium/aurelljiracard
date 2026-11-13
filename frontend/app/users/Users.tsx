@@ -4,12 +4,12 @@ import { toast } from 'sonner';
 import { PencilIcon, TrashIcon } from '@heroicons/react/16/solid';
 import { ArrowRightStartOnRectangleIcon } from '@heroicons/react/24/outline';
 import { deleteUser, getUsers, revokeUserSessions, type PublicUser } from '../api/endpoints';
-import { apiErrorMessage } from '../utils/apiError';
+import { reportError } from '../utils/apiError';
 import { avatarColor, avatarInitials } from '../utils/avatar';
 import { handleLogout } from '../utils/logout';
 import { getUsername } from '../utils/session';
 import { lastSeenLabel } from '../utils/presence';
-import { TABLE_CELL_CLASS as TD_CLASS, TABLE_HEAD_CLASS as TH_CLASS, TABLE_THEAD_CLASS, TABLE_ROW_CLASS, TABLE_WRAPPER_CLASS } from '../utils/styles';
+import { TABLE_CELL_CLASS as TD_CLASS, TABLE_HEAD_CLASS as TH_CLASS, TABLE_THEAD_CLASS, TABLE_ROW_CLASS, TABLE_WRAPPER_CLASS, TABLE_ACTION_CLASS as ACTION_CLASS } from '../utils/styles';
 import EditUserForm from './EditUserForm';
 import TableSkeleton from '../components/TableSkeleton';
 import { Dialog, DialogContent, DialogTitle } from '../components/ui/dialog';
@@ -24,9 +24,6 @@ import {
   AlertDialogTitle,
 } from '../components/ui/alert-dialog';
 
-const ACTION_CLASS =
-  'rounded-[3px] p-1.5 text-jira-secondary hover:bg-jira-neutral disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent';
-
 export default function Users() {
   const [users, setUsers] = useState<PublicUser[] | null>(null);
   const [editingUser, setEditingUser] = useState<PublicUser | null>(null);
@@ -38,9 +35,8 @@ export default function Users() {
       // Cards are per board now, so the admin can't count them; deleting a user with cards answers 409
       const usersRes = await getUsers();
       setUsers([...usersRes.data].sort((a, b) => a.username.localeCompare(b.username)));
-    } catch (err: any) {
-      console.error('Error fetching users:', err.message);
-      toast.error(apiErrorMessage(err, 'Could not load users.'));
+    } catch (err) {
+      reportError('Error fetching users', err, 'Could not load users.');
       setUsers([]);
     }
   }, []);
@@ -67,9 +63,8 @@ export default function Users() {
       await deleteUser(user._id);
       setUsers((prev) => prev?.filter((u) => u._id !== user._id) ?? null);
       toast.success(`${user.username} deleted.`);
-    } catch (err: any) {
-      console.error('Error deleting user:', err.message);
-      toast.error(apiErrorMessage(err, 'Could not delete user.'));
+    } catch (err) {
+      reportError('Error deleting user', err, 'Could not delete user.');
     }
   };
 
@@ -79,9 +74,8 @@ export default function Users() {
       // Backenden räknar dem som utloggade direkt
       setUsers((prev) => prev?.map((u) => (u._id === user._id ? { ...u, online: false } : u)) ?? null);
       toast.success(`${user.username} will be logged out within 15 minutes.`);
-    } catch (err: any) {
-      console.error('Error logging out user:', err.message);
-      toast.error(apiErrorMessage(err, 'Could not log out user.'));
+    } catch (err) {
+      reportError('Error logging out user', err, 'Could not log out user.');
     }
   };
 

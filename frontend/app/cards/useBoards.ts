@@ -2,8 +2,9 @@
 import { useEffect, useSyncExternalStore } from "react";
 import { toast } from "sonner";
 import { getBoards, joinBoard, type Board } from "../api/endpoints";
-import { apiErrorMessage } from "../utils/apiError";
+import { reportError } from "../utils/apiError";
 import { CURRENT_BOARD_KEY, PENDING_INVITE_KEY, isBoardAdmin, pickBoard } from "../utils/currentBoard";
+import { readText, removeStored, writeText } from "../utils/storage";
 import { getUsername, hasSession } from "../utils/session";
 
 // Användarens boards (den egna + de hen är medarbetare på) och den som visas, delade av navbaren och sidorna.
@@ -28,21 +29,7 @@ const subscribe = (listener: () => void) => {
   return () => listeners.delete(listener);
 };
 
-const readStorage = (storage: Storage, key: string): string | null => {
-  try {
-    return storage.getItem(key);
-  } catch {
-    return null;
-  }
-};
-
-const rememberBoard = (id: string) => {
-  try {
-    localStorage.setItem(CURRENT_BOARD_KEY, id);
-  } catch {
-    // Privat läge e.d.: valet gäller bara den här sidladdningen
-  }
-};
+const rememberBoard = (id: string) => writeText(CURRENT_BOARD_KEY, id);
 
 const setState = (boards: Board[], preferredId: string | null) => {
   const current = pickBoard(boards, preferredId);
@@ -53,16 +40,15 @@ const setState = (boards: Board[], preferredId: string | null) => {
 
 // En inbjudan som öppnades före inloggningen (sidan /invite/[token]) tas emot nu
 const acceptPendingInvite = async (): Promise<Board | null> => {
-  const token = readStorage(sessionStorage, PENDING_INVITE_KEY);
+  const token = readText(PENDING_INVITE_KEY, "session");
   if (!token) return null;
-  sessionStorage.removeItem(PENDING_INVITE_KEY);
+  removeStored(PENDING_INVITE_KEY, "session");
   try {
     const board = (await joinBoard(token)).data;
     toast.success(`You joined ${board.name}.`);
     return board;
-  } catch (err: any) {
-    console.error("Join board error:", err.message);
-    toast.error(apiErrorMessage(err, "Could not join the board."));
+  } catch (err) {
+    reportError("Join board error", err, "Could not join the board.");
     return null;
   }
 };
@@ -81,10 +67,9 @@ const load = async (force = false) => {
     const joined = await acceptPendingInvite();
     const res = await getBoards();
     loadedFor = user;
-    setState(res.data || [], joined?._id ?? state.current?._id ?? readStorage(localStorage, CURRENT_BOARD_KEY));
-  } catch (err: any) {
-    console.error("Error fetching boards:", err.message);
-    toast.error(apiErrorMessage(err, "Could not load your boards."), { id: "boards" });
+    setState(res.data || [], joined?._id ?? state.current?._id ?? readText(CURRENT_BOARD_KEY));
+  } catch (err) {
+    reportError("Error fetching boards", err, "Could not load your boards.", "boards");
   } finally {
     loading = false;
   }

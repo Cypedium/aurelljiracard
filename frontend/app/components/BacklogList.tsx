@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { PencilIcon, TrashIcon } from '@heroicons/react/16/solid';
 import { deleteCard, getCards, updateCardStatus, type Card } from '../api/endpoints';
 import { CardFormDialog, DeleteCardDialog } from '../cards/board/CardDialogs';
-import { apiErrorMessage } from '../utils/apiError';
+import { reportError } from '../utils/apiError';
 import { avatarColor, avatarInitials } from '../utils/avatar';
 import { backlogCards } from '../utils/backlog';
 import { DEFAULT_HEADERS } from '../utils/boardLayout';
@@ -46,9 +46,8 @@ export default function BacklogList({ refreshKey = 0, onMoved }: BacklogListProp
     try {
       const res = await getCards(boardId);
       setCards(backlogCards(res.data || []));
-    } catch (err: any) {
-      console.error('Error fetching backlog:', err.message);
-      toast.error(apiErrorMessage(err, 'Could not load the backlog.'));
+    } catch (err) {
+      reportError('Error fetching backlog', err, 'Could not load the backlog.');
       setCards([]);
     }
   }, [boardId]);
@@ -65,9 +64,8 @@ export default function BacklogList({ refreshKey = 0, onMoved }: BacklogListProp
       setCards((prev) => prev?.filter((c) => c._id !== card._id) ?? null);
       toast.success(`${card.productId} moved to the board and assigned to you.`);
       onMoved?.(res.data);
-    } catch (err: any) {
-      console.error('Error moving card:', err.message);
-      toast.error(apiErrorMessage(err, 'Could not move card.'));
+    } catch (err) {
+      reportError('Error moving card', err, 'Could not move card.');
     } finally {
       setMovingId(null);
     }
@@ -84,9 +82,8 @@ export default function BacklogList({ refreshKey = 0, onMoved }: BacklogListProp
     try {
       await deleteCard(boardId, id);
       setCards((prev) => prev?.filter((c) => c._id !== id) ?? null);
-    } catch (err: any) {
-      console.error('Error deleting card:', err.message);
-      toast.error(apiErrorMessage(err, 'Could not delete card.'));
+    } catch (err) {
+      reportError('Error deleting card', err, 'Could not delete card.');
     }
   };
 

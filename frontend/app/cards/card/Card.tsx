@@ -19,7 +19,7 @@ import {
   takenIssueKeys,
   type CardFormValues,
 } from '../../utils/cardForm';
-import { apiErrorMessage, isConflictError } from '../../utils/apiError';
+import { apiErrorMessage, isConflictError, logError, reportError } from '../../utils/apiError';
 import { formatDate } from '../../utils/date';
 import { FIELD_ERROR_CLASS, FORM_ITEM_CLASS, LABEL_CLASS, SECTION_PADDING } from '../../utils/styles';
 import { BACKLOG_STATUS, type AnyCardStatus } from '../../utils/backlog';
@@ -30,6 +30,7 @@ import { Button } from '../../components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../../components/ui/form';
 import { Input } from '../../components/ui/input';
 import { Textarea } from '../../components/ui/textarea';
+import { ROUTES } from '../../utils/routes';
 
 type CardProps = {
   // Set when editing an existing card; omitted on the create page
@@ -61,7 +62,7 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
     if (!boardId) return;
     getCards(boardId)
       .then((res) => setTakenKeys(takenIssueKeys(res.data || [], card?._id)))
-      .catch((err) => console.error('Fetch issue keys error:', err.message));
+      .catch((err) => logError('Fetch issue keys error', err));
   }, [boardId, card?._id]);
 
   // Boardens listor till dropdownen bredvid Issue type. Kortet flyttas när man sparar
@@ -71,7 +72,7 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
     if (!boardId) return;
     getColumns(boardId)
       .then((res) => setLists(normalizeColumns(res.data)))
-      .catch((err) => console.error('Fetch lists error:', err.message));
+      .catch((err) => logError('Fetch lists error', err));
   }, [boardId]);
   // null = inte ändrad: kortet stannar där det är (nytt kort: listan det skapas i)
   const [movedTo, setMovedTo] = useState<CardStatus | null>(null);
@@ -120,8 +121,7 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
             saved = (await updateCardStatus(boardId, card._id, movedTo)).data;
           } catch (error) {
             // Ändringarna är sparade, bara flytten misslyckades
-            console.error('Move error:', (error as Error).message);
-            toast.error(apiErrorMessage(error, 'Card saved, but it could not be moved.'));
+            reportError('Move error', error, 'Card saved, but it could not be moved.');
             onSaved?.(saved);
             return;
           }
@@ -129,7 +129,7 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
         onSaved?.(saved);
         toast.success('Card updated.');
       } catch (error) {
-        console.error('Update error:', (error as Error).message);
+        logError('Update error', error);
         showError(error, 'Failed to save card.', fields.productId);
       }
       return;
@@ -147,10 +147,10 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
       // Toastern ligger i layouten, så den syns kvar efter navigeringen
       toast.success(res.data.message || 'Card submitted!');
       form.reset(EMPTY_CARD_FORM);
-      router.push("/");
+      router.push(ROUTES.home);
 
     } catch (error) {
-      console.error('Submission error:', (error as Error).message);
+      logError('Submission error', error);
       showError(error, 'Failed to submit card.', fields.productId);
     }
   };

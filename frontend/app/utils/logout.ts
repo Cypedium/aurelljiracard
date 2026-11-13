@@ -1,5 +1,7 @@
 import { logoutUser } from "../api/endpoints";
+import { logError } from "./apiError";
 import { clearSession, getRefreshToken } from "./session";
+import { ROUTES } from "./routes";
 
 export const handleLogout = async () => {
   const refreshToken = getRefreshToken();
@@ -9,9 +11,9 @@ export const handleLogout = async () => {
     if (refreshToken) await logoutUser(refreshToken);
   } catch (err) {
     // Bara meddelandet: axios-felet innehåller requesten, med refresh-tokenet
-    console.error("Logout request failed:", (err as Error).message);
+    logError("Logout request failed", err);
   } finally {
     clearSession();
-    window.location.href = "/login";
+    window.location.href = ROUTES.login;
   }
 };

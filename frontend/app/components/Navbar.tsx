@@ -25,10 +25,8 @@ import {
   ViewColumnsIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
+import { ROUTES } from '../utils/routes';
 
-const BOARD_PATH = '/cards';
-const BACKLOG_PATH = '/backlog';
-const ISSUE_TYPES_PATH = '/issue-types';
 // Länk med ikon före texten (som Trellos sidomeny); ljusare grå bakgrund vid hovring, som knapparna i rad två
 const NAV_LINK_CLASS =
   'flex items-center gap-2 rounded-md px-2 py-1 transition-colors hover:bg-white/10 focus-visible:bg-white/10';
@@ -74,10 +72,10 @@ const Navbar = () => {
     setAdmin(isAdmin());
   }, [pathname]);
 
-  const logoHref = isLoggedIn ? BOARD_PATH : '/';
-  const onBoard = isLoggedIn && pathname === BOARD_PATH;
-  const onBacklog = isLoggedIn && pathname === BACKLOG_PATH;
-  const onIssueTypes = isLoggedIn && boardAdmin && pathname === ISSUE_TYPES_PATH;
+  const logoHref = isLoggedIn ? ROUTES.board : ROUTES.home;
+  const onBoard = isLoggedIn && pathname === ROUTES.board;
+  const onBacklog = isLoggedIn && pathname === ROUTES.backlog;
+  const onIssueTypes = isLoggedIn && boardAdmin && pathname === ROUTES.issueTypes;
 
   // Rad tvås knappar för aktuell sida. Bara boardens admin lägger till / tar bort kolumner (backend nekar andra)
   const subActions: SubAction[] = [
@@ -179,8 +177,8 @@ const Navbar = () => {
               <li onClick={() => setMenuOpen(false)}>
                 <Link
                   ref={boardLinkRef}
-                  href={BOARD_PATH}
-                  aria-current={pathname === BOARD_PATH ? 'page' : undefined}
+                  href={ROUTES.board}
+                  aria-current={pathname === ROUTES.board ? 'page' : undefined}
                   className={`${NAV_LINK_CLASS} underline-offset-8 aria-[current=page]:underline`}
                 >
                   <ViewColumnsIcon className={NAV_ICON_CLASS} aria-hidden />
@@ -191,8 +189,8 @@ const Navbar = () => {
               <li onClick={() => setMenuOpen(false)}>
                 <Link
                   ref={backlogLinkRef}
-                  href={BACKLOG_PATH}
-                  aria-current={pathname === BACKLOG_PATH ? 'page' : undefined}
+                  href={ROUTES.backlog}
+                  aria-current={pathname === ROUTES.backlog ? 'page' : undefined}
                   className={`${NAV_LINK_CLASS} underline-offset-8 aria-[current=page]:underline`}
                 >
                   <QueueListIcon className={NAV_ICON_CLASS} aria-hidden />
@@ -203,7 +201,7 @@ const Navbar = () => {
               {/* Bara för sajtens admin; backend nekar andra (403) */}
               {admin && (
                 <li onClick={() => setMenuOpen(false)}>
-                  <Link href="/users" className={NAV_LINK_CLASS}>
+                  <Link href={ROUTES.users} className={NAV_LINK_CLASS}>
                     <UsersIcon className={NAV_ICON_CLASS} aria-hidden />
                     Users
                   </Link>
@@ -214,8 +212,8 @@ const Navbar = () => {
                 <li onClick={() => setMenuOpen(false)}>
                   <Link
                     ref={issueTypesLinkRef}
-                    href={ISSUE_TYPES_PATH}
-                    aria-current={pathname === ISSUE_TYPES_PATH ? 'page' : undefined}
+                    href={ROUTES.issueTypes}
+                    aria-current={pathname === ROUTES.issueTypes ? 'page' : undefined}
                     className={`${NAV_LINK_CLASS} underline-offset-8 aria-[current=page]:underline`}
                   >
                     <TagIcon className={NAV_ICON_CLASS} aria-hidden />
@@ -253,10 +251,10 @@ const Navbar = () => {
           ) : (
             <>
               <li key="register" onClick={() => setMenuOpen(false)}>
-                <Link href="/register" className={NAV_LINK_CLASS}>Register User</Link>
+                <Link href={ROUTES.register} className={NAV_LINK_CLASS}>Register User</Link>
               </li>
               <li key="login" onClick={() => setMenuOpen(false)}>
-                <Link href="/login" className={NAV_LINK_CLASS}>Login</Link>
+                <Link href={ROUTES.login} className={NAV_LINK_CLASS}>Login</Link>
               </li>
             </>
           )}
