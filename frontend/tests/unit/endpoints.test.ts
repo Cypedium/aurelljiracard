@@ -24,7 +24,6 @@ describe("API endpoints", () => {
     ["loginUser", () => endpoints.loginUser({ username: "a", password: "secret1" }), "post", "/auth/login"],
     ["googleLogin", () => endpoints.googleLogin("cred"), "post", "/auth/google"],
     ["logoutUser", () => endpoints.logoutUser("rt"), "post", "/auth/logout"],
-    ["refreshToken", () => endpoints.refreshToken("rt"), "post", "/auth/refresh"],
     ["getBoards", () => endpoints.getBoards(), "get", "/board"],
     ["createInvite", () => endpoints.createInvite(B), "post", "/board/b1/invite"],
     ["deleteInvite", () => endpoints.deleteInvite(B), "delete", "/board/b1/invite"],

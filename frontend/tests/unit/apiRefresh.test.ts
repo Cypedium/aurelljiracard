@@ -38,10 +38,13 @@ describe("failed token refresh", () => {
     const refreshError = new AxiosError("Request failed with status code 403", "ERR_BAD_REQUEST", {
       data: JSON.stringify({ refreshToken: "secret-refresh-token" }),
     } as InternalAxiosRequestConfig);
-    jest.spyOn(axios, "post").mockRejectedValueOnce(refreshError);
+    const refresh = jest.spyOn(axios, "post").mockRejectedValueOnce(refreshError);
     const log = jest.spyOn(console, "error").mockImplementation(() => {});
 
     await expect(api.get("/board")).rejects.toBe(refreshError);
+
+    // Förnyelsen går direkt med axios (inte via api, som annars skulle fånga sin egen 401)
+    expect(refresh).toHaveBeenCalledWith(expect.stringMatching(/\/auth\/refresh$/), { refreshToken: "secret-refresh-token" });
 
     expect(log).toHaveBeenCalledWith("Refresh token failed:", "Request failed with status code 403");
     expect(JSON.stringify(log.mock.calls)).not.toContain("secret-refresh-token");
