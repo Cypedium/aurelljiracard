@@ -8,7 +8,7 @@ import { useBoards } from '../cards/useBoards';
 import { reportError } from '../utils/apiError';
 import { BOARD_ACTIONS, onBoardAction } from '../utils/boardActions';
 import { countCardsByType, DEFAULT_CARD_TYPE, MAX_ISSUE_TYPES, normalizeIssueTypes, type IssueType } from '../utils/cardType';
-import { TABLE_CELL_CLASS as TD_CLASS, TABLE_HEAD_CLASS as TH_CLASS, TABLE_THEAD_CLASS, TABLE_ROW_CLASS, TABLE_WRAPPER_CLASS } from '../utils/styles';
+import { TABLE_CELL_CLASS as TD_CLASS, TABLE_HEAD_CLASS as TH_CLASS, TABLE_THEAD_CLASS, TABLE_ROW_CLASS, TABLE_WRAPPER_CLASS, TABLE_ACTION_CLASS as ACTION_CLASS } from '../utils/styles';
 import IssueTypeIcon from '../components/IssueTypeIcon';
 import NewIssueTypeDialog from '../components/NewIssueTypeDialog';
 import TableSkeleton from '../components/TableSkeleton';
@@ -23,8 +23,6 @@ import {
   AlertDialogTitle,
 } from '../components/ui/alert-dialog';
 
-const ACTION_CLASS =
-  'rounded-[3px] p-1.5 text-jira-secondary hover:bg-jira-neutral disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent';
 
 // Boardens admin: boardens ärendetyper med antal kort. Nya läggs till här eller i kortformuläret; oanvända kan tas bort
 export default function IssueTypes() {

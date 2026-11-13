@@ -9,7 +9,7 @@ import { avatarColor, avatarInitials } from '../utils/avatar';
 import { handleLogout } from '../utils/logout';
 import { getUsername } from '../utils/session';
 import { lastSeenLabel } from '../utils/presence';
-import { TABLE_CELL_CLASS as TD_CLASS, TABLE_HEAD_CLASS as TH_CLASS, TABLE_THEAD_CLASS, TABLE_ROW_CLASS, TABLE_WRAPPER_CLASS } from '../utils/styles';
+import { TABLE_CELL_CLASS as TD_CLASS, TABLE_HEAD_CLASS as TH_CLASS, TABLE_THEAD_CLASS, TABLE_ROW_CLASS, TABLE_WRAPPER_CLASS, TABLE_ACTION_CLASS as ACTION_CLASS } from '../utils/styles';
 import EditUserForm from './EditUserForm';
 import TableSkeleton from '../components/TableSkeleton';
 import { Dialog, DialogContent, DialogTitle } from '../components/ui/dialog';
@@ -24,8 +24,6 @@ import {
   AlertDialogTitle,
 } from '../components/ui/alert-dialog';
 
-const ACTION_CLASS =
-  'rounded-[3px] p-1.5 text-jira-secondary hover:bg-jira-neutral disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent';
 
 export default function Users() {
   const [users, setUsers] = useState<PublicUser[] | null>(null);

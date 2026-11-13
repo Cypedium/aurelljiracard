@@ -78,6 +78,10 @@ export const PASSWORD_STRENGTH_CLASS: Record<PasswordStrength, string> = {
 // Tabeller (Users, Backlog): vit ruta, rubrikrad med små grå versaler
 export const TABLE_WRAPPER_CLASS =
   "overflow-hidden rounded-lg bg-white shadow-[0_1px_1px_rgba(9,30,66,0.25),0_0_1px_rgba(9,30,66,0.31)]";
+
+// Ikonknapp i en tabellrad (Users, Issue types): redigera, ta bort, logga ut
+export const TABLE_ACTION_CLASS =
+  "rounded-[3px] p-1.5 text-jira-secondary hover:bg-jira-neutral disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent";
 // Tabellhuvudet har samma bakgrund som navbarens övre rad (bg-gray-600), med vit text
 export const TABLE_THEAD_CLASS = "bg-gray-600";
 export const TABLE_HEAD_CLASS = "px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-white";
