@@ -1,15 +1,32 @@
 // Inloggningen sparas i sessionStorage: den finns kvar vid omladdning men försvinner
-// när fönstret/fliken stängs (= utloggad). Se även clearSession i logout.ts
-export const SESSION_KEYS = ["accessToken", "refreshToken", "username"] as const;
+// när fönstret/fliken stängs (= utloggad). Läs och skriv bara via funktionerna här
+const ACCESS_TOKEN_KEY = "accessToken";
+const REFRESH_TOKEN_KEY = "refreshToken";
+const USERNAME_KEY = "username";
+export const SESSION_KEYS = [ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY, USERNAME_KEY] as const;
 
 // Äldre versioner sparade inloggningen i localStorage; ta bort den
 export const clearLegacySession = () => SESSION_KEYS.forEach((k) => localStorage.removeItem(k));
 
-// Minst en token finns → axios-interceptorn avgör resten
-export const hasSession = (): boolean =>
-  Boolean(sessionStorage.getItem("accessToken") || sessionStorage.getItem("refreshToken"));
+// Utloggning, eller när tokens inte längre går att förnya
+export const clearSession = () => {
+  SESSION_KEYS.forEach((k) => sessionStorage.removeItem(k));
+  clearLegacySession();
+};
 
-export const getUsername = (): string => sessionStorage.getItem("username") || "";
+export const getAccessToken = (): string | null => sessionStorage.getItem(ACCESS_TOKEN_KEY);
+export const getRefreshToken = (): string | null => sessionStorage.getItem(REFRESH_TOKEN_KEY);
+
+// Efter /auth/refresh: båda tokens byts (refresh-tokens är engångs)
+export const saveTokens = (accessToken: string, refreshToken: string) => {
+  sessionStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
+  sessionStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+};
+
+// Minst en token finns → axios-interceptorn avgör resten
+export const hasSession = (): boolean => Boolean(getAccessToken() || getRefreshToken());
+
+export const getUsername = (): string => sessionStorage.getItem(USERNAME_KEY) || "";
 
 // Samma roller som backend (server/utils/role.js)
 export const ROLES = ["user", "admin"] as const;
@@ -30,7 +47,7 @@ const tokenPayload = (accessToken: string): Record<string, unknown> => {
 
 // Rollen läses ur access-tokenet. Saknas eller ogiltig → "user"
 export const getRole = (): Role => {
-  const role = tokenPayload(sessionStorage.getItem("accessToken") || "").role;
+  const role = tokenPayload(getAccessToken() || "").role;
   return ROLES.includes(role as Role) ? (role as Role) : "user";
 };
 
@@ -43,9 +60,8 @@ export const tokenUsername = (accessToken: string): string | null => {
 export const isAdmin = (): boolean => getRole() === "admin";
 
 export const saveSession = (username: string, accessToken: string, refreshToken: string) => {
-  sessionStorage.setItem("username", username);
-  sessionStorage.setItem("accessToken", accessToken);
-  sessionStorage.setItem("refreshToken", refreshToken);
+  sessionStorage.setItem(USERNAME_KEY, username);
+  saveTokens(accessToken, refreshToken);
   clearLegacySession();
 };
 
