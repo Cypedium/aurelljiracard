@@ -30,6 +30,7 @@ import { Button } from '../../components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../../components/ui/form';
 import { Input } from '../../components/ui/input';
 import { Textarea } from '../../components/ui/textarea';
+import { ROUTES } from '../../utils/routes';
 
 type CardProps = {
   // Set when editing an existing card; omitted on the create page
@@ -146,7 +147,7 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
       // Toastern ligger i layouten, så den syns kvar efter navigeringen
       toast.success(res.data.message || 'Card submitted!');
       form.reset(EMPTY_CARD_FORM);
-      router.push("/");
+      router.push(ROUTES.home);
 
     } catch (error) {
       logError('Submission error', error);

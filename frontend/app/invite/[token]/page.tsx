@@ -9,6 +9,7 @@ import { reportError } from "../../utils/apiError";
 import { PENDING_INVITE_KEY } from "../../utils/currentBoard";
 import { hasSession } from "../../utils/session";
 import { writeText } from "../../utils/storage";
+import { ROUTES } from "../../utils/routes";
 
 type Status = "joining" | "login" | "failed";
 
@@ -33,7 +34,7 @@ export default function InvitePage() {
       .then((res) => {
         showJoinedBoard(res.data);
         toast.success(`You joined ${res.data.name}.`);
-        router.replace("/cards");
+        router.replace(ROUTES.board);
       })
       .catch((err) => {
         reportError("Join board error", err, "Could not join the board.");
@@ -50,10 +51,10 @@ export default function InvitePage() {
             <h1 className="text-lg font-semibold">You are invited to a board</h1>
             <p className="mt-2 text-sm text-jira-secondary">Log in or register, and you join the board automatically.</p>
             <div className="mt-4 flex justify-center gap-2">
-              <Link href="/login" className="rounded-[3px] bg-jira-primary px-3 py-1.5 text-sm font-medium text-white hover:bg-jira-primary-hover">
+              <Link href={ROUTES.login} className="rounded-[3px] bg-jira-primary px-3 py-1.5 text-sm font-medium text-white hover:bg-jira-primary-hover">
                 Log in
               </Link>
-              <Link href="/register" className="rounded-[3px] px-3 py-1.5 text-sm font-medium text-jira-primary hover:bg-jira-neutral">
+              <Link href={ROUTES.register} className="rounded-[3px] px-3 py-1.5 text-sm font-medium text-jira-primary hover:bg-jira-neutral">
                 Register
               </Link>
             </div>
@@ -63,7 +64,7 @@ export default function InvitePage() {
           <>
             <h1 className="text-lg font-semibold">The link does not work</h1>
             <p className="mt-2 text-sm text-jira-secondary">Ask the board&apos;s owner for a new invite link.</p>
-            <Link href="/cards" className="mt-4 inline-block text-sm font-medium text-jira-primary hover:underline">
+            <Link href={ROUTES.board} className="mt-4 inline-block text-sm font-medium text-jira-primary hover:underline">
               Go to your board
             </Link>
           </>

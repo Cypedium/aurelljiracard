@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import Layout from "../components/Layout";
 import Users from "./Users";
 import { isAdmin } from "../utils/session";
+import { ROUTES } from "../utils/routes";
 
 export default function UsersPage() {
   const router = useRouter();
@@ -12,7 +13,7 @@ export default function UsersPage() {
   // Bara för UI:t: backend nekar icke-admins själv (403)
   useEffect(() => {
     if (isAdmin()) setAllowed(true);
-    else router.replace("/cards");
+    else router.replace(ROUTES.board);
   }, [router]);
 
   return (

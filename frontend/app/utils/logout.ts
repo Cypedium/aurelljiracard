@@ -1,6 +1,7 @@
 import { logoutUser } from "../api/endpoints";
 import { logError } from "./apiError";
 import { clearSession, getRefreshToken } from "./session";
+import { ROUTES } from "./routes";
 
 export const handleLogout = async () => {
   const refreshToken = getRefreshToken();
@@ -13,6 +14,6 @@ export const handleLogout = async () => {
     logError("Logout request failed", err);
   } finally {
     clearSession();
-    window.location.href = "/login";
+    window.location.href = ROUTES.login;
   }
 };

@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import Card from "./Card";
 import BacklogList from "../../components/BacklogList";
 import { hasSession } from "../../utils/session";
+import { ROUTES } from "../../utils/routes";
 
 type Tab = "new" | "backlog";
 const TABS: { key: Tab; label: string }[] = [
@@ -18,7 +19,7 @@ export default function CardPage() {
 
   useEffect(() => {
     if (!hasSession()) {
-      router.replace("/"); // root tar hand om redirect till login
+      router.replace(ROUTES.home); // root tar hand om redirect till login
     } else {
       setAllowed(true); // visa formuläret
     }
@@ -50,7 +51,7 @@ export default function CardPage() {
       ) : (
         // Ett kort från backloggen hamnar i To Do och tilldelas dig; sedan till boarden
         <div className="mx-auto mb-6 w-full max-w-[640px] font-jira">
-          <BacklogList onMoved={() => router.push("/")} />
+          <BacklogList onMoved={() => router.push(ROUTES.home)} />
         </div>
       )}
     </div>

@@ -2,6 +2,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { hasSession } from "../utils/session";
+import { ROUTES } from "../utils/routes";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -11,7 +12,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     const checkAuth = () => {
       // ❌ Ingen token alls → användaren är inte inloggad
       if (!hasSession()) {
-        router.replace("/login");
+        router.replace(ROUTES.login);
         setIsAuthenticated(false);
         return;
       }

@@ -8,6 +8,7 @@ import {
   createLoadingTracker,
   loadingToastText,
 } from "../utils/loadingToast";
+import { ROUTES } from "../utils/routes";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -62,7 +63,7 @@ const handleResponseError = async (error: any) => {
 
       const refreshToken = getRefreshToken();
       if (!refreshToken) {
-        window.location.href = "/login";
+        window.location.href = ROUTES.login;
         return Promise.reject(error);
       }
 
@@ -106,7 +107,7 @@ const handleResponseError = async (error: any) => {
 
         // Tokens ogiltiga → logga ut (även användarnamnet)
         clearSession();
-        window.location.href = "/login";
+        window.location.href = ROUTES.login;
 
         return Promise.reject(refreshError);
 
