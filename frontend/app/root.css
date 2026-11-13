@@ -41,6 +41,11 @@
   --color-board-from: #1c2b41;
   --color-board-via: #1d4f91;
   --color-board-to: #2b7bb9;
+  /* Navbarens två rader och text. Board- och navbarfärgerna byts i Account → Settings
+     (app/utils/appearance.ts sätter variablerna på <html>); standardvärdena här ska matcha standardvalet där */
+  --color-nav-top: #4a5565;
+  --color-nav-sub: #364153;
+  --color-nav-text: #9cc8f5;
 }
 
 /* shadcn/ui-tokens (components/ui), mappade till Jira-färgerna ovan */
