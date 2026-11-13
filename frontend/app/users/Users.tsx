@@ -24,7 +24,6 @@ import {
   AlertDialogTitle,
 } from '../components/ui/alert-dialog';
 
-
 export default function Users() {
   const [users, setUsers] = useState<PublicUser[] | null>(null);
   const [editingUser, setEditingUser] = useState<PublicUser | null>(null);

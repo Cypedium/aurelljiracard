@@ -23,7 +23,6 @@ import {
   AlertDialogTitle,
 } from '../components/ui/alert-dialog';
 
-
 // Boardens admin: boardens ärendetyper med antal kort. Nya läggs till här eller i kortformuläret; oanvända kan tas bort
 export default function IssueTypes() {
   const boardId = useBoards().current?._id ?? null;
