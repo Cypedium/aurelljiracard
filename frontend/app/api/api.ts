@@ -1,5 +1,6 @@
 import axios from "axios";
 import { toast } from "sonner";
+import { clearSession, getAccessToken, getRefreshToken, saveTokens } from "../utils/session";
 import {
   LOADING_TOAST_DELAY_MS,
   LOADING_TOAST_ID,
@@ -21,7 +22,7 @@ const loadingTracker = createLoadingTracker(
   LOADING_TOAST_DELAY_MS
 );
 
-// ⭐ REQUEST INTERCEPTOR — lägg till accessToken automatiskt
+// Request interceptor: lägger till accessToken automatiskt
 api.interceptors.request.use(
   (config) => {
     const text = loadingToastText(config.url);
@@ -29,7 +30,7 @@ api.interceptors.request.use(
       loadingText = text;
       loadingTracker.start();
     }
-    const token = sessionStorage.getItem("accessToken");
+    const token = getAccessToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -38,7 +39,7 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// ⭐ RESPONSE INTERCEPTOR — hantera expired token + köhantering
+// Response interceptor: förnyar ett utgånget accessToken, med kö för samtidiga requests
 let isRefreshing = false;
 let failedQueue: any[] = [];
 
@@ -58,9 +59,8 @@ const handleResponseError = async (error: any) => {
     if (error.response?.status === 401 && !originalRequest._retry && !isAuthRequest) {
       originalRequest._retry = true;
 
-      const refreshToken = sessionStorage.getItem("refreshToken");
+      const refreshToken = getRefreshToken();
       if (!refreshToken) {
-        //console.warn("No refresh token — redirecting to login");
         window.location.href = "/login";
         return Promise.reject(error);
       }
@@ -85,9 +85,8 @@ const handleResponseError = async (error: any) => {
         const newAccessToken = res.data.accessToken;
         const newRefreshToken = res.data.refreshToken;
 
-        // ⭐ Uppdatera båda tokens
-        sessionStorage.setItem("accessToken", newAccessToken);
-        sessionStorage.setItem("refreshToken", newRefreshToken);
+        // Båda tokens byts (refresh-tokens är engångs)
+        saveTokens(newAccessToken, newRefreshToken);
 
         // Uppdatera default header
         api.defaults.headers.common.Authorization = `Bearer ${newAccessToken}`;
@@ -99,13 +98,13 @@ const handleResponseError = async (error: any) => {
         return api(originalRequest);
 
       } catch (refreshError) {
-        console.error("Refresh token failed:", refreshError);
+        // Bara meddelandet: axios-felet innehåller requesten, med refresh-tokenet
+        console.error("Refresh token failed:", (refreshError as Error).message);
 
         processQueue(refreshError, null);
 
-        // Tokens ogiltiga → logga ut
-        sessionStorage.removeItem("accessToken");
-        sessionStorage.removeItem("refreshToken");
+        // Tokens ogiltiga → logga ut (även användarnamnet)
+        clearSession();
         window.location.href = "/login";
 
         return Promise.reject(refreshError);

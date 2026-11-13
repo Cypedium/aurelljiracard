@@ -108,7 +108,11 @@ export function useBoardData(boardId: string) {
   const persistLayout = (next: UserLayout) => {
     const merged = { ...next, cards: mergeBoardPositions(userLayout.cards, next.cards, boardCardIds.current) };
     setUserLayout(merged);
-    localStorage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify(merged));
+    try {
+      localStorage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify(merged));
+    } catch {
+      // Privat läge eller fullt: sparas ändå till servern
+    }
     saveLayoutToServer(merged);
   };
 

@@ -1,19 +1,15 @@
 import { logoutUser } from "../api/endpoints";
-import { SESSION_KEYS, clearLegacySession } from "./session";
-
-export const clearSession = () => {
-  SESSION_KEYS.forEach((k) => sessionStorage.removeItem(k));
-  clearLegacySession();
-};
+import { clearSession, getRefreshToken } from "./session";
 
 export const handleLogout = async () => {
-  const refreshToken = sessionStorage.getItem("refreshToken");
+  const refreshToken = getRefreshToken();
 
   try {
     // Revokes the refresh token server-side
     if (refreshToken) await logoutUser(refreshToken);
   } catch (err) {
-    console.error("Logout request failed:", err);
+    // Bara meddelandet: axios-felet innehåller requesten, med refresh-tokenet
+    console.error("Logout request failed:", (err as Error).message);
   } finally {
     clearSession();
     window.location.href = "/login";

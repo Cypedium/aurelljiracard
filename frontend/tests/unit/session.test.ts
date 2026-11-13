@@ -1,5 +1,18 @@
 import { beforeEach, describe, expect, it } from "@jest/globals";
-import { canDeleteCard, canEditCard, getRole, getUsername, hasSession, isAdmin, saveSession, tokenUsername } from "../../app/utils/session";
+import {
+  canDeleteCard,
+  canEditCard,
+  clearSession,
+  getAccessToken,
+  getRefreshToken,
+  getRole,
+  getUsername,
+  hasSession,
+  isAdmin,
+  saveSession,
+  saveTokens,
+  tokenUsername,
+} from "../../app/utils/session";
 
 // Tests run in Node, so provide minimal in-memory sessionStorage and localStorage
 const memoryStorage = (map: Map<string, string>) => ({
@@ -44,6 +57,28 @@ describe("session", () => {
     saveSession("alice", "at", "rt");
 
     expect([...legacyStore.keys()]).toEqual(["user_layout"]);
+  });
+
+  it("saveTokens replaces both tokens and keeps the username", () => {
+    saveSession("alice", "at", "rt");
+    saveTokens("at2", "rt2");
+
+    expect(getAccessToken()).toBe("at2");
+    expect(getRefreshToken()).toBe("rt2");
+    expect(getUsername()).toBe("alice");
+  });
+
+  it("clearSession removes the tokens, the username and an old localStorage login", () => {
+    saveSession("alice", "at", "rt");
+    store.set("pending_invite", "tok");
+    legacyStore.set("accessToken", "old-at");
+
+    clearSession();
+
+    expect(hasSession()).toBe(false);
+    expect(getUsername()).toBe("");
+    expect([...store.keys()]).toEqual(["pending_invite"]);
+    expect(legacyStore.size).toBe(0);
   });
 
   it("counts a refresh token alone as a session", () => {
