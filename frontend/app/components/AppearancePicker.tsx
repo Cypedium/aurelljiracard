@@ -1,5 +1,5 @@
 'use client';
-import { CheckIcon, ChevronLeftIcon } from '@heroicons/react/24/outline';
+import { CheckIcon, ChevronLeftIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import {
   BOARD_COLORS,
   BOARD_GRADIENTS,
@@ -60,8 +60,20 @@ const CustomColor = ({ value, selected, onChange }: { value: string; selected: b
   </label>
 );
 
+// Stäng-krysset i övre högra hörnet på kontomenyn och dess paneler; stänger hela menyn
+export const CloseButton = ({ onClose, className = '' }: { onClose: () => void; className?: string }) => (
+  <button
+    type="button"
+    onClick={onClose}
+    className={`rounded-md p-1 text-jira-secondary hover:bg-jira-hover hover:text-jira-text ${className}`}
+    aria-label="Close menu"
+  >
+    <XMarkIcon className="size-5" aria-hidden />
+  </button>
+);
+
 // Rubrik på en panel i kontomenyn; tillbaka-pilen bara på mobil, där panelen ersätter menyn
-export const PanelHeader = ({ title, onBack }: { title: string; onBack: () => void }) => (
+export const PanelHeader = ({ title, onBack, onClose }: { title: string; onBack: () => void; onClose: () => void }) => (
   <div className="relative flex min-h-7 items-center justify-center">
     <button
       type="button"
@@ -72,6 +84,7 @@ export const PanelHeader = ({ title, onBack }: { title: string; onBack: () => vo
       <ChevronLeftIcon className="size-5" aria-hidden />
     </button>
     <h2 className="text-sm font-semibold text-jira-secondary">{title}</h2>
+    <CloseButton onClose={onClose} className="absolute right-0" />
   </div>
 );
 
@@ -80,11 +93,12 @@ type PickerProps = {
   appearance: Appearance;
   onChange: (appearance: Appearance) => void;
   onBack: () => void;
+  onClose: () => void;
 };
 
 // En väljare i kontomenyn. Desktop: en panel till vänster om menyn (som Trellos "Tema").
 // Mobil: i menyns ställe, med tillbaka-pil. Valet gäller direkt
-export function AppearancePicker({ view, appearance, onChange, onBack }: PickerProps) {
+export function AppearancePicker({ view, appearance, onChange, onBack, onClose }: PickerProps) {
   const backgroundButton = (b: BoardBackground, sizeClass: string) => (
     <button
       key={b.key}
@@ -116,7 +130,7 @@ export function AppearancePicker({ view, appearance, onChange, onBack }: PickerP
 
   return (
     <div className="flex flex-col gap-4">
-      <PanelHeader title={view === 'background' ? 'Board background' : 'Navbar colour'} onBack={onBack} />
+      <PanelHeader title={view === 'background' ? 'Board background' : 'Navbar colour'} onBack={onBack} onClose={onClose} />
 
       {view === 'background' ? (
         <>

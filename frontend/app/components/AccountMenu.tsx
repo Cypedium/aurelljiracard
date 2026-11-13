@@ -11,7 +11,7 @@ import { loadAppearance, saveAppearance } from '../utils/appearanceStore';
 import { avatarInitials } from '../utils/avatar';
 import { GOOGLE_CLIENT_ID } from '../utils/google';
 import { handleLogout } from '../utils/logout';
-import { AppearancePicker, NavbarPreview, PanelHeader, type AppearanceView } from './AppearancePicker';
+import { AppearancePicker, CloseButton, NavbarPreview, PanelHeader, type AppearanceView } from './AppearancePicker';
 import GoogleButton from './GoogleButton';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 
@@ -55,14 +55,17 @@ export default function AccountMenu({ username }: { username: string }) {
     setAppearance(next);
     saveAppearance(next);
   };
+  const close = () => {
+    setOpen(false);
+    setPanel(null);
+  };
   const togglePanel = (next: Panel) => setPanel((current) => (current === next ? null : next));
 
   const handleConnect = async (credential: string) => {
     try {
       await connectGoogle(credential);
       toast.success('Google account connected. You can now sign in with Google.');
-      setOpen(false);
-      setPanel(null);
+      close();
     } catch (error) {
       // T.ex. 409: Google-kontot hör redan till en annan användare
       toast.error(apiErrorMessage(error, 'Could not connect the Google account.'));
@@ -91,7 +94,10 @@ export default function AccountMenu({ username }: { username: string }) {
         className="relative w-[min(300px,calc(100vw-24px))] p-0 font-jira text-jira-text"
       >
         <div className={`${panel ? 'hidden md:block' : ''} py-2`}>
-          <h2 className={SECTION_HEADING_CLASS}>Account</h2>
+          <div className="flex items-start justify-between pr-2">
+            <h2 className={SECTION_HEADING_CLASS}>Account</h2>
+            <CloseButton onClose={close} className="mt-1" />
+          </div>
           <div className="flex items-center gap-3 px-4 py-2">
             <span className={`${AVATAR_CLASS} size-10 text-sm`} aria-hidden>
               {avatarInitials(username)}
@@ -142,7 +148,7 @@ export default function AccountMenu({ username }: { username: string }) {
           <div className="max-h-[calc(100dvh-6rem)] overflow-y-auto p-4 md:absolute md:top-0 md:right-full md:mr-2 md:w-[340px] md:rounded-md md:border md:bg-popover md:shadow-md">
             {panel === 'google' ? (
               <div className="flex flex-col gap-3">
-                <PanelHeader title="Google sign-in" onBack={() => setPanel(null)} />
+                <PanelHeader title="Google sign-in" onBack={() => setPanel(null)} onClose={close} />
                 <p className="text-sm text-jira-secondary">
                   Connect your Google account to sign in with Google instead of your password.
                 </p>
@@ -153,7 +159,7 @@ export default function AccountMenu({ username }: { username: string }) {
                 )}
               </div>
             ) : (
-              <AppearancePicker view={panel} appearance={appearance} onChange={changeAppearance} onBack={() => setPanel(null)} />
+              <AppearancePicker view={panel} appearance={appearance} onChange={changeAppearance} onBack={() => setPanel(null)} onClose={close} />
             )}
           </div>
         )}
