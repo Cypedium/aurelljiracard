@@ -2,7 +2,7 @@
 import { useState, type Dispatch, type SetStateAction } from "react";
 import { toast } from "sonner";
 import { createColumn, deleteColumn, reorderColumns, updateColumn } from "../api/endpoints";
-import { apiErrorMessage } from "../utils/apiError";
+import { reportError } from "../utils/apiError";
 import {
   moveHeader,
   normalizeColumns,
@@ -39,10 +39,9 @@ export function useColumnActions({ boardId, headers, setHeaders, userLayout, per
     setHeaders(next);
     try {
       await updateColumn(boardId, key, { title: column.title, color: column.color ?? null });
-    } catch (err: any) {
-      console.error("Error updating list:", err.message);
+    } catch (err) {
       setHeaders(previous);
-      toast.error(apiErrorMessage(err, "Could not update the list."));
+      reportError("Error updating list", err, "Could not update the list.");
     }
   };
 
@@ -66,10 +65,9 @@ export function useColumnActions({ boardId, headers, setHeaders, userLayout, per
     setHeaders(next);
     try {
       await reorderColumns(boardId, next.map((h) => h.key));
-    } catch (err: any) {
-      console.error("Error moving list:", err.message);
+    } catch (err) {
       setHeaders(previous);
-      toast.error(apiErrorMessage(err, "Could not move the list."));
+      reportError("Error moving list", err, "Could not move the list.");
     }
   };
 
@@ -83,9 +81,8 @@ export function useColumnActions({ boardId, headers, setHeaders, userLayout, per
       const res = await createColumn(boardId, { title: title.trim() });
       setHeaders((prev) => normalizeColumns([...prev, res.data]));
       setAddingList(false);
-    } catch (err: any) {
-      console.error("Error adding list:", err.message);
-      toast.error(apiErrorMessage(err, "Could not add the list."));
+    } catch (err) {
+      reportError("Error adding list", err, "Could not add the list.");
     }
   };
 
@@ -97,9 +94,8 @@ export function useColumnActions({ boardId, headers, setHeaders, userLayout, per
       setHeaders((prev) => prev.filter((h) => h.key !== key));
       setDeletingList(false);
       toast.success(`List ${title} deleted.`);
-    } catch (err: any) {
-      console.error("Error deleting list:", err.message);
-      toast.error(apiErrorMessage(err, "Could not delete the list."));
+    } catch (err) {
+      reportError("Error deleting list", err, "Could not delete the list.");
     }
   };
 

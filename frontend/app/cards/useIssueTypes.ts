@@ -1,8 +1,7 @@
 'use client';
 import { useEffect, useSyncExternalStore } from "react";
-import { toast } from "sonner";
 import { getIssueTypes } from "../api/endpoints";
-import { apiErrorMessage } from "../utils/apiError";
+import { reportError } from "../utils/apiError";
 import { DEFAULT_ISSUE_TYPES, normalizeIssueTypes, type IssueType } from "../utils/cardType";
 import { useBoards } from "./useBoards";
 
@@ -32,9 +31,8 @@ const load = (id: string | null) => {
       emit();
     })
     .catch((err) => {
-      console.error("Error fetching issue types:", err.message);
       // Fast id: flera komponenter kan försöka igen, då ersätter toasten sig själv
-      toast.error(apiErrorMessage(err, "Could not load the issue types."), { id: "issue-types" });
+      reportError("Error fetching issue types", err, "Could not load the issue types.", "issue-types");
     })
     .finally(() => {
       if (loading === id) loading = null;

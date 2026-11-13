@@ -19,7 +19,7 @@ import {
   takenIssueKeys,
   type CardFormValues,
 } from '../../utils/cardForm';
-import { apiErrorMessage, isConflictError } from '../../utils/apiError';
+import { apiErrorMessage, isConflictError, logError, reportError } from '../../utils/apiError';
 import { formatDate } from '../../utils/date';
 import { FIELD_ERROR_CLASS, FORM_ITEM_CLASS, LABEL_CLASS, SECTION_PADDING } from '../../utils/styles';
 import { BACKLOG_STATUS, type AnyCardStatus } from '../../utils/backlog';
@@ -61,7 +61,7 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
     if (!boardId) return;
     getCards(boardId)
       .then((res) => setTakenKeys(takenIssueKeys(res.data || [], card?._id)))
-      .catch((err) => console.error('Fetch issue keys error:', err.message));
+      .catch((err) => logError('Fetch issue keys error', err));
   }, [boardId, card?._id]);
 
   // Boardens listor till dropdownen bredvid Issue type. Kortet flyttas när man sparar
@@ -71,7 +71,7 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
     if (!boardId) return;
     getColumns(boardId)
       .then((res) => setLists(normalizeColumns(res.data)))
-      .catch((err) => console.error('Fetch lists error:', err.message));
+      .catch((err) => logError('Fetch lists error', err));
   }, [boardId]);
   // null = inte ändrad: kortet stannar där det är (nytt kort: listan det skapas i)
   const [movedTo, setMovedTo] = useState<CardStatus | null>(null);
@@ -120,8 +120,7 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
             saved = (await updateCardStatus(boardId, card._id, movedTo)).data;
           } catch (error) {
             // Ändringarna är sparade, bara flytten misslyckades
-            console.error('Move error:', (error as Error).message);
-            toast.error(apiErrorMessage(error, 'Card saved, but it could not be moved.'));
+            reportError('Move error', error, 'Card saved, but it could not be moved.');
             onSaved?.(saved);
             return;
           }
@@ -129,7 +128,7 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
         onSaved?.(saved);
         toast.success('Card updated.');
       } catch (error) {
-        console.error('Update error:', (error as Error).message);
+        logError('Update error', error);
         showError(error, 'Failed to save card.', fields.productId);
       }
       return;
@@ -150,7 +149,7 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
       router.push("/");
 
     } catch (error) {
-      console.error('Submission error:', (error as Error).message);
+      logError('Submission error', error);
       showError(error, 'Failed to submit card.', fields.productId);
     }
   };

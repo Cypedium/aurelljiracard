@@ -2,7 +2,7 @@
 import { useEffect, useSyncExternalStore } from "react";
 import { toast } from "sonner";
 import { getBoards, joinBoard, type Board } from "../api/endpoints";
-import { apiErrorMessage } from "../utils/apiError";
+import { reportError } from "../utils/apiError";
 import { CURRENT_BOARD_KEY, PENDING_INVITE_KEY, isBoardAdmin, pickBoard } from "../utils/currentBoard";
 import { getUsername, hasSession } from "../utils/session";
 
@@ -60,9 +60,8 @@ const acceptPendingInvite = async (): Promise<Board | null> => {
     const board = (await joinBoard(token)).data;
     toast.success(`You joined ${board.name}.`);
     return board;
-  } catch (err: any) {
-    console.error("Join board error:", err.message);
-    toast.error(apiErrorMessage(err, "Could not join the board."));
+  } catch (err) {
+    reportError("Join board error", err, "Could not join the board.");
     return null;
   }
 };
@@ -82,9 +81,8 @@ const load = async (force = false) => {
     const res = await getBoards();
     loadedFor = user;
     setState(res.data || [], joined?._id ?? state.current?._id ?? readStorage(localStorage, CURRENT_BOARD_KEY));
-  } catch (err: any) {
-    console.error("Error fetching boards:", err.message);
-    toast.error(apiErrorMessage(err, "Could not load your boards."), { id: "boards" });
+  } catch (err) {
+    reportError("Error fetching boards", err, "Could not load your boards.", "boards");
   } finally {
     loading = false;
   }

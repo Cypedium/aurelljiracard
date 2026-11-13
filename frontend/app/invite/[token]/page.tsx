@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { joinBoard } from "../../api/endpoints";
 import { showJoinedBoard } from "../../cards/useBoards";
-import { apiErrorMessage } from "../../utils/apiError";
+import { reportError } from "../../utils/apiError";
 import { PENDING_INVITE_KEY } from "../../utils/currentBoard";
 import { hasSession } from "../../utils/session";
 
@@ -35,8 +35,7 @@ export default function InvitePage() {
         router.replace("/cards");
       })
       .catch((err) => {
-        console.error("Join board error:", err.message);
-        toast.error(apiErrorMessage(err, "Could not join the board."));
+        reportError("Join board error", err, "Could not join the board.");
         setStatus("failed");
       });
   }, [token, router]);

@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef } from 'react';
 import { toast } from 'sonner';
+import { logError } from '../utils/apiError';
 import {
   GOOGLE_CLIENT_ID,
   GOOGLE_LOAD_ERROR_TOAST_ID,
@@ -43,8 +44,8 @@ export default function GoogleButton({ onCredential, text = 'signin_with' }: Pro
           width: googleButtonWidth(container.offsetWidth),
         });
       })
-      .catch((err: Error) => {
-        console.error(err.message);
+      .catch((err: unknown) => {
+        logError('Google sign-in script', err);
         toast.error('Could not load Google sign-in.', { id: GOOGLE_LOAD_ERROR_TOAST_ID });
       });
     return () => {

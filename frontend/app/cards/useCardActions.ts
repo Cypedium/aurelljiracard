@@ -1,8 +1,7 @@
 'use client';
 import { useState, type Dispatch, type SetStateAction } from "react";
-import { toast } from "sonner";
 import { deleteCard, updateCardStatus, type Card } from "../api/endpoints";
-import { apiErrorMessage } from "../utils/apiError";
+import { reportError } from "../utils/apiError";
 import type { AnyCardStatus } from "../utils/backlog";
 import type { CardStatus } from "../utils/boardLayout";
 
@@ -30,10 +29,9 @@ export function useCardActions({ boardId, cards, setCards, fetchCards }: Options
     setStatus(status);
     try {
       await updateCardStatus(boardId, id, status);
-    } catch (err: any) {
-      console.error("Error moving card:", err.message);
+    } catch (err) {
       setStatus(previous);
-      toast.error(apiErrorMessage(err, "Could not move card."));
+      reportError("Error moving card", err, "Could not move card.");
     }
   };
 
@@ -56,9 +54,8 @@ export function useCardActions({ boardId, cards, setCards, fetchCards }: Options
     try {
       await deleteCard(boardId, id);
       setCards((prev) => prev.filter((fb) => fb._id !== id));
-    } catch (err: any) {
-      console.error("Error deleting card:", err.message);
-      toast.error(apiErrorMessage(err, "Could not delete card."));
+    } catch (err) {
+      reportError("Error deleting card", err, "Could not delete card.");
     }
   };
 

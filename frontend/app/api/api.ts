@@ -1,5 +1,6 @@
 import axios from "axios";
 import { toast } from "sonner";
+import { logError } from "../utils/apiError";
 import { clearSession, getAccessToken, getRefreshToken, saveTokens } from "../utils/session";
 import {
   LOADING_TOAST_DELAY_MS,
@@ -99,7 +100,7 @@ const handleResponseError = async (error: any) => {
 
       } catch (refreshError) {
         // Bara meddelandet: axios-felet innehåller requesten, med refresh-tokenet
-        console.error("Refresh token failed:", (refreshError as Error).message);
+        logError("Refresh token failed", refreshError);
 
         processQueue(refreshError, null);
 
