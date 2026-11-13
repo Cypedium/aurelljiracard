@@ -14,13 +14,9 @@ import {
   type BoardBackground,
   type NavbarTheme,
 } from '../utils/appearance';
+import { PICKER_GROUP_HEADING_CLASS, PICKER_SWATCH_CLASS } from '../utils/styles';
 
 export type AppearanceView = 'background' | 'navbar';
-
-const GROUP_HEADING_CLASS = 'text-xs font-semibold uppercase text-jira-secondary';
-
-const SWATCH_CLASS =
-  'relative rounded-md shadow-[inset_0_0_0_1px_rgba(9,30,66,0.15)] transition-[filter] hover:brightness-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jira-focus';
 
 // Bock mitt i den valda rutan, som i Trello
 const Selected = () => (
@@ -103,7 +99,7 @@ export function AppearancePicker({ view, appearance, onChange, onBack, onClose }
     <button
       key={b.key}
       type="button"
-      className={`${SWATCH_CLASS} ${sizeClass}`}
+      className={`${PICKER_SWATCH_CLASS} ${sizeClass}`}
       style={{ background: backgroundSwatch(b) }}
       aria-label={b.name}
       aria-pressed={appearance.background === b.key}
@@ -146,9 +142,9 @@ export function AppearancePicker({ view, appearance, onChange, onBack, onClose }
         </>
       ) : (
         <>
-          <h4 className={GROUP_HEADING_CLASS}>Greys</h4>
+          <h4 className={PICKER_GROUP_HEADING_CLASS}>Greys</h4>
           <div className="-mt-2 grid grid-cols-2 gap-1">{NAVBAR_GREYS.map(navbarButton)}</div>
-          <h4 className={GROUP_HEADING_CLASS}>Colours</h4>
+          <h4 className={PICKER_GROUP_HEADING_CLASS}>Colours</h4>
           <div className="-mt-2 grid grid-cols-2 gap-1">{NAVBAR_COLORS.map(navbarButton)}</div>
           <CustomColor
             value={navbarTheme(appearance.navbar).top}
