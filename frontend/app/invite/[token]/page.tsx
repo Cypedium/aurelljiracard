@@ -8,6 +8,7 @@ import { showJoinedBoard } from "../../cards/useBoards";
 import { reportError } from "../../utils/apiError";
 import { PENDING_INVITE_KEY } from "../../utils/currentBoard";
 import { hasSession } from "../../utils/session";
+import { writeText } from "../../utils/storage";
 
 type Status = "joining" | "login" | "failed";
 
@@ -24,7 +25,7 @@ export default function InvitePage() {
     if (started.current || !token) return;
     started.current = true;
     if (!hasSession()) {
-      sessionStorage.setItem(PENDING_INVITE_KEY, token);
+      writeText(PENDING_INVITE_KEY, token, "session");
       setStatus("login");
       return;
     }

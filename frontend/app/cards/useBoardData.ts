@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { getCards, getColumns, getLayout, saveLayout, type Card } from "../api/endpoints";
 import { logError, reportError } from "../utils/apiError";
 import { boardCards } from "../utils/backlog";
+import { readJson, writeJson } from "../utils/storage";
 import {
   DEFAULT_HEADERS,
   DEFAULT_LAYOUT,
@@ -61,12 +62,7 @@ export function useBoardData(boardId: string) {
         console.warn("Could not load layout from server, falling back to localStorage");
       }
 
-      try {
-        const saved = localStorage.getItem(LAYOUT_STORAGE_KEY);
-        setUserLayout(saved ? normalizeLayout(JSON.parse(saved)) : DEFAULT_LAYOUT);
-      } catch {
-        setUserLayout(DEFAULT_LAYOUT);
-      }
+      setUserLayout(readJson(LAYOUT_STORAGE_KEY, normalizeLayout, DEFAULT_LAYOUT));
     };
 
     loadLayout().finally(() => setLayoutLoaded(true));
@@ -106,11 +102,8 @@ export function useBoardData(boardId: string) {
   const persistLayout = (next: UserLayout) => {
     const merged = { ...next, cards: mergeBoardPositions(userLayout.cards, next.cards, boardCardIds.current) };
     setUserLayout(merged);
-    try {
-      localStorage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify(merged));
-    } catch {
-      // Privat läge eller fullt: sparas ändå till servern
-    }
+    // Sparas till servern även om webbläsaren inte kan spara den
+    writeJson(LAYOUT_STORAGE_KEY, merged);
     saveLayoutToServer(merged);
   };
 

@@ -69,6 +69,8 @@ describe("normalizeLayout", () => {
     const cards = [{ id: "a", x: 1, y: 0, w: 1, h: 1 }];
     expect(normalizeLayout({ cols: 12, headers: [], cards } as any)).toEqual({ ...DEFAULT_LAYOUT, cards });
     expect(normalizeLayout({})).toEqual({ ...DEFAULT_LAYOUT, cards: undefined });
+    // Sparad JSON kan vara vad som helst, t.ex. null
+    expect(normalizeLayout(null)).toEqual({ ...DEFAULT_LAYOUT, cards: undefined });
   });
 });
 
