@@ -87,7 +87,7 @@ export const TABLE_ACTION_CLASS =
 export const TABLE_THEAD_CLASS = "bg-gray-600";
 export const TABLE_HEAD_CLASS = "px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-white";
 export const TABLE_CELL_CLASS = "px-4 py-3";
-export const TABLE_ROW_CLASS = "border-b border-jira-neutral last:border-b-0 hover:bg-[#f7f8f9]";
+export const TABLE_ROW_CLASS = "border-b border-jira-neutral last:border-b-0 hover:bg-jira-hover";
 
 // Navbarens boardväljare (öppen lista): samma tema som navbaren (raden under, navbarens textfärg).
 // ! går före shadcn-standardfärgerna (bg-popover, focus:bg-accent, text-muted-foreground)
