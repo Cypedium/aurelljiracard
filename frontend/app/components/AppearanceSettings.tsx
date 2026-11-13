@@ -11,17 +11,22 @@ import {
 import {
   BOARD_COLORS,
   BOARD_GRADIENTS,
-  NAVBAR_THEMES,
+  NAVBAR_COLORS,
+  NAVBAR_GREYS,
   backgroundSwatch,
   boardBackground,
+  isCustomColor,
   navbarTextColor,
   navbarTheme,
   type Appearance,
   type BoardBackground,
+  type NavbarTheme,
 } from '../utils/appearance';
 import { DialogTitle } from './ui/dialog';
 
 export type AppearanceView = 'background' | 'navbar';
+
+const GROUP_HEADING_CLASS = 'text-xs font-semibold uppercase text-jira-secondary';
 
 const SWATCH_CLASS =
   'relative rounded-md shadow-[inset_0_0_0_1px_rgba(9,30,66,0.15)] transition-[filter] hover:brightness-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jira-focus';
@@ -38,7 +43,7 @@ const NavbarPreview = ({ appearance, themeKey }: { appearance: Appearance; theme
   const theme = navbarTheme(themeKey);
   const color = navbarTextColor(boardBackground(appearance.background), theme);
   return (
-    <span className="flex w-24 shrink-0 flex-col overflow-hidden rounded" aria-hidden>
+    <span className="flex w-16 shrink-0 flex-col overflow-hidden rounded" aria-hidden>
       <span className="px-1.5 py-0.5 font-brand text-[10px] font-semibold" style={{ background: theme.top, color }}>
         AURELLO
       </span>
@@ -46,6 +51,23 @@ const NavbarPreview = ({ appearance, themeKey }: { appearance: Appearance; theme
     </span>
   );
 };
+
+// Egen färg med webbläsarens färgväljare; valet gäller medan man drar i den
+const CustomColor = ({ value, selected, onChange }: { value: string; selected: boolean; onChange: (hex: string) => void }) => (
+  <label
+    className={`flex cursor-pointer items-center gap-3 rounded-md px-2 py-2 text-sm hover:bg-jira-hover ${selected ? 'ring-2 ring-jira-primary' : ''}`}
+  >
+    <input
+      type="color"
+      value={value}
+      onChange={(e) => onChange(e.target.value.toLowerCase())}
+      className="h-8 w-12 shrink-0 cursor-pointer rounded border border-jira-neutral bg-white p-0.5"
+    />
+    <span className="flex-1 font-medium">Custom colour</span>
+    <span className="font-mono text-xs text-jira-secondary">{value}</span>
+    {selected && <CheckIcon className="size-4 text-jira-primary" strokeWidth={2.5} aria-hidden />}
+  </label>
+);
 
 type SettingButtonProps = {
   Icon: ComponentType<SVGProps<SVGSVGElement>>;
@@ -121,6 +143,20 @@ export function AppearancePicker({ view, appearance, onChange, onBack }: PickerP
     </button>
   );
 
+  const navbarButton = (n: NavbarTheme) => (
+    <button
+      key={n.key}
+      type="button"
+      className="flex items-center gap-2 rounded-md p-1.5 text-left text-sm hover:bg-jira-hover focus-visible:outline-2 focus-visible:outline-jira-focus"
+      aria-pressed={appearance.navbar === n.key}
+      onClick={() => onChange({ ...appearance, navbar: n.key })}
+    >
+      <NavbarPreview appearance={appearance} themeKey={n.key} />
+      <span className="min-w-0 flex-1 truncate font-medium">{n.name}</span>
+      {appearance.navbar === n.key && <CheckIcon className="size-4 shrink-0 text-jira-primary" strokeWidth={2.5} aria-hidden />}
+    </button>
+  );
+
   return (
     <div className="flex flex-col gap-4">
       <div className="relative flex items-center justify-center">
@@ -140,26 +176,28 @@ export function AppearancePicker({ view, appearance, onChange, onBack }: PickerP
           <div className="grid grid-cols-2 gap-2">{BOARD_GRADIENTS.map((b) => backgroundButton(b, 'h-16'))}</div>
           <hr className="border-jira-neutral" />
           <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">{BOARD_COLORS.map((b) => backgroundButton(b, 'h-10'))}</div>
+          <CustomColor
+            value={isCustomColor(appearance.background) ? appearance.background : boardBackground(appearance.background).via}
+            selected={isCustomColor(appearance.background)}
+            onChange={(hex) => onChange({ ...appearance, background: hex })}
+          />
           <p className="text-xs text-jira-subtle">The navbar text follows the board colour. Saved in this browser.</p>
         </>
       ) : (
         <>
-          <div className="flex flex-col gap-1">
-            {NAVBAR_THEMES.map((n) => (
-              <button
-                key={n.key}
-                type="button"
-                className="flex items-center gap-3 rounded-md px-2 py-2 text-left text-sm hover:bg-jira-hover focus-visible:outline-2 focus-visible:outline-jira-focus"
-                aria-pressed={appearance.navbar === n.key}
-                onClick={() => onChange({ ...appearance, navbar: n.key })}
-              >
-                <NavbarPreview appearance={appearance} themeKey={n.key} />
-                <span className="flex-1 font-medium">{n.name}</span>
-                {appearance.navbar === n.key && <CheckIcon className="size-4 text-jira-primary" strokeWidth={2.5} aria-hidden />}
-              </button>
-            ))}
-          </div>
-          <p className="text-xs text-jira-subtle">Two shades of grey: the top row and the row below. Saved in this browser.</p>
+          <h4 className={GROUP_HEADING_CLASS}>Greys</h4>
+          <div className="-mt-2 grid grid-cols-2 gap-1">{NAVBAR_GREYS.map(navbarButton)}</div>
+          <h4 className={GROUP_HEADING_CLASS}>Colours</h4>
+          <div className="-mt-2 grid grid-cols-2 gap-1">{NAVBAR_COLORS.map(navbarButton)}</div>
+          <CustomColor
+            value={navbarTheme(appearance.navbar).top}
+            selected={isCustomColor(appearance.navbar)}
+            onChange={(hex) => onChange({ ...appearance, navbar: hex })}
+          />
+          <p className="text-xs text-jira-subtle">
+            The row below the top row gets a darker shade. Text that would match the navbar turns white or dark. Saved in
+            this browser.
+          </p>
         </>
       )}
     </div>
