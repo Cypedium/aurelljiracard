@@ -1,4 +1,5 @@
 'use client';
+import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -8,9 +9,6 @@ import { handleLogout } from '../utils/logout';
 import { getUsername, hasSession, isAdmin } from '../utils/session';
 import { BOARD_ACTIONS, onBoardAction, requestBoardAction, type BoardAction } from '../utils/boardActions';
 import { useBoards } from '../cards/useBoards';
-import AccountMenu from './AccountMenu';
-import BoardSwitcher from './BoardSwitcher';
-import ShareBoardDialog from './ShareBoardDialog';
 import {
   ArrowRightStartOnRectangleIcon,
   Bars3Icon,
@@ -27,6 +25,11 @@ import {
 } from '@heroicons/react/24/outline';
 import { ROUTES } from '../utils/routes';
 import { NAV_ICON_CLASS, NAV_ICON_SUB_CLASS, NAV_LINK_CLASS, NAV_MOBILE_SUB_LIST_CLASS, NAV_SUB_ROW_BUTTON_CLASS } from '../utils/styles';
+
+// Bara för inloggade: laddas när de visas, så att /login och /register slipper deras kod (Radix-popover/select/dialog)
+const AccountMenu = dynamic(() => import('./AccountMenu'));
+const BoardSwitcher = dynamic(() => import('./BoardSwitcher'));
+const ShareBoardDialog = dynamic(() => import('./ShareBoardDialog'));
 
 type SubAction = { label: string; action: BoardAction; Icon: ComponentType<SVGProps<SVGSVGElement>> };
 
