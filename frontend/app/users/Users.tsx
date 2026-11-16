@@ -89,7 +89,7 @@ export default function Users() {
             <tr>
               <th scope="col" className={TH_CLASS}>User</th>
               <th scope="col" className={TH_CLASS}>Role</th>
-              <th scope="col" className={TH_CLASS}>Status</th>
+              <th scope="col" className={`${TH_CLASS} max-sm:hidden`}>Status</th>
               <th scope="col" className={`${TH_CLASS} text-right`}>Actions</th>
             </tr>
           </thead>
@@ -109,6 +109,13 @@ export default function Users() {
                       >
                         {avatarInitials(user.username)}
                       </span>
+                      {/* Grön prick = inloggad nu */}
+                      <span
+                        role="img"
+                        aria-label={user.online ? 'Online' : 'Offline'}
+                        title={user.online ? 'Online' : 'Offline'}
+                        className={`-mr-1.5 size-2 shrink-0 rounded-full ${user.online ? 'bg-[#22a06b]' : 'bg-jira-border'}`}
+                      />
                       <span className="min-w-0 truncate font-medium" title={user.username}>
                         {user.username}
                         {isSelf && <span className="ml-1 font-normal text-jira-secondary">(you)</span>}
@@ -124,13 +131,9 @@ export default function Users() {
                       {user.role}
                     </span>
                   </td>
-                  <td className={TD_CLASS}>
-                    {/* Grön prick = inloggad nu, annars när användaren senast var aktiv */}
-                    <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-jira-secondary">
-                      <span
-                        className={`size-2 shrink-0 rounded-full ${user.online ? 'bg-[#22a06b]' : 'bg-jira-border'}`}
-                        aria-hidden
-                      />
+                  <td className={`${TD_CLASS} max-sm:hidden`}>
+                    {/* Online nu, annars när användaren senast var aktiv. Dold på mobil så att Actions får plats (pricken vid namnet syns) */}
+                    <span className="whitespace-nowrap text-jira-secondary">
                       {user.online ? (
                         <span className="font-medium text-jira-text">Online</span>
                       ) : (
