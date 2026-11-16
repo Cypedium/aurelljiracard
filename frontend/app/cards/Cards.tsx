@@ -352,7 +352,7 @@ function BoardView({ boardId, admin }: { boardId: string; admin: boolean }) {
                   >
                     <BoardCard
                       card={fb}
-                      canEdit={canEditCard(fb, userName, admin)}
+                      canEdit={canEditCard(fb)}
                       canDelete={canDeleteCard(fb, userName, admin)}
                       onEdit={() => setEditingCard(fb)}
                       onDelete={() => setDeletingCard(fb)}
