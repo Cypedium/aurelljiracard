@@ -88,7 +88,6 @@ export default function IssueTypes() {
               <tr>
                 <th scope="col" className={TH_CLASS}>Issue type</th>
                 <th scope="col" className={`${TH_CLASS} max-[480px]:hidden`}>Key</th>
-                <th scope="col" className={TH_CLASS}>Color</th>
                 <th scope="col" className={`${TH_CLASS} text-right`}>Cards</th>
                 <th scope="col" className={`${TH_CLASS} text-right`}>Actions</th>
               </tr>
@@ -116,12 +115,6 @@ export default function IssueTypes() {
                     </td>
                     <td className={`${TD_CLASS} text-jira-secondary max-[480px]:hidden`}>
                       <code className="text-xs">{type.key}</code>
-                    </td>
-                    <td className={TD_CLASS}>
-                      <span className="inline-flex items-center gap-1.5 text-jira-secondary">
-                        <span className="size-3 shrink-0 rounded-[3px]" style={{ background: type.color }} aria-hidden />
-                        <span className="text-xs tabular-nums">{type.color}</span>
-                      </span>
                     </td>
                     <td className={`${TD_CLASS} text-right text-jira-secondary tabular-nums`}>{cards}</td>
                     <td className={`${TD_CLASS} w-px whitespace-nowrap`}>
