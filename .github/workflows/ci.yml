@@ -59,26 +59,27 @@ jobs:
       # Testcontainers starts postgres:17-alpine on the runner's Docker
       - run: ./mvnw -B -ntp test
 
-  deploy:
-    name: Deploy ${{ matrix.app }} to Fly.io
+ # deploy:
+ #   name: Deploy ${{ matrix.app }} to Fly.io
     # The production frontend calls server-java, so its tests gate the deploy too
-    needs: [server, frontend, server-java]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    concurrency: deploy-${{ matrix.app }}
-    strategy:
-      matrix:
-        include:
-          - app: server
-            config: fly.server.toml
-          - app: frontend
-            config: fly.app.toml
-    defaults:
-      run:
-        working-directory: ${{ matrix.app }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: superfly/flyctl-actions/setup-flyctl@master
-      - run: flyctl deploy --config ${{ matrix.config }} --remote-only
-        env:
-          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+ #   needs: [server, frontend, server-java]
+  #  if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+ #   runs-on: ubuntu-latest
+#    concurrency: deploy-${{ matrix.app }}
+ #   strategy:
+ #     matrix:
+ #       include:
+ #         - app: server
+ #           config: fly.server.toml
+  #        - app: frontend
+ #           config: fly.app.toml
+ #   defaults:
+ #     run:
+ #       working-directory: ${{ matrix.app }}
+ #   steps:
+ #     - uses: actions/checkout@v4
+ #     - uses: superfly/flyctl-actions/setup-flyctl@master
+ #     - run: flyctl deploy --config ${{ matrix.config }} --remote-only
+ #       env:
+ #         FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+#
