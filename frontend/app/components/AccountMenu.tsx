@@ -2,7 +2,7 @@
 import Image from 'next/image';
 import { useState, type ComponentType, type ReactNode, type SVGProps } from 'react';
 import { toast } from 'sonner';
-import { ArrowRightStartOnRectangleIcon, Bars2Icon, ChevronRightIcon, LinkIcon, PhotoIcon } from '@heroicons/react/24/outline';
+import { ArrowRightStartOnRectangleIcon, Bars2Icon, ChevronRightIcon, LinkIcon, PhotoIcon, UserIcon } from '@heroicons/react/24/outline';
 import logo from '../icon.png';
 import { connectGoogle } from '../api/endpoints';
 import { apiErrorMessage } from '../utils/apiError';
@@ -14,7 +14,7 @@ import { handleLogout } from '../utils/logout';
 import { AppearancePicker, CloseButton, NavbarPreview, PanelHeader, type AppearanceView } from './AppearancePicker';
 import GoogleButton from './GoogleButton';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
-import { ACCOUNT_AVATAR_CLASS, ACCOUNT_MENU_ACTIVE_ITEM_CLASS, ACCOUNT_MENU_HEADING_CLASS, ACCOUNT_MENU_ITEM_CLASS } from '../utils/styles';
+import { ACCOUNT_AVATAR_CLASS, ACCOUNT_MENU_ACTIVE_ITEM_CLASS, ACCOUNT_MENU_HEADING_CLASS, ACCOUNT_MENU_ITEM_CLASS, NAV_ACCOUNT_BUTTON_CLASS, NAV_ICON_SUB_CLASS } from '../utils/styles';
 
 // Panelen som är öppen bredvid menyn: en av färgväljarna eller Google-kopplingen
 type Panel = AppearanceView | 'google';
@@ -75,8 +75,9 @@ export default function AccountMenu({ username }: { username: string }) {
       <PopoverTrigger
         aria-label={`Account (logged in as ${username})`}
         title={username}
-        className={`${ACCOUNT_AVATAR_CLASS} size-8 text-xs`}
+        className={NAV_ACCOUNT_BUTTON_CLASS}
       >
+        <UserIcon className={NAV_ICON_SUB_CLASS} aria-hidden />
         {avatarInitials(username)}
       </PopoverTrigger>
       <PopoverContent
