@@ -105,7 +105,11 @@ export const NAV_SUB_ROW_BUTTON_CLASS = "flex items-center gap-1.5 rounded-md px
 // Mobil: rad tvås knappar visas i hamburgermenyn, indragna under sidans länk
 export const NAV_MOBILE_SUB_LIST_CLASS = "mt-2 ml-7 flex flex-col gap-2 text-lg md:hidden";
 
-// Kontomenyn (avataren i navbaren). Avataren: ljusgrå med vit text
+// Kontoknappen i navbaren: användarikon + initialer, ljusare än navbaren och med navbarens textfärg (följer temat)
+export const NAV_ACCOUNT_BUTTON_CLASS =
+  "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full bg-white/15 pr-3 pl-2 font-jira text-xs font-semibold text-nav-text transition-colors hover:bg-white/25 focus-visible:bg-white/25";
+
+// Kontomenyn. Avataren i menyn: ljusgrå med vit text
 export const ACCOUNT_AVATAR_CLASS =
   "inline-flex shrink-0 items-center justify-center rounded-full bg-gray-500 font-jira font-semibold text-white";
 export const ACCOUNT_MENU_HEADING_CLASS =
