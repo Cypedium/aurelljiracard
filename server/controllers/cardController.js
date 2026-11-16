@@ -115,10 +115,7 @@ exports.update = async (req, res) => {
     if (!card) {
       return res.status(404).json({ message: "Card not found." });
     }
-    // The author or the board admin may edit; the author never changes
-    if (card.username !== req.user.username && req.boardRole !== ADMIN_ROLE) {
-      return res.status(403).json({ message: "You can only edit your own card." });
-    }
+    // Every board member may edit any card on the board (collaborators too); the author never changes
     // Keeping the card's own key is fine (no $ne: sanitizeFilter would neutralise it)
     const duplicate = await Card.exists({ boardId: req.boardId, productId });
     if (duplicate && String(duplicate._id) !== id) {

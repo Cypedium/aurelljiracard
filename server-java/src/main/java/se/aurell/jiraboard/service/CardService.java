@@ -67,14 +67,14 @@ public class CardService {
         saveUnique(card);
     }
 
-    /** The author or the board admin may edit; author, date and status are never changed by an edit. */
+    /** Every board member may edit any card (collaborators too); author, date and status are never changed by an edit. */
     @Transactional
     public CardResponse update(UUID boardId, UUID id, CardRequest request, AuthUser user) {
-        BoardMember member = boardService.requireMember(boardId, user);
+        boardService.requireMember(boardId, user);
         if (request.type() != null) {
             issueTypeService.requireCardType(boardId, request.type());
         }
-        Card card = findEditableCard(boardId, id, member, user, "You can only edit your own card.");
+        Card card = findCard(boardId, id);
         if (cardRepository.existsByBoardIdAndProductIdAndIdNot(boardId, request.productId(), id)) {
             throw ApiException.conflict(DUPLICATE_KEY_MESSAGE);
         }
@@ -109,7 +109,7 @@ public class CardService {
     @Transactional
     public void delete(UUID boardId, UUID id, AuthUser user) {
         BoardMember member = boardService.requireMember(boardId, user);
-        Card card = findEditableCard(boardId, id, member, user, "You can only delete your own card.");
+        Card card = findDeletableCard(boardId, id, member, user);
         cardRepository.delete(card);
     }
 
@@ -131,10 +131,11 @@ public class CardService {
         return cardRepository.findByIdAndBoardId(id, boardId).orElseThrow(() -> ApiException.notFound("Card not found."));
     }
 
-    private Card findEditableCard(UUID boardId, UUID id, BoardMember member, AuthUser user, String forbiddenMessage) {
+    // Only the author or the board admin may delete a card
+    private Card findDeletableCard(UUID boardId, UUID id, BoardMember member, AuthUser user) {
         Card card = findCard(boardId, id);
         if (!member.isAdmin() && !card.getUsername().equals(user.username())) {
-            throw ApiException.forbidden(forbiddenMessage);
+            throw ApiException.forbidden("You can only delete your own card.");
         }
         return card;
     }

@@ -139,15 +139,17 @@ class CardApiTest extends ApiIntegrationTest {
     }
 
     @Test
-    void collaboratorsCannotUpdateOrDeleteOthersCards() throws Exception {
+    void collaboratorsCanEditButNotDeleteOthersCards() throws Exception {
         String alice = accessToken("alice");
         String bob = accessToken("bob");
         String board = joinBoard(alice, bob);
         String id = createCard(alice, board, VALID_CARD);
 
-        mvc.perform(bearer(json(put(on(board, "/card/" + id)), VALID_CARD), bob))
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.message").value("You can only edit your own card."));
+        mvc.perform(bearer(json(put(on(board, "/card/" + id)), """
+                {"rating": 4, "comment": "Edited by bob", "productId": "AJB-1"}"""), bob))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.comment").value("Edited by bob"))
+                .andExpect(jsonPath("$.username").value("alice"));
 
         mvc.perform(bearer(delete(on(board, "/card/" + id)), bob))
                 .andExpect(status().isForbidden())

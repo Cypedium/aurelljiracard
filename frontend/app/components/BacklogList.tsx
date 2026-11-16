@@ -146,7 +146,7 @@ export default function BacklogList({ refreshKey = 0, onMoved }: BacklogListProp
                 <td className={`${TD_CLASS} text-right`}>
                   <div className="flex items-center justify-end gap-1">
                     {/* Edit och delete på egna kort, eller alla för admin (syns vid hover, som på boarden) */}
-                    {canEditCard(card, userName, admin) && (
+                    {canEditCard(card) && (
                       <button className={CARD_ACTION_CLASS} aria-label="Edit card" title="Edit" onClick={() => setEditingCard(card)}>
                         <PencilIcon className="size-4" aria-hidden />
                       </button>

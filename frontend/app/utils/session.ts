@@ -65,12 +65,11 @@ export const saveSession = (username: string, accessToken: string, refreshToken:
   clearLegacySession();
 };
 
-// Samma regler som backend: bara författaren redigerar; författaren eller admin tar bort.
-// Kort utan _id (inte sparade) kan inte ändras
+// Samma regler som backend: alla på boarden redigerar alla kort (även medarbetare);
+// bara författaren eller boardens admin tar bort. Kort utan _id (inte sparade) kan inte ändras
 type OwnedCard = { _id?: string; username: string };
 
-export const canEditCard = (card: OwnedCard, username: string, admin: boolean): boolean =>
-  Boolean(card._id) && (card.username === username || admin);
+export const canEditCard = (card: OwnedCard): boolean => Boolean(card._id);
 
 export const canDeleteCard = (card: OwnedCard, username: string, admin: boolean): boolean =>
   Boolean(card._id) && (card.username === username || admin);
