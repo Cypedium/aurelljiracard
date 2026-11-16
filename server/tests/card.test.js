@@ -230,14 +230,18 @@ describe("PUT /card/:id", () => {
     expect(save).not.toHaveBeenCalled();
   });
 
-  it("refuses to edit another user's card with 403", async () => {
-    const save = jest.fn();
-    Card.findOne.mockResolvedValue({ _id: CARD_ID, username: "bob", save });
+  it("lets a collaborator edit another user's card without changing the author", async () => {
+    const save = jest.fn().mockResolvedValue({});
+    Card.findOne.mockResolvedValue({ _id: CARD_ID, username: "bob", ...validCard, save });
 
-    const res = await request(app).put(`${CARDS}/${CARD_ID}`).set("Authorization", authHeader("alice")).send(validCard);
+    const res = await request(app)
+      .put(`${CARDS}/${CARD_ID}`)
+      .set("Authorization", authHeader("alice"))
+      .send({ ...validCard, comment: "Edited by a collaborator" });
 
-    expect(res.status).toBe(403);
-    expect(save).not.toHaveBeenCalled();
+    expect(res.status).toBe(200);
+    expect(save).toHaveBeenCalled();
+    expect(res.body).toMatchObject({ comment: "Edited by a collaborator", username: "bob" });
   });
 
   it("returns 404 for a missing card", async () => {
