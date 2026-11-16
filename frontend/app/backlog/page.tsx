@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import Layout from "../components/Layout";
 import BacklogList from "../components/BacklogList";
@@ -7,14 +8,26 @@ import CardForm from "../cards/card/Card";
 import { Dialog, DialogContent, DialogTitle } from "../components/ui/dialog";
 import { BACKLOG_STATUS } from "../utils/backlog";
 import { BOARD_ACTIONS, onBoardAction } from "../utils/boardActions";
+import { canUseBacklog } from "../utils/features";
+import { ROUTES } from "../utils/routes";
 
 export default function BacklogPage() {
+  const router = useRouter();
+  // Backloggen är under arbete: bara sajtens admin; andra skickas till boarden (features.ts)
+  const [allowed, setAllowed] = useState(false);
   const [creating, setCreating] = useState(false);
   // Ökas när ett kort lagts till, så att listan hämtas igen
   const [refreshKey, setRefreshKey] = useState(0);
 
+  useEffect(() => {
+    if (canUseBacklog()) setAllowed(true);
+    else router.replace(ROUTES.board);
+  }, [router]);
+
   // Navbarens "Create card" öppnar formuläret (nytt kort i backloggen)
   useEffect(() => onBoardAction(BOARD_ACTIONS.createCard, () => setCreating(true)), []);
+
+  if (!allowed) return null;
 
   const handleCreated = () => {
     setCreating(false);

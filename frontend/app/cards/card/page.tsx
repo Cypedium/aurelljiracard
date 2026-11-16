@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Card from "./Card";
 import BacklogList from "../../components/BacklogList";
+import { canUseBacklog } from "../../utils/features";
 import { hasSession } from "../../utils/session";
 import { ROUTES } from "../../utils/routes";
 
@@ -16,12 +17,15 @@ export default function CardPage() {
   const router = useRouter();
   const [allowed, setAllowed] = useState(false);
   const [tab, setTab] = useState<Tab>("new");
+  // "From backlog" bara för sajtens admin så länge backloggen är under arbete (features.ts)
+  const [showBacklog, setShowBacklog] = useState(false);
 
   useEffect(() => {
     if (!hasSession()) {
       router.replace(ROUTES.home); // root tar hand om redirect till login
     } else {
       setAllowed(true); // visa formuläret
+      setShowBacklog(canUseBacklog());
     }
   }, []);
 
@@ -30,7 +34,7 @@ export default function CardPage() {
   // Samma bakgrund som boarden; pt eftersom navbaren är fixed
   return (
     <div className="min-h-[calc(100dvh-60px)] bg-linear-135 from-board-from via-board-via to-board-to px-4 pt-20 pb-6">
-      <div className="mx-auto flex w-full max-w-[640px] gap-1 font-jira" role="tablist">
+      <div className={`mx-auto w-full max-w-[640px] gap-1 font-jira ${showBacklog ? "flex" : "hidden"}`} role="tablist">
         {TABS.map(({ key, label }) => (
           <button
             key={key}
@@ -46,7 +50,7 @@ export default function CardPage() {
         ))}
       </div>
 
-      {tab === "new" ? (
+      {tab === "new" || !showBacklog ? (
         <Card />
       ) : (
         // Ett kort från backloggen hamnar i To Do och tilldelas dig; sedan till boarden

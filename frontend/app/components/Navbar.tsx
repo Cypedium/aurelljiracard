@@ -7,6 +7,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type ComponentType, type 
 import logo from '../icon.png';
 import { handleLogout } from '../utils/logout';
 import { getUsername, hasSession, isAdmin } from '../utils/session';
+import { backlogVisible } from '../utils/features';
 import { BOARD_ACTIONS, onBoardAction, requestBoardAction, type BoardAction } from '../utils/boardActions';
 import { useBoards } from '../cards/useBoards';
 import {
@@ -181,18 +182,21 @@ const Navbar = () => {
                 </Link>
                 {onBoard && <MobileSubActions actions={subActions} />}
               </li>
-              <li onClick={() => setMenuOpen(false)}>
-                <Link
-                  ref={backlogLinkRef}
-                  href={ROUTES.backlog}
-                  aria-current={pathname === ROUTES.backlog ? 'page' : undefined}
-                  className={`${NAV_LINK_CLASS} underline-offset-8 aria-[current=page]:underline`}
-                >
-                  <QueueListIcon className={NAV_ICON_CLASS} aria-hidden />
-                  Backlog
-                </Link>
-                {onBacklog && <MobileSubActions actions={subActions} />}
-              </li>
+              {/* Backloggen är under arbete: bara sajtens admin (features.ts) */}
+              {backlogVisible(admin) && (
+                <li onClick={() => setMenuOpen(false)}>
+                  <Link
+                    ref={backlogLinkRef}
+                    href={ROUTES.backlog}
+                    aria-current={pathname === ROUTES.backlog ? 'page' : undefined}
+                    className={`${NAV_LINK_CLASS} underline-offset-8 aria-[current=page]:underline`}
+                  >
+                    <QueueListIcon className={NAV_ICON_CLASS} aria-hidden />
+                    Backlog
+                  </Link>
+                  {onBacklog && <MobileSubActions actions={subActions} />}
+                </li>
+              )}
               {/* Bara för sajtens admin; backend nekar andra (403) */}
               {admin && (
                 <li onClick={() => setMenuOpen(false)}>
