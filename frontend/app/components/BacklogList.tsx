@@ -9,6 +9,7 @@ import { avatarColor, avatarInitials } from '../utils/avatar';
 import { backlogCards } from '../utils/backlog';
 import { DEFAULT_HEADERS } from '../utils/boardLayout';
 import { formatShortDate } from '../utils/date';
+import { toPlainLine, toPlainText } from '../utils/richText';
 import { canDeleteCard, canEditCard, getUsername } from '../utils/session';
 import { useBoards } from '../cards/useBoards';
 import { CARD_ACTION_CLASS, TABLE_CELL_CLASS as TD_CLASS, TABLE_HEAD_CLASS as TH_CLASS, TABLE_THEAD_CLASS, TABLE_ROW_CLASS, TABLE_WRAPPER_CLASS } from '../utils/styles';
@@ -120,8 +121,8 @@ export default function BacklogList({ refreshKey = 0, onMoved }: BacklogListProp
                     <span className="text-xs font-semibold uppercase text-jira-secondary">{card.productId}</span>
                   </div>
                 </td>
-                <td className={`${TD_CLASS} w-full max-w-0 truncate`} title={card.comment}>
-                  {card.comment}
+                <td className={`${TD_CLASS} w-full max-w-0 truncate`} title={toPlainText(card.comment)}>
+                  {toPlainLine(card.comment)}
                 </td>
                 <td className={`${TD_CLASS} text-center`}>
                   <span

@@ -29,7 +29,7 @@ import ListSelect from '../../components/ListSelect';
 import { Button } from '../../components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../../components/ui/form';
 import { Input } from '../../components/ui/input';
-import { Textarea } from '../../components/ui/textarea';
+import SummaryEditor from '../../components/SummaryEditor';
 import { ROUTES } from '../../utils/routes';
 
 type CardProps = {
@@ -210,13 +210,7 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
             render={({ field }) => (
               <FormItem className={FORM_ITEM_CLASS}>
                 <FormLabel className={LABEL_CLASS}>Summary {required}</FormLabel>
-                <FormControl>
-                  <Textarea
-                    className="min-h-[88px] resize-y bg-white text-jira-text"
-                    placeholder="What needs to be done?"
-                    {...field}
-                  />
-                </FormControl>
+                <SummaryEditor field={field} placeholder="What needs to be done?" />
                 <FormMessage className={FIELD_ERROR_CLASS} />
               </FormItem>
             )}

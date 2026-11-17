@@ -11,6 +11,7 @@ import {
   AlertDialogTitle,
 } from "../../components/ui/alert-dialog";
 import type { CardStatus } from "../../utils/boardLayout";
+import { toPlainText } from "../../utils/richText";
 import CardForm from "../card/Card";
 
 type CardFormDialogProps = {
@@ -59,8 +60,8 @@ export function DeleteCardDialog({ card, onClose, onConfirm }: DeleteCardDialogP
       <AlertDialogContent className="font-jira text-jira-text">
         <AlertDialogHeader>
           <AlertDialogTitle>Delete this card?</AlertDialogTitle>
-          <AlertDialogDescription className="line-clamp-3 wrap-anywhere">
-            {card?.productId}: {card?.comment}
+          <AlertDialogDescription className="line-clamp-3 whitespace-pre-line wrap-anywhere">
+            {card?.productId}: {toPlainText(card?.comment ?? "")}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
