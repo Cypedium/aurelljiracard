@@ -13,6 +13,7 @@ import { NEW_LIST_COLOR, type BoardHeader, type CardStatus } from "./boardLayout
 import { readableTextColor } from "./color";
 import type { IssueTypeIconName } from "./cardType";
 import type { PasswordStrength } from "./checkPasswordStrength";
+import type { TextSize } from "./richText";
 
 // Board: datum, edit- och delete-knappen syns bara när man hovrar över kortet
 // (alltid på pekskärmar, där det inte finns hover)
@@ -56,6 +57,20 @@ export const SECTION_PADDING = "px-6 max-[480px]:px-4";
 // Login och register: vitt kort i samma stil som kortformuläret
 export const AUTH_FORM_CLASS =
   "mx-4 flex w-full max-w-md flex-col rounded-xl bg-white p-6 font-jira text-sm text-jira-text shadow-[0_8px_12px_rgba(9,30,66,0.15),0_0_1px_rgba(9,30,66,0.31)]";
+
+// Formaterad sammanfattning (RichText): textstorlek per rad, punktlista
+export const RICH_TEXT_CLASS = "leading-5 wrap-anywhere";
+export const RICH_TEXT_SIZE_CLASS: Record<TextSize | "normal", string> = {
+  normal: "",
+  large: "text-base font-semibold",
+  heading: "text-lg font-semibold",
+};
+export const RICH_TEXT_LIST_CLASS = "list-disc pl-5";
+// Sammanfattningens verktygsrad (fet, punktlista, storlek) och Write/Preview
+export const EDITOR_TOOL_CLASS =
+  "inline-flex size-7 items-center justify-center rounded-[3px] text-jira-secondary hover:bg-jira-neutral disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent";
+export const EDITOR_TAB_CLASS = "rounded-[3px] px-2 py-1 text-xs font-semibold text-jira-secondary hover:bg-jira-neutral";
+export const EDITOR_TAB_ACTIVE_CLASS = "bg-jira-info text-jira-primary hover:bg-jira-info";
 
 // Ikon per ärendetyp (IssueTypeIcon); bakgrunden är typens färg
 export const ISSUE_TYPE_ICON: Record<IssueTypeIconName, typeof CheckIcon> = {
