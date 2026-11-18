@@ -138,6 +138,25 @@ main.view { background: linear-gradient(135deg, var(--board-from), var(--board-v
 .toast { position: absolute; right: 16px; bottom: 16px; background: var(--danger-bg); color: var(--danger); border: 1px solid #fd9891; border-radius: 8px; padding: 12px 36px 12px 14px; font-size: 14px; box-shadow: 0 4px 12px rgba(9,30,66,.2); z-index: 6; max-width: 360px; }
 .toast button { position: absolute; top: 6px; right: 6px; border: 0; background: none; color: inherit; }
 
+/* Kontomenyn: navbarens färger, kant i kant med högerkanten */
+.acct { position: absolute; right: 0; top: 44px; width: 280px; background: var(--nav-top); color: var(--nav-text); border: 1px solid rgba(156,200,245,.25); border-radius: 8px; box-shadow: 0 8px 16px rgba(9,30,66,.35); padding: 8px 0; font-size: 14px; z-index: 4; }
+.acct h4 { margin: 0; padding: 10px 16px 4px; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; }
+.acct .item { display: flex; align-items: center; gap: 10px; width: 100%; border: 0; background: none; color: inherit; padding: 8px 16px; text-align: left; }
+.acct .item:hover { background: rgba(156,200,245,.12); }
+.acct .item .end { margin-left: auto; font-size: 12px; opacity: .8; }
+.acct hr { border: 0; border-top: 1px solid rgba(156,200,245,.25); margin: 8px 0; }
+.acct hr.gap { margin-top: 20px; }
+.acct .user { display: flex; align-items: center; gap: 10px; padding: 6px 16px; }
+.acct .user span:first-child { width: 36px; height: 36px; border-radius: 50%; background: #6a7282; color: #fff; display: inline-flex; align-items: center; justify-content: center; font: 600 13px var(--sans); }
+.avatar { border: 0; color: inherit; }
+.off-page { max-width: 460px; margin: 40px auto; background: #fff; border-radius: 12px; padding: 24px; text-align: center; font-size: 14px; box-shadow: 0 8px 12px rgba(9,30,66,.15), 0 0 1px rgba(9,30,66,.31); }
+.off-page h2 { margin: 0 0 8px; font-size: 18px; }
+.off-page p { color: var(--secondary); margin: 0 0 16px; }
+.table { background: #fff; border-radius: 8px; overflow: hidden; max-width: 820px; margin: 0 auto; font-size: 14px; box-shadow: 0 1px 1px rgba(9,30,66,.25), 0 0 1px rgba(9,30,66,.31); }
+.table > div { display: flex; gap: 16px; padding: 10px 16px; border-bottom: 1px solid var(--neutral); }
+.table > div:first-child { background: #4a5565; color: #fff; font-size: 12px; font-weight: 600; text-transform: uppercase; }
+.hint { font-size: 12px; color: var(--subtle); padding: 0 24px 8px; margin: 0; }
+
 /* Anteckningar under skissen */
 .notes { max-width: 1240px; margin: 0 auto 40px; padding: 0 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
 .note { background: var(--frame-surface); border: 1px solid var(--frame-line); border-radius: 10px; padding: 14px 16px; font-size: 13px; line-height: 1.5; color: inherit; }
@@ -175,12 +194,23 @@ main.view { background: linear-gradient(135deg, var(--board-from), var(--board-v
 const FEATURES = [
   { key: "register", group: "Accounts", name: "Registration", hides: "“Register User” link; the register page shows a message", blocks: "POST /auth/register, first Google sign-in" },
   { key: "joinBoard", group: "Accounts", name: "Join boards", hides: "Invite page shows “temporarily disabled”", blocks: "POST /invite/{token}" },
+  { key: "googleConnect", group: "Accounts", name: "Connect Google", hides: "“Google sign-in” in the account menu", blocks: "POST /user/google" },
   { key: "createCard", group: "Cards", name: "Create cards", hides: "“Create card”", blocks: "POST /board/{id}/card" },
   { key: "editCard", group: "Cards", name: "Edit and move cards", hides: "Edit, dragging cards to another list", blocks: "PUT …/card/{cardId}, PATCH …/status" },
   { key: "deleteCard", group: "Cards", name: "Delete cards", hides: "Delete in the card dialog", blocks: "DELETE …/card/{cardId}" },
   { key: "manageColumns", group: "Board", name: "Manage lists", hides: "“Create column”, “Delete column”, rename/recolour, dragging list headers", blocks: "POST/PUT/DELETE /board/{id}/column" },
   { key: "manageIssueTypes", group: "Board", name: "Manage issue types", hides: "“Create Issue type”, delete on the Issue types page", blocks: "POST, DELETE /board/{id}/issue-type" },
   { key: "shareBoard", group: "Board", name: "Share and members", hides: "“Share” / “Members” (also leaving a board)", blocks: "POST/DELETE …/invite, DELETE …/member/{userId}" },
+];
+
+// Navbarens brytare (avsnitt 2.1): döljer bara, inget 503, påverkas inte av read-only
+const NAV_FEATURES = [
+  { key: "backlogPage", name: "Backlog", hides: "“Backlog” link, the Backlog choice in the card form; /backlog shows “turned off”", still: "GET /board/{id}/card" },
+  { key: "boardSwitcher", name: "Board switcher", hides: "The board dropdown", still: "The board last chosen stays shown" },
+  { key: "issueTypesPage", name: "Issue types page", hides: "“Issue types” link; /issue-types shows “turned off”", still: "Creating types from the card form (manageIssueTypes)" },
+  { key: "boardBackground", name: "Board background", hides: "“Board background” in the account menu", still: "The saved background keeps applying" },
+  { key: "navbarColour", name: "Navbar colour", hides: "“Navbar colour” in the account menu", still: "The saved colour keeps applying" },
+  { key: "theme", name: "Theme", hides: "“Theme” in the account menu", still: "The saved theme keeps applying" },
 ];
 
 const VIEWERS = [
@@ -191,6 +221,8 @@ const VIEWERS = [
 const PAGES = [
   { key: "features", name: "Features (admin)", path: "/features" },
   { key: "board", name: "Board", path: "/cards" },
+  { key: "backlog", name: "Backlog", path: "/backlog" },
+  { key: "issueTypes", name: "Issue types", path: "/issue-types" },
   { key: "register", name: "Register", path: "/register" },
   { key: "invite", name: "Invite link", path: "/invite/3f9c…" },
 ];
@@ -205,14 +237,16 @@ const TYPE_COLORS = { task: "#4bade8", bug: "#c9372c", doc: "#8270db" };
 const PEOPLE = { MI: "#0c66e4", SA: "#6e5dc6" };
 
 const fresh = () => ({
-  enabled: Object.fromEntries(FEATURES.map((f) => [f.key, true])),
+  enabled: Object.fromEntries([...FEATURES, ...NAV_FEATURES].map((f) => [f.key, true])),
   readOnly: false,
   changed: {},
 });
-const state = { viewer: "member", page: "board", sw: fresh(), confirm: false, toast: null };
+const state = { viewer: "member", page: "board", sw: fresh(), confirm: false, toast: null, menu: false };
 
 // Samma regel som useFeatures(): site admins ser allt, andra stoppas av avstängd funktion eller read-only
 const isOn = (key) => state.viewer === "siteAdmin" || (!state.sw.readOnly && state.sw.enabled[key]);
+// Navbarens brytare: bara av/på, read-only rör dem inte
+const navOn = (key) => state.viewer === "siteAdmin" || state.sw.enabled[key];
 // Board-rollen först (ägaren = boardens admin), sedan brytaren; en brytare tar bara bort rättigheter
 const boardAdmin = () => state.viewer !== "member";
 const viewer = () => VIEWERS.find((v) => v.key === state.viewer);
@@ -241,7 +275,7 @@ function renderControls() {
     el.onclick = (e) => { const k = e.target.dataset.k; if (k) { set(k); render(); } };
   };
   seg("viewer", VIEWERS, state.viewer, (k) => (state.viewer = k));
-  seg("page", PAGES, state.page, (k) => (state.page = k));
+  seg("page", PAGES, state.page, (k) => { state.page = k; state.menu = false; });
 }
 
 function navbar() {
@@ -262,12 +296,12 @@ function navbar() {
   }
   return `<nav class="top">
       <span class="nav-link logo"><i></i>AURELLO</span>
-      <span class="switcher">${icon.board}${state.viewer === "member" ? "Mikael's board" : v.user + "'s board"} ▾</span>
-      <span class="nav-link">${icon.list}Backlog</span>
+      ${navOn("boardSwitcher") ? `<span class="switcher">${icon.board}${state.viewer === "member" ? "Mikael's board" : v.user + "'s board"} ▾</span>` : ""}
+      ${navOn("backlogPage") ? `<span class="nav-link" ${state.page === "backlog" ? 'aria-current="page"' : ""}>${icon.list}Backlog</span>` : ""}
       ${site ? `<span class="nav-link">${icon.users}Users</span>` : ""}
       ${site ? `<span class="nav-link" ${state.page === "features" ? 'aria-current="page"' : ""}>${icon.toggle}Features</span>` : ""}
-      ${boardAdmin() ? `<span class="nav-link">${icon.tag}Issue types</span>` : ""}
-      <span class="avatar">${v.initials}</span>
+      ${boardAdmin() && navOn("issueTypesPage") ? `<span class="nav-link" ${state.page === "issueTypes" ? 'aria-current="page"' : ""}>${icon.tag}Issue types</span>` : ""}
+      <button type="button" class="avatar" data-menu aria-expanded="${state.menu}">${v.initials}</button>
     </nav>
     ${subs.length ? `<div class="sub">${subs.join("")}</div>` : state.page === "board" ? '<div class="sub"></div>' : ""}`;
 }
@@ -334,7 +368,48 @@ function featuresView() {
         <div class="toggle-cell">${on ? "On" : "Off"}<button class="switch" role="switch" aria-checked="${on}" aria-label="${f.name}" data-key="${f.key}"></button></div>
       </div>`;
     }).join("")}`).join("")}
+    <h4 class="group-title">Navbar <span class="tag ro" style="margin-left:6px">Hides only</span></h4>
+    <p class="hint">These only hide links and settings. Pages read with GET and settings saved in the browser are not blocked; read-only mode doesn't change them.</p>
+    ${NAV_FEATURES.map((f) => {
+      const on = sw.enabled[f.key];
+      return `<div class="row">
+        <h3>${f.name} <code class="muted">${f.key}</code> ${on ? "" : '<span class="tag off">Hidden</span>'}</h3>
+        <div class="desc">Hides: ${f.hides}</div>
+        <div class="meta"><span>Still works: ${f.still}</span><span>${meta(f.key)}</span></div>
+        <div class="toggle-cell">${on ? "Shown" : "Hidden"}<button class="switch" role="switch" aria-checked="${on}" aria-label="${f.name}" data-key="${f.key}"></button></div>
+      </div>`;
+    }).join("")}
   </div>`;
+}
+
+// Sidor bakom en navbarbrytare: länken är borta, och öppnas adressen ändå visas det här
+const offPage = (name) => `<div class="off-page"><h2>${name} is turned off</h2><p>An admin has hidden this page for now.</p><button class="btn primary" type="button">Go to the board</button></div>`;
+
+function backlogView() {
+  if (!navOn("backlogPage")) return offPage("The backlog");
+  return `<div class="table"><div><span style="width:80px">Key</span><span>Summary</span></div>
+    <div><span style="width:80px" class="key">MA-110</span><span>Export board as CSV</span></div>
+    <div><span style="width:80px" class="key">MA-111</span><span>Keyboard shortcuts</span></div></div>`;
+}
+
+function issueTypesView() {
+  if (!boardAdmin()) return `<p class="forbidden">Only the board owner has the Issue types page.</p>`;
+  if (!navOn("issueTypesPage")) return offPage("The Issue types page");
+  return `<div class="table"><div><span style="width:120px">Type</span><span>Key</span></div>
+    ${["task", "bug", "doc"].map((t) => `<div><span style="width:120px;display:flex;gap:8px;align-items:center"><span class="type" style="background:${TYPE_COLORS[t]}"></span>${t[0].toUpperCase() + t.slice(1)}</span><code>${t}</code></div>`).join("")}</div>`;
+}
+
+// Kontomenyn: varje rad bakom sin brytare; Aurello-rubriken försvinner när alla tre utseendeval är av
+function accountMenu() {
+  if (!state.menu || state.page === "register") return "";
+  const v = viewer();
+  const look = [["theme", "Theme", "Light"], ["boardBackground", "Board background", "Ocean"], ["navbarColour", "Navbar colour", "Grey"]].filter(([k]) => navOn(k));
+  return `<div class="acct" role="menu">
+    <h4>Account</h4>
+    <div class="user"><span>${v.initials}</span><span>${v.user}</span></div>
+    ${isOn("googleConnect") ? '<button class="item" type="button">Google sign-in<span class="end">›</span></button>' : ""}
+    ${look.length ? `<hr><h4>Aurello</h4>${look.map(([, n, val]) => `<button class="item" type="button">${n}<span class="end">${val} ›</span></button>`).join("")}` : ""}
+    <hr class="gap"><button class="item" type="button">Log out</button></div>`;
 }
 
 function registerView() {
@@ -374,9 +449,9 @@ function toast() {
 function render() {
   renderControls();
   const page = PAGES.find((p) => p.key === state.page);
-  const body = { board: boardView, features: featuresView, register: registerView, invite: inviteView }[state.page]();
+  const body = { board: boardView, backlog: backlogView, issueTypes: issueTypesView, features: featuresView, register: registerView, invite: inviteView }[state.page]();
   const app = document.getElementById("app");
-  app.innerHTML = `<div class="url">●●● <span>aurello.app${page.path}</span></div>${navbar()}${banner()}<main class="view">${body}</main>${dialog()}${toast()}`;
+  app.innerHTML = `<div class="url">●●● <span>aurello.app${page.path}</span></div>${navbar()}${accountMenu()}${banner()}<main class="view">${body}</main>${dialog()}${toast()}`;
   renderNotes();
 }
 
@@ -389,6 +464,7 @@ document.getElementById("app").addEventListener("click", (e) => {
   else if ("confirm" in t.dataset) { sw.readOnly = true; sw.changed.readOnly = timeNow(); state.confirm = false; }
   else if ("cancel" in t.dataset) state.confirm = false;
   else if ("toast" in t.dataset) state.toast = null;
+  else if ("menu" in t.dataset) state.menu = !state.menu;
   else return;
   render();
 });
@@ -407,7 +483,14 @@ const NOTES = {
   ],
   features: [
     ["Features page", ["Route <code>/features</code>, navbar link next to Users, site admins only.", "Read-only is the red toggle on top; turning it on asks for confirmation (<code>AlertDialog</code>), turning it off doesn't.", "Each toggle saves at once with <code>PUT /feature/{key}</code> and shows a success toast."]],
+    ["Navbar group", ["Six UI-only switches at the bottom, labelled “Hides only”: Backlog, Board switcher, Issue types, Board background, Navbar colour, Theme.", "They say “Shown/Hidden” instead of “On/Off” and are never “paused by read-only”.", "<code>googleConnect</code> sits with Accounts: connecting Google is a write, so the server refuses it (503).", "Click the avatar in the navbar to see the account menu."]],
     ["Audit", ["“Changed by … at …” comes from <code>updatedBy</code>/<code>updatedAt</code>, returned only to admins by <code>GET /feature</code>.", "Rows keep their own state while read-only is on (“Paused by read-only”), so turning read-only off restores them."]],
+  ],
+  backlog: [
+    ["Backlog switch", ["<code>backlogPage</code> off: no Backlog link, <code>/backlog</code> says it is turned off, and the card form drops the Backlog choice so cards don't disappear from view.", "UI-only: the cards are still returned by <code>GET /board/{id}/card</code>.", "Click the avatar to see the account menu switches."]],
+  ],
+  issueTypes: [
+    ["Issue types switch", ["<code>issueTypesPage</code> off: the owner loses the link and the page; creating a type from the card form is <code>manageIssueTypes</code>, a separate, enforced switch.", "Collaborators never had this page."]],
   ],
   register: [
     ["Logged out", ["<code>GET /feature</code> is public, so the register page knows before login.", "With <code>register</code> off (or read-only on) the form is replaced by a message, and the navbar's “Register User” link goes away.", "A first Google sign-in is refused too; existing Google users still log in."]],
