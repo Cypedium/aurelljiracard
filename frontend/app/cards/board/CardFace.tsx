@@ -1,6 +1,7 @@
 import type { CSSProperties, MouseEventHandler, ReactNode } from "react";
 import IssueTypeIcon from "../../components/IssueTypeIcon";
 import type { Card } from "../../api/endpoints";
+import RichText from "../../components/RichText";
 import { toPlainText } from "../../utils/richText";
 
 type Props = {
@@ -23,10 +24,10 @@ export default function CardFace({ card, className = "", style, children, action
       style={style}
       onDoubleClick={onDoubleClick}
     >
-      {/* Utan formatering men med radbrytningar; formateringen syns i kortformulärets Preview */}
-      <p className="line-clamp-3 leading-5 whitespace-pre-line wrap-anywhere" title={summary}>
-        {summary}
-      </p>
+      {/* Formaterad, tre rader; hela texten utan formatering när man hovrar */}
+      <div title={summary}>
+        <RichText text={card.comment} variant="compact" />
+      </div>
 
       <div className="mt-auto flex flex-col gap-1">
         {/* Knappar (edit/delete) högerställda ovanför nedre raden */}
