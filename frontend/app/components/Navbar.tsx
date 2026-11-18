@@ -85,9 +85,10 @@ const Navbar = () => {
     ...(onIssueTypes ? [{ label: 'Create Issue type', action: BOARD_ACTIONS.createIssueType, Icon: PlusIcon }] : []),
   ];
 
-  // Boardväljaren visas bara på boarden, först efter loggan (desktop) / överst i hamburgermenyn (mobil).
+  // Boardväljaren visas på alla sidor när man är inloggad, först efter loggan (desktop) / överst i hamburgermenyn (mobil),
+  // så att länkarna inte flyttar sig mellan sidorna. Backlog och Issue types laddar om när boarden byts.
   // Det finns ingen Board-länk: loggan leder till boarden
-  const showSwitcher = onBoard && Boolean(board);
+  const showSwitcher = isLoggedIn && Boolean(board);
 
   // Rad två börjar under boardväljaren / sin länk (Backlog / Issue types). null = vänsterställd (mobil, där länken är dold)
   const headerRef = useRef<HTMLElement>(null);
