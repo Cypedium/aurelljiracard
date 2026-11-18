@@ -158,3 +158,108 @@ button {
     scrollbar-color: rgb(255 255 255 / 0.5) rgb(255 255 255 / 0.15);
   }
 }
+
+/* Kortets sammanfattning (Tiptap, app/utils/summaryFormat.ts): samma utseende i editorn och på kortet.
+   Tailwinds preflight nollställer rubriker och listor, så de får sin stil här */
+.rich-summary {
+  line-height: 1.25rem;
+  overflow-wrap: anywhere;
+}
+.rich-summary > * + *,
+.rich-summary li > * + * {
+  margin-top: 0.5rem;
+}
+.rich-summary h1 {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+.rich-summary h2 {
+  font-size: 1rem;
+  font-weight: 600;
+}
+.rich-summary :is(h3, h4, h5, h6) {
+  font-weight: 600;
+}
+.rich-summary ul {
+  list-style: disc;
+  padding-left: 1.25rem;
+}
+.rich-summary ol {
+  list-style: decimal;
+  padding-left: 1.25rem;
+}
+.rich-summary ul[data-type="taskList"] {
+  list-style: none;
+  padding-left: 0;
+}
+.rich-summary li[data-type="taskItem"] {
+  display: flex;
+  gap: 0.375rem;
+  align-items: flex-start;
+}
+.rich-summary li[data-type="taskItem"] > label {
+  flex: none;
+  margin-top: 0.125rem;
+}
+.rich-summary li[data-type="taskItem"] > div {
+  flex: 1;
+  min-width: 0;
+}
+.rich-summary li[data-checked="true"] > div {
+  color: var(--color-jira-subtle);
+  text-decoration: line-through;
+}
+.rich-summary input[type="checkbox"] {
+  accent-color: var(--color-jira-primary);
+}
+.rich-summary a {
+  color: var(--color-jira-primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.rich-summary code {
+  border-radius: 3px;
+  background: var(--color-jira-lane);
+  padding: 0 0.25rem;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 0.85em;
+}
+.rich-summary pre {
+  overflow-x: auto;
+  border-radius: 3px;
+  background: var(--color-jira-lane);
+  padding: 0.5rem;
+  font-size: 0.75rem;
+}
+.rich-summary pre code {
+  background: none;
+  padding: 0;
+}
+.rich-summary blockquote {
+  border-left: 2px solid var(--color-jira-neutral);
+  padding-left: 0.5rem;
+  color: var(--color-jira-secondary);
+}
+.rich-summary hr {
+  border-color: var(--color-jira-neutral);
+}
+/* Kortets framsida: tre rader som förut, rubriker bara feta, tätare */
+.rich-summary-compact {
+  max-height: 3.75rem;
+  overflow: hidden;
+}
+.rich-summary-compact > * + *,
+.rich-summary-compact li > * + * {
+  margin-top: 0.25rem;
+}
+.rich-summary-compact :is(h1, h2) {
+  font-size: inherit;
+}
+.rich-summary-compact pre {
+  padding: 0 0.25rem;
+  font-size: inherit;
+}
+/* Editorn: ingen egen fokusram (rutan runt får ringen) */
+.rich-summary.ProseMirror {
+  outline: none;
+}

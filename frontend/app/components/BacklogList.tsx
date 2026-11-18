@@ -15,6 +15,7 @@ import { CARD_ACTION_CLASS, TABLE_CELL_CLASS as TD_CLASS, TABLE_HEAD_CLASS as TH
 import IssueTypeIcon from './IssueTypeIcon';
 import TableSkeleton from './TableSkeleton';
 import { Button } from './ui/button';
+import { toPlainLine, toPlainText } from '../utils/summaryFormat';
 
 type BacklogListProps = {
   // Ändras av föräldern för att hämta listan igen (t.ex. efter att ett kort lagts till)
@@ -120,8 +121,8 @@ export default function BacklogList({ refreshKey = 0, onMoved }: BacklogListProp
                     <span className="text-xs font-semibold uppercase text-jira-secondary">{card.productId}</span>
                   </div>
                 </td>
-                <td className={`${TD_CLASS} w-full max-w-0 truncate`} title={card.comment}>
-                  {card.comment}
+                <td className={`${TD_CLASS} w-full max-w-0 truncate`} title={toPlainText(card.comment)}>
+                  {toPlainLine(card.comment)}
                 </td>
                 <td className={`${TD_CLASS} text-center`}>
                   <span
