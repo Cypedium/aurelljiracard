@@ -6,6 +6,8 @@ A site admin can switch individual features off for everyone else, or put the wh
 
 Used for maintenance, for stopping abuse ("hacker issues"), and for limiting what users can do.
 
+A second, smaller group of **navbar switches** only hides navbar links and account-menu settings (section 2.1). They are UI-only by design and are labelled that way on the admin page; they are not a security control.
+
 ## 1. Decisions
 
 | Question | Decision |
@@ -17,6 +19,7 @@ Used for maintenance, for stopping abuse ("hacker issues"), and for limiting wha
 | Scope | Whole site for now. The table is built so a per-board switch can be added later (nullable `board_id`) |
 | Rule | **Allowed = board role allows it AND the feature is on** (site admins skip the second part). A switch only takes rights away, never grants them |
 | Read-only mode | Yes: one master switch that blocks every write for non-admins |
+| Navbar switches | **UI-only** (hide, never `503`): they cover pages that only read (`GET`) and settings saved in the browser, so there is nothing for the backend to refuse and reads stay free. Labelled "Hides only" on the Features page. Exception: `googleConnect` is a write and is enforced like the others |
 
 ## 2. The switches
 
@@ -30,9 +33,25 @@ Used for maintenance, for stopping abuse ("hacker issues"), and for limiting wha
 | `manageIssueTypes` | "Create Issue type", delete on the Issue types page | `POST`, `DELETE /{key}` on `/board/{id}/issue-type` |
 | `shareBoard` | "Share" / "Members" | `POST`/`DELETE /board/{id}/invite`, `DELETE /board/{id}/member/{userId}` (this also blocks **leaving** a board) |
 | `joinBoard` | Invite page shows "temporarily disabled" | `POST /invite/{token}` (stops leaked invite links without touching member management) |
+| `googleConnect` | "Google sign-in" in the account menu | `POST /user/google` (connecting Google to a password account; signing in with an already connected Google account is not affected) |
 | `writes` (API: `readOnly`) | Read-only banner, all create/edit/delete/drag off | Every `POST`/`PUT`/`PATCH`/`DELETE` except the exempt ones below |
 
 `editCard` covers moving cards. If moving should be frozen separately later, split it out as `moveCard`.
+
+### 2.1 Navbar switches (UI-only)
+
+| Key | Hides | What still works (by design) |
+|---|---|---|
+| `backlogPage` | "Backlog" link; `/backlog` shows "This page is turned off" with a link to the board; the "Backlog" choice in the card form's list select (so cards don't vanish from view) | `GET /board/{id}/card` (the board reads the same list); cards already in the backlog stay there |
+| `boardSwitcher` | The board dropdown in the navbar (desktop and mobile menu) | The board last chosen in this browser stays shown; accepting an invite still opens the new board (`showJoinedBoard`) |
+| `issueTypesPage` | "Issue types" link for board owners; `/issue-types` shows "This page is turned off" | Creating a type from the card form (that is `manageIssueTypes`) |
+| `boardBackground` | "Board background" in the account menu | The background already saved in the browser keeps applying |
+| `navbarColour` | "Navbar colour" in the account menu | The navbar colour already saved keeps applying |
+| `theme` | "Theme" in the account menu (after the dark-mode branch is merged) | The theme already saved keeps applying |
+
+- Read-only mode does **not** touch these (they are not writes); site admins always see everything, as with the other switches.
+- Saved browser choices are left alone on purpose: switching a picker off must not change how anyone's board looks. If a uniform look is wanted later, add "reset to default while off" as a separate decision.
+- Anyone can still call the API or set `localStorage` by hand. That is accepted: these switches tidy the UI, they don't protect anything.
 
 ### Never switchable (and exempt from read-only mode)
 
@@ -113,6 +132,7 @@ erDiagram
 
 - One row per switch, seeded by the migration with `disabled = false`. A missing row reads as "on", so adding a key later never blocks anything by accident.
 - Read-only mode is the row `writes` with `disabled = true` ("writes are disabled"). The API exposes it as `readOnly`.
+- Navbar switches are ordinary rows in the same table (seeded by V12 too); only the backend's `Feature` enum knows they are UI-only.
 - `updated_by` / `updated_at` record who changed what and when; this matters after an incident.
 - Later, per board: add a nullable `board_id` (FK → `boards`, cascade) and change the PK. No redesign needed.
 
@@ -121,13 +141,13 @@ erDiagram
 | Method + path | Who | Returns |
 |---|---|---|
 | `GET /feature` | **Public** (`permitAll`; the register page needs it before login). An optional token still authenticates | `{ readOnly, disabled: [keys] }`; for site admins also `switches: [{ key, enabled, updatedAt, updatedBy }]` (the same pattern as `GET /user` adding fields for admins) |
-| `PUT /feature/{key}` | `@AdminOnly` | Body `{ enabled: boolean }` → the updated switch. Unknown key → `404`. `key` = one of the 8 features or `readOnly` |
+| `PUT /feature/{key}` | `@AdminOnly` | Body `{ enabled: boolean }` → the updated switch. Unknown key → `404`. `key` = one of the 9 features, the 6 navbar switches or `readOnly` |
 
 ## 7. Backend parts
 
 | Part | Where |
 |---|---|
-| `Feature` enum (9 keys incl. `WRITES`, JSON keys as in the table) | `entity/Feature.java` |
+| `Feature` enum (16 keys incl. `WRITES`, JSON keys as in the tables; a `uiOnly` flag on the 6 navbar switches) | `entity/Feature.java` |
 | `FeatureSwitch` entity + repository | `entity/`, `repository/` |
 | `FeatureService`: `isDisabled(key)`, `readOnly()`, `list()`, `set(key, enabled, adminId)` | `service/` |
 | `@Feature(Feature.X)` and `@ReadOnlyExempt` annotations | `security/` |
@@ -146,20 +166,24 @@ flowchart LR
     H --> C["Cards / card dialog<br/>no edit/delete/drag when off"]
     H --> B["Read-only banner<br/>layout save skipped"]
     H --> P["Register page / invite page<br/>'temporarily disabled'"]
+    H --> M["Navbar links + account menu<br/>Backlog, board switcher, Issue types,<br/>Board background, Navbar colour, Theme, Google"]
     A["Admin: Features page<br/>/features, link next to Users"] -->|"PUT /feature/{key}"| G
 ```
 
-- `app/utils/features.ts`: `FEATURE_KEYS` (must match the Java `Feature` enum), the `BOARD_ACTIONS` → feature map, and pure helpers (unit-tested).
+- `app/utils/features.ts`: `FEATURE_KEYS` (must match the Java `Feature` enum), `NAVBAR_FEATURE_KEYS` (the UI-only ones), the `BOARD_ACTIONS` → feature map, and pure helpers (unit-tested).
+- Navbar: `Navbar.tsx` hides Backlog, the board switcher and Issue types; `AccountMenu.tsx` hides its items (and the whole "Aurello" section when all three appearance switches are off). `/backlog` and `/issue-types` show "This page is turned off" instead of their content.
 - `useFeatures()`: site admins get everything on (`isOn` is always true), but the admin page still shows the real state.
 - `api.ts`: a `503` shows `toast.error(apiErrorMessage(...))` with a fixed `id` and triggers a refetch of `/feature`.
 - `endpoints.ts` + `tests/unit/endpoints.test.ts`: `getFeatures`, `setFeature`.
 - If `GET /feature` fails (for example an old backend without it), treat everything as on. Never block the UI because the switch list couldn't load.
-- Admin page `app/features/page.tsx`: one toggle per switch with "changed by … at …". Read-only mode is at the top, styled as a danger toggle, with an `AlertDialog` confirmation.
+- Admin page `app/features/page.tsx`: one toggle per switch with "changed by … at …". Read-only mode is at the top, styled as a danger toggle, with an `AlertDialog` confirmation. The navbar switches are their own group at the bottom with a "Hides only" label and a one-line note that they are not a security control.
+- Mockup: `docs/feature-switches-ui.html` (open in a browser).
 
 ## 9. Tests
 
 - **`FeatureApiTest`** (Testcontainers): for each switch, the blocked endpoints return 503 for a user and work for a site admin; the board role still applies when a switch is on; read-only mode blocks every write but `login`/`refresh`/`logout` keep working; Google sign-in creates no user while `register` is off.
-- **`FeatureCoverageTest`** (like `AdminOnlyApiTest`): lists exactly which handler methods carry `@Feature` and `@ReadOnlyExempt`, so a new endpoint can't silently miss them.
+- **`FeatureCoverageTest`** (like `AdminOnlyApiTest`): lists exactly which handler methods carry `@Feature` and `@ReadOnlyExempt`, so a new endpoint can't silently miss them, and checks that no handler carries a `uiOnly` feature.
+- `FeatureApiTest`: `googleConnect` off → `POST /user/google` 503; a navbar switch off → `GET /feature` lists it, but every `GET` still answers 200.
 - `AdminOnlyApiTest`: add `PUT /feature/{key}`.
 - Frontend unit tests: `features.ts` helpers and the `endpoints.test.ts` paths.
 
@@ -168,7 +192,7 @@ flowchart LR
 1. `feat:` V12 migration + entity, repository, `Feature` enum, `FeatureService`
 2. `feat:` interceptor + annotations + 503 + `FeatureController` + tests
 3. `feat:` frontend `features.ts`, `useFeatures`, endpoints, 503 handling
-4. `feat:` hide navbar buttons and card actions, read-only banner, register/invite messages
+4. `feat:` hide navbar buttons and card actions, read-only banner, register/invite messages, navbar switches (links, account menu, "page turned off")
 5. `feat:` admin Features page
 6. `docs:` `CLAUDE.md`, `server-java/README.md` (known difference: Java only), `docs/backend-map.html`
 
