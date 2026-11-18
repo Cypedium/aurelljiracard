@@ -86,7 +86,7 @@ const Navbar = () => {
     ...(onIssueTypes ? [{ label: 'Create Issue type', action: BOARD_ACTIONS.createIssueType, Icon: PlusIcon }] : []),
   ];
 
-  // Boardväljaren visas bara på boarden: sist i rad två (desktop), i hamburgermenyn (mobil)
+  // Boardväljaren visas bara på boarden: till vänster om Board i översta raden (desktop), i hamburgermenyn (mobil)
   const showSwitcher = onBoard && Boolean(board);
 
   // Rad två börjar under sin länk (Board / Backlog / Issue types). null = vänsterställd (mobil, där länken är dold)
@@ -94,6 +94,8 @@ const Navbar = () => {
   const boardLinkRef = useRef<HTMLAnchorElement>(null);
   const backlogLinkRef = useRef<HTMLAnchorElement>(null);
   const issueTypesLinkRef = useRef<HTMLAnchorElement>(null);
+  // Väljaren före Board flyttar länken när den laddats (dynamic import) eller byter bredd
+  const switcherRef = useRef<HTMLLIElement>(null);
   const [subRowStart, setSubRowStart] = useState<number | null>(null);
 
   useLayoutEffect(() => {
@@ -118,8 +120,9 @@ const Navbar = () => {
     const observer = new ResizeObserver(measure);
     observer.observe(link);
     observer.observe(header);
+    if (switcherRef.current) observer.observe(switcherRef.current);
     return () => observer.disconnect();
-  }, [onBoard, onBacklog, onIssueTypes, admin, boardAdmin, board, userName]);
+  }, [onBoard, onBacklog, onIssueTypes, admin, boardAdmin, board, userName, showSwitcher]);
 
   return (
     <header ref={headerRef} className="fixed z-1000 w-full font-brand">
@@ -169,6 +172,12 @@ const Navbar = () => {
           </li>
           {isLoggedIn && (
             <>
+              {/* Vilken board som visas; desktop här, mobil längre ned. Samma typsnitt som länkarna (! går före font-jira) */}
+              {showSwitcher && (
+                <li ref={switcherRef} className="hidden md:block">
+                  <BoardSwitcher className="font-brand! text-base" />
+                </li>
+              )}
               <li onClick={() => setMenuOpen(false)}>
                 <Link
                   ref={boardLinkRef}
@@ -217,7 +226,7 @@ const Navbar = () => {
                   {onIssueTypes && <MobileSubActions actions={subActions} />}
                 </li>
               )}
-              {/* Vilken board som visas; mobil här, desktop i rad två */}
+              {/* Vilken board som visas; mobil här, desktop före Board */}
               {showSwitcher && (
                 <li className="md:hidden">
                   <BoardSwitcher onSelected={() => setMenuOpen(false)} />
@@ -273,8 +282,6 @@ const Navbar = () => {
                 {label}
               </button>
             ))}
-            {/* Samma typsnitt och storlek som länkarna i rad två (! går före BoardSwitchers font-jira) */}
-            {showSwitcher && <BoardSwitcher className="h-7 font-brand! text-base" />}
           </div>
         </div>
       )}
