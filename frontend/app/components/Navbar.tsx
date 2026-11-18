@@ -20,7 +20,6 @@ import {
   TrashIcon,
   UserGroupIcon,
   UsersIcon,
-  ViewColumnsIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
 import { ROUTES } from '../utils/routes';
@@ -86,19 +85,21 @@ const Navbar = () => {
     ...(onIssueTypes ? [{ label: 'Create Issue type', action: BOARD_ACTIONS.createIssueType, Icon: PlusIcon }] : []),
   ];
 
-  // Boardväljaren visas bara på boarden: sist i rad två (desktop), i hamburgermenyn (mobil)
+  // Boardväljaren visas bara på boarden, först efter loggan (desktop) / överst i hamburgermenyn (mobil).
+  // Det finns ingen Board-länk: loggan leder till boarden
   const showSwitcher = onBoard && Boolean(board);
 
-  // Rad två börjar under sin länk (Board / Backlog / Issue types). null = vänsterställd (mobil, där länken är dold)
+  // Rad två börjar under boardväljaren / sin länk (Backlog / Issue types). null = vänsterställd (mobil, där länken är dold)
   const headerRef = useRef<HTMLElement>(null);
-  const boardLinkRef = useRef<HTMLAnchorElement>(null);
   const backlogLinkRef = useRef<HTMLAnchorElement>(null);
   const issueTypesLinkRef = useRef<HTMLAnchorElement>(null);
+  // Väljaren får sin bredd först när den laddats (dynamic import); då flyttas länkarna efter den
+  const switcherRef = useRef<HTMLLIElement>(null);
   const [subRowStart, setSubRowStart] = useState<number | null>(null);
 
   useLayoutEffect(() => {
-    const link = onBoard
-      ? boardLinkRef.current
+    const link: HTMLElement | null = onBoard
+      ? switcherRef.current
       : onBacklog
         ? backlogLinkRef.current
         : onIssueTypes
@@ -118,8 +119,9 @@ const Navbar = () => {
     const observer = new ResizeObserver(measure);
     observer.observe(link);
     observer.observe(header);
+    if (switcherRef.current) observer.observe(switcherRef.current);
     return () => observer.disconnect();
-  }, [onBoard, onBacklog, onIssueTypes, admin, boardAdmin, board, userName]);
+  }, [onBoard, onBacklog, onIssueTypes, admin, boardAdmin, board, userName, showSwitcher]);
 
   return (
     <header ref={headerRef} className="fixed z-1000 w-full font-brand">
@@ -169,18 +171,18 @@ const Navbar = () => {
           </li>
           {isLoggedIn && (
             <>
-              <li onClick={() => setMenuOpen(false)}>
-                <Link
-                  ref={boardLinkRef}
-                  href={ROUTES.board}
-                  aria-current={pathname === ROUTES.board ? 'page' : undefined}
-                  className={`${NAV_LINK_CLASS} underline-offset-8 aria-[current=page]:underline`}
-                >
-                  <ViewColumnsIcon className={NAV_ICON_CLASS} aria-hidden />
-                  Board
-                </Link>
-                {onBoard && <MobileSubActions actions={subActions} />}
-              </li>
+              {/* Vilken board som visas; typsnitt och storlek som länkarna */}
+              {showSwitcher && (
+                <li ref={switcherRef}>
+                  <BoardSwitcher onSelected={() => setMenuOpen(false)} />
+                </li>
+              )}
+              {/* Mobil: boardens knappar (Create card, Share …), som annars ligger i rad två */}
+              {onBoard && (
+                <li className="md:hidden" onClick={() => setMenuOpen(false)}>
+                  <MobileSubActions actions={subActions} />
+                </li>
+              )}
               <li onClick={() => setMenuOpen(false)}>
                 <Link
                   ref={backlogLinkRef}
@@ -215,12 +217,6 @@ const Navbar = () => {
                     Issue types
                   </Link>
                   {onIssueTypes && <MobileSubActions actions={subActions} />}
-                </li>
-              )}
-              {/* Vilken board som visas; mobil här, desktop i rad två */}
-              {showSwitcher && (
-                <li className="md:hidden">
-                  <BoardSwitcher onSelected={() => setMenuOpen(false)} />
                 </li>
               )}
             </>
@@ -273,8 +269,6 @@ const Navbar = () => {
                 {label}
               </button>
             ))}
-            {/* Samma typsnitt och storlek som länkarna i rad två (! går före BoardSwitchers font-jira) */}
-            {showSwitcher && <BoardSwitcher className="h-7 font-brand! text-base" />}
           </div>
         </div>
       )}

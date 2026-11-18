@@ -71,6 +71,21 @@
   --ring: #388bff;
 }
 
+/* Kontomenyn (portal): navbarens färger i stället för de vita ytorna. Variablerna ärvs av menyn och dess paneler;
+   ytor och linjer blandas från textfärgen, så att de syns både på mörka och ljusa navbarfärger */
+.nav-theme {
+  --popover: var(--color-nav-top);
+  --popover-foreground: var(--color-nav-text);
+  --border: color-mix(in srgb, var(--color-nav-text) 25%, transparent);
+  --color-jira-text: var(--color-nav-text);
+  --color-jira-secondary: var(--color-nav-text);
+  --color-jira-subtle: color-mix(in srgb, var(--color-nav-text) 80%, transparent);
+  --color-jira-primary: var(--color-nav-text);
+  --color-jira-hover: color-mix(in srgb, var(--color-nav-text) 12%, transparent);
+  --color-jira-info: color-mix(in srgb, var(--color-nav-text) 18%, transparent);
+  --color-jira-neutral: color-mix(in srgb, var(--color-nav-text) 25%, transparent);
+}
+
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);

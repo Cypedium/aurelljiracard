@@ -20,7 +20,7 @@ export type AppearanceView = 'background' | 'navbar';
 
 // Bock mitt i den valda rutan, som i Trello
 const Selected = () => (
-  <span className="absolute inset-0 m-auto flex size-6 items-center justify-center rounded-full bg-white/90 text-jira-text">
+  <span className="absolute inset-0 m-auto flex size-6 items-center justify-center rounded-full bg-black/55 text-white">
     <CheckIcon className="size-4" strokeWidth={2.5} aria-hidden />
   </span>
 );
