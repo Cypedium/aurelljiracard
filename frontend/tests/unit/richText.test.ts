@@ -1,8 +1,9 @@
 import { describe, expect, it } from "@jest/globals";
 import {
+  CARD_FACE_ELEMENTS,
+  LINK_REL,
+  SUMMARY_ELEMENTS,
   continueList,
-  parseInline,
-  parseRichText,
   toPlainLine,
   toPlainText,
   toggleBold,
@@ -34,59 +35,23 @@ const enter = (marked: string) => {
   return edit && show(edit);
 };
 
-describe("parseInline", () => {
-  it("splits bold from plain text", () => {
-    expect(parseInline("Fix **login** now")).toEqual([
-      { text: "Fix ", bold: false },
-      { text: "login", bold: true },
-      { text: " now", bold: false },
-    ]);
+describe("rendered elements", () => {
+  it("never renders images or raw HTML elements", () => {
+    for (const list of [CARD_FACE_ELEMENTS, SUMMARY_ELEMENTS]) {
+      for (const tag of ["img", "script", "iframe", "style", "object"]) expect(list).not.toContain(tag);
+    }
   });
 
-  it("keeps unmatched or empty markers as text", () => {
-    expect(parseInline("a ** b")).toEqual([{ text: "a ** b", bold: false }]);
-    expect(parseInline("****")).toEqual([{ text: "****", bold: false }]);
+  it("keeps tables, code blocks and lines out of the three-line card face", () => {
+    for (const tag of ["table", "pre", "hr"]) {
+      expect(CARD_FACE_ELEMENTS).not.toContain(tag as never);
+      expect(SUMMARY_ELEMENTS).toContain(tag);
+    }
+    for (const tag of CARD_FACE_ELEMENTS) expect(SUMMARY_ELEMENTS).toContain(tag);
   });
 
-  it("returns no spans for an empty line", () => {
-    expect(parseInline("")).toEqual([]);
-  });
-});
-
-describe("parseRichText", () => {
-  it("keeps every line, including empty ones", () => {
-    expect(parseRichText("one\n\ntwo")).toEqual([
-      { kind: "line", spans: [{ text: "one", bold: false }] },
-      { kind: "line", spans: [] },
-      { kind: "line", spans: [{ text: "two", bold: false }] },
-    ]);
-  });
-
-  it("groups consecutive bullet lines into one list", () => {
-    expect(parseRichText("- a\n* **b**\nend\n- c")).toEqual([
-      { kind: "list", items: [[{ text: "a", bold: false }], [{ text: "b", bold: true }]] },
-      { kind: "line", spans: [{ text: "end", bold: false }] },
-      { kind: "list", items: [[{ text: "c", bold: false }]] },
-    ]);
-  });
-
-  it("reads # as heading and ## as large text", () => {
-    expect(parseRichText("# Title\n## Sub\n### Not")).toEqual([
-      { kind: "line", size: "heading", spans: [{ text: "Title", bold: false }] },
-      { kind: "line", size: "large", spans: [{ text: "Sub", bold: false }] },
-      { kind: "line", spans: [{ text: "### Not", bold: false }] },
-    ]);
-  });
-
-  it("accepts Windows line breaks", () => {
-    expect(parseRichText("a\r\nb")).toHaveLength(2);
-  });
-
-  it("needs a space after the marker", () => {
-    expect(parseRichText("-a\n#b")).toEqual([
-      { kind: "line", spans: [{ text: "-a", bold: false }] },
-      { kind: "line", spans: [{ text: "#b", bold: false }] },
-    ]);
+  it("opens links without giving the new tab access to the board", () => {
+    expect(LINK_REL.split(" ")).toEqual(expect.arrayContaining(["noopener", "noreferrer"]));
   });
 });
 
@@ -103,6 +68,27 @@ describe("toPlainText / toPlainLine", () => {
 
   it("leaves plain text unchanged", () => {
     expect(toPlainText("Fix the login page")).toBe("Fix the login page");
+  });
+
+  it("removes inline markdown and keeps link and image text", () => {
+    expect(toPlainText("*Very* ~~old~~ `npm test`, see [docs](https://x.se) ![logo](https://x.se/a.png)")).toBe(
+      "Very old npm test, see docs logo",
+    );
+    expect(toPlainText("__bold__ and **bold**")).toBe("bold and bold");
+  });
+
+  it("keeps stars and underscores that are not formatting", () => {
+    expect(toPlainText("2 * 3 * 4 and snake_case_name")).toBe("2 * 3 * 4 and snake_case_name");
+  });
+
+  it("shows to-do items as boxes and drops quote and deeper heading markers", () => {
+    expect(toPlainText("- [ ] write tests\n- [x] plan\n> quoted\n### Small")).toBe(
+      "☐ write tests\n☑ plan\nquoted\nSmall",
+    );
+  });
+
+  it("treats + and indented items as bullets and keeps numbered lists", () => {
+    expect(toPlainText("+ a\n  - b\n1. c")).toBe("• a\n• b\n1. c");
   });
 });
 

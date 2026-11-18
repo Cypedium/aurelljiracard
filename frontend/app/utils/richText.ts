@@ -1,13 +1,11 @@
-// Formatering i kortets sammanfattning: en liten del av markdown, sparad som vanlig text.
-//   **fet**   "- " punktlista   "## " större text   "# " rubrik   varje radbrytning är en ny rad
-// parseRichText ger data som RichText.tsx ritar som React-element, aldrig som HTML.
-// Backenden ser bara en sträng (max 2000 tecken), så gamla kort fungerar som förut
+// Formatering i kortets sammanfattning: markdown (GFM), sparad som vanlig text. Backenden ser bara en sträng
+// (max 2000 tecken), så gamla kort fungerar som förut. RichText.tsx ritar den med react-markdown som
+// React-element, aldrig som HTML (ingen rehype-raw). Verktygsraden skriver in tecknen med funktionerna nedan:
+//   **fet**   "- " punktlista   "## " större text   "# " rubrik
+// Utöver dem fungerar allt i GFM som går att skriva: *kursiv*, ~~struken~~, `kod`, [länk](https://…), "- [ ] " att-göra,
+// numrerade listor, > citat och (bara i kortformuläret) tabeller och kodblock. Bilder visas aldrig.
 
 export type TextSize = "large" | "heading";
-export type InlineSpan = { text: string; bold: boolean };
-export type RichBlock =
-  | { kind: "line"; size?: TextSize; spans: InlineSpan[] }
-  | { kind: "list"; items: InlineSpan[][] };
 
 // Text, cursor och markering efter en ändring från verktygsraden
 export type TextEdit = { value: string; selectionStart: number; selectionEnd: number };
@@ -18,9 +16,25 @@ export const SIZE_PREFIX: Record<TextSize, string> = { heading: "# ", large: "##
 const BOLD_MARK = "**";
 const BULLET_RE = /^[-*] /;
 const SIZE_RE = /^(#{1,2}) /;
-const BOLD_RE = /\*\*(.+?)\*\*/g;
-// Tecknet som visas före en punkt när formateringen tas bort (kortets framsida, backloggen)
+
+// Elementen react-markdown får rita. Kortets framsida är tre rader: inga tabeller, kodblock eller linjer
+// (deras text visas ändå, unwrapDisallowed). Bilder ritas aldrig: de skulle hämtas från vilken adress som helst
+export const CARD_FACE_ELEMENTS = [
+  "p", "br", "strong", "em", "del", "code", "a",
+  "ul", "ol", "li", "input",
+  "h1", "h2", "h3", "h4", "h5", "h6", "blockquote",
+] as const;
+export const SUMMARY_ELEMENTS = [
+  ...CARD_FACE_ELEMENTS,
+  "pre", "hr", "table", "thead", "tbody", "tr", "th", "td",
+] as const;
+// Länkar öppnas i en ny flik utan att sidan får tillgång till kortet
+export const LINK_REL = "noopener noreferrer nofollow";
+
+// Tecknen som visas före en punkt / att-göra-rad när formateringen tas bort (kortets title, backloggen, dialoger)
 const PLAIN_BULLET = "• ";
+const PLAIN_TODO = "☐ ";
+const PLAIN_DONE = "☑ ";
 
 const splitLines = (text: string) => text.split(/\r?\n/);
 
@@ -33,47 +47,34 @@ export const lineSize = (line: string): TextSize | undefined => {
 // Radens prefix (punkt eller storlek), som inte räknas till texten
 const linePrefixLength = (line: string) => BULLET_RE.exec(line)?.[0].length ?? SIZE_RE.exec(line)?.[0].length ?? 0;
 
-// **fet** inom en rad; ett ensamt ** visas som det är
-export const parseInline = (line: string): InlineSpan[] => {
-  const spans: InlineSpan[] = [];
-  let last = 0;
-  for (const match of line.matchAll(BOLD_RE)) {
-    if (match.index > last) spans.push({ text: line.slice(last, match.index), bold: false });
-    spans.push({ text: match[1], bold: true });
-    last = match.index + match[0].length;
-  }
-  if (last < line.length) spans.push({ text: line.slice(last), bold: false });
-  return spans;
-};
+// Markdown inom en rad → bara texten: bilder och länkar blir sin text, fet/kursiv/struken/kod blir oformaterat
+const plainInline = (line: string): string =>
+  line
+    .replace(/!\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+    .replace(/(\*\*|__)(.+?)\1/g, "$2")
+    .replace(/~~(.+?)~~/g, "$1")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/(^|[^*\w])\*(?!\s)([^*]+?)\*(?!\w)/g, "$1$2");
 
-// Rader i följd som börjar med "- " (eller "* ") blir en lista; en tom rad blir en tom rad
-export const parseRichText = (text: string): RichBlock[] => {
-  const blocks: RichBlock[] = [];
-  for (const line of splitLines(text)) {
-    if (BULLET_RE.test(line)) {
-      const item = parseInline(line.replace(BULLET_RE, ""));
-      const previous = blocks.at(-1);
-      if (previous?.kind === "list") previous.items.push(item);
-      else blocks.push({ kind: "list", items: [item] });
-      continue;
-    }
-    const size = lineSize(line);
-    blocks.push(
-      size
-        ? { kind: "line", size, spans: parseInline(line.replace(SIZE_RE, "")) }
-        : { kind: "line", spans: parseInline(line) },
-    );
-  }
-  return blocks;
-};
+const LIST_RE = /^\s*[-*+] /;
+const TODO_RE = /^\[([ xX])\] /;
+const HEADING_RE = /^#{1,6} /;
+const QUOTE_RE = /^>\s?/;
 
-// Utan formateringstecken, radbrytningarna kvar (kortets framsida, dialoger)
+// Utan formateringstecken, radbrytningarna kvar
 export const toPlainText = (text: string): string =>
   splitLines(text)
     .map((line) => {
-      const bullet = BULLET_RE.test(line);
-      const content = line.replace(BULLET_RE, "").replace(SIZE_RE, "").replace(BOLD_RE, "$1");
-      return bullet ? PLAIN_BULLET + content : content;
+      let content = line.replace(QUOTE_RE, "").replace(HEADING_RE, "");
+      let marker = "";
+      if (LIST_RE.test(content)) {
+        content = content.replace(LIST_RE, "");
+        const todo = TODO_RE.exec(content);
+        marker = todo ? (todo[1] === " " ? PLAIN_TODO : PLAIN_DONE) : PLAIN_BULLET;
+        content = content.replace(TODO_RE, "");
+      }
+      return marker + plainInline(content);
     })
     .join("\n");
 

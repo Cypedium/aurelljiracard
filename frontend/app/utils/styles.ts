@@ -13,7 +13,6 @@ import { NEW_LIST_COLOR, type BoardHeader, type CardStatus } from "./boardLayout
 import { readableTextColor } from "./color";
 import type { IssueTypeIconName } from "./cardType";
 import type { PasswordStrength } from "./checkPasswordStrength";
-import type { TextSize } from "./richText";
 
 // Board: datum, edit- och delete-knappen syns bara när man hovrar över kortet
 // (alltid på pekskärmar, där det inte finns hover)
@@ -58,14 +57,30 @@ export const SECTION_PADDING = "px-6 max-[480px]:px-4";
 export const AUTH_FORM_CLASS =
   "mx-4 flex w-full max-w-md flex-col rounded-xl bg-white p-6 font-jira text-sm text-jira-text shadow-[0_8px_12px_rgba(9,30,66,0.15),0_0_1px_rgba(9,30,66,0.31)]";
 
-// Formaterad sammanfattning (RichText): textstorlek per rad, punktlista
-export const RICH_TEXT_CLASS = "leading-5 wrap-anywhere";
-export const RICH_TEXT_SIZE_CLASS: Record<TextSize | "normal", string> = {
-  normal: "",
-  large: "text-base font-semibold",
-  heading: "text-lg font-semibold",
-};
-export const RICH_TEXT_LIST_CLASS = "list-disc pl-5";
+// Formaterad sammanfattning (RichText, react-markdown). full = kortformulärets Preview, compact = kortets framsida
+export const RICH_TEXT_CLASS = {
+  full: "leading-5 wrap-anywhere [&>*+*]:mt-2",
+  // Tre rader som förut (line-clamp-3); det som inte får plats klipps
+  compact: "max-h-15 overflow-hidden leading-5 wrap-anywhere [&>*+*]:mt-1",
+} as const;
+export const RICH_TEXT_HEADING_CLASS = {
+  full: { h1: "text-lg font-semibold", h2: "text-base font-semibold", other: "font-semibold" },
+  // På kortet: rubriker bara feta, så att raderna får plats
+  compact: { h1: "font-semibold", h2: "font-semibold", other: "font-semibold" },
+} as const;
+// Mjuka radbrytningar (en Enter) syns som nya rader, som i textrutan
+export const RICH_TEXT_PARAGRAPH_CLASS = "whitespace-pre-line";
+export const RICH_TEXT_LIST_CLASS = { ul: "list-disc pl-5", ol: "list-decimal pl-5" } as const;
+// Att-göra-rader ("- [ ] "): ingen punkt, kryssrutan först
+export const RICH_TEXT_TODO_LIST_CLASS = "list-none pl-0";
+export const RICH_TEXT_CHECKBOX_CLASS = "mr-1.5 align-middle accent-jira-primary";
+// no-drag: en länk på kortet startar inte en dragning (react-grid-layout cancel)
+export const RICH_TEXT_LINK_CLASS = "no-drag text-jira-primary underline underline-offset-2 hover:text-jira-primary-hover";
+export const RICH_TEXT_CODE_CLASS = "rounded-[3px] bg-jira-lane px-1 font-mono text-[0.85em]";
+export const RICH_TEXT_PRE_CLASS = "overflow-x-auto rounded-[3px] bg-jira-lane p-2 font-mono text-xs [&_code]:bg-transparent [&_code]:p-0";
+export const RICH_TEXT_QUOTE_CLASS = "border-l-2 border-jira-neutral pl-2 text-jira-secondary";
+export const RICH_TEXT_TABLE_CLASS = "block overflow-x-auto border-collapse text-xs [&_td]:border [&_td]:border-jira-neutral [&_td]:px-2 [&_td]:py-1 [&_th]:border [&_th]:border-jira-neutral [&_th]:bg-jira-lane [&_th]:px-2 [&_th]:py-1 [&_th]:text-left";
+export const RICH_TEXT_HR_CLASS = "border-jira-neutral";
 // Sammanfattningens verktygsrad (fet, punktlista, storlek) och Write/Preview
 export const EDITOR_TOOL_CLASS =
   "inline-flex size-7 items-center justify-center rounded-[3px] text-jira-secondary hover:bg-jira-neutral disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent";
