@@ -171,10 +171,10 @@ const Navbar = () => {
           </li>
           {isLoggedIn && (
             <>
-              {/* Vilken board som visas. Desktop: samma typsnitt som länkarna (! går före font-jira) */}
+              {/* Vilken board som visas; typsnitt och storlek som länkarna */}
               {showSwitcher && (
                 <li ref={switcherRef}>
-                  <BoardSwitcher className="md:font-brand! md:text-base" onSelected={() => setMenuOpen(false)} />
+                  <BoardSwitcher onSelected={() => setMenuOpen(false)} />
                 </li>
               )}
               {/* Mobil: boardens knappar (Create card, Share …), som annars ligger i rad två */}
