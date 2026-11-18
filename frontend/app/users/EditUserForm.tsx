@@ -52,7 +52,7 @@ export default function EditUserForm({ user, isSelf, onSaved, onCancel }: EditUs
   return (
     <Form {...form}>
       <form
-        className="w-full overflow-hidden rounded-xl bg-white font-jira text-sm text-jira-text shadow-[0_8px_12px_rgba(9,30,66,0.15),0_0_1px_rgba(9,30,66,0.31)]"
+        className="w-full overflow-hidden rounded-xl bg-jira-surface font-jira text-sm text-jira-text shadow-[0_8px_12px_rgba(9,30,66,0.15),0_0_1px_rgba(9,30,66,0.31)]"
         onSubmit={form.handleSubmit(onSubmit)}
         noValidate
       >
@@ -68,7 +68,7 @@ export default function EditUserForm({ user, isSelf, onSaved, onCancel }: EditUs
               <FormItem className={FORM_ITEM_CLASS}>
                 <FormLabel className={LABEL_CLASS}>Username</FormLabel>
                 <FormControl>
-                  <Input className="bg-white text-jira-text" autoComplete="off" {...field} />
+                  <Input className="bg-jira-surface text-jira-text" autoComplete="off" {...field} />
                 </FormControl>
                 <FormMessage className={FIELD_ERROR_CLASS} />
               </FormItem>

@@ -55,7 +55,7 @@ export default function LoginForm() {
             <FormItem className={FORM_ITEM_CLASS}>
               <FormLabel className={LABEL_CLASS}>Username</FormLabel>
               <FormControl>
-                <Input type="text" autoComplete="username" className="bg-white" {...field} />
+                <Input type="text" autoComplete="username" className="bg-jira-surface" {...field} />
               </FormControl>
               <FormMessage className={FIELD_ERROR_CLASS} />
             </FormItem>
@@ -69,7 +69,7 @@ export default function LoginForm() {
             <FormItem className={FORM_ITEM_CLASS}>
               <FormLabel className={LABEL_CLASS}>Password</FormLabel>
               <FormControl>
-                <Input type="password" autoComplete="current-password" className="bg-white" {...field} />
+                <Input type="password" autoComplete="current-password" className="bg-jira-surface" {...field} />
               </FormControl>
               <FormMessage className={FIELD_ERROR_CLASS} />
             </FormItem>

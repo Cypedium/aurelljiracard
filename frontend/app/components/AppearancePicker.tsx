@@ -20,7 +20,7 @@ export type AppearanceView = 'background' | 'navbar';
 
 // Bock mitt i den valda rutan, som i Trello
 const Selected = () => (
-  <span className="absolute inset-0 m-auto flex size-6 items-center justify-center rounded-full bg-white/90 text-jira-text">
+  <span className="absolute inset-0 m-auto flex size-6 items-center justify-center rounded-full bg-jira-surface/90 text-jira-text">
     <CheckIcon className="size-4" strokeWidth={2.5} aria-hidden />
   </span>
 );
@@ -48,7 +48,7 @@ const CustomColor = ({ value, selected, onChange }: { value: string; selected: b
       type="color"
       value={value}
       onChange={(e) => onChange(e.target.value.toLowerCase())}
-      className="h-8 w-12 shrink-0 cursor-pointer rounded border border-jira-neutral bg-white p-0.5"
+      className="h-8 w-12 shrink-0 cursor-pointer rounded border border-jira-neutral bg-jira-surface p-0.5"
     />
     <span className="flex-1 font-medium">Custom colour</span>
     <span className="font-mono text-xs text-jira-secondary">{value}</span>

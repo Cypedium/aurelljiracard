@@ -25,7 +25,7 @@ export default function AddListForm({ onClose, onSubmit }: Props) {
           placeholder="Enter list name…"
           maxLength={HEADER_TITLE_MAX_LENGTH}
           onKeyDown={(e) => e.key === "Escape" && onClose()}
-          className="rounded-md bg-white px-2 py-1.5 text-sm text-jira-text ring-2 ring-jira-focus outline-none"
+          className="rounded-md bg-jira-surface px-2 py-1.5 text-sm text-jira-text ring-2 ring-jira-focus outline-none"
         />
         <div className="flex items-center gap-1">
           <Button type="submit" size="sm">

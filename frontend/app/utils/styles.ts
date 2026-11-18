@@ -55,7 +55,7 @@ export const FIELD_ERROR_CLASS = "mt-1 text-xs text-jira-danger";
 export const SECTION_PADDING = "px-6 max-[480px]:px-4";
 // Login och register: vitt kort i samma stil som kortformuläret
 export const AUTH_FORM_CLASS =
-  "mx-4 flex w-full max-w-md flex-col rounded-xl bg-white p-6 font-jira text-sm text-jira-text shadow-[0_8px_12px_rgba(9,30,66,0.15),0_0_1px_rgba(9,30,66,0.31)]";
+  "mx-4 flex w-full max-w-md flex-col rounded-xl bg-jira-surface p-6 font-jira text-sm text-jira-text shadow-[0_8px_12px_rgba(9,30,66,0.15),0_0_1px_rgba(9,30,66,0.31)]";
 
 // Ikon per ärendetyp (IssueTypeIcon); bakgrunden är typens färg
 export const ISSUE_TYPE_ICON: Record<IssueTypeIconName, typeof CheckIcon> = {
@@ -78,7 +78,7 @@ export const PASSWORD_STRENGTH_CLASS: Record<PasswordStrength, string> = {
 
 // Tabeller (Users, Backlog): vit ruta, rubrikrad med små grå versaler
 export const TABLE_WRAPPER_CLASS =
-  "overflow-hidden rounded-lg bg-white shadow-[0_1px_1px_rgba(9,30,66,0.25),0_0_1px_rgba(9,30,66,0.31)]";
+  "overflow-hidden rounded-lg bg-jira-surface shadow-[0_1px_1px_rgba(9,30,66,0.25),0_0_1px_rgba(9,30,66,0.31)]";
 
 // Ikonknapp i en tabellrad (Users, Issue types): redigera, ta bort, logga ut
 export const TABLE_ACTION_CLASS =

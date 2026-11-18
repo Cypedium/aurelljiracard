@@ -90,7 +90,7 @@ export default function BacklogList({ refreshKey = 0, onMoved }: BacklogListProp
   if (cards === null) return <TableSkeleton />;
 
   if (cards.length === 0) {
-    return <p className="rounded-lg bg-white p-6 text-center text-sm text-jira-secondary">The backlog is empty.</p>;
+    return <p className="rounded-lg bg-jira-surface p-6 text-center text-sm text-jira-secondary">The backlog is empty.</p>;
   }
 
   // Mobil: Created och Reporter döljs så att tabellen får plats

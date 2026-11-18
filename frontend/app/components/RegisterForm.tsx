@@ -58,7 +58,7 @@ export default function RegisterForm() {
                 <Input
                   type="file"
                   accept="image/*"
-                  className="bg-white"
+                  className="bg-jira-surface"
                   name={name}
                   ref={ref}
                   onBlur={onBlur}
@@ -77,7 +77,7 @@ export default function RegisterForm() {
             <FormItem className={FORM_ITEM_CLASS}>
               <FormLabel className={LABEL_CLASS}>Username</FormLabel>
               <FormControl>
-                <Input type="text" autoComplete="username" className="bg-white" {...field} />
+                <Input type="text" autoComplete="username" className="bg-jira-surface" {...field} />
               </FormControl>
               <FormMessage className={FIELD_ERROR_CLASS} />
             </FormItem>
@@ -91,7 +91,7 @@ export default function RegisterForm() {
             <FormItem className={FORM_ITEM_CLASS}>
               <FormLabel className={LABEL_CLASS}>Password</FormLabel>
               <FormControl>
-                <Input type="password" autoComplete="new-password" className="bg-white" {...field} />
+                <Input type="password" autoComplete="new-password" className="bg-jira-surface" {...field} />
               </FormControl>
               <FormMessage className={FIELD_ERROR_CLASS} />
             </FormItem>

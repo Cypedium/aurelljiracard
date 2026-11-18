@@ -83,7 +83,7 @@ export default function ListHeader({
                   e.currentTarget.blur();
                 }
               }}
-              className="pointer-events-auto min-w-0 flex-1 rounded-md bg-white px-2 py-1 text-sm font-semibold text-jira-text ring-2 ring-jira-focus outline-none"
+              className="pointer-events-auto min-w-0 flex-1 rounded-md bg-jira-surface px-2 py-1 text-sm font-semibold text-jira-text ring-2 ring-jira-focus outline-none"
             />
           ) : admin ? (
             <button

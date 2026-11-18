@@ -100,7 +100,7 @@ export default function NewIssueTypeDialog({ open, onClose, onCreated }: Props) 
         <DialogTitle className="sr-only">New issue type</DialogTitle>
         <Form {...form}>
           <form
-            className="w-full overflow-hidden rounded-xl bg-white text-sm text-jira-text shadow-[0_8px_12px_rgba(9,30,66,0.15),0_0_1px_rgba(9,30,66,0.31)]"
+            className="w-full overflow-hidden rounded-xl bg-jira-surface text-sm text-jira-text shadow-[0_8px_12px_rgba(9,30,66,0.15),0_0_1px_rgba(9,30,66,0.31)]"
             // Dialogen ligger i kortformuläret i React-trädet: submit får inte bubbla dit
             onSubmit={(e) => {
               e.stopPropagation();
@@ -121,7 +121,7 @@ export default function NewIssueTypeDialog({ open, onClose, onCreated }: Props) 
                     <FormLabel className={LABEL_CLASS}>Name</FormLabel>
                     <FormControl>
                       <Input
-                        className="bg-white text-jira-text"
+                        className="bg-jira-surface text-jira-text"
                         placeholder="e.g. Story"
                         autoComplete="off"
                         maxLength={ISSUE_TYPE_LABEL_MAX_LENGTH}

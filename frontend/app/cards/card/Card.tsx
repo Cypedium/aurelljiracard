@@ -158,7 +158,7 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
   return (
     <Form {...form}>
       <form
-        className="mx-auto my-6 w-full max-w-[640px] overflow-hidden rounded-xl bg-white font-jira text-sm text-jira-text shadow-[0_8px_12px_rgba(9,30,66,0.15),0_0_1px_rgba(9,30,66,0.31)] max-[480px]:my-3"
+        className="mx-auto my-6 w-full max-w-[640px] overflow-hidden rounded-xl bg-jira-surface font-jira text-sm text-jira-text shadow-[0_8px_12px_rgba(9,30,66,0.15),0_0_1px_rgba(9,30,66,0.31)] max-[480px]:my-3"
         onSubmit={form.handleSubmit(onSubmit)}
         noValidate
       >
@@ -212,7 +212,7 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
                 <FormLabel className={LABEL_CLASS}>Summary {required}</FormLabel>
                 <FormControl>
                   <Textarea
-                    className="min-h-[88px] resize-y bg-white text-jira-text"
+                    className="min-h-[88px] resize-y bg-jira-surface text-jira-text"
                     placeholder="What needs to be done?"
                     {...field}
                   />
@@ -229,7 +229,7 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
               <FormItem className={FORM_ITEM_CLASS}>
                 <FormLabel className={LABEL_CLASS}>Issue key {required}</FormLabel>
                 <FormControl>
-                  <Input className="bg-white text-jira-text" placeholder="e.g. MA-100" maxLength={PRODUCT_ID_MAX_LENGTH} {...field} />
+                  <Input className="bg-jira-surface text-jira-text" placeholder="e.g. MA-100" maxLength={PRODUCT_ID_MAX_LENGTH} {...field} />
                 </FormControl>
                 <FormMessage className={FIELD_ERROR_CLASS} />
               </FormItem>

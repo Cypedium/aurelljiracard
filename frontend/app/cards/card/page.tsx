@@ -37,7 +37,7 @@ export default function CardPage() {
             role="tab"
             aria-selected={tab === key}
             className={`rounded-lg px-4 py-2 text-sm font-semibold ${
-              tab === key ? "bg-white text-jira-text" : "bg-black/25 text-white hover:bg-black/35"
+              tab === key ? "bg-jira-surface text-jira-text" : "bg-black/25 text-white hover:bg-black/35"
             }`}
             onClick={() => setTab(key)}
           >

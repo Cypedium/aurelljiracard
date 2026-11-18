@@ -44,7 +44,7 @@ export default function InvitePage() {
 
   return (
     <div className="flex min-h-[calc(100dvh-60px)] items-center justify-center bg-linear-135 from-board-from via-board-via to-board-to px-4 pt-20 font-jira">
-      <div className="w-full max-w-[400px] rounded-lg bg-white p-6 text-center text-jira-text shadow-lg">
+      <div className="w-full max-w-[400px] rounded-lg bg-jira-surface p-6 text-center text-jira-text shadow-lg">
         {status === "joining" && <p className="text-sm text-jira-secondary">Joining the board…</p>}
         {status === "login" && (
           <>

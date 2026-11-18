@@ -17,7 +17,7 @@ type Props = {
 export default function CardFace({ card, className = "", style, children, actions, onDoubleClick }: Props) {
   return (
     <div
-      className={`flex flex-col gap-2 rounded-lg bg-white p-3 text-sm text-jira-text shadow-[0_1px_1px_rgba(9,30,66,0.25),0_0_1px_rgba(9,30,66,0.31)] ${className}`}
+      className={`flex flex-col gap-2 rounded-lg bg-jira-surface p-3 text-sm text-jira-text shadow-[0_1px_1px_rgba(9,30,66,0.25),0_0_1px_rgba(9,30,66,0.31)] ${className}`}
       style={style}
       onDoubleClick={onDoubleClick}
     >
