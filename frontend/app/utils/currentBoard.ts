@@ -14,5 +14,9 @@ export const pickBoard = (boards: Board[], savedId: string | null): Board | null
 // Ägaren är boardens admin (listor, ärendetyper, alla kort, inbjudningar); medarbetare är "user"
 export const isBoardAdmin = (board: Board | null | undefined): boolean => board?.role === "admin";
 
+// Namnet i boardväljaren: den egna heter "My board", andras "<ägare>'s board" (från backend)
+export const OWN_BOARD_LABEL = "My board";
+export const boardLabel = (board: Board): string => (isBoardAdmin(board) ? OWN_BOARD_LABEL : board.name);
+
 export const inviteUrl = (origin: string, token: string): string =>
   `${origin}${INVITE_PATH}/${encodeURIComponent(token)}`;

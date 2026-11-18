@@ -2,6 +2,7 @@
 import { ViewColumnsIcon } from '@heroicons/react/24/outline';
 import { selectBoard, useBoards } from '../cards/useBoards';
 import { cn } from '../lib/utils';
+import { boardLabel } from '../utils/currentBoard';
 import { NAV_ICON_CLASS, NAV_MENU_CLASS, NAV_MENU_ITEM_CLASS, NAV_MENU_LABEL_CLASS, NAV_MENU_SEPARATOR_CLASS } from '../utils/styles';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger, SelectValue } from './ui/select';
 
@@ -34,7 +35,7 @@ export default function BoardSwitcher({ onSelected, className }: { onSelected?: 
       <SelectContent position="popper" className={NAV_MENU_CLASS}>
         {own.map((b) => (
           <SelectItem key={b._id} value={b._id} className={NAV_MENU_ITEM_CLASS}>
-            <span className="truncate">{b.name}</span>
+            <span className="truncate">{boardLabel(b)}</span>
           </SelectItem>
         ))}
         {shared.length > 0 && (
@@ -44,7 +45,7 @@ export default function BoardSwitcher({ onSelected, className }: { onSelected?: 
               <SelectLabel className={NAV_MENU_LABEL_CLASS}>Shared with you</SelectLabel>
               {shared.map((b) => (
                 <SelectItem key={b._id} value={b._id} className={NAV_MENU_ITEM_CLASS}>
-                  <span className="truncate">{b.name}</span>
+                  <span className="truncate">{boardLabel(b)}</span>
                 </SelectItem>
               ))}
             </SelectGroup>
