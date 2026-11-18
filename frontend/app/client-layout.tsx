@@ -5,10 +5,15 @@ import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import { Toaster } from "./components/ui/sonner";
 import { applyAppearance, loadAppearance } from "./utils/appearanceStore";
+import { applyTheme, loadTheme } from "./utils/themeStore";
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   // Sparat utseende (boardens bakgrund, navbarens färg) före första ritningen i webbläsaren
-  useLayoutEffect(() => applyAppearance(loadAppearance()), []);
+  // och ljust/mörkt läge (lyssnar på webbläsaren medan "Match browser" är valt)
+  useLayoutEffect(() => {
+    applyAppearance(loadAppearance());
+    applyTheme(loadTheme());
+  }, []);
 
   return (
     <>

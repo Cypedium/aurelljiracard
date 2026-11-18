@@ -2,22 +2,25 @@
 import Image from 'next/image';
 import { useState, type ComponentType, type ReactNode, type SVGProps } from 'react';
 import { toast } from 'sonner';
-import { ArrowRightStartOnRectangleIcon, Bars2Icon, ChevronRightIcon, LinkIcon, PhotoIcon, UserIcon } from '@heroicons/react/24/outline';
+import { ArrowRightStartOnRectangleIcon, Bars2Icon, ChevronRightIcon, LinkIcon, MoonIcon, PhotoIcon, UserIcon } from '@heroicons/react/24/outline';
 import logo from '../icon.png';
 import { connectGoogle } from '../api/endpoints';
 import { apiErrorMessage } from '../utils/apiError';
 import { backgroundSwatch, boardBackground, type Appearance } from '../utils/appearance';
 import { loadAppearance, saveAppearance } from '../utils/appearanceStore';
+import { themeName, type Theme } from '../utils/theme';
+import { loadTheme, saveTheme } from '../utils/themeStore';
 import { avatarInitials } from '../utils/avatar';
 import { GOOGLE_CLIENT_ID } from '../utils/google';
 import { handleLogout } from '../utils/logout';
 import { AppearancePicker, CloseButton, NavbarPreview, PanelHeader, type AppearanceView } from './AppearancePicker';
 import GoogleButton from './GoogleButton';
+import ThemePicker from './ThemePicker';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { ACCOUNT_AVATAR_CLASS, ACCOUNT_MENU_ACTIVE_ITEM_CLASS, ACCOUNT_MENU_HEADING_CLASS, ACCOUNT_MENU_ITEM_CLASS, NAV_ACCOUNT_BUTTON_CLASS, NAV_ICON_SUB_CLASS } from '../utils/styles';
 
-// Panelen som är öppen bredvid menyn: en av färgväljarna eller Google-kopplingen
-type Panel = AppearanceView | 'google';
+// Panelen som är öppen bredvid menyn: en av färgväljarna, temat eller Google-kopplingen
+type Panel = AppearanceView | 'theme' | 'google';
 
 type MenuItemProps = {
   Icon: ComponentType<SVGProps<SVGSVGElement>>;
@@ -42,10 +45,15 @@ export default function AccountMenu({ username }: { username: string }) {
   const [open, setOpen] = useState(false);
   const [panel, setPanel] = useState<Panel | null>(null);
   const [appearance, setAppearance] = useState<Appearance>(loadAppearance);
+  const [theme, setTheme] = useState<Theme>(loadTheme);
 
   const changeAppearance = (next: Appearance) => {
     setAppearance(next);
     saveAppearance(next);
+  };
+  const changeTheme = (next: Theme) => {
+    setTheme(next);
+    saveTheme(next);
   };
   const close = () => {
     setOpen(false);
@@ -110,6 +118,13 @@ export default function AccountMenu({ username }: { username: string }) {
             Aurello
           </h2>
           <MenuItem
+            Icon={MoonIcon}
+            label="Theme"
+            active={panel === 'theme'}
+            end={<span className="shrink-0 text-xs text-jira-secondary">{themeName(theme)}</span>}
+            onClick={() => togglePanel('theme')}
+          />
+          <MenuItem
             Icon={PhotoIcon}
             label="Board background"
             active={panel === 'background'}
@@ -151,6 +166,8 @@ export default function AccountMenu({ username }: { username: string }) {
                   <p className="text-sm text-jira-subtle">Google sign-in is not configured.</p>
                 )}
               </div>
+            ) : panel === 'theme' ? (
+              <ThemePicker theme={theme} onChange={changeTheme} onBack={() => setPanel(null)} onClose={close} />
             ) : (
               <AppearancePicker view={panel} appearance={appearance} onChange={changeAppearance} onBack={() => setPanel(null)} onClose={close} />
             )}
