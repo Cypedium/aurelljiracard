@@ -195,12 +195,14 @@ const FEATURES = [
   { key: "register", group: "Accounts", name: "Registration", hides: "“Register User” link; the register page shows a message", blocks: "POST /auth/register, first Google sign-in" },
   { key: "joinBoard", group: "Accounts", name: "Join boards", hides: "Invite page shows “temporarily disabled”", blocks: "POST /invite/{token}" },
   { key: "googleConnect", group: "Accounts", name: "Connect Google", hides: "“Google sign-in” in the account menu", blocks: "POST /user/google" },
-  { key: "createCard", group: "Cards", name: "Create cards", hides: "“Create card”", blocks: "POST /board/{id}/card" },
+  { key: "createCard", group: "Navbar second row", name: "Create card", hides: "“Create card”", blocks: "POST /board/{id}/card" },
+  { key: "createColumn", group: "Navbar second row", name: "Create column", hides: "“Create column”", blocks: "POST /board/{id}/column" },
+  { key: "deleteColumn", group: "Navbar second row", name: "Delete column", hides: "“Delete column”", blocks: "DELETE /board/{id}/column/{key}" },
+  { key: "shareBoard", group: "Navbar second row", name: "Share", hides: "“Share” / “Members” (also leaving a board)", blocks: "POST/DELETE …/invite, DELETE …/member/{userId}" },
   { key: "editCard", group: "Cards", name: "Edit and move cards", hides: "Edit, dragging cards to another list", blocks: "PUT …/card/{cardId}, PATCH …/status" },
   { key: "deleteCard", group: "Cards", name: "Delete cards", hides: "Delete in the card dialog", blocks: "DELETE …/card/{cardId}" },
-  { key: "manageColumns", group: "Board", name: "Manage lists", hides: "“Create column”, “Delete column”, rename/recolour, dragging list headers", blocks: "POST/PUT/DELETE /board/{id}/column" },
+  { key: "editColumns", group: "Board", name: "Edit lists", hides: "Rename/recolour in the list header, dragging list headers", blocks: "PUT /board/{id}/column/{key}, PUT /board/{id}/column" },
   { key: "manageIssueTypes", group: "Board", name: "Manage issue types", hides: "“Create Issue type”, delete on the Issue types page", blocks: "POST, DELETE /board/{id}/issue-type" },
-  { key: "shareBoard", group: "Board", name: "Share and members", hides: "“Share” / “Members” (also leaving a board)", blocks: "POST/DELETE …/invite, DELETE …/member/{userId}" },
 ];
 
 // Navbarens brytare (avsnitt 2.1): döljer bara, inget 503, påverkas inte av read-only
@@ -291,7 +293,8 @@ function navbar() {
   const subs = [];
   if (state.page === "board") {
     if (isOn("createCard")) subs.push(`<button type="button">${icon.pencil}Create card</button>`);
-    if (boardAdmin() && isOn("manageColumns")) subs.push(`<button type="button">${icon.plus}Create column</button>`, `<button type="button">${icon.trash}Delete column</button>`);
+    if (boardAdmin() && isOn("createColumn")) subs.push(`<button type="button">${icon.plus}Create column</button>`);
+    if (boardAdmin() && isOn("deleteColumn")) subs.push(`<button type="button">${icon.trash}Delete column</button>`);
     if (isOn("shareBoard")) subs.push(`<button type="button">${icon.share}${boardAdmin() ? "Share" : "Members"}</button>`);
   }
   return `<nav class="top">
@@ -319,7 +322,7 @@ function banner() {
 function boardView() {
   const canEdit = isOn("editCard");
   const canDelete = isOn("deleteCard");
-  const lists = boardAdmin() && isOn("manageColumns");
+  const lists = boardAdmin() && isOn("editColumns");
   return `<div class="board">${LISTS.map((l) => `
     <section class="list" style="background:${l.bg};color:${l.fg}">
       <div class="list-head ${lists ? "grab" : ""}" title="${lists ? "Drag to move the list" : ""}">${l.title} <span class="count">${l.cards.length}</span>
@@ -478,6 +481,7 @@ document.getElementById("reset").onclick = () => { state.sw = fresh(); state.toa
 
 const NOTES = {
   board: [
+    ["Second row", ["Each button has its own switch: <code>createCard</code>, <code>createColumn</code>, <code>deleteColumn</code>, <code>shareBoard</code>. Turn one off on the Features page and only that button goes.", "Renaming, recolouring and dragging lists is <code>editColumns</code> (the ⋯ and drag on the list header)."]],
     ["What changes", ["Buttons whose feature is off disappear from the navbar's second row and the cards; nothing is greyed out.", "Read-only adds the yellow banner and stops saving the card layout (<code>PUT /user/layout</code>).", "Board role first: a collaborator never sees Create column, even with the switch on."]],
     ["Data", ["<code>useFeatures()</code> → <code>{ readOnly, isOn(key) }</code> from <code>GET /feature</code>: on load, on window focus and after any 503.", "Site admins: <code>isOn</code> is always true, they get a blue banner instead.", "If <code>/feature</code> fails, treat everything as on."]],
   ],

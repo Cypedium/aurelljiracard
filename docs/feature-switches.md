@@ -26,17 +26,21 @@ A second, smaller group of **navbar switches** only hides navbar links and accou
 | Key | Hides in the UI | Blocks (503) |
 |---|---|---|
 | `register` | "Register User" link, register page shows a message | `POST /auth/register`; a **first** Google sign-in that would create a user |
-| `createCard` | "Create card" | `POST /board/{id}/card` |
+| `createCard` | "Create card" (navbar second row) | `POST /board/{id}/card` |
 | `editCard` | Edit in the card dialog, dragging a card to another list | `PUT /board/{id}/card/{cardId}`, `PATCH …/card/{cardId}/status` |
 | `deleteCard` | Delete in the card dialog | `DELETE /board/{id}/card/{cardId}` |
-| `manageColumns` | "Create column", "Delete column", rename/recolour, dragging list headers | `POST`, `PUT`, `PUT /{key}`, `DELETE /{key}` on `/board/{id}/column` |
+| `createColumn` | "Create column" (navbar second row) | `POST /board/{id}/column` |
+| `deleteColumn` | "Delete column" (navbar second row) | `DELETE /board/{id}/column/{key}` |
+| `editColumns` | Rename/recolour in the list header, dragging list headers | `PUT /board/{id}/column/{key}`, `PUT /board/{id}/column` (move) |
 | `manageIssueTypes` | "Create Issue type", delete on the Issue types page | `POST`, `DELETE /{key}` on `/board/{id}/issue-type` |
-| `shareBoard` | "Share" / "Members" | `POST`/`DELETE /board/{id}/invite`, `DELETE /board/{id}/member/{userId}` (this also blocks **leaving** a board) |
+| `shareBoard` | "Share" / "Members" (navbar second row) | `POST`/`DELETE /board/{id}/invite`, `DELETE /board/{id}/member/{userId}` (this also blocks **leaving** a board) |
 | `joinBoard` | Invite page shows "temporarily disabled" | `POST /invite/{token}` (stops leaked invite links without touching member management) |
 | `googleConnect` | "Google sign-in" in the account menu | `POST /user/google` (connecting Google to a password account; signing in with an already connected Google account is not affected) |
 | `writes` (API: `readOnly`) | Read-only banner, all create/edit/delete/drag off | Every `POST`/`PUT`/`PATCH`/`DELETE` except the exempt ones below |
 
 `editCard` covers moving cards. If moving should be frozen separately later, split it out as `moveCard`.
+
+Each button in the navbar's second row has its own switch: `createCard`, `createColumn`, `deleteColumn`, `shareBoard` (one-to-one with `BOARD_ACTIONS`; "Create Issue type" on the Issue types page is `manageIssueTypes`). They are enforced like every switch in this table, since each one is a write. The Features page shows them together as a "Navbar second row" group. Lists used to be one `manageColumns` switch; it is split so that, for example, deleting lists can be stopped while creating them still works.
 
 ### 2.1 Navbar switches (UI-only)
 
@@ -141,13 +145,13 @@ erDiagram
 | Method + path | Who | Returns |
 |---|---|---|
 | `GET /feature` | **Public** (`permitAll`; the register page needs it before login). An optional token still authenticates | `{ readOnly, disabled: [keys] }`; for site admins also `switches: [{ key, enabled, updatedAt, updatedBy }]` (the same pattern as `GET /user` adding fields for admins) |
-| `PUT /feature/{key}` | `@AdminOnly` | Body `{ enabled: boolean }` → the updated switch. Unknown key → `404`. `key` = one of the 9 features, the 6 navbar switches or `readOnly` |
+| `PUT /feature/{key}` | `@AdminOnly` | Body `{ enabled: boolean }` → the updated switch. Unknown key → `404`. `key` = one of the 11 features, the 6 navbar switches or `readOnly` |
 
 ## 7. Backend parts
 
 | Part | Where |
 |---|---|
-| `Feature` enum (16 keys incl. `WRITES`, JSON keys as in the tables; a `uiOnly` flag on the 6 navbar switches) | `entity/Feature.java` |
+| `Feature` enum (18 keys incl. `WRITES`, JSON keys as in the tables; a `uiOnly` flag on the 6 navbar switches) | `entity/Feature.java` |
 | `FeatureSwitch` entity + repository | `entity/`, `repository/` |
 | `FeatureService`: `isDisabled(key)`, `readOnly()`, `list()`, `set(key, enabled, adminId)` | `service/` |
 | `@Feature(Feature.X)` and `@ReadOnlyExempt` annotations | `security/` |
@@ -170,7 +174,7 @@ flowchart LR
     A["Admin: Features page<br/>/features, link next to Users"] -->|"PUT /feature/{key}"| G
 ```
 
-- `app/utils/features.ts`: `FEATURE_KEYS` (must match the Java `Feature` enum), `NAVBAR_FEATURE_KEYS` (the UI-only ones), the `BOARD_ACTIONS` → feature map, and pure helpers (unit-tested).
+- `app/utils/features.ts`: `FEATURE_KEYS` (must match the Java `Feature` enum), `NAVBAR_FEATURE_KEYS` (the UI-only ones), the `BOARD_ACTIONS` → feature map (`createCard`, `createColumn`, `deleteColumn`, `shareBoard`, `createIssueType` → `manageIssueTypes`), and pure helpers (unit-tested).
 - Navbar: `Navbar.tsx` hides Backlog, the board switcher and Issue types; `AccountMenu.tsx` hides its items (and the whole "Aurello" section when all three appearance switches are off). `/backlog` and `/issue-types` show "This page is turned off" instead of their content.
 - `useFeatures()`: site admins get everything on (`isOn` is always true), but the admin page still shows the real state.
 - `api.ts`: a `503` shows `toast.error(apiErrorMessage(...))` with a fixed `id` and triggers a refetch of `/feature`.
