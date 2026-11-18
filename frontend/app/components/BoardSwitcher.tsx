@@ -24,7 +24,7 @@ export default function BoardSwitcher({ onSelected, className }: { onSelected?: 
       <SelectTrigger
         aria-label="Board"
         className={cn(
-          'h-auto max-w-[260px] border-white/30 bg-white/10 py-1 [font:inherit]! text-inherit hover:bg-white/20 [&_svg]:text-current!',
+          'h-auto max-w-[260px] border-0 bg-white/10 py-1 shadow-none [font:inherit]! text-inherit hover:bg-white/20 [&_svg]:text-current!',
           className,
         )}
       >
