@@ -16,7 +16,7 @@ describe("cardFormSchema", () => {
   });
 
   it("requires a priority", () => {
-    expect(firstError({ ...valid, rating: 0 })).toBe("Please select a priority.");
+    expect(firstError({ ...valid, rating: 0 })).toBe("Please select a time tracking 1 to 5.");
   });
 
   it.each([

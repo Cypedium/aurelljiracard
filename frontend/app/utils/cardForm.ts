@@ -28,7 +28,7 @@ export const cardFormSchema = z.object({
   comment: requiredText(COMMENT_MAX_LENGTH, `Summary is required (max ${COMMENT_MAX_LENGTH} characters).`),
   productId: requiredText(PRODUCT_ID_MAX_LENGTH, PRODUCT_ID_MESSAGE).regex(PRODUCT_ID_PATTERN, PRODUCT_ID_MESSAGE),
   // 0 = inget valt än
-  rating: z.number().int().min(1, "Please select a priority.").max(5, "Please select a priority."),
+  rating: z.number().int().min(1, "Please select a time tracking 1 to 5.").max(5, "Please select a time tracking 1 to 5."),
 });
 
 export type CardFormValues = z.infer<typeof cardFormSchema>;
