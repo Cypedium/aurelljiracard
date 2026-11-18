@@ -12,6 +12,7 @@ import {
 } from "../../components/ui/alert-dialog";
 import type { CardStatus } from "../../utils/boardLayout";
 import CardForm from "../card/Card";
+import { toPlainText } from "../../utils/summaryFormat";
 
 type CardFormDialogProps = {
   // Kortet som redigeras, eller listan där ett nytt kort skapas
@@ -60,7 +61,7 @@ export function DeleteCardDialog({ card, onClose, onConfirm }: DeleteCardDialogP
         <AlertDialogHeader>
           <AlertDialogTitle>Delete this card?</AlertDialogTitle>
           <AlertDialogDescription className="line-clamp-3 wrap-anywhere">
-            {card?.productId}: {card?.comment}
+            {card?.productId}: {toPlainText(card?.comment ?? "")}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

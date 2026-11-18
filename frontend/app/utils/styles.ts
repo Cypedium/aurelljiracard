@@ -57,6 +57,15 @@ export const SECTION_PADDING = "px-6 max-[480px]:px-4";
 export const AUTH_FORM_CLASS =
   "mx-4 flex w-full max-w-md flex-col rounded-xl bg-white p-6 font-jira text-sm text-jira-text shadow-[0_8px_12px_rgba(9,30,66,0.15),0_0_1px_rgba(9,30,66,0.31)]";
 
+// Sammanfattningens editor (SummaryEditor, Tiptap): ruta som textfälten, verktygsrad ovanför
+export const SUMMARY_EDITOR_BOX_CLASS =
+  "relative min-h-[88px] rounded-md border border-input bg-white px-3 py-2 text-sm text-jira-text focus-within:border-jira-focus focus-within:ring-[3px] focus-within:ring-ring/50 aria-invalid:border-jira-danger";
+// Själva skrivytan fyller rutan, så att ett klick var som helst i den sätter cursorn
+export const SUMMARY_EDITOR_CONTENT_CLASS = "min-h-[70px] cursor-text";
+export const SUMMARY_PLACEHOLDER_CLASS = "pointer-events-none absolute top-2 left-3 text-sm text-jira-subtle";
+export const EDITOR_TOOL_CLASS =
+  "inline-flex size-7 items-center justify-center rounded-[3px] text-jira-secondary hover:bg-jira-neutral aria-pressed:bg-jira-info aria-pressed:text-jira-primary";
+
 // Ikon per ärendetyp (IssueTypeIcon); bakgrunden är typens färg
 export const ISSUE_TYPE_ICON: Record<IssueTypeIconName, typeof CheckIcon> = {
   check: CheckIcon,
