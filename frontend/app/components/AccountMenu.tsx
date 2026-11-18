@@ -14,7 +14,7 @@ import { handleLogout } from '../utils/logout';
 import { AppearancePicker, CloseButton, NavbarPreview, PanelHeader, type AppearanceView } from './AppearancePicker';
 import GoogleButton from './GoogleButton';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
-import { ACCOUNT_AVATAR_CLASS, ACCOUNT_MENU_ACTIVE_ITEM_CLASS, ACCOUNT_MENU_HEADING_CLASS, ACCOUNT_MENU_ITEM_CLASS, NAV_ACCOUNT_BUTTON_CLASS, NAV_ICON_SUB_CLASS } from '../utils/styles';
+import { ACCOUNT_AVATAR_CLASS, ACCOUNT_MENU_ACTIVE_ITEM_CLASS, ACCOUNT_MENU_ALIGN_OFFSET, ACCOUNT_MENU_CLASS, ACCOUNT_MENU_HEADING_CLASS, ACCOUNT_MENU_ITEM_CLASS, NAV_ACCOUNT_BUTTON_CLASS, NAV_ICON_SUB_CLASS } from '../utils/styles';
 
 // Panelen som är öppen bredvid menyn: en av färgväljarna eller Google-kopplingen
 type Panel = AppearanceView | 'google';
@@ -82,9 +82,11 @@ export default function AccountMenu({ username }: { username: string }) {
       </PopoverTrigger>
       <PopoverContent
         align="end"
+        alignOffset={ACCOUNT_MENU_ALIGN_OFFSET}
+        collisionPadding={0}
         sideOffset={8}
         aria-label="Account menu"
-        className="relative w-[min(300px,calc(100vw-24px))] p-0 font-jira text-jira-text"
+        className={ACCOUNT_MENU_CLASS}
       >
         <div className={`${panel ? 'hidden md:block' : ''} py-2`}>
           <div className="flex items-start justify-between pr-2">
@@ -130,7 +132,8 @@ export default function AccountMenu({ username }: { username: string }) {
             onClick={() => togglePanel('navbar')}
           />
 
-          <hr className="my-2 border-jira-neutral" />
+          {/* Log out för sig längst ned */}
+          <hr className="mt-6 mb-2 border-jira-neutral" />
           <button type="button" onClick={handleLogout} className={ACCOUNT_MENU_ITEM_CLASS}>
             <ArrowRightStartOnRectangleIcon className="size-5 shrink-0 text-jira-secondary" aria-hidden />
             Log out
@@ -138,7 +141,7 @@ export default function AccountMenu({ username }: { username: string }) {
         </div>
 
         {panel && (
-          <div className="max-h-[calc(100dvh-6rem)] overflow-y-auto p-4 md:absolute md:top-0 md:right-full md:mr-2 md:w-[340px] md:rounded-md md:border md:bg-popover md:shadow-md">
+          <div className="max-h-[calc(100dvh-6rem)] overflow-y-auto p-4 md:absolute md:top-0 md:right-full md:mr-2 md:w-[340px] md:rounded-md md:border md:border-border md:bg-popover md:shadow-md">
             {panel === 'google' ? (
               <div className="flex flex-col gap-3">
                 <PanelHeader title="Google sign-in" onBack={() => setPanel(null)} onClose={close} />

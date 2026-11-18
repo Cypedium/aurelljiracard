@@ -109,7 +109,11 @@ export const NAV_MOBILE_SUB_LIST_CLASS = "mt-2 ml-7 flex flex-col gap-2 text-lg 
 export const NAV_ACCOUNT_BUTTON_CLASS =
   "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full bg-white/15 pr-3 pl-2 font-jira text-xs font-semibold text-nav-text transition-colors hover:bg-white/25 focus-visible:bg-white/25";
 
-// Kontomenyn. Avataren i menyn: ljusgrå med vit text
+// Kontomenyn: navbarens färger (.nav-theme i root.css)
+export const ACCOUNT_MENU_CLASS = "nav-theme relative w-[min(300px,calc(100vw-24px))] p-0 font-jira text-jira-text";
+// align="end" skjuts så här långt åt höger; Radix flyttar sedan tillbaka menyn innanför fönstret, så den ligger kant i kant med skärmens högerkant
+export const ACCOUNT_MENU_ALIGN_OFFSET = -200;
+// Avataren i menyn: ljusgrå med vit text
 export const ACCOUNT_AVATAR_CLASS =
   "inline-flex shrink-0 items-center justify-center rounded-full bg-gray-500 font-jira font-semibold text-white";
 export const ACCOUNT_MENU_HEADING_CLASS =
