@@ -1,0 +1,514 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Feature Switches UI</title>
+<style>
+/* Klickbar skiss av frontenden i docs/feature-switches.md. Appen ritas i Jira-färgerna; ramen runt (flikar, roller, anteckningar) är dokumentation */
+:root {
+  --text: #172b4d; --secondary: #44546f; --subtle: #626f86; --primary: #0c66e4; --primary-hover: #0055cc;
+  --lane: #f1f2f4; --hover: #f7f8f9; --neutral: #dcdfe4; --border: #8590a2; --danger: #c9372c; --danger-bg: #ffeceb;
+  --success: #22a06b; --info: #e9f2ff; --warning-bg: #fff7d6; --warning: #7f5f01;
+  --nav-top: #4a5565; --nav-sub: #364153; --nav-text: #9cc8f5;
+  --board-from: #1c2b41; --board-via: #1d4f91; --board-to: #2b7bb9;
+  --frame-bg: #f7f8fa; --frame-surface: #ffffff; --frame-line: #c9ced6;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --brand: Arial, Helvetica, sans-serif;
+  --mono: ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --frame-bg: #1d2125; --frame-surface: #22272b; --frame-line: #454f59; }
+  :root:not([data-theme="light"]) .frame { color: #dee4ea; }
+  :root:not([data-theme="light"]) .frame .muted { color: #9fadbc; }
+}
+:root[data-theme="dark"] { --frame-bg: #1d2125; --frame-surface: #22272b; --frame-line: #454f59; }
+:root[data-theme="dark"] .frame { color: #dee4ea; }
+:root[data-theme="dark"] .frame .muted { color: #9fadbc; }
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--frame-bg); font-family: var(--sans); color: var(--text); }
+button { font: inherit; cursor: pointer; }
+.muted { color: var(--secondary); }
+code { font-family: var(--mono); font-size: 0.85em; }
+
+/* Ramen: rubrik, flikar och rollväljare */
+.frame { max-width: 1240px; margin: 0 auto; padding: 24px 16px 8px; color: var(--text); }
+.frame h1 { margin: 0 0 4px; font-size: 22px; }
+.frame p { margin: 0 0 16px; font-size: 14px; max-width: 760px; }
+.controls { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; margin-bottom: 16px; }
+.seg { display: inline-flex; border: 1px solid var(--frame-line); border-radius: 8px; overflow: hidden; background: var(--frame-surface); }
+.seg button { border: 0; background: transparent; padding: 6px 12px; font-size: 13px; color: inherit; }
+.seg button + button { border-left: 1px solid var(--frame-line); }
+.seg button[aria-pressed="true"] { background: var(--primary); color: #fff; }
+.controls label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; margin-right: 8px; }
+.link-btn { background: none; border: 0; color: var(--primary); font-size: 13px; padding: 0; text-decoration: underline; }
+
+/* Appens fönster */
+.app { max-width: 1240px; margin: 0 auto 16px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(9,30,66,.25); border: 1px solid var(--frame-line); position: relative; }
+.url { background: #e9ebee; padding: 6px 12px; font: 12px var(--mono); color: var(--secondary); display: flex; gap: 8px; align-items: center; }
+.url span { background: #fff; border-radius: 6px; padding: 3px 10px; flex: 1; }
+nav.top { background: var(--nav-top); color: var(--nav-text); font-family: var(--brand); display: flex; align-items: center; gap: 24px; padding: 8px 16px 8px 24px; flex-wrap: wrap; }
+.nav-link { display: inline-flex; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 6px; color: inherit; text-decoration: none; background: none; border: 0; }
+.nav-link:hover { background: rgba(255,255,255,.1); }
+.nav-link[aria-current="page"] { text-decoration: underline; text-underline-offset: 8px; }
+.logo { font-weight: 700; font-size: 18px; }
+.logo i { width: 26px; height: 26px; border-radius: 6px; background: linear-gradient(135deg, #0c66e4, #36b5c8); display: inline-block; }
+.switcher { display: inline-flex; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 6px; }
+.avatar { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,.15); border-radius: 999px; padding: 6px 12px; font: 600 12px var(--sans); }
+.sub { background: var(--nav-sub); color: var(--nav-text); font-family: var(--brand); display: flex; gap: 16px; padding: 6px 24px; min-height: 36px; align-items: center; flex-wrap: wrap; }
+.sub button { background: none; border: 0; color: inherit; display: inline-flex; gap: 6px; align-items: center; padding: 2px 8px; border-radius: 6px; }
+.sub button:hover { background: rgba(255,255,255,.1); }
+.ico { width: 18px; height: 18px; flex: none; }
+
+.banner { display: flex; gap: 10px; align-items: center; padding: 8px 24px; font-size: 14px; }
+.banner.ro { background: var(--warning-bg); color: var(--warning); }
+.banner.admin { background: var(--info); color: #09326c; }
+
+main.view { background: linear-gradient(135deg, var(--board-from), var(--board-via), var(--board-to)); min-height: 460px; padding: 24px; }
+
+/* Board */
+.board { display: grid; grid-template-columns: repeat(4, minmax(220px, 1fr)); gap: 12px; overflow-x: auto; }
+.list { border-radius: 12px; padding: 8px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 1px 1px rgba(9,30,66,.25); }
+.list-head { display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: 14px; padding: 4px 6px; }
+.list-head .count { font-weight: 400; opacity: .7; }
+.list-head .menu { margin-left: auto; border: 0; background: none; color: inherit; border-radius: 4px; padding: 0 6px; }
+.list-head .menu:hover { background: rgba(0,0,0,.1); }
+.list-head.grab { cursor: grab; }
+.card { background: #fff; border-radius: 8px; padding: 10px 12px; font-size: 14px; box-shadow: 0 1px 1px rgba(9,30,66,.25), 0 0 1px rgba(9,30,66,.31); display: flex; flex-direction: column; gap: 8px; }
+.card.grab { cursor: grab; }
+.card-foot { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--secondary); }
+.type { width: 16px; height: 16px; border-radius: 3px; display: inline-block; flex: none; }
+.key { font-weight: 600; text-transform: uppercase; }
+.pill { background: var(--neutral); border-radius: 999px; padding: 0 6px; }
+.card-actions { margin-left: auto; display: flex; gap: 2px; }
+.card-actions button { border: 0; background: none; color: var(--secondary); border-radius: 3px; padding: 2px 6px; font-size: 12px; }
+.card-actions button:hover { background: var(--neutral); }
+.card-actions .del { color: var(--danger); }
+.who { width: 22px; height: 22px; border-radius: 50%; color: #fff; font: 600 10px var(--sans); display: inline-flex; align-items: center; justify-content: center; }
+.lock { font-size: 12px; color: var(--subtle); display: inline-flex; gap: 4px; align-items: center; }
+
+/* Ytor: features-sidan, register, invite */
+.panel { background: #fff; border-radius: 12px; box-shadow: 0 8px 12px rgba(9,30,66,.15), 0 0 1px rgba(9,30,66,.31); max-width: 820px; margin: 0 auto; overflow: hidden; }
+.panel-head { padding: 20px 24px 12px; }
+.panel-head h2 { margin: 0; font-size: 20px; }
+.panel-head p { margin: 4px 0 0; font-size: 14px; color: var(--secondary); }
+.group-title { margin: 0; padding: 16px 24px 6px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--secondary); }
+.row { display: grid; grid-template-columns: 1fr auto; gap: 4px 16px; align-items: center; padding: 12px 24px; border-top: 1px solid var(--neutral); }
+.row h3 { margin: 0; font-size: 14px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.row .desc { font-size: 13px; color: var(--secondary); grid-column: 1; }
+.row .meta { font-size: 12px; color: var(--subtle); grid-column: 1; display: flex; gap: 12px; flex-wrap: wrap; }
+.row .toggle-cell { grid-column: 2; grid-row: 1 / span 3; display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--secondary); }
+.tag { font-size: 11px; font-weight: 600; border-radius: 3px; padding: 1px 6px; }
+.tag.off { background: var(--danger-bg); color: var(--danger); }
+.tag.ro { background: var(--warning-bg); color: var(--warning); }
+.tag.on { background: #dcfff1; color: #216e4e; }
+.danger-row { margin: 0 24px 8px; border: 1px solid var(--danger); border-radius: 8px; background: var(--danger-bg); padding: 14px 16px; display: grid; grid-template-columns: 1fr auto; gap: 4px 16px; align-items: center; }
+.danger-row h3 { margin: 0; font-size: 15px; color: var(--danger); }
+.danger-row .desc { font-size: 13px; color: var(--text); }
+
+/* Brytare (role="switch") */
+.switch { width: 40px; height: 22px; border-radius: 999px; border: 0; background: var(--border); position: relative; padding: 0; transition: background .15s; flex: none; }
+.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform .15s; }
+.switch[aria-checked="true"] { background: var(--success); }
+.switch[aria-checked="true"]::after { transform: translateX(18px); }
+.switch.danger[aria-checked="true"] { background: var(--danger); }
+.switch:focus-visible { outline: 2px solid #388bff; outline-offset: 2px; }
+
+.auth { max-width: 420px; margin: 32px auto; background: #fff; border-radius: 12px; padding: 24px; font-size: 14px; box-shadow: 0 8px 12px rgba(9,30,66,.15), 0 0 1px rgba(9,30,66,.31); }
+.auth h2 { margin: 0 0 12px; font-size: 20px; }
+.auth label { display: block; margin: 12px 0 4px; font-size: 12px; font-weight: 600; color: var(--secondary); }
+.auth input { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; font: inherit; }
+.btn { border: 0; border-radius: 4px; padding: 7px 14px; font-weight: 500; font-size: 14px; }
+.btn.primary { background: var(--primary); color: #fff; }
+.btn.primary:hover { background: var(--primary-hover); }
+.btn.subtle { background: var(--lane); color: var(--secondary); }
+.btn.danger { background: var(--danger); color: #fff; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.notice { display: flex; gap: 10px; align-items: flex-start; background: var(--lane); border-radius: 8px; padding: 12px; color: var(--secondary); }
+.notice b { color: var(--text); display: block; margin-bottom: 2px; }
+.forbidden { color: #fff; text-align: center; padding-top: 80px; font-size: 15px; }
+
+/* Dialog och toast */
+.overlay { position: absolute; inset: 0; background: rgba(9,30,66,.55); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 5; }
+.dialog { background: #fff; border-radius: 12px; max-width: 440px; padding: 24px; box-shadow: 0 8px 24px rgba(9,30,66,.4); }
+.dialog h2 { margin: 0 0 8px; font-size: 18px; }
+.dialog p { margin: 0 0 20px; font-size: 14px; color: var(--secondary); }
+.dialog .actions { display: flex; justify-content: flex-end; gap: 8px; }
+.toast { position: absolute; right: 16px; bottom: 16px; background: var(--danger-bg); color: var(--danger); border: 1px solid #fd9891; border-radius: 8px; padding: 12px 36px 12px 14px; font-size: 14px; box-shadow: 0 4px 12px rgba(9,30,66,.2); z-index: 6; max-width: 360px; }
+.toast button { position: absolute; top: 6px; right: 6px; border: 0; background: none; color: inherit; }
+
+/* Kontomenyn: navbarens färger, kant i kant med högerkanten */
+.acct { position: absolute; right: 0; top: 44px; width: 280px; background: var(--nav-top); color: var(--nav-text); border: 1px solid rgba(156,200,245,.25); border-radius: 8px; box-shadow: 0 8px 16px rgba(9,30,66,.35); padding: 8px 0; font-size: 14px; z-index: 4; }
+.acct h4 { margin: 0; padding: 10px 16px 4px; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; }
+.acct .item { display: flex; align-items: center; gap: 10px; width: 100%; border: 0; background: none; color: inherit; padding: 8px 16px; text-align: left; }
+.acct .item:hover { background: rgba(156,200,245,.12); }
+.acct .item .end { margin-left: auto; font-size: 12px; opacity: .8; }
+.acct hr { border: 0; border-top: 1px solid rgba(156,200,245,.25); margin: 8px 0; }
+.acct hr.gap { margin-top: 20px; }
+.acct .user { display: flex; align-items: center; gap: 10px; padding: 6px 16px; }
+.acct .user span:first-child { width: 36px; height: 36px; border-radius: 50%; background: #6a7282; color: #fff; display: inline-flex; align-items: center; justify-content: center; font: 600 13px var(--sans); }
+.avatar { border: 0; color: inherit; }
+.off-page { max-width: 460px; margin: 40px auto; background: #fff; border-radius: 12px; padding: 24px; text-align: center; font-size: 14px; box-shadow: 0 8px 12px rgba(9,30,66,.15), 0 0 1px rgba(9,30,66,.31); }
+.off-page h2 { margin: 0 0 8px; font-size: 18px; }
+.off-page p { color: var(--secondary); margin: 0 0 16px; }
+.table { background: #fff; border-radius: 8px; overflow: hidden; max-width: 820px; margin: 0 auto; font-size: 14px; box-shadow: 0 1px 1px rgba(9,30,66,.25), 0 0 1px rgba(9,30,66,.31); }
+.table > div { display: flex; gap: 16px; padding: 10px 16px; border-bottom: 1px solid var(--neutral); }
+.table > div:first-child { background: #4a5565; color: #fff; font-size: 12px; font-weight: 600; text-transform: uppercase; }
+.hint { font-size: 12px; color: var(--subtle); padding: 0 24px 8px; margin: 0; }
+
+/* Anteckningar under skissen */
+.notes { max-width: 1240px; margin: 0 auto 40px; padding: 0 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+.note { background: var(--frame-surface); border: 1px solid var(--frame-line); border-radius: 10px; padding: 14px 16px; font-size: 13px; line-height: 1.5; color: inherit; }
+.note h3 { margin: 0 0 6px; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; }
+.note ul { margin: 0; padding-left: 18px; }
+
+@media (max-width: 720px) {
+  .board { grid-template-columns: repeat(4, 240px); }
+  main.view { padding: 16px; }
+  .row, .danger-row { grid-template-columns: 1fr; }
+  .row .toggle-cell { grid-column: 1; grid-row: auto; }
+  nav.top { gap: 8px; padding-left: 12px; }
+  .sub { padding: 6px 12px; }
+}
+</style>
+</head>
+<body>
+
+<div class="frame">
+  <h1>Feature switches: frontend mockup</h1>
+  <p class="muted">A clickable sketch of the frontend in <code>docs/feature-switches.md</code>. Pick who is looking and which page, then turn switches off on the Features page (as the site admin) and switch to another role to see what disappears. Hiding a button is cosmetic: the backend answers <code>503</code>.</p>
+  <div class="controls">
+    <div><label>Viewer</label><span class="seg" id="viewer"></span></div>
+    <div><label>Page</label><span class="seg" id="page"></span></div>
+    <button class="link-btn" id="stale" type="button">Simulate a stale tab (503)</button>
+    <button class="link-btn" id="reset" type="button">Reset switches</button>
+  </div>
+</div>
+
+<div class="app" id="app"></div>
+<div class="notes" id="notes"></div>
+
+<script>
+// Samma nycklar som Feature-enumen i server-java (docs/feature-switches.md, avsnitt 2)
+const FEATURES = [
+  { key: "register", group: "Accounts", name: "Registration", hides: "“Register User” link; the register page shows a message", blocks: "POST /auth/register, first Google sign-in" },
+  { key: "joinBoard", group: "Accounts", name: "Join boards", hides: "Invite page shows “temporarily disabled”", blocks: "POST /invite/{token}" },
+  { key: "googleConnect", group: "Accounts", name: "Connect Google", hides: "“Google sign-in” in the account menu", blocks: "POST /user/google" },
+  { key: "createCard", group: "Navbar second row", name: "Create card", hides: "“Create card”", blocks: "POST /board/{id}/card" },
+  { key: "createColumn", group: "Navbar second row", name: "Create column", hides: "“Create column”", blocks: "POST /board/{id}/column" },
+  { key: "deleteColumn", group: "Navbar second row", name: "Delete column", hides: "“Delete column”", blocks: "DELETE /board/{id}/column/{key}" },
+  { key: "shareBoard", group: "Navbar second row", name: "Share", hides: "“Share” / “Members” (also leaving a board)", blocks: "POST/DELETE …/invite, DELETE …/member/{userId}" },
+  { key: "editCard", group: "Cards", name: "Edit and move cards", hides: "Edit, dragging cards to another list", blocks: "PUT …/card/{cardId}, PATCH …/status" },
+  { key: "deleteCard", group: "Cards", name: "Delete cards", hides: "Delete in the card dialog", blocks: "DELETE …/card/{cardId}" },
+  { key: "editColumns", group: "Board", name: "Edit lists", hides: "Rename/recolour in the list header, dragging list headers", blocks: "PUT /board/{id}/column/{key}, PUT /board/{id}/column" },
+  { key: "manageIssueTypes", group: "Board", name: "Manage issue types", hides: "“Create Issue type”, delete on the Issue types page", blocks: "POST, DELETE /board/{id}/issue-type" },
+];
+
+// Navbarens brytare (avsnitt 2.1): döljer bara, inget 503, påverkas inte av read-only
+const NAV_FEATURES = [
+  { key: "backlogPage", name: "Backlog", hides: "“Backlog” link, the Backlog choice in the card form; /backlog shows “turned off”", still: "GET /board/{id}/card" },
+  { key: "boardSwitcher", name: "Board switcher", hides: "The board dropdown", still: "The board last chosen stays shown" },
+  { key: "issueTypesPage", name: "Issue types page", hides: "“Issue types” link; /issue-types shows “turned off”", still: "Creating types from the card form (manageIssueTypes)" },
+  { key: "boardBackground", name: "Board background", hides: "“Board background” in the account menu", still: "The saved background keeps applying" },
+  { key: "navbarColour", name: "Navbar colour", hides: "“Navbar colour” in the account menu", still: "The saved colour keeps applying" },
+  { key: "theme", name: "Theme", hides: "“Theme” in the account menu", still: "The saved theme keeps applying" },
+];
+
+const VIEWERS = [
+  { key: "siteAdmin", name: "Site admin", user: "Admin", initials: "AD" },
+  { key: "owner", name: "Board owner", user: "Mikael", initials: "MI" },
+  { key: "member", name: "Collaborator", user: "Sara", initials: "SA" },
+];
+const PAGES = [
+  { key: "features", name: "Features (admin)", path: "/features" },
+  { key: "board", name: "Board", path: "/cards" },
+  { key: "backlog", name: "Backlog", path: "/backlog" },
+  { key: "issueTypes", name: "Issue types", path: "/issue-types" },
+  { key: "register", name: "Register", path: "/register" },
+  { key: "invite", name: "Invite link", path: "/invite/3f9c…" },
+];
+
+const LISTS = [
+  { title: "To Do", bg: "#eed7fc", fg: "#352c63", cards: [["MA-104", "Add read-only banner", "task", "SA"], ["MA-105", "Invite link expires", "bug", "MI"]] },
+  { title: "In Progress", bg: "#f5e989", fg: "#533f04", cards: [["MA-101", "Features page with toggles", "task", "MI"]] },
+  { title: "Test", bg: "#cce0ff", fg: "#09326c", cards: [["MA-99", "503 toast refetches /feature", "bug", "SA"]] },
+  { title: "Done", bg: "#baf3db", fg: "#164b35", cards: [["MA-97", "Plan in feature-switches.md", "doc", "MI"]] },
+];
+const TYPE_COLORS = { task: "#4bade8", bug: "#c9372c", doc: "#8270db" };
+const PEOPLE = { MI: "#0c66e4", SA: "#6e5dc6" };
+
+const fresh = () => ({
+  enabled: Object.fromEntries([...FEATURES, ...NAV_FEATURES].map((f) => [f.key, true])),
+  readOnly: false,
+  changed: {},
+});
+const state = { viewer: "member", page: "board", sw: fresh(), confirm: false, toast: null, menu: false };
+
+// Samma regel som useFeatures(): site admins ser allt, andra stoppas av avstängd funktion eller read-only
+const isOn = (key) => state.viewer === "siteAdmin" || (!state.sw.readOnly && state.sw.enabled[key]);
+// Navbarens brytare: bara av/på, read-only rör dem inte
+const navOn = (key) => state.viewer === "siteAdmin" || state.sw.enabled[key];
+// Board-rollen först (ägaren = boardens admin), sedan brytaren; en brytare tar bara bort rättigheter
+const boardAdmin = () => state.viewer !== "member";
+const viewer = () => VIEWERS.find((v) => v.key === state.viewer);
+
+const icon = {
+  board: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 4.5v15m6-15v15M4.5 19.5h15V4.5h-15z"/></svg>',
+  list: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"/></svg>',
+  users: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="8" r="3"/><path d="M3 19c0-3 2.7-5 6-5s6 2 6 5M16 5a3 3 0 010 6m2 3c2 .6 3 2.4 3 5"/></svg>',
+  tag: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3h7.5l10 10-7.5 7.5-10-10z"/><circle cx="7.5" cy="7.5" r="1.2"/></svg>',
+  toggle: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2.5" y="7" width="19" height="10" rx="5"/><circle cx="16.5" cy="12" r="3"/></svg>',
+  pencil: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16.9 4.6l2.5 2.5L8 18.5H5.5V16z"/></svg>',
+  plus: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 4.5v15m7.5-7.5h-15"/></svg>',
+  trash: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 7h14M10 7V5h4v2m-7 0l1 12h8l1-12"/></svg>',
+  share: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.2 10.9l7.6-3.8m-7.6 6l7.6 3.8"/></svg>',
+  lock: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg>',
+  pause: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M10 9v6m4-6v6"/></svg>',
+  info: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 11v5m0-8h.01"/></svg>',
+};
+
+const timeNow = () => new Date().toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+
+function renderControls() {
+  const seg = (id, items, current, set) => {
+    const el = document.getElementById(id);
+    el.innerHTML = items.map((i) => `<button type="button" data-k="${i.key}" aria-pressed="${i.key === current}">${i.name}</button>`).join("");
+    el.onclick = (e) => { const k = e.target.dataset.k; if (k) { set(k); render(); } };
+  };
+  seg("viewer", VIEWERS, state.viewer, (k) => (state.viewer = k));
+  seg("page", PAGES, state.page, (k) => { state.page = k; state.menu = false; });
+}
+
+function navbar() {
+  const v = viewer();
+  const site = state.viewer === "siteAdmin";
+  const loggedOut = state.page === "register";
+  if (loggedOut) {
+    return `<nav class="top"><span class="nav-link logo"><i></i>AURELLO</span>
+      <span style="margin-left:auto"></span>
+      ${isOnPublic("register") ? '<span class="nav-link">Register User</span>' : ""}
+      <span class="nav-link">Login</span></nav>`;
+  }
+  const subs = [];
+  if (state.page === "board") {
+    if (isOn("createCard")) subs.push(`<button type="button">${icon.pencil}Create card</button>`);
+    if (boardAdmin() && isOn("createColumn")) subs.push(`<button type="button">${icon.plus}Create column</button>`);
+    if (boardAdmin() && isOn("deleteColumn")) subs.push(`<button type="button">${icon.trash}Delete column</button>`);
+    if (isOn("shareBoard")) subs.push(`<button type="button">${icon.share}${boardAdmin() ? "Share" : "Members"}</button>`);
+  }
+  return `<nav class="top">
+      <span class="nav-link logo"><i></i>AURELLO</span>
+      ${navOn("boardSwitcher") ? `<span class="switcher">${icon.board}${state.viewer === "member" ? "Mikael's board" : v.user + "'s board"} ▾</span>` : ""}
+      ${navOn("backlogPage") ? `<span class="nav-link" ${state.page === "backlog" ? 'aria-current="page"' : ""}>${icon.list}Backlog</span>` : ""}
+      ${site ? `<span class="nav-link">${icon.users}Users</span>` : ""}
+      ${site ? `<span class="nav-link" ${state.page === "features" ? 'aria-current="page"' : ""}>${icon.toggle}Features</span>` : ""}
+      ${boardAdmin() && navOn("issueTypesPage") ? `<span class="nav-link" ${state.page === "issueTypes" ? 'aria-current="page"' : ""}>${icon.tag}Issue types</span>` : ""}
+      <button type="button" class="avatar" data-menu aria-expanded="${state.menu}">${v.initials}</button>
+    </nav>
+    ${subs.length ? `<div class="sub">${subs.join("")}</div>` : state.page === "board" ? '<div class="sub"></div>' : ""}`;
+}
+
+// Utloggad (register): ingen admin-undantag
+const isOnPublic = (key) => !state.sw.readOnly && state.sw.enabled[key];
+
+function banner() {
+  if (!state.sw.readOnly || state.page === "register") return "";
+  return state.viewer === "siteAdmin"
+    ? `<div class="banner admin">${icon.info}<span><b>Read-only mode is on</b> for everyone else. You can still make changes as site admin.</span></div>`
+    : `<div class="banner ro">${icon.pause}<span><b>Aurello is in read-only mode.</b> You can look around, but changes are paused for now.</span></div>`;
+}
+
+function boardView() {
+  const canEdit = isOn("editCard");
+  const canDelete = isOn("deleteCard");
+  const lists = boardAdmin() && isOn("editColumns");
+  return `<div class="board">${LISTS.map((l) => `
+    <section class="list" style="background:${l.bg};color:${l.fg}">
+      <div class="list-head ${lists ? "grab" : ""}" title="${lists ? "Drag to move the list" : ""}">${l.title} <span class="count">${l.cards.length}</span>
+        ${lists ? '<button class="menu" type="button" aria-label="List actions">⋯</button>' : ""}</div>
+      ${l.cards.map(([key, text, type, who]) => {
+        const mine = who === viewer().initials || boardAdmin();
+        const del = canDelete && mine;
+        return `<article class="card ${canEdit ? "grab" : ""}">
+          <span>${text}</span>
+          <div class="card-foot">
+            <span class="type" style="background:${TYPE_COLORS[type]}"></span><span class="key">${key}</span><span class="pill">3</span>
+            <span class="card-actions">
+              ${canEdit ? '<button type="button">Edit</button>' : ""}
+              ${del ? '<button type="button" class="del">Delete</button>' : ""}
+              ${!canEdit && !del ? `<span class="lock">${icon.lock}View only</span>` : ""}
+            </span>
+            <span class="who" style="background:${PEOPLE[who]}">${who}</span>
+          </div></article>`;
+      }).join("")}
+    </section>`).join("")}</div>`;
+}
+
+function featuresView() {
+  if (state.viewer !== "siteAdmin") {
+    return `<p class="forbidden">No “Features” link for this user. Opening <code>/features</code> directly shows nothing to change:<br><code>PUT /feature/{key}</code> answers <b>403 “Admins only.”</b></p>`;
+  }
+  const sw = state.sw;
+  const meta = (key) => sw.changed[key] ? `Changed by Admin · ${sw.changed[key]}` : "Never changed";
+  const groups = [...new Set(FEATURES.map((f) => f.group))];
+  return `<div class="panel">
+    <div class="panel-head"><h2>Features</h2><p>Turn features off for everyone except site admins. The server refuses blocked requests; hidden buttons only match it.</p></div>
+    <div class="danger-row">
+      <div><h3>Read-only mode</h3>
+        <div class="desc">Blocks every create, edit, delete and move for everyone but site admins. Login, refresh and logout keep working.</div>
+        <div class="meta" style="font-size:12px;color:var(--subtle);margin-top:4px">${meta("readOnly")}</div></div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:13px">${sw.readOnly ? '<span class="tag off">On</span>' : '<span class="muted">Off</span>'}
+        <button class="switch danger" role="switch" aria-checked="${sw.readOnly}" aria-label="Read-only mode" data-ro></button></div>
+    </div>
+    ${groups.map((g) => `<h4 class="group-title">${g}</h4>${FEATURES.filter((f) => f.group === g).map((f) => {
+      const on = sw.enabled[f.key];
+      const tag = !on ? '<span class="tag off">Off</span>' : sw.readOnly ? '<span class="tag ro">Paused by read-only</span>' : "";
+      return `<div class="row">
+        <h3>${f.name} <code class="muted">${f.key}</code> ${tag}</h3>
+        <div class="desc">Hides: ${f.hides}</div>
+        <div class="meta"><span>Blocks <code>${f.blocks}</code></span><span>${meta(f.key)}</span></div>
+        <div class="toggle-cell">${on ? "On" : "Off"}<button class="switch" role="switch" aria-checked="${on}" aria-label="${f.name}" data-key="${f.key}"></button></div>
+      </div>`;
+    }).join("")}`).join("")}
+    <h4 class="group-title">Navbar <span class="tag ro" style="margin-left:6px">Hides only</span></h4>
+    <p class="hint">These only hide links and settings. Pages read with GET and settings saved in the browser are not blocked; read-only mode doesn't change them.</p>
+    ${NAV_FEATURES.map((f) => {
+      const on = sw.enabled[f.key];
+      return `<div class="row">
+        <h3>${f.name} <code class="muted">${f.key}</code> ${on ? "" : '<span class="tag off">Hidden</span>'}</h3>
+        <div class="desc">Hides: ${f.hides}</div>
+        <div class="meta"><span>Still works: ${f.still}</span><span>${meta(f.key)}</span></div>
+        <div class="toggle-cell">${on ? "Shown" : "Hidden"}<button class="switch" role="switch" aria-checked="${on}" aria-label="${f.name}" data-key="${f.key}"></button></div>
+      </div>`;
+    }).join("")}
+  </div>`;
+}
+
+// Sidor bakom en navbarbrytare: länken är borta, och öppnas adressen ändå visas det här
+const offPage = (name) => `<div class="off-page"><h2>${name} is turned off</h2><p>An admin has hidden this page for now.</p><button class="btn primary" type="button">Go to the board</button></div>`;
+
+function backlogView() {
+  if (!navOn("backlogPage")) return offPage("The backlog");
+  return `<div class="table"><div><span style="width:80px">Key</span><span>Summary</span></div>
+    <div><span style="width:80px" class="key">MA-110</span><span>Export board as CSV</span></div>
+    <div><span style="width:80px" class="key">MA-111</span><span>Keyboard shortcuts</span></div></div>`;
+}
+
+function issueTypesView() {
+  if (!boardAdmin()) return `<p class="forbidden">Only the board owner has the Issue types page.</p>`;
+  if (!navOn("issueTypesPage")) return offPage("The Issue types page");
+  return `<div class="table"><div><span style="width:120px">Type</span><span>Key</span></div>
+    ${["task", "bug", "doc"].map((t) => `<div><span style="width:120px;display:flex;gap:8px;align-items:center"><span class="type" style="background:${TYPE_COLORS[t]}"></span>${t[0].toUpperCase() + t.slice(1)}</span><code>${t}</code></div>`).join("")}</div>`;
+}
+
+// Kontomenyn: varje rad bakom sin brytare; Aurello-rubriken försvinner när alla tre utseendeval är av
+function accountMenu() {
+  if (!state.menu || state.page === "register") return "";
+  const v = viewer();
+  const look = [["theme", "Theme", "Light"], ["boardBackground", "Board background", "Ocean"], ["navbarColour", "Navbar colour", "Grey"]].filter(([k]) => navOn(k));
+  return `<div class="acct" role="menu">
+    <h4>Account</h4>
+    <div class="user"><span>${v.initials}</span><span>${v.user}</span></div>
+    ${isOn("googleConnect") ? '<button class="item" type="button">Google sign-in<span class="end">›</span></button>' : ""}
+    ${look.length ? `<hr><h4>Aurello</h4>${look.map(([, n, val]) => `<button class="item" type="button">${n}<span class="end">${val} ›</span></button>`).join("")}` : ""}
+    <hr class="gap"><button class="item" type="button">Log out</button></div>`;
+}
+
+function registerView() {
+  if (!isOnPublic("register")) {
+    return `<div class="auth"><h2>Register</h2>
+      <div class="notice">${icon.pause}<div><b>Registration is closed for now.</b>New accounts can't be created at the moment. Try again later, or log in if you already have an account.</div></div>
+      <div style="margin-top:16px;display:flex;justify-content:flex-end"><button class="btn primary" type="button">Go to login</button></div></div>`;
+  }
+  return `<div class="auth"><h2>Register</h2>
+    <label>Username</label><input value="new.user">
+    <label>Password</label><input type="password" value="••••••••••">
+    <div style="margin-top:16px;display:flex;justify-content:flex-end"><button class="btn primary" type="button">Register</button></div></div>`;
+}
+
+function inviteView() {
+  const open = isOn("joinBoard");
+  return `<div class="auth" style="text-align:center"><h2>Join Mikael's board</h2>
+    ${open
+      ? `<p class="muted">Mikael invited you to collaborate on their board.</p><button class="btn primary" type="button">Join board</button>`
+      : `<div class="notice" style="text-align:left">${icon.pause}<div><b>Joining boards is temporarily disabled.</b>The invite link still works; try it again later.</div></div>
+         <div style="margin-top:16px"><button class="btn subtle" type="button">Back to my board</button></div>`}</div>`;
+}
+
+function dialog() {
+  if (!state.confirm) return "";
+  return `<div class="overlay"><div class="dialog" role="alertdialog" aria-labelledby="ro-title">
+    <h2 id="ro-title">Turn on read-only mode?</h2>
+    <p>Everyone except site admins will be unable to create, edit, delete or move anything until you turn it off. Open tabs pick it up on their next request.</p>
+    <div class="actions"><button class="btn subtle" type="button" data-cancel>Cancel</button><button class="btn danger" type="button" data-confirm>Turn on read-only</button></div>
+  </div></div>`;
+}
+
+function toast() {
+  return state.toast ? `<div class="toast" role="status">${state.toast}<button type="button" aria-label="Close" data-toast>✕</button></div>` : "";
+}
+
+function render() {
+  renderControls();
+  const page = PAGES.find((p) => p.key === state.page);
+  const body = { board: boardView, backlog: backlogView, issueTypes: issueTypesView, features: featuresView, register: registerView, invite: inviteView }[state.page]();
+  const app = document.getElementById("app");
+  app.innerHTML = `<div class="url">●●● <span>aurello.app${page.path}</span></div>${navbar()}${accountMenu()}${banner()}<main class="view">${body}</main>${dialog()}${toast()}`;
+  renderNotes();
+}
+
+document.getElementById("app").addEventListener("click", (e) => {
+  const t = e.target.closest("button");
+  if (!t) return;
+  const sw = state.sw;
+  if (t.dataset.key) { sw.enabled[t.dataset.key] = !sw.enabled[t.dataset.key]; sw.changed[t.dataset.key] = timeNow(); }
+  else if ("ro" in t.dataset) { if (sw.readOnly) { sw.readOnly = false; sw.changed.readOnly = timeNow(); } else state.confirm = true; }
+  else if ("confirm" in t.dataset) { sw.readOnly = true; sw.changed.readOnly = timeNow(); state.confirm = false; }
+  else if ("cancel" in t.dataset) state.confirm = false;
+  else if ("toast" in t.dataset) state.toast = null;
+  else if ("menu" in t.dataset) state.menu = !state.menu;
+  else return;
+  render();
+});
+
+// En flik som öppnades innan brytaren slogs av: knappen syns, servern svarar 503, toasten visas och /feature hämtas igen
+document.getElementById("stale").onclick = () => {
+  state.toast = state.sw.readOnly ? "Aurello is in read-only mode." : "This feature is temporarily disabled.";
+  render();
+};
+document.getElementById("reset").onclick = () => { state.sw = fresh(); state.toast = null; render(); };
+
+const NOTES = {
+  board: [
+    ["Second row", ["Each button has its own switch: <code>createCard</code>, <code>createColumn</code>, <code>deleteColumn</code>, <code>shareBoard</code>. Turn one off on the Features page and only that button goes.", "Renaming, recolouring and dragging lists is <code>editColumns</code> (the ⋯ and drag on the list header)."]],
+    ["What changes", ["Buttons whose feature is off disappear from the navbar's second row and the cards; nothing is greyed out.", "Read-only adds the yellow banner and stops saving the card layout (<code>PUT /user/layout</code>).", "Board role first: a collaborator never sees Create column, even with the switch on."]],
+    ["Data", ["<code>useFeatures()</code> → <code>{ readOnly, isOn(key) }</code> from <code>GET /feature</code>: on load, on window focus and after any 503.", "Site admins: <code>isOn</code> is always true, they get a blue banner instead.", "If <code>/feature</code> fails, treat everything as on."]],
+  ],
+  features: [
+    ["Features page", ["Route <code>/features</code>, navbar link next to Users, site admins only.", "Read-only is the red toggle on top; turning it on asks for confirmation (<code>AlertDialog</code>), turning it off doesn't.", "Each toggle saves at once with <code>PUT /feature/{key}</code> and shows a success toast."]],
+    ["Navbar group", ["Six UI-only switches at the bottom, labelled “Hides only”: Backlog, Board switcher, Issue types, Board background, Navbar colour, Theme.", "They say “Shown/Hidden” instead of “On/Off” and are never “paused by read-only”.", "<code>googleConnect</code> sits with Accounts: connecting Google is a write, so the server refuses it (503).", "Click the avatar in the navbar to see the account menu."]],
+    ["Audit", ["“Changed by … at …” comes from <code>updatedBy</code>/<code>updatedAt</code>, returned only to admins by <code>GET /feature</code>.", "Rows keep their own state while read-only is on (“Paused by read-only”), so turning read-only off restores them."]],
+  ],
+  backlog: [
+    ["Backlog switch", ["<code>backlogPage</code> off: no Backlog link, <code>/backlog</code> says it is turned off, and the card form drops the Backlog choice so cards don't disappear from view.", "UI-only: the cards are still returned by <code>GET /board/{id}/card</code>.", "Click the avatar to see the account menu switches."]],
+  ],
+  issueTypes: [
+    ["Issue types switch", ["<code>issueTypesPage</code> off: the owner loses the link and the page; creating a type from the card form is <code>manageIssueTypes</code>, a separate, enforced switch.", "Collaborators never had this page."]],
+  ],
+  register: [
+    ["Logged out", ["<code>GET /feature</code> is public, so the register page knows before login.", "With <code>register</code> off (or read-only on) the form is replaced by a message, and the navbar's “Register User” link goes away.", "A first Google sign-in is refused too; existing Google users still log in."]],
+  ],
+  invite: [
+    ["Invite links", ["<code>joinBoard</code> off: the page explains instead of offering Join; the token is untouched, so the same link works later.", "Stops leaked links without touching Share/Members.", "A stale page that still clicks Join gets the 503 toast."]],
+  ],
+};
+function renderNotes() {
+  document.getElementById("notes").innerHTML = NOTES[state.page].map(([title, items]) =>
+    `<div class="note"><h3>${title}</h3><ul>${items.map((i) => `<li>${i}</li>`).join("")}</ul></div>`).join("");
+}
+
+render();
+</script>
+</body>
+</html>
