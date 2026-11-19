@@ -86,22 +86,20 @@ const Navbar = () => {
     ...(onIssueTypes ? [{ label: 'Create Issue type', action: BOARD_ACTIONS.createIssueType, Icon: PlusIcon }] : []),
   ];
 
-  // Boardväljaren visas på alla sidor när man är inloggad och har fler än en board, först efter loggan (desktop) /
-  // överst i hamburgermenyn (mobil), så att länkarna inte flyttar sig mellan sidorna. Backlog och Issue types laddar om
-  // när boarden byts. Med bara den egna boarden finns inget att välja: där står Board-länken i stället
+  // Board-länken står alltid först efter loggan. Boardväljaren visas på alla sidor när man är inloggad och har fler än
+  // en board, till vänster om kontoknappen (desktop) / sist i hamburgermenyn (mobil); ett byte öppnar boarden
   const showSwitcher = isLoggedIn && Boolean(board) && boards.length > 1;
 
-  // Rad två börjar under boardväljaren / sin länk (Backlog / Issue types). null = vänsterställd (mobil, där länken är dold)
+  // Rad två börjar under sin länk (Board / Backlog / Issue types). null = vänsterställd (mobil, där länken är dold)
   const headerRef = useRef<HTMLElement>(null);
   const backlogLinkRef = useRef<HTMLAnchorElement>(null);
   const issueTypesLinkRef = useRef<HTMLAnchorElement>(null);
-  // Väljaren (eller Board-länken) får sin bredd först när den laddats (dynamic import); då flyttas länkarna efter den
-  const switcherRef = useRef<HTMLLIElement>(null);
+  const boardLinkRef = useRef<HTMLAnchorElement>(null);
   const [subRowStart, setSubRowStart] = useState<number | null>(null);
 
   useLayoutEffect(() => {
     const link: HTMLElement | null = onBoard
-      ? switcherRef.current
+      ? boardLinkRef.current
       : onBacklog
         ? backlogLinkRef.current
         : onIssueTypes
@@ -121,9 +119,8 @@ const Navbar = () => {
     const observer = new ResizeObserver(measure);
     observer.observe(link);
     observer.observe(header);
-    if (switcherRef.current) observer.observe(switcherRef.current);
     return () => observer.disconnect();
-  }, [onBoard, onBacklog, onIssueTypes, admin, boardAdmin, board, userName, showSwitcher]);
+  }, [onBoard, onBacklog, onIssueTypes, admin, boardAdmin, board, userName]);
 
   return (
     <header ref={headerRef} className="fixed z-1000 w-full font-brand">
@@ -173,21 +170,16 @@ const Navbar = () => {
           </li>
           {isLoggedIn && (
             <>
-              {/* Vilken board som visas (typsnitt och storlek som länkarna), eller Board-länken när man bara har sin egen */}
-              <li ref={switcherRef}>
-                {showSwitcher ? (
-                  <BoardSwitcher onSelected={() => setMenuOpen(false)} />
-                ) : (
-                  <Link
-                    href={ROUTES.board}
-                    onClick={() => setMenuOpen(false)}
-                    aria-current={pathname === ROUTES.board ? 'page' : undefined}
-                    className={`${NAV_LINK_CLASS} underline-offset-8 aria-[current=page]:underline`}
-                  >
-                    <ViewColumnsIcon className={NAV_ICON_CLASS} aria-hidden />
-                    Board
-                  </Link>
-                )}
+              <li onClick={() => setMenuOpen(false)}>
+                <Link
+                  ref={boardLinkRef}
+                  href={ROUTES.board}
+                  aria-current={pathname === ROUTES.board ? 'page' : undefined}
+                  className={`${NAV_LINK_CLASS} underline-offset-8 aria-[current=page]:underline`}
+                >
+                  <ViewColumnsIcon className={NAV_ICON_CLASS} aria-hidden />
+                  Board
+                </Link>
               </li>
               {/* Mobil: boardens knappar (Create card, Share …), som annars ligger i rad två */}
               {onBoard && (
@@ -237,13 +229,19 @@ const Navbar = () => {
           {isLoggedIn ? (
             <>
               {/* Desktop: användare och logout längst till höger */}
+              {/* Vilken board som visas (typsnitt och storlek som länkarna), till vänster om kontoknappen */}
+              {showSwitcher && (
+                <li className="md:ml-auto">
+                  <BoardSwitcher onSelected={() => setMenuOpen(false)} />
+                </li>
+              )}
               {/* Avataren öppnar kontomenyn (konto, utseende, Log out) */}
               {userName ? (
-                <li key="profile" className="md:ml-auto">
+                <li key="profile" className={showSwitcher ? '' : 'md:ml-auto'}>
                   <AccountMenu username={userName} />
                 </li>
               ) : (
-                <li key="logout" className="md:ml-auto">
+                <li key="logout" className={showSwitcher ? '' : 'md:ml-auto'}>
                   <button onClick={handleLogout} className={NAV_LINK_CLASS}>
                     <ArrowRightStartOnRectangleIcon className={NAV_ICON_CLASS} aria-hidden />
                     Logout
