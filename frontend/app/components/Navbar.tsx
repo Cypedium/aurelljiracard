@@ -87,7 +87,7 @@ const Navbar = () => {
   ];
 
   // Board-länken står alltid först efter loggan. Boardväljaren visas på alla sidor när man är inloggad och har fler än
-  // en board, till vänster om kontoknappen (desktop) / sist i hamburgermenyn (mobil); ett byte öppnar boarden
+  // en board, till vänster om kontoknappen (desktop) / sist i hamburgermenyn (mobil); ett byte stannar på sidan
   const showSwitcher = isLoggedIn && Boolean(board) && boards.length > 1;
 
   // Rad två börjar under sin länk (Board / Backlog / Issue types). null = vänsterställd (mobil, där länken är dold)

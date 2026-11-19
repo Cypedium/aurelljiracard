@@ -1,18 +1,14 @@
 'use client';
 import { ClipboardDocumentListIcon } from '@heroicons/react/24/outline';
-import { usePathname, useRouter } from 'next/navigation';
 import { selectBoard, useBoards } from '../cards/useBoards';
 import { cn } from '../lib/utils';
 import { boardLabel } from '../utils/currentBoard';
-import { ROUTES } from '../utils/routes';
 import { NAV_ICON_CLASS, NAV_MENU_CLASS, NAV_MENU_ITEM_CLASS, NAV_MENU_LABEL_CLASS, NAV_MENU_SEPARATOR_CLASS } from '../utils/styles';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger, SelectValue } from './ui/select';
 
-// Navbaren: vilken board som visas, med klippbordsikonen (Board-länken har kolumnikonen). Texten ärver radens färg, typsnitt och storlek som länkarna (navbarens textfärg, vit i mobilmenyn); den öppna listan har navbarens tema. Den egna först, sedan de man är medarbetare på (backend sorterar). Ett byte visar alltid boarden
+// Navbaren: vilken board som visas, med klippbordsikonen (Board-länken har kolumnikonen). Texten ärver radens färg, typsnitt och storlek som länkarna (navbarens textfärg, vit i mobilmenyn); den öppna listan har navbarens tema. Den egna först, sedan de man är medarbetare på (backend sorterar). Ett byte stannar på sidan; Board, Backlog och Issue types laddar om för den valda boarden
 export default function BoardSwitcher({ onSelected, className }: { onSelected?: () => void; className?: string }) {
   const { boards, current } = useBoards();
-  const router = useRouter();
-  const pathname = usePathname();
   if (!current) return null;
 
   const own = boards.filter((b) => b.role === 'admin');
@@ -23,8 +19,6 @@ export default function BoardSwitcher({ onSelected, className }: { onSelected?: 
       value={current._id}
       onValueChange={(id) => {
         selectBoard(id);
-        // Den valda boarden visas: från Backlog, Issue types m.fl. går man till boarden
-        if (pathname !== ROUTES.board) router.push(ROUTES.board);
         onSelected?.();
       }}
     >
