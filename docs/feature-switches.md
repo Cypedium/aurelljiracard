@@ -47,12 +47,13 @@ Each button in the navbar's second row has its own switch: `createCard`, `create
 | Key | Hides | What still works (by design) |
 |---|---|---|
 | `backlogPage` | "Backlog" link; `/backlog` shows "This page is turned off" with a link to the board; the "Backlog" choice in the card form's list select (so cards don't vanish from view) | `GET /board/{id}/card` (the board reads the same list); cards already in the backlog stay there |
-| `boardSwitcher` | The board dropdown left of the account button (desktop and mobile menu; only shown with more than one board) | The Board link; the board last chosen in this browser stays shown; accepting an invite still opens the new board (`showJoinedBoard`) |
+| `boardSwitcher` | The board dropdown (desktop: left of the account button; mobile: in the hamburger menu, after Issue types; only shown with more than one board) | The Board link; the board last chosen in this browser stays shown; accepting an invite still opens the new board (`showJoinedBoard`); picking a board never changed the page anyway |
 | `issueTypesPage` | "Issue types" link for board owners; `/issue-types` shows "This page is turned off" | Creating a type from the card form (that is `manageIssueTypes`) |
 | `boardBackground` | "Board background" in the account menu | The background already saved in the browser keeps applying |
 | `navbarColour` | "Navbar colour" in the account menu | The navbar colour already saved keeps applying |
 | `theme` | "Theme" in the account menu (after the dark-mode branch is merged) | The theme already saved keeps applying |
 
+- The account menu opens from the account button: desktop at the right end of the navbar (icon + initials), mobile at the right of the top bar (icon only; the bar is hamburger left, AURELLO centred, account right). The hamburger menu uses the navbar's colours. Hidden account-menu items are hidden in both.
 - Read-only mode does **not** touch these (they are not writes); site admins always see everything, as with the other switches.
 - Saved browser choices are left alone on purpose: switching a picker off must not change how anyone's board looks. If a uniform look is wanted later, add "reset to default while off" as a separate decision.
 - Anyone can still call the API or set `localStorage` by hand. That is accepted: these switches tidy the UI, they don't protect anything.
@@ -175,7 +176,7 @@ flowchart LR
 ```
 
 - `app/utils/features.ts`: `FEATURE_KEYS` (must match the Java `Feature` enum), `NAVBAR_FEATURE_KEYS` (the UI-only ones), the `BOARD_ACTIONS` → feature map (`createCard`, `createColumn`, `deleteColumn`, `shareBoard`, `createIssueType` → `manageIssueTypes`), and pure helpers (unit-tested).
-- Navbar: `Navbar.tsx` hides Backlog, the board switcher and Issue types; `AccountMenu.tsx` hides its items (and the whole "Aurello" section when all three appearance switches are off). `/backlog` and `/issue-types` show "This page is turned off" instead of their content.
+- Navbar: `Navbar.tsx` hides Backlog, the board switcher and Issue types (the Board link is always shown, so the board stays reachable); `AccountMenu.tsx` hides its items (and the whole "Aurello" section when all three appearance switches are off). `/backlog` and `/issue-types` show "This page is turned off" instead of their content.
 - `useFeatures()`: site admins get everything on (`isOn` is always true), but the admin page still shows the real state.
 - `api.ts`: a `503` shows `toast.error(apiErrorMessage(...))` with a fixed `id` and triggers a refetch of `/feature`.
 - `endpoints.ts` + `tests/unit/endpoints.test.ts`: `getFeatures`, `setFeature`.
