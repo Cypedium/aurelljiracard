@@ -20,6 +20,7 @@ import {
   TrashIcon,
   UserGroupIcon,
   UsersIcon,
+  ViewColumnsIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
 import { ROUTES } from '../utils/routes';
@@ -53,7 +54,7 @@ const Navbar = () => {
   const [userName, setUserName] = useState('');
   // Global admin (sajtens): hanterar användare. Boardens admin (ägaren): listor, ärendetyper, inbjudningar
   const [admin, setAdmin] = useState(false);
-  const { current: board, boardAdmin } = useBoards();
+  const { boards, current: board, boardAdmin } = useBoards();
   const [menuOpen, setMenuOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
 
@@ -85,16 +86,16 @@ const Navbar = () => {
     ...(onIssueTypes ? [{ label: 'Create Issue type', action: BOARD_ACTIONS.createIssueType, Icon: PlusIcon }] : []),
   ];
 
-  // Boardväljaren visas på alla sidor när man är inloggad, först efter loggan (desktop) / överst i hamburgermenyn (mobil),
-  // så att länkarna inte flyttar sig mellan sidorna. Backlog och Issue types laddar om när boarden byts.
-  // Det finns ingen Board-länk: loggan leder till boarden
-  const showSwitcher = isLoggedIn && Boolean(board);
+  // Boardväljaren visas på alla sidor när man är inloggad och har fler än en board, först efter loggan (desktop) /
+  // överst i hamburgermenyn (mobil), så att länkarna inte flyttar sig mellan sidorna. Backlog och Issue types laddar om
+  // när boarden byts. Med bara den egna boarden finns inget att välja: där står Board-länken i stället
+  const showSwitcher = isLoggedIn && Boolean(board) && boards.length > 1;
 
   // Rad två börjar under boardväljaren / sin länk (Backlog / Issue types). null = vänsterställd (mobil, där länken är dold)
   const headerRef = useRef<HTMLElement>(null);
   const backlogLinkRef = useRef<HTMLAnchorElement>(null);
   const issueTypesLinkRef = useRef<HTMLAnchorElement>(null);
-  // Väljaren får sin bredd först när den laddats (dynamic import); då flyttas länkarna efter den
+  // Väljaren (eller Board-länken) får sin bredd först när den laddats (dynamic import); då flyttas länkarna efter den
   const switcherRef = useRef<HTMLLIElement>(null);
   const [subRowStart, setSubRowStart] = useState<number | null>(null);
 
@@ -172,12 +173,22 @@ const Navbar = () => {
           </li>
           {isLoggedIn && (
             <>
-              {/* Vilken board som visas; typsnitt och storlek som länkarna */}
-              {showSwitcher && (
-                <li ref={switcherRef}>
+              {/* Vilken board som visas (typsnitt och storlek som länkarna), eller Board-länken när man bara har sin egen */}
+              <li ref={switcherRef}>
+                {showSwitcher ? (
                   <BoardSwitcher onSelected={() => setMenuOpen(false)} />
-                </li>
-              )}
+                ) : (
+                  <Link
+                    href={ROUTES.board}
+                    onClick={() => setMenuOpen(false)}
+                    aria-current={pathname === ROUTES.board ? 'page' : undefined}
+                    className={`${NAV_LINK_CLASS} underline-offset-8 aria-[current=page]:underline`}
+                  >
+                    <ViewColumnsIcon className={NAV_ICON_CLASS} aria-hidden />
+                    Board
+                  </Link>
+                )}
+              </li>
               {/* Mobil: boardens knappar (Create card, Share …), som annars ligger i rad två */}
               {onBoard && (
                 <li className="md:hidden" onClick={() => setMenuOpen(false)}>
