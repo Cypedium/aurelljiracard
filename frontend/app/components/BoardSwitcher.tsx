@@ -6,7 +6,7 @@ import { boardLabel } from '../utils/currentBoard';
 import { NAV_ICON_CLASS, NAV_MENU_CLASS, NAV_MENU_ITEM_CLASS, NAV_MENU_LABEL_CLASS, NAV_MENU_SEPARATOR_CLASS } from '../utils/styles';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger, SelectValue } from './ui/select';
 
-// Navbaren: vilken board som visas, med klippbordsikonen (Board-länken har kolumnikonen). Texten ärver radens färg, typsnitt och storlek som länkarna (navbarens textfärg, vit i mobilmenyn); den öppna listan har navbarens tema. Den egna först, sedan de man är medarbetare på (backend sorterar). Ett byte stannar på sidan; Board, Backlog och Issue types laddar om för den valda boarden
+// Navbaren: vilken board som visas, med klippbordsikonen (Board-länken har kolumnikonen). Texten ärver radens färg, typsnitt och storlek som länkarna (navbarens textfärg, även i mobilmenyn); den öppna listan har navbarens tema. Den egna först, sedan de man är medarbetare på (backend sorterar). Ett byte stannar på sidan; Board, Backlog och Issue types laddar om för den valda boarden
 export default function BoardSwitcher({ onSelected, className }: { onSelected?: () => void; className?: string }) {
   const { boards, current } = useBoards();
   if (!current) return null;
