@@ -77,8 +77,9 @@ export default function AccountMenu({ username }: { username: string }) {
         title={username}
         className={NAV_ACCOUNT_BUTTON_CLASS}
       >
-        <UserIcon className={NAV_ICON_SUB_CLASS} aria-hidden />
-        {avatarInitials(username)}
+        <UserIcon className={`${NAV_ICON_SUB_CLASS} max-md:size-5`} aria-hidden />
+        {/* Mobil: bara ikonen */}
+        <span className="hidden md:inline">{avatarInitials(username)}</span>
       </PopoverTrigger>
       <PopoverContent
         align="end"
