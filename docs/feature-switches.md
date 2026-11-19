@@ -47,7 +47,7 @@ Each button in the navbar's second row has its own switch: `createCard`, `create
 | Key | Hides | What still works (by design) |
 |---|---|---|
 | `backlogPage` | "Backlog" link; `/backlog` shows "This page is turned off" with a link to the board; the "Backlog" choice in the card form's list select (so cards don't vanish from view) | `GET /board/{id}/card` (the board reads the same list); cards already in the backlog stay there |
-| `boardSwitcher` | The board dropdown in the navbar (desktop and mobile menu) | The board last chosen in this browser stays shown; accepting an invite still opens the new board (`showJoinedBoard`) |
+| `boardSwitcher` | The board dropdown left of the account button (desktop and mobile menu; only shown with more than one board) | The Board link; the board last chosen in this browser stays shown; accepting an invite still opens the new board (`showJoinedBoard`) |
 | `issueTypesPage` | "Issue types" link for board owners; `/issue-types` shows "This page is turned off" | Creating a type from the card form (that is `manageIssueTypes`) |
 | `boardBackground` | "Board background" in the account menu | The background already saved in the browser keeps applying |
 | `navbarColour` | "Navbar colour" in the account menu | The navbar colour already saved keeps applying |

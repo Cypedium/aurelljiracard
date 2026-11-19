@@ -54,7 +54,9 @@ nav.top { background: var(--nav-top); color: var(--nav-text); font-family: var(-
 .nav-link[aria-current="page"] { text-decoration: underline; text-underline-offset: 8px; }
 .logo { font-weight: 700; font-size: 18px; }
 .logo i { width: 26px; height: 26px; border-radius: 6px; background: linear-gradient(135deg, #0c66e4, #36b5c8); display: inline-block; }
-.switcher { display: inline-flex; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 6px; }
+.switcher { margin-left: auto; display: inline-flex; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 6px; }
+/* Boardväljaren står till vänster om kontoknappen; då är det väljaren som trycks åt höger */
+.switcher + .avatar { margin-left: 0; }
 .avatar { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,.15); border-radius: 999px; padding: 6px 12px; font: 600 12px var(--sans); }
 .sub { background: var(--nav-sub); color: var(--nav-text); font-family: var(--brand); display: flex; gap: 16px; padding: 6px 24px; min-height: 36px; align-items: center; flex-wrap: wrap; }
 .sub button { background: none; border: 0; color: inherit; display: inline-flex; gap: 6px; align-items: center; padding: 2px 8px; border-radius: 6px; }
@@ -208,7 +210,7 @@ const FEATURES = [
 // Navbarens brytare (avsnitt 2.1): döljer bara, inget 503, påverkas inte av read-only
 const NAV_FEATURES = [
   { key: "backlogPage", name: "Backlog", hides: "“Backlog” link, the Backlog choice in the card form; /backlog shows “turned off”", still: "GET /board/{id}/card" },
-  { key: "boardSwitcher", name: "Board switcher", hides: "The board dropdown", still: "The board last chosen stays shown" },
+  { key: "boardSwitcher", name: "Board switcher", hides: "The board dropdown left of the avatar (only there with more than one board)", still: "The Board link; the board last chosen stays shown" },
   { key: "issueTypesPage", name: "Issue types page", hides: "“Issue types” link; /issue-types shows “turned off”", still: "Creating types from the card form (manageIssueTypes)" },
   { key: "boardBackground", name: "Board background", hides: "“Board background” in the account menu", still: "The saved background keeps applying" },
   { key: "navbarColour", name: "Navbar colour", hides: "“Navbar colour” in the account menu", still: "The saved colour keeps applying" },
@@ -251,10 +253,13 @@ const isOn = (key) => state.viewer === "siteAdmin" || (!state.sw.readOnly && sta
 const navOn = (key) => state.viewer === "siteAdmin" || state.sw.enabled[key];
 // Board-rollen först (ägaren = boardens admin), sedan brytaren; en brytare tar bara bort rättigheter
 const boardAdmin = () => state.viewer !== "member";
+// Väljaren visas bara med fler än en board: ägaren har bara sin egen, de andra är också med på Mikaels
+const hasSeveralBoards = () => state.viewer !== "owner";
 const viewer = () => VIEWERS.find((v) => v.key === state.viewer);
 
 const icon = {
   board: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 4.5v15m6-15v15M4.5 19.5h15V4.5h-15z"/></svg>',
+  clipboard: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25ZM6.75 12h.008v.008H6.75V12Zm0 3h.008v.008H6.75V15Zm0 3h.008v.008H6.75V18Z"/></svg>',
   list: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"/></svg>',
   users: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="8" r="3"/><path d="M3 19c0-3 2.7-5 6-5s6 2 6 5M16 5a3 3 0 010 6m2 3c2 .6 3 2.4 3 5"/></svg>',
   tag: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3h7.5l10 10-7.5 7.5-10-10z"/><circle cx="7.5" cy="7.5" r="1.2"/></svg>',
@@ -299,11 +304,12 @@ function navbar() {
   }
   return `<nav class="top">
       <span class="nav-link logo"><i></i>AURELLO</span>
-      ${navOn("boardSwitcher") ? `<span class="switcher">${icon.board}${state.viewer === "member" ? "Mikael's board" : v.user + "'s board"} ▾</span>` : ""}
+      <span class="nav-link" ${state.page === "board" ? 'aria-current="page"' : ""}>${icon.board}Board</span>
       ${navOn("backlogPage") ? `<span class="nav-link" ${state.page === "backlog" ? 'aria-current="page"' : ""}>${icon.list}Backlog</span>` : ""}
       ${site ? `<span class="nav-link">${icon.users}Users</span>` : ""}
       ${site ? `<span class="nav-link" ${state.page === "features" ? 'aria-current="page"' : ""}>${icon.toggle}Features</span>` : ""}
       ${boardAdmin() && navOn("issueTypesPage") ? `<span class="nav-link" ${state.page === "issueTypes" ? 'aria-current="page"' : ""}>${icon.tag}Issue types</span>` : ""}
+      ${hasSeveralBoards() && navOn("boardSwitcher") ? `<span class="switcher">${icon.clipboard}${state.viewer === "member" ? "Mikael's board" : "My board"} ▾</span>` : ""}
       <button type="button" class="avatar" data-menu aria-expanded="${state.menu}">${v.initials}</button>
     </nav>
     ${subs.length ? `<div class="sub">${subs.join("")}</div>` : state.page === "board" ? '<div class="sub"></div>' : ""}`;
@@ -482,6 +488,7 @@ document.getElementById("reset").onclick = () => { state.sw = fresh(); state.toa
 const NOTES = {
   board: [
     ["Second row", ["Each button has its own switch: <code>createCard</code>, <code>createColumn</code>, <code>deleteColumn</code>, <code>shareBoard</code>. Turn one off on the Features page and only that button goes.", "Renaming, recolouring and dragging lists is <code>editColumns</code> (the ⋯ and drag on the list header)."]],
+    ["Navbar", ["The Board link is always shown after the logo, underlined on the board.", "The board dropdown (clipboard icon) sits left of the avatar and only appears with more than one board: the Board owner here has only their own, so it is missing. Picking a board stays on the page.", "Your own board is called “My board”."]],
     ["What changes", ["Buttons whose feature is off disappear from the navbar's second row and the cards; nothing is greyed out.", "Read-only adds the yellow banner and stops saving the card layout (<code>PUT /user/layout</code>).", "Board role first: a collaborator never sees Create column, even with the switch on."]],
     ["Data", ["<code>useFeatures()</code> → <code>{ readOnly, isOn(key) }</code> from <code>GET /feature</code>: on load, on window focus and after any 503.", "Site admins: <code>isOn</code> is always true, they get a blue banner instead.", "If <code>/feature</code> fails, treat everything as on."]],
   ],
