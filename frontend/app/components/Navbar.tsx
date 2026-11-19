@@ -158,11 +158,11 @@ const Navbar = () => {
         {/* Mobil: dold tills menyn öppnas, fyller sedan skärmen under raden med 12px kant runt om
             (100% = navraden, absolut positionerad). Desktop: alltid synlig på en rad */}
         <ul
-          className={`${menuOpen ? 'flex' : 'hidden'} absolute top-full inset-x-3 mt-3 h-[calc(100dvh-100%-1.5rem)] flex-col overflow-y-auto gap-4 rounded-lg bg-brand p-8 text-xl text-white shadow-2xl md:static md:text-nav-text md:mt-0 md:flex md:h-auto md:overflow-visible md:flex-1 md:flex-row md:items-center md:gap-10 md:bg-transparent md:p-0 md:shadow-none`}
+          className={`${menuOpen ? 'flex' : 'hidden'} absolute top-full inset-x-3 mt-3 h-[calc(100dvh-100%-1.5rem)] flex-col overflow-y-auto gap-4 rounded-lg bg-nav-top p-8 text-xl text-nav-text shadow-2xl md:static md:mt-0 md:flex md:h-auto md:overflow-visible md:flex-1 md:flex-row md:items-center md:gap-10 md:bg-transparent md:p-0 md:shadow-none`}
         >
           {/* Mobil: stäng-krysset i menyns övre högra hörn */}
           <li className="absolute top-3 right-3 md:hidden">
-            <button type="button" className="block rounded-md text-white hover:bg-white/10" onClick={() => setMenuOpen(false)} aria-label="Close menu">
+            <button type="button" className="block rounded-md text-nav-text hover:bg-white/10" onClick={() => setMenuOpen(false)} aria-label="Close menu">
               <XMarkIcon className="size-8" aria-hidden />
             </button>
           </li>
