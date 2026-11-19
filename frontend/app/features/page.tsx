@@ -1,0 +1,33 @@
+'use client';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import Layout from "../components/Layout";
+import Features from "./Features";
+import { isAdmin } from "../utils/session";
+import { ROUTES } from "../utils/routes";
+
+export default function FeaturesPage() {
+  const router = useRouter();
+  const [allowed, setAllowed] = useState(false);
+
+  // Bara för UI:t: backend nekar icke-admins själv (403), och GET /feature ger bara admins brytarna
+  useEffect(() => {
+    if (isAdmin()) setAllowed(true);
+    else router.replace(ROUTES.board);
+  }, [router]);
+
+  return (
+    <Layout>
+      {/* Samma bakgrund som boarden; pt eftersom navbaren är fixed; samma som Users */}
+      <div className="min-h-[calc(100dvh-60px)] bg-linear-135 from-board-from via-board-via to-board-to px-4 pt-20 pb-6 font-jira">
+        {allowed && (
+          <div className="mx-auto flex max-w-[960px] flex-col gap-4">
+            {/* Ingen synlig rubrik (navbaren visar sidan); kvar för skärmläsare */}
+            <h1 className="sr-only">Features</h1>
+            <Features />
+          </div>
+        )}
+      </div>
+    </Layout>
+  );
+}

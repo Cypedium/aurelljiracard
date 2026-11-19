@@ -76,6 +76,16 @@ export const isFeatureOn = (state: FeatureState, key: FeatureKey, siteAdmin: boo
 // Skrivningar utan egen brytare (t.ex. kortens ordning, PUT /user/layout) stoppas bara av read-only
 export const canWrite = (state: FeatureState, siteAdmin: boolean): boolean => siteAdmin || !state.readOnly;
 
+// "Changed by root, 19 Nov 14:32" på admin-sidan; null om brytaren aldrig ändrats.
+// En borttagen admin ger bara tiden
+export const featureChangedLabel = (sw: Pick<FeatureSwitch, "updatedAt" | "updatedBy"> | undefined, locale = "en-GB"): string | null => {
+  if (!sw?.updatedAt) return null;
+  const when = new Date(sw.updatedAt);
+  if (Number.isNaN(when.getTime())) return null;
+  const time = when.toLocaleString(locale, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+  return sw.updatedBy ? `Changed by ${sw.updatedBy}, ${time}` : `Changed ${time}`;
+};
+
 // Navbarens knappar → sin brytare
 export const BOARD_ACTION_FEATURES: Record<BoardAction, FeatureKey> = {
   [BOARD_ACTIONS.createCard]: "createCard",

@@ -6,6 +6,7 @@ import {
   FEATURE_GROUPS,
   FEATURE_KEYS,
   canWrite,
+  featureChangedLabel,
   isFeatureOn,
   parseFeatureState,
   type FeatureState,
@@ -59,6 +60,18 @@ describe("isFeatureOn", () => {
     expect(isFeatureOn(off, "createCard", true)).toBe(true);
     expect(isFeatureOn(readOnly, "createCard", true)).toBe(true);
     expect(canWrite(readOnly, true)).toBe(true);
+  });
+});
+
+describe("featureChangedLabel", () => {
+  it("names the admin and the time", () => {
+    expect(featureChangedLabel({ updatedAt: "2026-11-19T13:32:00Z", updatedBy: "root" })).toMatch(/^Changed by root, 19 Nov/);
+  });
+
+  it("leaves out a deleted admin, and says nothing for a switch never changed", () => {
+    expect(featureChangedLabel({ updatedAt: "2026-11-19T13:32:00Z", updatedBy: null })).toMatch(/^Changed 19 Nov/);
+    expect(featureChangedLabel({ updatedAt: null, updatedBy: null })).toBeNull();
+    expect(featureChangedLabel(undefined)).toBeNull();
   });
 });
 

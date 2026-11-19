@@ -12,6 +12,7 @@ import { useBoards } from '../cards/useBoards';
 import { useFeatures } from '../cards/useFeatures';
 import { BOARD_ACTION_FEATURES } from '../utils/features';
 import {
+  AdjustmentsHorizontalIcon,
   ArrowRightStartOnRectangleIcon,
   Bars3Icon,
   PencilSquareIcon,
@@ -216,6 +217,19 @@ const Navbar = () => {
                   <Link href={ROUTES.users} className={NAV_LINK_CLASS}>
                     <UsersIcon className={NAV_ICON_CLASS} aria-hidden />
                     Users
+                  </Link>
+                </li>
+              )}
+              {/* Sajtens admin: feature switches och read-only-läget (docs/feature-switches.md) */}
+              {admin && (
+                <li onClick={() => setMenuOpen(false)}>
+                  <Link
+                    href={ROUTES.features}
+                    aria-current={pathname === ROUTES.features ? 'page' : undefined}
+                    className={`${NAV_LINK_CLASS} underline-offset-8 aria-[current=page]:underline`}
+                  >
+                    <AdjustmentsHorizontalIcon className={NAV_ICON_CLASS} aria-hidden />
+                    Features
                   </Link>
                 </li>
               )}
