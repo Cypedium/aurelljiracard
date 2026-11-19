@@ -128,3 +128,7 @@ Same as the Express API; see the [root README](../README.md#api). Differences th
   - `POST /auth/google { credential }` (public) verifies Google's ID token and returns `{ accessToken, refreshToken }`. The first sign-in creates a user named after the email address (`mikael.aurell@gmail.com` → `mikael.aurell`, `mikael.aurell2` if taken) without a password.
   - `POST /user/google { credential }` (logged in) connects a Google account to the caller. `409` if it belongs to another user or the caller already has a different one.
   - `401 "Invalid Google credential."`, `503 "Google sign-in is not configured."` when `GOOGLE_CLIENT_ID` is not set.
+- Feature switches and read-only mode exist only here ([docs/feature-switches.md](../docs/feature-switches.md)):
+  - `GET /feature` (public) → `{ readOnly, disabled: [keys] }`; site admins also get `switches: [{ key, enabled, uiOnly, updatedAt, updatedBy }]`.
+  - `PUT /feature/{key} { enabled }` (site admins) turns one on or off; for `readOnly`, `enabled: true` turns read-only mode on. Unknown key → `404`.
+  - While a feature is off, its endpoints answer `503 "This feature is temporarily disabled."`; in read-only mode every write answers `503 "Aurello is in read-only mode."` except login, refresh, logout and Google sign-in for existing users. Site admins are never blocked.
