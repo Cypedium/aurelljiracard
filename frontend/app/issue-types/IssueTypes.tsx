@@ -5,6 +5,7 @@ import { TrashIcon } from '@heroicons/react/16/solid';
 import { deleteIssueType, getCards, getIssueTypes } from '../api/endpoints';
 import { removeIssueType } from '../cards/useIssueTypes';
 import { useBoards } from '../cards/useBoards';
+import { useFeatures } from '../cards/useFeatures';
 import { reportError } from '../utils/apiError';
 import { BOARD_ACTIONS, onBoardAction } from '../utils/boardActions';
 import { countCardsByType, DEFAULT_CARD_TYPE, MAX_ISSUE_TYPES, normalizeIssueTypes, type IssueType } from '../utils/cardType';
@@ -26,6 +27,8 @@ import {
 // Boardens admin: boardens ärendetyper med antal kort. Nya läggs till här eller i kortformuläret; oanvända kan tas bort
 export default function IssueTypes() {
   const boardId = useBoards().current?._id ?? null;
+  // manageIssueTypes avstängd: ingen borttagning (och ingen "Create Issue type" i navbaren)
+  const canManage = useFeatures().isOn('manageIssueTypes');
   const [types, setTypes] = useState<IssueType[] | null>(null);
   const [cardCounts, setCardCounts] = useState<Record<string, number>>({});
   const [creating, setCreating] = useState(false);
@@ -118,7 +121,7 @@ export default function IssueTypes() {
                     </td>
                     <td className={`${TD_CLASS} text-right text-jira-secondary tabular-nums`}>{cards}</td>
                     <td className={`${TD_CLASS} w-px whitespace-nowrap`}>
-                      <div className="flex items-center justify-end">
+                      <div className={`flex items-center justify-end ${canManage ? '' : 'invisible'}`}>
                         <button
                           className={ACTION_CLASS}
                           aria-label={`Delete ${type.label}`}

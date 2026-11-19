@@ -51,6 +51,7 @@ import {
 } from "../utils/boardLayout";
 import { canDeleteCard, canEditCard, getUsername } from "../utils/session";
 import { BOARD_ACTIONS, onBoardAction } from "../utils/boardActions";
+import { useFeatures } from "./useFeatures";
 
 // Den valda boarden (navbaren byter); key gör att allt laddas om när boarden byts
 export default function Home() {
@@ -100,6 +101,9 @@ function BoardView({ boardId, admin }: { boardId: string; admin: boolean }) {
   // Samma värde i CSS-griddarna (bakgrund, rubriker) och i react-grid-layout (korten), så att de linjerar
   const gutter = useIsMobile() ? MOBILE_GUTTER : GRID_MARGIN;
   const boardScrollRef = useRef<HTMLDivElement>(null);
+  // Avstängda funktioner och read-only-läge (backend nekar ändå med 503); sajtens admin ser allt
+  const { isOn, canWrite } = useFeatures();
+  const canDragCards = isOn("editCard") && canWrite;
 
   useEffect(() => {
     setUserName(getUsername());
@@ -276,7 +280,8 @@ function BoardView({ boardId, admin }: { boardId: string; admin: boolean }) {
                   count={count}
                   span={columns.spans[i].span}
                   height={listHeight(columnRows[i])}
-                  admin={admin}
+                  admin={admin && isOn("editColumns")}
+                  canAddCard={isOn("createCard")}
                   renaming={renamingKey === h.key}
                   dragging={draggingList === h.key}
                   onDragStart={onListPointerDown(h.key)}
@@ -308,12 +313,13 @@ function BoardView({ boardId, admin }: { boardId: string; admin: boolean }) {
               width={width}
               margin={[gutter, GRID_MARGIN]}
               containerPadding={[gutter, CARDS_TOP]}
-              dragConfig={{ cancel: ".no-drag" }}
+              // Avstängd editCard eller read-only: korten ligger still
+              dragConfig={{ cancel: ".no-drag", enabled: canDragCards }}
               // Korten har fast storlek (1x1), så inget resize-handtag
               resizeConfig={{ enabled: false }}
               onLayoutChange={(currentLayout) => {
-                // Förhandsvisningen medan en lista dras sparas inte
-                if (listDrag) return;
+                // Förhandsvisningen medan en lista dras sparas inte, inte heller i read-only-läget
+                if (listDrag || !canWrite) return;
                 persistLayout({ ...userLayout, cards: savedPositions(currentLayout) });
               }}
               onDrag={(_layout, _oldItem, _newItem, _placeholder, e) => {
@@ -352,8 +358,8 @@ function BoardView({ boardId, admin }: { boardId: string; admin: boolean }) {
                   >
                     <BoardCard
                       card={fb}
-                      canEdit={canEditCard(fb)}
-                      canDelete={canDeleteCard(fb, userName, admin)}
+                      canEdit={canEditCard(fb) && isOn("editCard")}
+                      canDelete={canDeleteCard(fb, userName, admin) && isOn("deleteCard")}
                       onEdit={() => setEditingCard(fb)}
                       onDelete={() => setDeletingCard(fb)}
                     />

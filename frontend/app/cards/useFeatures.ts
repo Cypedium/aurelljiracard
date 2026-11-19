@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { onServiceUnavailable } from "../api/api";
 import { getFeatures } from "../api/endpoints";
 import { logError } from "../utils/apiError";
@@ -51,7 +51,10 @@ const start = () => {
 export function useFeatures() {
   useEffect(start, []);
   const snapshot = useSyncExternalStore(subscribe, () => state, () => ALL_ON);
-  const siteAdmin = isAdmin();
+  // Rollen ligger i sessionStorage: läses efter mount (inte vid serverrenderingen) och vid varje ny hämtning,
+  // så att en in-/utloggning syns
+  const [siteAdmin, setSiteAdmin] = useState(false);
+  useEffect(() => setSiteAdmin(isAdmin()), [snapshot]);
   return {
     state: snapshot,
     // Read-only-läget är på (bannern visas för alla; sajtens admin får en annan text)

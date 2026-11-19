@@ -5,13 +5,13 @@ import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { joinBoard } from "../../api/endpoints";
 import { showJoinedBoard } from "../../cards/useBoards";
-import { reportError } from "../../utils/apiError";
+import { isServiceUnavailable, logError, reportError } from "../../utils/apiError";
 import { PENDING_INVITE_KEY } from "../../utils/currentBoard";
 import { hasSession } from "../../utils/session";
 import { writeText } from "../../utils/storage";
 import { ROUTES } from "../../utils/routes";
 
-type Status = "joining" | "login" | "failed";
+type Status = "joining" | "login" | "failed" | "disabled";
 
 // En inbjudningslänk från boardens ägare. Inloggad: gå med och öppna boarden.
 // Annars sparas inbjudan tills inloggningen (useBoards tar emot den) och användaren skickas till login
@@ -37,6 +37,12 @@ export default function InvitePage() {
         router.replace(ROUTES.board);
       })
       .catch((err) => {
+        // joinBoard avstängd eller read-only: länken är inte trasig, sidan säger det i stället för en toast
+        if (isServiceUnavailable(err)) {
+          logError("Join board error", err);
+          setStatus("disabled");
+          return;
+        }
         reportError("Join board error", err, "Could not join the board.");
         setStatus("failed");
       });
@@ -58,6 +64,15 @@ export default function InvitePage() {
                 Register
               </Link>
             </div>
+          </>
+        )}
+        {status === "disabled" && (
+          <>
+            <h1 className="text-lg font-semibold">Joining boards is temporarily disabled</h1>
+            <p className="mt-2 text-sm text-jira-secondary">The link still works. Open it again a little later.</p>
+            <Link href={ROUTES.board} className="mt-4 inline-block text-sm font-medium text-jira-primary hover:underline">
+              Go to your board
+            </Link>
           </>
         )}
         {status === "failed" && (

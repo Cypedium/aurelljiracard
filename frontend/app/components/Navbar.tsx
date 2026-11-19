@@ -9,6 +9,8 @@ import { handleLogout } from '../utils/logout';
 import { getUsername, hasSession, isAdmin } from '../utils/session';
 import { BOARD_ACTIONS, onBoardAction, requestBoardAction, type BoardAction } from '../utils/boardActions';
 import { useBoards } from '../cards/useBoards';
+import { useFeatures } from '../cards/useFeatures';
+import { BOARD_ACTION_FEATURES } from '../utils/features';
 import {
   ArrowRightStartOnRectangleIcon,
   Bars3Icon,
@@ -57,6 +59,8 @@ const Navbar = () => {
   const { boards, current: board, boardAdmin } = useBoards();
   const [menuOpen, setMenuOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  // Avstängda funktioner döljs (sajtens admin ser allt)
+  const { isOn, readOnly, siteAdmin } = useFeatures();
 
   useEffect(() => onBoardAction(BOARD_ACTIONS.shareBoard, () => setShareOpen(true)), []);
 
@@ -84,11 +88,11 @@ const Navbar = () => {
     // Ägaren bjuder in; medarbetare ser vilka som är med och kan lämna
     ...(onBoard && board ? [{ label: boardAdmin ? 'Share' : 'Members', action: BOARD_ACTIONS.shareBoard, Icon: boardAdmin ? ShareIcon : UserGroupIcon }] : []),
     ...(onIssueTypes ? [{ label: 'Create Issue type', action: BOARD_ACTIONS.createIssueType, Icon: PlusIcon }] : []),
-  ];
+  ].filter(({ action }) => isOn(BOARD_ACTION_FEATURES[action]));
 
   // Board-länken står alltid först efter loggan. Boardväljaren visas på alla sidor när man är inloggad och har fler än
   // en board, till vänster om kontoknappen (desktop) / sist i hamburgermenyn (mobil); ett byte stannar på sidan
-  const showSwitcher = isLoggedIn && Boolean(board) && boards.length > 1;
+  const showSwitcher = isLoggedIn && Boolean(board) && boards.length > 1 && isOn('boardSwitcher');
 
   // Rad två börjar under sin länk (Board / Backlog / Issue types). null = vänsterställd (mobil, där länken är dold)
   const headerRef = useRef<HTMLElement>(null);
@@ -192,6 +196,7 @@ const Navbar = () => {
                   <MobileSubActions actions={subActions} />
                 </li>
               )}
+              {isOn('backlogPage') && (
               <li onClick={() => setMenuOpen(false)}>
                 <Link
                   ref={backlogLinkRef}
@@ -204,6 +209,7 @@ const Navbar = () => {
                 </Link>
                 {onBacklog && <MobileSubActions actions={subActions} />}
               </li>
+              )}
               {/* Bara för sajtens admin; backend nekar andra (403) */}
               {admin && (
                 <li onClick={() => setMenuOpen(false)}>
@@ -214,7 +220,7 @@ const Navbar = () => {
                 </li>
               )}
               {/* Den valda boardens ärendetyper: bara dess admin */}
-              {boardAdmin && (
+              {boardAdmin && isOn('issueTypesPage') && (
                 <li onClick={() => setMenuOpen(false)}>
                   <Link
                     ref={issueTypesLinkRef}
@@ -256,9 +262,11 @@ const Navbar = () => {
             </>
           ) : (
             <>
-              <li key="register" onClick={() => setMenuOpen(false)}>
-                <Link href={ROUTES.register} className={NAV_LINK_CLASS}>Register User</Link>
-              </li>
+              {isOn('register') && (
+                <li key="register" onClick={() => setMenuOpen(false)}>
+                  <Link href={ROUTES.register} className={NAV_LINK_CLASS}>Register User</Link>
+                </li>
+              )}
               <li key="login" onClick={() => setMenuOpen(false)}>
                 <Link href={ROUTES.login} className={NAV_LINK_CLASS}>Login</Link>
               </li>
@@ -285,6 +293,18 @@ const Navbar = () => {
               </button>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Read-only-läget: alla ser det; sajtens admin kan fortfarande ändra */}
+      {readOnly && (
+        <div
+          role="status"
+          className={`px-[3%] py-1 text-center font-jira text-sm ${siteAdmin ? 'bg-[#e9f2ff] text-[#0055cc]' : 'bg-[#fff7d6] text-[#7f5f01]'}`}
+        >
+          {siteAdmin
+            ? 'Read-only mode is on for everyone else. You can still make changes.'
+            : 'Aurello is in read-only mode. You can look around, but changes are paused for now.'}
         </div>
       )}
 
