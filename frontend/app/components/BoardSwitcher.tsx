@@ -30,8 +30,10 @@ export default function BoardSwitcher({ onSelected, className }: { onSelected?: 
     >
       <SelectTrigger
         aria-label="Board"
+        // Understruken på boarden, som länkarna på sin sida
+        aria-current={pathname === ROUTES.board ? 'page' : undefined}
         className={cn(
-          'h-auto max-w-[260px] border-0 bg-transparent py-1 shadow-none [font:inherit]! text-inherit hover:bg-white/10 focus-visible:bg-white/10 dark:bg-transparent dark:hover:bg-white/10 [&_svg]:text-current!',
+          'h-auto max-w-[260px] border-0 bg-transparent py-1 shadow-none [font:inherit]! text-inherit hover:bg-white/10 focus-visible:bg-white/10 dark:bg-transparent dark:hover:bg-white/10 [&_svg]:text-current! underline-offset-8 aria-[current=page]:underline',
           className,
         )}
       >
