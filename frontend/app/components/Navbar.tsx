@@ -134,21 +134,26 @@ const Navbar = () => {
       )}
       {/* z-10: mobilmenyn hamnar över raden under */}
       <nav className="relative z-10 flex w-full items-center justify-between bg-nav-top py-[0.5%] pr-[2%] pl-[3%]">
-        {/* Mobil: logga och namn till vänster i raden, hamburgaren till höger. Desktop: loggan ligger i listan.
-            Utloggad (Login/Register) leder den till startsidan, som skickar vidare */}
-        <Link href={logoHref} className={`${NAV_LINK_CLASS} -ml-2 text-xl text-nav-text md:hidden`}>
-          <Image src={logo} alt="" className="size-7 shrink-0" priority />
-          AURELLO
-        </Link>
-        {/* invisible när menyn är öppen: krysset ligger i menyns hörn, raden behåller sin höjd */}
+        {/* Mobil: hamburgaren till vänster, logga och namn i mitten, kontoknappen till höger. Desktop: allt ligger i listan.
+            invisible när menyn är öppen: krysset ligger i menyns hörn, raden behåller sin höjd */}
         <button
-          className={`ml-auto block text-nav-text md:hidden ${menuOpen ? 'invisible' : ''}`}
+          className={`block text-nav-text md:hidden ${menuOpen ? 'invisible' : ''}`}
           onClick={() => setMenuOpen(true)}
           aria-label="Open menu"
           aria-expanded={menuOpen}
         >
           <Bars3Icon className="size-8" aria-hidden />
         </button>
+        {/* Utloggad (Login/Register) leder loggan till startsidan, som skickar vidare */}
+        <Link href={logoHref} className={`${NAV_LINK_CLASS} absolute left-1/2 -translate-x-1/2 text-xl text-nav-text md:hidden`}>
+          <Image src={logo} alt="" className="size-7 shrink-0" priority />
+          AURELLO
+        </Link>
+        {isLoggedIn && userName && (
+          <div className="ml-auto md:hidden">
+            <AccountMenu username={userName} />
+          </div>
+        )}
 
         {/* Mobil: dold tills menyn öppnas, fyller sedan skärmen under raden med 12px kant runt om
             (100% = navraden, absolut positionerad). Desktop: alltid synlig på en rad */}
@@ -235,9 +240,9 @@ const Navbar = () => {
                   <BoardSwitcher onSelected={() => setMenuOpen(false)} />
                 </li>
               )}
-              {/* Avataren öppnar kontomenyn (konto, utseende, Log out). Mobil: högerställd, så att menyn öppnas mot högerkanten */}
+              {/* Avataren öppnar kontomenyn (konto, utseende, Log out). Mobil: i navraden, till höger */}
               {userName ? (
-                <li key="profile" className={`self-end md:self-auto ${showSwitcher ? '' : 'md:ml-auto'}`}>
+                <li key="profile" className={`hidden md:block ${showSwitcher ? '' : 'md:ml-auto'}`}>
                   <AccountMenu username={userName} />
                 </li>
               ) : (
