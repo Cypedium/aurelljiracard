@@ -67,7 +67,7 @@ export default function Features() {
       <section className={TABLE_WRAPPER_CLASS}>
         {/* Samma rubrikrad som grupperna nedan, men röd: gäller hela sajten */}
         <div className="bg-[#c9372c] px-4 py-2 text-white">
-          <h2 className="text-xs font-semibold uppercase tracking-wide">Whole site</h2>
+          <h2 className="text-xs font-semibold uppercase tracking-wide">Read-only mode</h2>
         </div>
         <div className={ROW_CLASS}>
           <div>
