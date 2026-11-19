@@ -115,9 +115,9 @@ export const NAV_SUB_ROW_BUTTON_CLASS = "flex items-center gap-1.5 rounded-md px
 export const NAV_MOBILE_SUB_LIST_CLASS = "mt-2 ml-7 flex flex-col gap-2 text-lg md:hidden";
 
 // Kontoknappen i navbaren: användarikon + initialer, ljusare än navbaren och med navbarens textfärg (följer temat)
-// Mobil: rund knapp med bara användarikonen; desktop: ikon och initialer
+// Mobil: bara användarikonen, utan bakgrund; desktop: rund knapp med ikon och initialer
 export const NAV_ACCOUNT_BUTTON_CLASS =
-  "inline-flex size-8 shrink-0 items-center justify-center gap-1.5 rounded-full bg-white/15 md:w-auto md:justify-start md:pr-3 md:pl-2 font-jira text-xs font-semibold text-nav-text transition-colors hover:bg-white/25 focus-visible:bg-white/25";
+  "inline-flex size-8 shrink-0 items-center justify-center gap-1.5 rounded-full md:bg-white/15 md:w-auto md:justify-start md:pr-3 md:pl-2 font-jira text-xs font-semibold text-nav-text transition-colors hover:bg-white/25 focus-visible:bg-white/25";
 
 // Kontomenyn: navbarens färger (.nav-theme i root.css)
 export const ACCOUNT_MENU_CLASS = "nav-theme relative w-[min(300px,calc(100vw-24px))] p-0 font-jira text-jira-text";
