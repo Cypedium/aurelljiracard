@@ -64,10 +64,14 @@ export default function Features() {
   return (
     <>
       {/* Read-only-läget överst, som en farlig brytare; att slå på frågar först */}
-      <section className={`${TABLE_WRAPPER_CLASS} border-l-4 border-[#c9372c]`}>
+      <section className={TABLE_WRAPPER_CLASS}>
+        {/* Samma rubrikrad som grupperna nedan, men röd: gäller hela sajten */}
+        <div className="bg-[#c9372c] px-4 py-2 text-white">
+          <h2 className="text-xs font-semibold uppercase tracking-wide">Whole site</h2>
+        </div>
         <div className={ROW_CLASS}>
           <div>
-            <h2 className="font-semibold text-jira-text">{READ_ONLY_INFO.name}</h2>
+            <h3 className="font-semibold text-jira-text">{READ_ONLY_INFO.name}</h3>
             <p className="text-sm text-jira-secondary">{READ_ONLY_INFO.hides}. Blocks: {READ_ONLY_INFO.blocks}.</p>
             <Changed sw={readOnly} />
           </div>
