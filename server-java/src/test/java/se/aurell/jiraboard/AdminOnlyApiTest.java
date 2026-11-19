@@ -3,6 +3,7 @@ package se.aurell.jiraboard;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -26,7 +27,9 @@ class AdminOnlyApiTest extends ApiIntegrationTest {
                 endpoint("PATCH /user/{id}", id -> json(patch("/user/" + id), """
                         {"role": "admin"}""")),
                 endpoint("DELETE /user/{id}", id -> delete("/user/" + id)),
-                endpoint("POST /user/{id}/logout", id -> post("/user/" + id + "/logout")));
+                endpoint("POST /user/{id}/logout", id -> post("/user/" + id + "/logout")),
+                endpoint("PUT /feature/{key}", id -> json(put("/feature/createCard"), """
+                        {"enabled": false}""")));
     }
 
     private static Arguments endpoint(String name, Function<String, MockHttpServletRequestBuilder> request) {

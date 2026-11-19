@@ -14,7 +14,9 @@ import se.aurell.jiraboard.dto.BoardMemberResponse;
 import se.aurell.jiraboard.dto.BoardResponse;
 import se.aurell.jiraboard.dto.InviteResponse;
 import se.aurell.jiraboard.dto.MessageResponse;
+import se.aurell.jiraboard.entity.Feature;
 import se.aurell.jiraboard.security.AuthUser;
+import se.aurell.jiraboard.security.RequiresFeature;
 import se.aurell.jiraboard.service.BoardService;
 
 /** Boards, their members and invite links; access is checked in BoardService. */
@@ -33,12 +35,14 @@ public class BoardController {
     }
 
     /** Board admin: a new invite link (the old one stops working). */
+    @RequiresFeature(Feature.SHARE_BOARD)
     @PostMapping("/board/{boardId}/invite")
     @ResponseStatus(HttpStatus.CREATED)
     public InviteResponse createInvite(@PathVariable UUID boardId, @AuthenticationPrincipal AuthUser user) {
         return boardService.createInvite(boardId, user);
     }
 
+    @RequiresFeature(Feature.SHARE_BOARD)
     @DeleteMapping("/board/{boardId}/invite")
     public MessageResponse deleteInvite(@PathVariable UUID boardId, @AuthenticationPrincipal AuthUser user) {
         boardService.deleteInvite(boardId, user);
@@ -51,6 +55,7 @@ public class BoardController {
     }
 
     /** The board admin removes a collaborator, or a collaborator removes themselves (leaves). */
+    @RequiresFeature(Feature.SHARE_BOARD)
     @DeleteMapping("/board/{boardId}/member/{userId}")
     public MessageResponse removeMember(@PathVariable UUID boardId, @PathVariable UUID userId,
             @AuthenticationPrincipal AuthUser user) {
@@ -59,6 +64,7 @@ public class BoardController {
     }
 
     /** Any logged-in user: joins the board behind the link as a collaborator. */
+    @RequiresFeature(Feature.JOIN_BOARD)
     @PostMapping("/invite/{token}")
     public BoardResponse join(@PathVariable String token, @AuthenticationPrincipal AuthUser user) {
         return boardService.join(token, user);

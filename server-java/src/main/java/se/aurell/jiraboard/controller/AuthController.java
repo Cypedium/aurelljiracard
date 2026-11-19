@@ -13,6 +13,9 @@ import se.aurell.jiraboard.dto.MessageResponse;
 import se.aurell.jiraboard.dto.RefreshTokenRequest;
 import se.aurell.jiraboard.dto.RegisterRequest;
 import se.aurell.jiraboard.dto.TokenResponse;
+import se.aurell.jiraboard.entity.Feature;
+import se.aurell.jiraboard.security.ReadOnlyExempt;
+import se.aurell.jiraboard.security.RequiresFeature;
 import se.aurell.jiraboard.service.AuthService;
 
 /** Public routes; every other controller requires a valid access token. */
@@ -26,6 +29,7 @@ public class AuthController {
         this.authService = authService;
     }
 
+    @RequiresFeature(Feature.REGISTER)
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
     public MessageResponse register(@Valid @RequestBody RegisterRequest request) {
@@ -33,23 +37,27 @@ public class AuthController {
         return new MessageResponse("User registered successfully.");
     }
 
+    @ReadOnlyExempt
     @PostMapping("/login")
     public TokenResponse login(@Valid @RequestBody LoginRequest request) {
         return authService.login(request);
     }
 
-    // Sign in with Google; creates the user on first sign-in
+    // Sign in with Google; creates the user on first sign-in (AuthService checks registration and read-only mode then)
+    @ReadOnlyExempt
     @PostMapping("/google")
     public TokenResponse google(@Valid @RequestBody GoogleCredentialRequest request) {
         return authService.googleLogin(request.credential());
     }
 
+    @ReadOnlyExempt
     @PostMapping("/logout")
     public MessageResponse logout(@RequestBody(required = false) RefreshTokenRequest request) {
         authService.logout(request == null ? null : request.refreshToken());
         return new MessageResponse("Logged out successfully.");
     }
 
+    @ReadOnlyExempt
     @PostMapping("/refresh")
     public TokenResponse refresh(@RequestBody(required = false) RefreshTokenRequest request) {
         return authService.refresh(request == null ? null : request.refreshToken());

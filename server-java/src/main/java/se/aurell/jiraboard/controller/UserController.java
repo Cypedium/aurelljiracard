@@ -18,9 +18,11 @@ import se.aurell.jiraboard.dto.LayoutRequest;
 import se.aurell.jiraboard.dto.MessageResponse;
 import se.aurell.jiraboard.dto.UserResponse;
 import se.aurell.jiraboard.dto.UserUpdateRequest;
+import se.aurell.jiraboard.entity.Feature;
 import se.aurell.jiraboard.entity.Layout;
 import se.aurell.jiraboard.security.AdminOnly;
 import se.aurell.jiraboard.security.AuthUser;
+import se.aurell.jiraboard.security.RequiresFeature;
 import se.aurell.jiraboard.service.UserService;
 
 @RestController
@@ -56,6 +58,7 @@ public class UserController {
     }
 
     // The logged-in user connects their Google account, so they can sign in with Google
+    @RequiresFeature(Feature.GOOGLE_CONNECT)
     @PostMapping("/google")
     public MessageResponse connectGoogle(@AuthenticationPrincipal AuthUser user,
             @Valid @RequestBody GoogleCredentialRequest request) {
