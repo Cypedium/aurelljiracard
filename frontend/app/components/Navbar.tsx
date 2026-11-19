@@ -235,13 +235,13 @@ const Navbar = () => {
                   <BoardSwitcher onSelected={() => setMenuOpen(false)} />
                 </li>
               )}
-              {/* Avataren öppnar kontomenyn (konto, utseende, Log out) */}
+              {/* Avataren öppnar kontomenyn (konto, utseende, Log out). Mobil: högerställd, så att menyn öppnas mot högerkanten */}
               {userName ? (
-                <li key="profile" className={showSwitcher ? '' : 'md:ml-auto'}>
+                <li key="profile" className={`self-end md:self-auto ${showSwitcher ? '' : 'md:ml-auto'}`}>
                   <AccountMenu username={userName} />
                 </li>
               ) : (
-                <li key="logout" className={showSwitcher ? '' : 'md:ml-auto'}>
+                <li key="logout" className={`self-end md:self-auto ${showSwitcher ? '' : 'md:ml-auto'}`}>
                   <button onClick={handleLogout} className={NAV_LINK_CLASS}>
                     <ArrowRightStartOnRectangleIcon className={NAV_ICON_CLASS} aria-hidden />
                     Logout
