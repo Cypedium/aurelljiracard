@@ -4,7 +4,6 @@ npm-debug.log*
 .env.*
 tests
 coverage
-backupfiles
 Dockerfile.server
 fly.server.toml
 deploy-backend.bat

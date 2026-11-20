@@ -26,7 +26,7 @@ Two independent npm projects plus a Maven project — always `cd` into one befor
   - `routes/` → `controllers/` → `models/`; `middleware/authMiddleware.js`, `middleware/boardAccess.js` (`requireMember` → `req.boardId`/`req.boardRole`, `requireBoardAdmin`); `utils/jwt.js`, `utils/validate.js`
   - `routes/board.js` mounts `card`, `column`, `issue-type` under `/board/:boardId` after `auth` + `requireMember`; `routes/invite.js` is `POST /invite/:token`
   - `tests/` — Jest + Supertest; models are `jest.mock`ed, no DB
-  - `backupfiles/`, `scripts/` — one-off seed/maintenance scripts, not part of the app (`scripts/migrateBoards.js`: the Mongo version of V11, run by hand before deploying boards)
+  - `scripts/` — one-off maintenance scripts, not part of the app (`scripts/migrateBoards.js`: the Mongo version of V11, run by hand before deploying boards)
 - `frontend/` — Next.js 16 App Router, React 19, TypeScript, Tailwind 4 + CSS modules
   - `app/api/api.ts` — axios instance (attaches token, refreshes on 401 — except for `/auth/*`, where 401 means bad credentials); `app/api/endpoints.ts` — all API calls
   - `app/cards/Cards.tsx` — board: `react-grid-layout` v2, fixed columns To Do / In Progress / Test / Done, width from `useContainerWidth`
@@ -103,7 +103,7 @@ CI (`.github/workflows/ci.yml`) runs all of the commands above except `spring-bo
 
 ## Deployment
 
-Pushes to `main` deploy both Fly apps after CI passes (`fly.server.toml`, `fly.app.toml`, region `arn`). Changing Dockerfiles, Fly configs or workflows affects production — call it out in the PR. `server-java` is deployed by hand as Fly app `aurelljiraboardjava` (`fly deploy -c fly.java.toml` in `server-java/`, `Dockerfile.java`, external PostgreSQL via `DB_URL`); CI runs its tests (job `server-java`, which also gates the Fly deploys) but does not deploy it. The production frontend (`fly.app.toml` `NEXT_PUBLIC_API_URL`) points at `aurelljiraboardjava`, so deploy `server-java` before a change that needs it reaches `main`.
+All Fly apps are deployed by hand (region `arn`); the CI deploy job is commented out in `ci.yml`, so CI only tests. Frontend: `fly deploy -c fly.app.toml` in `frontend/`; Express: `fly deploy -c fly.server.toml` in `server/`; `server-java`: Fly app `aurelljiraboardjava` (`fly deploy -c fly.java.toml` in `server-java/`, `Dockerfile.java`, external PostgreSQL via `DB_URL`). Changing Dockerfiles, Fly configs or workflows affects production — call it out in the PR. The production frontend (`fly.app.toml` `NEXT_PUBLIC_API_URL`) points at `aurelljiraboardjava`, so deploy `server-java` before a change that needs it reaches `main`.
 
 ## Data model
 
