@@ -2,8 +2,9 @@
 export const USERNAME_TAKEN_MESSAGE = "Username already taken.";
 export const RUDE_USERNAME_MESSAGE = "Username contains inappropriate words.";
 
-// Matched as substrings, so short words that hide inside normal names (ass, dick, cock) are left out
-const RUDE_WORDS = [
+// Matched as substrings, so short words that hide inside normal names (ass, dick, cock) are left out.
+// Must match shared/contract.json (contract.test.ts)
+export const RUDE_WORDS = [
   "fuck", "shit", "bitch", "cunt", "whore", "slut", "bastard", "asshole", "nigger", "nigga",
   "faggot", "retard", "hitler", "porn", "penis", "vagina",
   "fitta", "knull", "javla", "helvete", "horunge", "kuksugare",
