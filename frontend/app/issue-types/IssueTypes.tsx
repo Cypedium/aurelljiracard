@@ -24,10 +24,10 @@ import {
   AlertDialogTitle,
 } from '../components/ui/alert-dialog';
 
-// Boardens admin: boardens ärendetyper med antal kort. Nya läggs till här eller i kortformuläret; oanvända kan tas bort
+// The board's admin: the board's issue types with their card counts. New ones are added here or in the card form; unused ones can be deleted
 export default function IssueTypes() {
   const boardId = useBoards().current?._id ?? null;
-  // manageIssueTypes avstängd: ingen borttagning (och ingen "Create Issue type" i navbaren)
+  // manageIssueTypes switched off: no deleting (and no "Create Issue type" in the navbar)
   const canManage = useFeatures().isOn('manageIssueTypes');
   const [types, setTypes] = useState<IssueType[] | null>(null);
   const [cardCounts, setCardCounts] = useState<Record<string, number>>({});
@@ -62,7 +62,7 @@ export default function IssueTypes() {
     }
   };
 
-  // "Create Issue type" i navbaren öppnar dialogen; vid max antal typer visas varför i stället
+  // "Create Issue type" in the navbar opens the dialog; at the maximum number of types the reason is shown instead
   const typeCount = types?.length ?? null;
   useEffect(
     () =>
@@ -79,7 +79,7 @@ export default function IssueTypes() {
 
   return (
     <>
-      {/* Ingen synlig rubrik (navbaren visar sidan); kvar för skärmläsare */}
+      {/* No visible heading (the navbar shows the page); kept for screen readers */}
       <h1 className="sr-only">Issue types</h1>
 
       {types === null ? (

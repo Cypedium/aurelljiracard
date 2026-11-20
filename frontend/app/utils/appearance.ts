@@ -1,13 +1,13 @@
 import { HEX_COLOR, contrastRatio, mixHex, readableTextColor } from "./color";
 
-// Utseende (boardens bakgrund och navbarens färg). Sparas per webbläsare, som dolda listor
+// Appearance (the board's background and the navbar's colour). Saved per browser, like hidden lists
 export const APPEARANCE_STORAGE_KEY = "appearance";
 
-// text: navbarens textfärg med den här bakgrunden, en ljus ton av bakgrundens färg
+// text: the navbar's text colour with this background, a light shade of the background's colour
 export type BoardBackground = { key: string; name: string; from: string; via: string; to: string; text: string };
-// top: navbarens översta rad, sub: raden under (lite mörkare)
+// top: the navbar's top row, sub: the row below (slightly darker)
 export type NavbarTheme = { key: string; name: string; top: string; sub: string };
-// background/navbar: ett förval (key) eller en egen färg (#rrggbb, gemener)
+// background/navbar: a preset (key) or a custom colour (#rrggbb, lowercase)
 export type Appearance = { background: string; navbar: string };
 
 export const isCustomColor = (value: unknown): value is string => typeof value === "string" && HEX_COLOR.test(value);
@@ -21,7 +21,7 @@ const solid = (key: string, name: string, color: string, text: string): BoardBac
   text,
 });
 
-// Toningar (som Trellos bilder); den första är boardens ursprungliga bakgrund
+// Gradients (like Trello's images); the first is the board's original background
 export const BOARD_GRADIENTS: BoardBackground[] = [
   { key: "ocean", name: "Ocean", from: "#1c2b41", via: "#1d4f91", to: "#2b7bb9", text: "#9cc8f5" },
   { key: "ice", name: "Ice", from: "#e9f2ff", via: "#cce0ff", to: "#a8c8f5", text: "#cce0ff" },
@@ -49,7 +49,7 @@ export const BOARD_COLORS: BoardBackground[] = [
 
 export const BOARD_BACKGROUNDS = [...BOARD_GRADIENTS, ...BOARD_COLORS];
 
-// Två toner per tema (raden under är mörkare); det första är navbarens ursprungliga (Tailwinds gray-600/700)
+// Two shades per theme (the row below is darker); the first is the navbar's original (Tailwind's gray-600/700)
 export const NAVBAR_GREYS: NavbarTheme[] = [
   { key: "grey", name: "Grey", top: "#4a5565", sub: "#364153" },
   { key: "slate", name: "Slate", top: "#45556c", sub: "#314158" },
@@ -73,7 +73,7 @@ export const NAVBAR_THEMES = [...NAVBAR_GREYS, ...NAVBAR_COLORS];
 
 export const DEFAULT_APPEARANCE: Appearance = { background: BOARD_GRADIENTS[0].key, navbar: NAVBAR_GREYS[0].key };
 
-// Okända eller saknade val (gammal eller ändrad localStorage) blir standard
+// Unknown or missing choices (old or edited localStorage) become the default
 export const normalizeAppearance = (raw: unknown): Appearance => {
   const value = (raw ?? {}) as Partial<Record<keyof Appearance, unknown>>;
   const pick = (raw: unknown, presets: { key: string }[], fallback: string) =>
@@ -84,9 +84,9 @@ export const normalizeAppearance = (raw: unknown): Appearance => {
   };
 };
 
-// Egen färg: enfärgad bakgrund; navbarens text blir en ljus ton av den
+// Custom colour: a plain background; the navbar's text becomes a light shade of it
 const CUSTOM_TEXT_TINT = 0.6;
-// Egen navbarfärg: raden under är så här mycket mörkare
+// Custom navbar colour: the row below is this much darker
 const CUSTOM_SUB_SHADE = 0.25;
 
 export const boardBackground = (value: string): BoardBackground =>
@@ -99,12 +99,12 @@ export const navbarTheme = (value: string): NavbarTheme =>
     ? { key: value, name: "Custom", top: value, sub: mixHex(value, "#000000", CUSTOM_SUB_SHADE) }
     : (NAVBAR_THEMES.find((n) => n.key === value) ?? NAVBAR_GREYS[0]);
 
-// Navbarens text följer boardens färg, utom när den är för lik navbaren för att läsas: då vit eller mörk
+// The navbar's text follows the board's colour, except when it is too close to the navbar to read: then white or dark
 export const NAV_TEXT_MIN_CONTRAST = 3;
 export const navbarTextColor = (background: BoardBackground, navbar: NavbarTheme): string =>
   contrastRatio(background.text, navbar.top) >= NAV_TEXT_MIN_CONTRAST ? background.text : readableTextColor(navbar.top);
 
-// CSS-variablerna som root.css och navbaren läser (board-from/via/to, nav-top/sub/text)
+// The CSS variables that root.css and the navbar read (board-from/via/to, nav-top/sub/text)
 export const appearanceVars = (appearance: Appearance): Record<string, string> => {
   const background = boardBackground(appearance.background);
   const navbar = navbarTheme(appearance.navbar);
@@ -118,6 +118,6 @@ export const appearanceVars = (appearance: Appearance): Record<string, string> =
   };
 };
 
-// En ruta i väljaren: toningen som på boarden
+// A swatch in the picker: the gradient as on the board
 export const backgroundSwatch = (b: BoardBackground): string =>
   `linear-gradient(135deg, ${b.from}, ${b.via}, ${b.to})`;

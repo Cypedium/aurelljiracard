@@ -11,7 +11,7 @@ import {
   type CardStatus,
 } from "../utils/boardLayout";
 
-// Listan som dras, dess bredd (för förhandsvisningen) och platsen (index) pekaren är över
+// The list being dragged, its width (for the preview) and the slot (index) the pointer is over
 export type ListDrag = {
   key: CardStatus;
   target: number | null;
@@ -19,7 +19,7 @@ export type ListDrag = {
 };
 
 type Options = {
-  // Elementet som scrollar i sidled; scrollar när pekaren är nära kanten
+  // The element that scrolls sideways; scrolls when the pointer is near the edge
   scrollRef: RefObject<HTMLElement | null>;
   // toIndex: platsen i listornas ordning
   onDrop: (from: CardStatus, toIndex: number) => void;
@@ -27,14 +27,14 @@ type Options = {
 
 const previewTransform = (x: number, y: number) => `translate(${x}px, ${y}px) rotate(${LIST_DRAG_TILT_DEG}deg)`;
 
-// Admin: dra en lista i rubriken med musen, som i Trello. Den lyfta listan följer pekaren
-// (previewRef flyttas utan omrendering); platsen den är över blir target. Platsen räknas i
-// boardens aktuella ordning, där den lyfta listan redan står på target, så att den inte hoppar fram och tillbaka.
-// Escape avbryter
+// Admin: drag a list by its header with the mouse, as in Trello. The lifted list follows the pointer
+// (previewRef moves without re-rendering); the slot it is over becomes target. The slot is counted in
+// the board's current order, where the lifted list already sits at target, so it doesn't jump back and forth.
+// Escape cancels
 export function useListDrag({ scrollRef, onDrop }: Options) {
   const [drag, setDrag] = useState<ListDrag | null>(null);
   const previewRef = useRef<HTMLDivElement>(null);
-  // Förhandsvisningens position; ändras utan omrendering
+  // The preview's position; changes without re-rendering
   const positionRef = useRef({ x: 0, y: 0 });
   const onDropRef = useRef(onDrop);
   onDropRef.current = onDrop;
@@ -42,12 +42,12 @@ export function useListDrag({ scrollRef, onDrop }: Options) {
 
   useEffect(() => () => cleanupRef.current(), []);
 
-  // Listorna i dokumentordning = boardens ordning
+  // The lists in document order = the board's order
   const listsAt = () =>
     Array.from(document.querySelectorAll<HTMLElement>(`[${LIST_KEY_ATTR}]`), (el) => el.getBoundingClientRect());
 
   const onPointerDown = (key: CardStatus) => (e: ReactPointerEvent<HTMLElement>) => {
-    // Bara mus/penna: på touch sveper man mellan listorna
+    // Mouse/pen only: on touch you swipe between the lists
     if (e.button !== 0 || e.pointerType === "touch") return;
     if ((e.target as Element).closest(`[${NO_LIST_DRAG_ATTR}]`)) return;
     const list = e.currentTarget.closest(`[${LIST_KEY_ATTR}]`);
@@ -61,7 +61,7 @@ export function useListDrag({ scrollRef, onDrop }: Options) {
     let target: number | null = null;
     let frame = 0;
 
-    // Scrollar boarden medan pekaren står nära kanten
+    // Scrolls the board while the pointer stays near the edge
     const autoScroll = () => {
       const el = scrollRef.current;
       if (el) {
@@ -103,7 +103,7 @@ export function useListDrag({ scrollRef, onDrop }: Options) {
       const wasDragging = started;
       cleanup();
       if (!wasDragging) return;
-      // Klicket efter släppet ska inte öppna "byt namn" på rubriken
+      // The click after the drop must not open "rename" on the header
       const swallow = (ev: MouseEvent) => {
         ev.stopPropagation();
         ev.preventDefault();
@@ -136,7 +136,7 @@ export function useListDrag({ scrollRef, onDrop }: Options) {
     window.addEventListener("keydown", keydown);
   };
 
-  // Senaste positionen, så att en omrendering (nytt target) inte flyttar tillbaka den
+  // The latest position, so a re-render (new target) doesn't move it back
   const previewStyle = (d: ListDrag): CSSProperties => ({
     width: d.width,
     transform: previewTransform(positionRef.current.x, positionRef.current.y),

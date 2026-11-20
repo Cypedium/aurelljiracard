@@ -29,13 +29,13 @@ import {
 
 const ROW_CLASS = 'grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 border-b border-jira-neutral px-4 py-3 last:border-b-0';
 
-// Sajtens admin: stäng av funktioner för alla andra, eller hela sajten (read-only). Sparas direkt (PUT /feature/{key})
+// The site admin: switch features off for everyone else, or the whole site (read-only). Saved at once (PUT /feature/{key})
 export default function Features() {
   const { state } = useFeatures();
   const [saving, setSaving] = useState<SwitchKey | null>(null);
   const [confirmReadOnly, setConfirmReadOnly] = useState(false);
 
-  // Den gemensamma hämtningen kan vara gjord före inloggningen (utan brytarna, som bara admins får)
+  // The shared fetch may have happened before login (without the switches, which only admins get)
   useEffect(() => {
     reloadFeatures();
   }, []);
@@ -63,9 +63,9 @@ export default function Features() {
 
   return (
     <>
-      {/* Read-only-läget överst, som en farlig brytare; att slå på frågar först */}
+      {/* Read-only mode at the top, as a dangerous switch; turning it on asks first */}
       <section className={TABLE_WRAPPER_CLASS}>
-        {/* Samma rubrikrad som grupperna nedan, men röd: gäller hela sajten */}
+        {/* The same heading row as the groups below, but red: it applies to the whole site */}
         <div className="bg-[#c9372c] px-4 py-2 text-white">
           <h2 className="text-xs font-semibold uppercase tracking-wide">Read-only mode</h2>
         </div>

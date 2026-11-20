@@ -65,8 +65,8 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
       .catch((err) => logError('Fetch issue keys error', err));
   }, [boardId, card?._id]);
 
-  // Boardens listor till dropdownen bredvid Issue type. Kortet flyttas när man sparar
-  // och hamnar då överst i den nya listan (se buildCardLayout)
+  // The board's lists for the dropdown next to Issue type. The card moves when you save
+  // and then lands at the top of the new list (see buildCardLayout)
   const [lists, setLists] = useState<BoardHeader[]>([]);
   useEffect(() => {
     if (!boardId) return;
@@ -74,7 +74,7 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
       .then((res) => setLists(normalizeColumns(res.data)))
       .catch((err) => logError('Fetch lists error', err));
   }, [boardId]);
-  // null = inte ändrad: kortet stannar där det är (nytt kort: listan det skapas i)
+  // null = not changed: the card stays where it is (new card: the list it is created in)
   const [movedTo, setMovedTo] = useState<CardStatus | null>(null);
   const currentStatus = card ? card.status : status;
   const selectedList = movedTo ?? formListKey(lists, currentStatus);
@@ -120,7 +120,7 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
           try {
             saved = (await updateCardStatus(boardId, card._id, movedTo)).data;
           } catch (error) {
-            // Ändringarna är sparade, bara flytten misslyckades
+            // The changes are saved, only the move failed
             reportError('Move error', error, 'Card saved, but it could not be moved.');
             onSaved?.(saved);
             return;
@@ -144,7 +144,7 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
         return;
       }
 
-      // Toastern ligger i layouten, så den syns kvar efter navigeringen
+      // The toaster is in the layout, so it stays visible after the navigation
       toast.success(res.data.message || 'Card submitted!');
       form.reset(EMPTY_CARD_FORM);
       router.push(ROUTES.home);
@@ -162,7 +162,7 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
         onSubmit={form.handleSubmit(onSubmit)}
         noValidate
       >
-        {/* Samma gradient som boarden */}
+        {/* The same gradient as the board */}
         <header className={`${SECTION_PADDING} bg-linear-135 from-board-from via-board-via to-board-to py-5`}>
           <h2 className="text-xl font-semibold text-white" id="card-form-title">
             {isEdit ? 'Edit card' : 'Create card'}
@@ -174,7 +174,7 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
             Required fields are marked with an asterisk {required}
           </p>
 
-          {/* Issue type och listan bredvid varandra; under varandra på smala skärmar */}
+          {/* Issue type and the list side by side; stacked on narrow screens */}
           <div className="flex flex-wrap gap-x-4">
             <FormField
               control={form.control}
@@ -263,7 +263,7 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
         </div>
 
         <footer className={`${SECTION_PADDING} flex items-center justify-end gap-2 pt-4 pb-6`}>
-          {/* Sätts av servern när kortet skapas och ändras aldrig, så det visas bara */}
+          {/* Set by the server when the card is created and never changed, so it is only shown */}
           {isEdit && card?.submittedAt && (
             <span className="mr-auto text-xs text-jira-secondary">
               Created <time dateTime={card.submittedAt}>{formatDate(card.submittedAt)}</time>
@@ -278,7 +278,7 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
           >
             Cancel
           </Button>
-          {/* Samma blå som headerns gradient */}
+          {/* The same blue as the header's gradient */}
           <Button
             type="submit"
             size="sm"

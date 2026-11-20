@@ -13,13 +13,13 @@ import { ROUTES } from "../../utils/routes";
 
 type Status = "joining" | "login" | "failed" | "disabled";
 
-// En inbjudningslänk från boardens ägare. Inloggad: gå med och öppna boarden.
-// Annars sparas inbjudan tills inloggningen (useBoards tar emot den) och användaren skickas till login
+// An invite link from the board's owner. Logged in: join and open the board.
+// Otherwise the invite is kept until login (useBoards accepts it) and the user is sent to login
 export default function InvitePage() {
   const { token } = useParams<{ token: string }>();
   const router = useRouter();
   const [status, setStatus] = useState<Status>("joining");
-  // Strict mode kör effekten två gånger; gå med en gång
+  // Strict mode runs the effect twice; join only once
   const started = useRef(false);
 
   useEffect(() => {
@@ -37,7 +37,7 @@ export default function InvitePage() {
         router.replace(ROUTES.board);
       })
       .catch((err) => {
-        // joinBoard avstängd eller read-only: länken är inte trasig, sidan säger det i stället för en toast
+        // joinBoard switched off or read-only: the link isn't broken, the page says so instead of a toast
         if (isServiceUnavailable(err)) {
           logError("Join board error", err);
           setStatus("disabled");

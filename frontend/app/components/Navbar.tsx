@@ -36,7 +36,7 @@ import {
   NAV_SUB_ROW_BUTTON_CLASS,
 } from '../utils/styles';
 
-// Bara för inloggade: laddas när de visas, så att /login och /register slipper deras kod (Radix-popover/select/dialog)
+// Logged-in users only: loaded when shown, so /login and /register skip their code (Radix popover/select/dialog)
 const AccountMenu = dynamic(() => import('./AccountMenu'));
 const BoardSwitcher = dynamic(() => import('./BoardSwitcher'));
 const ShareBoardDialog = dynamic(() => import('./ShareBoardDialog'));
@@ -50,11 +50,11 @@ type NavItemProps = {
   Icon: NavIcon;
   pathname: string;
   onNavigate: () => void;
-  // Mobil: sidans knappar under länken
+  // Mobile: the page's buttons under the link
   children?: ReactNode;
 };
 
-// En sidlänk i navbaren: ikon och text, understruken på den aktuella sidan (rad två mäter just den länken)
+// A page link in the navbar: icon and text, underlined on the current page (row two measures exactly that link)
 const NavItem = ({ href, label, Icon, pathname, onNavigate, children }: NavItemProps) => (
   <li onClick={onNavigate}>
     <Link href={href} aria-current={pathname === href ? 'page' : undefined} className={NAV_PAGE_LINK_CLASS}>
@@ -70,7 +70,7 @@ const MobileSubActions = ({ actions }: { actions: SubAction[] }) =>
     <ul className={NAV_MOBILE_SUB_LIST_CLASS}>
       {actions.map(({ label, action, Icon }) => (
         <li key={action}>
-          {/* Klicket bubblar till länkens <li>, som stänger menyn */}
+          {/* The click bubbles to the link's <li>, which closes the menu */}
           <button type="button" className={NAV_SUB_ROW_BUTTON_CLASS} onClick={() => requestBoardAction(action)}>
             <Icon className={NAV_ICON_SUB_CLASS} aria-hidden />
             {label}
@@ -82,13 +82,13 @@ const MobileSubActions = ({ actions }: { actions: SubAction[] }) =>
 
 const Navbar = () => {
   const pathname = usePathname();
-  // Global admin (sajtens): hanterar användare. Boardens admin (ägaren): listor, ärendetyper, inbjudningar
+  // Global (site) admin: manages users. The board's admin (its owner): lists, issue types, invitations
   const { loggedIn: isLoggedIn, username: userName, admin } = useSession();
   const { boards, current: board, boardAdmin } = useBoards();
   const [menuOpen, setMenuOpen] = useState(false);
   const closeMenu = () => setMenuOpen(false);
   const [shareOpen, setShareOpen] = useState(false);
-  // Avstängda funktioner döljs (sajtens admin ser allt)
+  // Switched-off features are hidden (the site admin sees everything)
   const { isOn, readOnly, siteAdmin } = useFeatures();
 
   useEffect(() => onBoardAction(BOARD_ACTIONS.shareBoard, () => setShareOpen(true)), []);
@@ -98,7 +98,7 @@ const Navbar = () => {
   const onBacklog = isLoggedIn && pathname === ROUTES.backlog;
   const onIssueTypes = isLoggedIn && boardAdmin && pathname === ROUTES.issueTypes;
 
-  // Rad tvås knappar för aktuell sida. Bara boardens admin lägger till / tar bort kolumner (backend nekar andra)
+  // Row two's buttons for the current page. Only the board's admin adds / deletes columns (the backend refuses others)
   const subActions: SubAction[] = [
     ...(onBoard || onBacklog ? [{ label: 'Create card', action: BOARD_ACTIONS.createCard, Icon: PencilSquareIcon }] : []),
     ...(onBoard && boardAdmin
@@ -107,17 +107,17 @@ const Navbar = () => {
           { label: 'Delete column', action: BOARD_ACTIONS.deleteColumn, Icon: TrashIcon },
         ]
       : []),
-    // Ägaren bjuder in; medarbetare ser vilka som är med och kan lämna
+    // The owner invites; collaborators see who is on the board and can leave
     ...(onBoard && board ? [{ label: boardAdmin ? 'Share' : 'Members', action: BOARD_ACTIONS.shareBoard, Icon: boardAdmin ? ShareIcon : UserGroupIcon }] : []),
     ...(onIssueTypes ? [{ label: 'Create Issue type', action: BOARD_ACTIONS.createIssueType, Icon: PlusIcon }] : []),
   ].filter(({ action }) => isOn(BOARD_ACTION_FEATURES[action]));
 
-  // Board-länken står alltid först efter loggan. Boardväljaren visas på alla sidor när man är inloggad och har fler än
-  // en board, till vänster om kontoknappen (desktop) / sist i hamburgermenyn (mobil); ett byte stannar på sidan
+  // The Board link always comes first after the logo. The board switcher shows on every page when you are logged in and have more than
+  // one board, left of the account button (desktop) / last in the hamburger menu (mobile); switching stays on the page
   const showSwitcher = isLoggedIn && Boolean(board) && boards.length > 1 && isOn('boardSwitcher');
 
-  // Rad två börjar under den aktuella sidans länk (Board / Backlog / Issue types). null = vänsterställd
-  // (mobil, där länken är dold)
+  // Row two starts under the current page's link (Board / Backlog / Issue types). null = left-aligned
+  // (mobile, where the link is hidden)
   const headerRef = useRef<HTMLElement>(null);
   const [subRowStart, setSubRowStart] = useState<number | null>(null);
   const hasSubRow = subActions.length > 0;
@@ -134,7 +134,7 @@ const Navbar = () => {
       setSubRowStart(rect.width ? rect.left - header.getBoundingClientRect().left : null);
     };
     measure();
-    // Bredden ändras med fönstret, typsnittsladdning och när menyn byter läge
+    // The width changes with the window, font loading and when the menu changes mode
     const observer = new ResizeObserver(measure);
     observer.observe(link);
     observer.observe(header);
@@ -143,7 +143,7 @@ const Navbar = () => {
 
   return (
     <header ref={headerRef} className="fixed z-1000 w-full font-brand">
-      {/* Mobil: suddar sidan bakom den öppna menyn; tryck utanför stänger. Navraden (z-10) ligger ovanpå */}
+      {/* Mobile: blurs the page behind the open menu; tapping outside closes it. The nav row (z-10) sits on top */}
       {menuOpen && (
         <div
           className="fixed inset-0 bg-black/40 backdrop-blur-sm md:hidden"
@@ -151,10 +151,10 @@ const Navbar = () => {
           aria-hidden
         />
       )}
-      {/* z-10: mobilmenyn hamnar över raden under */}
+      {/* z-10: the mobile menu goes over the row below */}
       <nav className="relative z-10 flex w-full items-center justify-between bg-nav-top py-[0.5%] pr-[2%] pl-[3%]">
-        {/* Mobil: hamburgaren till vänster, logga och namn i mitten, kontoknappen till höger. Desktop: allt ligger i listan.
-            invisible när menyn är öppen: krysset ligger i menyns hörn, raden behåller sin höjd */}
+        {/* Mobile: hamburger on the left, logo and name in the middle, account button on the right. Desktop: everything is in the list.
+            invisible while the menu is open: the close button sits in the menu's corner, the row keeps its height */}
         <button
           className={`block text-nav-text md:hidden ${menuOpen ? 'invisible' : ''}`}
           onClick={() => setMenuOpen(true)}
@@ -163,7 +163,7 @@ const Navbar = () => {
         >
           <Bars3Icon className="size-8" aria-hidden />
         </button>
-        {/* Utloggad (Login/Register) leder loggan till startsidan, som skickar vidare */}
+        {/* Logged out (Login/Register) the logo leads to the start page, which redirects */}
         <Link href={logoHref} className={`${NAV_LINK_CLASS} absolute left-1/2 -translate-x-1/2 text-xl text-nav-text md:hidden`}>
           <Image src={logo} alt="" className="size-7 shrink-0" priority />
           AURELLO
@@ -174,12 +174,12 @@ const Navbar = () => {
           </div>
         )}
 
-        {/* Mobil: dold tills menyn öppnas, fyller sedan skärmen under raden med 12px kant runt om
-            (100% = navraden, absolut positionerad). Desktop: alltid synlig på en rad */}
+        {/* Mobile: hidden until the menu opens, then fills the screen below the row with a 12px margin all round
+            (100% = the nav row, absolutely positioned). Desktop: always visible on one row */}
         <ul
           className={`${menuOpen ? 'flex' : 'hidden'} absolute top-full inset-x-3 mt-3 h-[calc(100dvh-100%-1.5rem)] flex-col overflow-y-auto gap-4 rounded-lg bg-nav-top p-8 text-xl text-nav-text shadow-2xl md:static md:mt-0 md:flex md:h-auto md:overflow-visible md:flex-1 md:flex-row md:items-center md:gap-10 md:bg-transparent md:p-0 md:shadow-none`}
         >
-          {/* Mobil: stäng-krysset i menyns övre högra hörn */}
+          {/* Mobile: the close button in the menu's top right corner */}
           <li className="absolute top-3 right-3 md:hidden">
             <button type="button" className="block rounded-md text-nav-text hover:bg-white/10" onClick={closeMenu} aria-label="Close menu">
               <XMarkIcon className="size-8" aria-hidden />
@@ -187,7 +187,7 @@ const Navbar = () => {
           </li>
           <li className="hidden md:block">
             <Link href={logoHref} className={NAV_LINK_CLASS}>
-              {/* Samma bild som favicon (app/icon.png) */}
+              {/* Same image as the favicon (app/icon.png) */}
               <Image src={logo} alt="" className="size-7 shrink-0" priority />
               AURELLO
             </Link>
@@ -195,7 +195,7 @@ const Navbar = () => {
           {isLoggedIn && (
             <>
               <NavItem href={ROUTES.board} label="Board" Icon={ViewColumnsIcon} pathname={pathname} onNavigate={closeMenu} />
-              {/* Mobil: boardens knappar (Create card, Share …), som annars ligger i rad två */}
+              {/* Mobile: the board's buttons (Create card, Share …), which are otherwise in row two */}
               {onBoard && (
                 <li className="md:hidden" onClick={closeMenu}>
                   <MobileSubActions actions={subActions} />
@@ -206,13 +206,13 @@ const Navbar = () => {
                   {onBacklog && <MobileSubActions actions={subActions} />}
                 </NavItem>
               )}
-              {/* Bara för sajtens admin; backend nekar andra (403) */}
+              {/* Site admin only; the backend refuses others (403) */}
               {admin && <NavItem href={ROUTES.users} label="Users" Icon={UsersIcon} pathname={pathname} onNavigate={closeMenu} />}
-              {/* Sajtens admin: feature switches och read-only-läget (docs/feature-switches.md) */}
+              {/* Site admin: feature switches and read-only mode (docs/feature-switches.md) */}
               {admin && (
                 <NavItem href={ROUTES.features} label="Features" Icon={AdjustmentsHorizontalIcon} pathname={pathname} onNavigate={closeMenu} />
               )}
-              {/* Den valda boardens ärendetyper: bara dess admin */}
+              {/* The selected board's issue types: its admin only */}
               {boardAdmin && isOn('issueTypesPage') && (
                 <NavItem href={ROUTES.issueTypes} label="Issue types" Icon={TagIcon} pathname={pathname} onNavigate={closeMenu}>
                   {onIssueTypes && <MobileSubActions actions={subActions} />}
@@ -223,14 +223,14 @@ const Navbar = () => {
 
           {isLoggedIn ? (
             <>
-              {/* Desktop: användare och logout längst till höger */}
-              {/* Vilken board som visas (typsnitt och storlek som länkarna), till vänster om kontoknappen */}
+              {/* Desktop: user and logout on the far right */}
+              {/* Which board is shown (same font and size as the links), left of the account button */}
               {showSwitcher && (
                 <li className="md:ml-auto">
                   <BoardSwitcher onSelected={closeMenu} />
                 </li>
               )}
-              {/* Avataren öppnar kontomenyn (konto, utseende, Log out). Mobil: i navraden, till höger */}
+              {/* The avatar opens the account menu (account, appearance, Log out). Mobile: in the nav row, on the right */}
               {userName ? (
                 <li key="profile" className={`hidden md:block ${showSwitcher ? '' : 'md:ml-auto'}`}>
                   <AccountMenu username={userName} />
@@ -259,13 +259,13 @@ const Navbar = () => {
         </ul>
       </nav>
 
-      {/* Rad två (desktop), på boarden, backloggen och Issue types: öppnar sidans formulär. Lite mörkare än raden ovanför.
-          På mobil ligger knapparna i hamburgermenyn i stället */}
+      {/* Row two (desktop), on the board, the backlog and Issue types: opens the page's form. Slightly darker than the row above.
+          On mobile the buttons are in the hamburger menu instead */}
       {subActions.length > 0 && (
         <div
           className={`hidden items-center bg-nav-sub py-1.5 pr-[2%] text-base text-nav-text md:flex ${subRowStart === null ? 'pl-[3%]' : ''}`}
         >
-          {/* Vänsterkanten läggs under länkens vänsterkant */}
+          {/* The left edge lines up with the link's left edge */}
           <div
             className="flex w-fit shrink-0 items-center gap-4"
             style={subRowStart === null ? undefined : { marginLeft: subRowStart }}
@@ -280,7 +280,7 @@ const Navbar = () => {
         </div>
       )}
 
-      {/* Read-only-läget: alla ser det; sajtens admin kan fortfarande ändra */}
+      {/* Read-only mode: everyone sees it; the site admin can still make changes */}
       {readOnly && (
         <div
           role="status"

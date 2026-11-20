@@ -4,14 +4,14 @@ import { listColor } from "../../utils/styles";
 
 type Props = {
   header: BoardHeader;
-  // null medan boarden laddar
+  // null while the board loads
   count: number | null;
-  // Ett draget kort är över remsan
+  // A dragged card is over the strip
   dropTarget: boolean;
   onShow: () => void;
 };
 
-// En dold lista: smal remsa med rubriken på höjden. Klick visar listan igen
+// A hidden list: a narrow strip with the header running vertically. A click shows the list again
 export default function CollapsedListStrip({ header, count, dropTarget, onShow }: Props) {
   const color = listColor(header);
 
@@ -29,7 +29,7 @@ export default function CollapsedListStrip({ header, count, dropTarget, onShow }
       onClick={onShow}
     >
       <EyeIcon className="size-4 shrink-0 opacity-80" aria-hidden />
-      {/* Rubriken läses uppifrån och ner, som i Trello */}
+      {/* The header reads from top to bottom, as in Trello */}
       <span className="min-h-0 truncate text-sm font-semibold [writing-mode:vertical-rl]">{header.title}</span>
       <span className="shrink-0 text-sm opacity-80">{count}</span>
     </button>

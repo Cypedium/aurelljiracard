@@ -1,6 +1,6 @@
 import { CheckCircleIcon } from '@heroicons/react/24/outline';
 
-// Det man kan göra i appen; visas i välkomsttexten
+// What you can do in the app; shown in the welcome text
 const FEATURES = [
   'Boards with your own lists: add, rename, colour, reorder and hide them',
   'Cards with issue keys, priority, assignee and issue types like Task, Bug and Story',
@@ -8,8 +8,8 @@ const FEATURES = [
   'Invite others with a link and work on the same board together',
 ];
 
-// Välkomsttext på startsidan (Login och Register). Mobil/surfplatta: ovanför formuläret och lika bred
-// (samma mx-4 w-full max-w-md). Stor skärm (lg): bredvid formuläret. Texten växer med skärmen
+// The welcome text on the start page (Login and Register). Mobile/tablet: above the form and as wide
+// (the same mx-4 w-full max-w-md). Large screen (lg): next to the form. The text grows with the screen
 export default function Welcome() {
   return (
     <section className="mx-4 w-full max-w-md font-jira text-white">

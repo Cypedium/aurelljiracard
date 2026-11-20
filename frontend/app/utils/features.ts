@@ -1,8 +1,8 @@
-// Feature switches och read-only-läge (docs/feature-switches.md). Backend (server-java) nekar med 503;
-// här döljs bara knapparna så att de matchar. Navbar-brytarna (UI-only) döljer länkar och inställningar.
+// Feature switches and read-only mode (docs/feature-switches.md). The backend (server-java) refuses with 503;
+// here the buttons are only hidden to match. The navbar switches (UI-only) hide links and settings.
 import { BOARD_ACTIONS, type BoardAction } from "./boardActions";
 
-// Måste matcha Feature-enumen i server-java (API-nycklarna; read-only-läget heter "readOnly" och står för sig)
+// Must match the Feature enum in server-java (the API keys; read-only mode is called "readOnly" and stands on its own)
 export const ENFORCED_FEATURE_KEYS = [
   "register",
   "createCard",
@@ -29,7 +29,7 @@ export const READ_ONLY_KEY = "readOnly";
 export type FeatureKey = (typeof FEATURE_KEYS)[number];
 export type SwitchKey = FeatureKey | typeof READ_ONLY_KEY;
 
-// En brytare på admin-sidan. readOnly: enabled = read-only-läget är på; annars = funktionen är på
+// A switch on the admin page. readOnly: enabled = read-only mode is on; otherwise = the feature is on
 export type FeatureSwitch = {
   key: SwitchKey;
   enabled: boolean;
@@ -41,18 +41,18 @@ export type FeatureSwitch = {
 export type FeatureState = {
   readOnly: boolean;
   disabled: FeatureKey[];
-  // Bara för sajtens admin
+  // Site admin only
   switches?: FeatureSwitch[];
 };
 
-// Om GET /feature misslyckas (t.ex. en äldre backend) är allt på: UI:t blockeras aldrig av att listan saknas
+// If GET /feature fails (e.g. an older backend) everything is on: the UI is never blocked by a missing list
 export const ALL_ON: FeatureState = { readOnly: false, disabled: [] };
 
 const isFeatureKey = (key: unknown): key is FeatureKey => (FEATURE_KEYS as readonly unknown[]).includes(key);
 const isSwitchKey = (key: unknown): key is SwitchKey => key === READ_ONLY_KEY || isFeatureKey(key);
 export const isNavbarFeature = (key: SwitchKey): boolean => (NAVBAR_FEATURE_KEYS as readonly string[]).includes(key);
 
-// Backendens svar, tolerant: okända nycklar och fel typer ignoreras
+// The backend's response, read leniently: unknown keys and wrong types are ignored
 export const parseFeatureState = (data: unknown): FeatureState => {
   if (!data || typeof data !== "object") return ALL_ON;
   const raw = data as Record<string, unknown>;
@@ -66,18 +66,18 @@ export const parseFeatureState = (data: unknown): FeatureState => {
   return state;
 };
 
-// Sajtens admin ser allt. Navbar-brytarna påverkas inte av read-only (de är inga skrivningar)
+// The site admin sees everything. The navbar switches are not affected by read-only (they are not writes)
 export const isFeatureOn = (state: FeatureState, key: FeatureKey, siteAdmin: boolean): boolean => {
   if (siteAdmin) return true;
   if (state.disabled.includes(key)) return false;
   return isNavbarFeature(key) || !state.readOnly;
 };
 
-// Skrivningar utan egen brytare (t.ex. kortens ordning, PUT /user/layout) stoppas bara av read-only
+// Writes without their own switch (e.g. the order of the cards, PUT /user/layout) are only stopped by read-only
 export const canWrite = (state: FeatureState, siteAdmin: boolean): boolean => siteAdmin || !state.readOnly;
 
-// "Changed by root, 19 Nov 14:32" på admin-sidan; null om brytaren aldrig ändrats.
-// En borttagen admin ger bara tiden
+// "Changed by root, 19 Nov 14:32" on the admin page; null if the switch was never changed.
+// A deleted admin gives only the time
 export const featureChangedLabel = (sw: Pick<FeatureSwitch, "updatedAt" | "updatedBy"> | undefined, locale = "en-GB"): string | null => {
   if (!sw?.updatedAt) return null;
   const when = new Date(sw.updatedAt);
@@ -86,7 +86,7 @@ export const featureChangedLabel = (sw: Pick<FeatureSwitch, "updatedAt" | "updat
   return sw.updatedBy ? `Changed by ${sw.updatedBy}, ${time}` : `Changed ${time}`;
 };
 
-// Navbarens knappar → sin brytare
+// The navbar's buttons → their switch
 export const BOARD_ACTION_FEATURES: Record<BoardAction, FeatureKey> = {
   [BOARD_ACTIONS.createCard]: "createCard",
   [BOARD_ACTIONS.createColumn]: "createColumn",
@@ -95,7 +95,7 @@ export const BOARD_ACTION_FEATURES: Record<BoardAction, FeatureKey> = {
   [BOARD_ACTIONS.createIssueType]: "manageIssueTypes",
 };
 
-// Admin-sidan: grupper, namn och vad som döljs/stoppas (samma text som i docs/feature-switches.md)
+// The admin page: groups, names and what is hidden/stopped (the same text as in docs/feature-switches.md)
 export type FeatureInfo = { key: SwitchKey; name: string; hides: string; blocks: string };
 export type FeatureGroup = { title: string; uiOnly: boolean; features: FeatureInfo[] };
 

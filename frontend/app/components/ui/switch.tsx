@@ -1,4 +1,4 @@
-// shadcn/ui-stil Switch på radix-ui (redan ett beroende). Grön när på; danger = röd (read-only-läget)
+// A shadcn/ui-style Switch on radix-ui (already a dependency). Green when on; danger = red (read-only mode)
 "use client"
 
 import * as React from "react"

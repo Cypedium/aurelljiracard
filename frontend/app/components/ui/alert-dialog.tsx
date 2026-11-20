@@ -1,4 +1,4 @@
-// Overlay och innehåll: z-[1001] (över Navbar z-[1000]) och Jiras blå-grå bakgrund
+// Overlay and content: z-[1001] (above the Navbar's z-[1000]) and Jira's blue-grey backdrop
 "use client"
 
 import * as React from "react"

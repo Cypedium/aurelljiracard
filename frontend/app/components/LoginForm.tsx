@@ -23,16 +23,16 @@ export default function LoginForm() {
   const handleLogin = async ({ username, password }: LoginValues) => {
     try {
       const { data } = await loginUser({ username, password });
-      // Inloggning ignorerar skiftläge; spara namnet som backend har det, annars matchar inte korten
+      // Login ignores case; save the name as the backend has it, otherwise the cards don't match
       saveSession(tokenUsername(data.accessToken) ?? username, data.accessToken, data.refreshToken);
       window.location.href = ROUTES.board;
     } catch (error) {
-      // Backendens meddelande (t.ex. 401 "Invalid credentials."), annars nådde vi inte servern
+      // The backend's message (e.g. 401 "Invalid credentials."), otherwise we didn't reach the server
       toast.error(apiErrorMessage(error, "Could not reach the server. Please try again."));
     }
   };
 
-  // Första Google-inloggningen skapar användaren; namnet står i access-tokenet
+  // The first Google sign-in creates the user; the name is in the access token
   const handleGoogleLogin = async (credential: string) => {
     try {
       const { data } = await googleLogin(credential);

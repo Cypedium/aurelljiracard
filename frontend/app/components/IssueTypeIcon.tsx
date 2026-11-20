@@ -3,7 +3,7 @@ import { useIssueTypes } from "../hooks/useIssueTypes";
 import { issueTypeOf, type IssueType } from "../utils/cardType";
 import { ISSUE_TYPE_ICON } from "../utils/styles";
 
-// Kortets typ (key), eller en typ direkt (förhandsvisningen i NewIssueTypeDialog)
+// The card's type (key), or a type directly (the preview in NewIssueTypeDialog)
 type Props = { type?: string; issueType?: Pick<IssueType, "label" | "color" | "icon"> };
 
 export default function IssueTypeIcon({ type, issueType }: Props) {
@@ -16,7 +16,7 @@ export default function IssueTypeIcon({ type, issueType }: Props) {
       style={{ background: color }}
       title={label}
     >
-      {/* text-white på svg:n: annars gör SelectItem ikonen grå (text-muted-foreground) */}
+      {/* text-white on the svg: otherwise SelectItem makes the icon grey (text-muted-foreground) */}
       <Icon className="size-3 text-white" aria-hidden />
     </span>
   );

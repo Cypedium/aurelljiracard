@@ -10,20 +10,20 @@ import { MAX_ISSUE_TYPES, type CardType } from '../utils/cardType';
 import { cn } from '../lib/utils';
 import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, SelectValue } from './ui/select';
 
-// Övriga props (id, aria-*, ref från FormControl) går till knappen
+// Other props (id, aria-*, ref from FormControl) go to the button
 type Props = Omit<React.ComponentProps<typeof SelectTrigger>, 'value' | 'onChange'> & {
   value: CardType;
   onChange: (type: CardType) => void;
 };
 
-// Valet som öppnar dialogen för en ny typ; aldrig en typnyckel (de har bara a–z, 0–9 och bindestreck)
+// The option that opens the dialog for a new type; never a type key (those only have a–z, 0–9 and hyphens)
 const NEW_TYPE_VALUE = '__new__';
 
-// Jira-liknande dropdown med ikon per typ; Radix sköter tangentbord, fokus och Escape.
-// Boardens admin: sist finns "New issue type", som lägger till en typ på boarden och väljer den
+// A Jira-like dropdown with an icon per type; Radix handles keyboard, focus and Escape.
+// The board's admin: last there is "New issue type", which adds a type to the board and selects it
 export default function IssueTypeSelect({ value, onChange, className, ...triggerProps }: Props) {
   const types = useIssueTypes();
-  // "New issue type": boardens admin, när manageIssueTypes är på
+  // "New issue type": the board's admin, when manageIssueTypes is on
   const { boardAdmin } = useBoards();
   const { isOn } = useFeatures();
   const admin = boardAdmin && isOn('manageIssueTypes');

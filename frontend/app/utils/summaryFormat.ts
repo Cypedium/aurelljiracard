@@ -1,6 +1,6 @@
-// Kortets sammanfattning med formatering (Tiptap). Sparas som markdown, så backenden ser bara en sträng (max 2000 tecken)
-// och gamla kort med vanlig text fungerar som förut. Samma extensions används av editorn (SummaryEditor),
-// av kortet på boarden (renderSummary → React-element, ingen editor och ingen HTML-sträng) och av toPlainText.
+// The card's summary with formatting (Tiptap). Saved as markdown, so the backend sees only a string (max 2000 characters)
+// and old cards with plain text work as before. The same extensions are used by the editor (SummaryEditor),
+// by the card on the board (renderSummary → React elements, no editor and no HTML string) and by toPlainText.
 import { createElement, type ReactNode } from "react";
 import type { JSONContent } from "@tiptap/core";
 import { TaskItem, TaskList } from "@tiptap/extension-list";
@@ -8,15 +8,15 @@ import { MarkdownManager } from "@tiptap/markdown";
 import StarterKit from "@tiptap/starter-kit";
 import { renderToReactElement } from "@tiptap/static-renderer";
 
-// Länkar öppnas i en ny flik utan att sidan får tillgång till boarden.
-// no-drag: ett klick på en länk på kortet startar inte en dragning (react-grid-layout cancel)
+// Links open in a new tab without the page getting access to the board.
+// no-drag: a click on a link on the card doesn't start a drag (react-grid-layout cancel)
 export const LINK_REL = "noopener noreferrer nofollow";
 const LINK_CLASS = "no-drag";
 
-// GFM (att-göra, struken text), och en ensam radbrytning blir en ny rad som i en vanlig textruta
+// GFM (task lists, strikethrough), and a single line break becomes a new line as in a normal text box
 export const MARKED_OPTIONS = { gfm: true, breaks: true } as const;
 
-// Formateringen som finns. Understrykning saknar markdown och stängs av; bilder finns inte (ingen Image-extension)
+// The available formatting. Underline has no markdown and is turned off; there are no images (no Image extension)
 export const SUMMARY_EXTENSIONS = [
   StarterKit.configure({
     underline: false,
@@ -31,7 +31,7 @@ export const SUMMARY_EXTENSIONS = [
   TaskItem.configure({ nested: true }),
 ];
 
-// CSS-klassen för formaterad text (root.css): samma utseende i editorn och på kortet. compact = kortets framsida
+// The CSS class for formatted text (root.css): the same look in the editor and on the card. compact = the card face
 export const SUMMARY_CLASS = "rich-summary";
 export const SUMMARY_COMPACT_CLASS = "rich-summary rich-summary-compact";
 
@@ -41,7 +41,7 @@ const markdown = () => (manager ??= new MarkdownManager({ extensions: SUMMARY_EX
 export const summaryToDoc = (text: string): JSONContent => markdown().parse(text);
 export const docToSummary = (doc: JSONContent): string => markdown().serialize(doc);
 
-// Att-göra-rutan på kortet: bara visning (Tiptaps egen rendering ger en kryssruta utan onChange)
+// The task checkbox on the card: display only (Tiptap's own rendering gives a checkbox without onChange)
 const taskItem = ({ node, children }: { node: { attrs: Record<string, unknown> }; children?: ReactNode }) => {
   const checked = node.attrs.checked === true;
   return createElement(
@@ -52,7 +52,7 @@ const taskItem = ({ node, children }: { node: { attrs: Record<string, unknown> }
   );
 };
 
-// Sammanfattningen som React-element, utan editor
+// The summary as React elements, without an editor
 export const renderSummary = (text: string): ReactNode =>
   renderToReactElement({
     content: summaryToDoc(text),
@@ -60,17 +60,17 @@ export const renderSummary = (text: string): ReactNode =>
     options: { nodeMapping: { taskItem } },
   });
 
-// Tecknen före en rad när formateringen tas bort
+// The characters before a line when the formatting is removed
 const PLAIN_BULLET = "• ";
 const PLAIN_TODO = "☐ ";
 const PLAIN_DONE = "☑ ";
-// Block som ger egna rader (allt annat är inline)
+// Blocks that get their own lines (everything else is inline)
 const LIST_TYPES = new Set(["bulletList", "orderedList", "taskList"]);
 
 const inlineText = (nodes: JSONContent[] = []): string =>
   nodes.map((n) => (n.type === "text" ? (n.text ?? "") : n.type === "hardBreak" ? "\n" : inlineText(n.content))).join("");
 
-// Ett block → rader; listor får sitt tecken framför varje punkt
+// One block → lines; lists get their marker in front of each item
 const blockLines = (node: JSONContent, prefix = ""): string[] => {
   if (node.type && LIST_TYPES.has(node.type)) {
     const start = typeof node.attrs?.start === "number" ? node.attrs.start : 1;
@@ -92,10 +92,10 @@ const blockLines = (node: JSONContent, prefix = ""): string[] => {
   return inlineText(node.content).split("\n");
 };
 
-// Utan formatering, radbrytningarna kvar (kortets title, dialoger)
+// Without formatting, line breaks kept (the card's title, dialogs)
 export const toPlainText = (text: string): string => blockLines(summaryToDoc(text)).join("\n");
 
-// På en rad (tabeller som backloggen)
+// On one line (tables such as the backlog)
 export const toPlainLine = (text: string): string =>
   toPlainText(text)
     .split("\n")

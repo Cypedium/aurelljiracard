@@ -1,7 +1,7 @@
 import { describe, expect, it, jest } from "@jest/globals";
 import { apiErrorMessage, isConflictError, logError, reportError } from "../../app/utils/apiError";
 
-// axios isAxiosError() känner igen fel på flaggan isAxiosError
+// axios isAxiosError() recognises errors by the isAxiosError flag
 const axiosError = (data?: unknown) => ({ isAxiosError: true, response: data === undefined ? undefined : { data } });
 
 describe("apiErrorMessage", () => {

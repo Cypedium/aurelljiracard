@@ -17,7 +17,7 @@ import GoogleButton from './GoogleButton';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { ACCOUNT_AVATAR_CLASS, ACCOUNT_MENU_ACTIVE_ITEM_CLASS, ACCOUNT_MENU_ALIGN_OFFSET, ACCOUNT_MENU_CLASS, ACCOUNT_MENU_HEADING_CLASS, ACCOUNT_MENU_ITEM_CLASS, NAV_ACCOUNT_BUTTON_CLASS, NAV_ICON_SUB_CLASS } from '../utils/styles';
 
-// Panelen som är öppen bredvid menyn: en av färgväljarna eller Google-kopplingen
+// The panel open next to the menu: one of the colour pickers or the Google connection
 type Panel = AppearanceView | 'google';
 
 type MenuItemProps = {
@@ -37,12 +37,12 @@ const MenuItem = ({ Icon, label, end, active = false, onClick }: MenuItemProps) 
   </button>
 );
 
-// Avataren i navbaren öppnar kontomenyn (som Trellos): konto, utseende och utloggning.
-// Desktop: panelerna öppnas till vänster om menyn. Mobil: i menyns ställe, med tillbaka-pil
+// The avatar in the navbar opens the account menu (like Trello's): account, appearance and logout.
+// Desktop: the panels open to the left of the menu. Mobile: in place of the menu, with a back arrow
 export default function AccountMenu({ username }: { username: string }) {
   const [open, setOpen] = useState(false);
   const [panel, setPanel] = useState<Panel | null>(null);
-  // Avstängda inställningar döljs (sajtens admin ser allt)
+  // Switched-off settings are hidden (the site admin sees everything)
   const { isOn } = useFeatures();
   const [appearance, setAppearance] = useState<Appearance>(loadAppearance);
 
@@ -62,7 +62,7 @@ export default function AccountMenu({ username }: { username: string }) {
       toast.success('Google account connected. You can now sign in with Google.');
       close();
     } catch (error) {
-      // T.ex. 409: Google-kontot hör redan till en annan användare
+      // E.g. 409: the Google account already belongs to another user
       toast.error(apiErrorMessage(error, 'Could not connect the Google account.'));
     }
   };
@@ -81,7 +81,7 @@ export default function AccountMenu({ username }: { username: string }) {
         className={NAV_ACCOUNT_BUTTON_CLASS}
       >
         <UserIcon className={`${NAV_ICON_SUB_CLASS} max-md:size-5`} aria-hidden />
-        {/* Mobil: bara ikonen */}
+        {/* Mobile: only the icon */}
         <span className="hidden md:inline">{avatarInitials(username)}</span>
       </PopoverTrigger>
       <PopoverContent
@@ -112,7 +112,7 @@ export default function AccountMenu({ username }: { username: string }) {
             />
           )}
 
-          {/* Avsnittet försvinner när båda inställningarna är avstängda */}
+          {/* The section disappears when both settings are switched off */}
           {(isOn('boardBackground') || isOn('navbarColour')) && (
             <>
               <hr className="my-2 border-jira-neutral" />
@@ -147,7 +147,7 @@ export default function AccountMenu({ username }: { username: string }) {
           />
           )}
 
-          {/* Log out för sig längst ned */}
+          {/* Log out on its own at the bottom */}
           <hr className="mt-6 mb-2 border-jira-neutral" />
           <button type="button" onClick={handleLogout} className={ACCOUNT_MENU_ITEM_CLASS}>
             <ArrowRightStartOnRectangleIcon className="size-5 shrink-0 text-jira-secondary" aria-hidden />

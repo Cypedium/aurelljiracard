@@ -29,11 +29,11 @@ export default function RegisterForm() {
 
       const res = await registerUser({ username, password, pictureUrl });
 
-      // Toastern ligger i layouten, så den syns kvar på /login
+      // The toaster is in the layout, so it stays visible on /login
       toast.success(res.data.message);
       router.push(ROUTES.login);
     } catch (err) {
-      // Taget namn (409, även med annan skiftläge: "mike" när "Mike" finns) visas under fältet, som issue key
+      // A taken name (409, also with different case: "mike" when "Mike" exists) is shown under the field, like the issue key
       if (isConflictError(err)) {
         form.setError("username", { message: apiErrorMessage(err, USERNAME_TAKEN_MESSAGE) }, { shouldFocus: true });
         return;
@@ -54,7 +54,7 @@ export default function RegisterForm() {
             <FormItem className={FORM_ITEM_CLASS}>
               <FormLabel className={LABEL_CLASS}>Profile picture</FormLabel>
               <FormControl>
-                {/* Filfält kan inte styras med value, bara läsas vid onChange */}
+                {/* File inputs can't be controlled with value, only read in onChange */}
                 <Input
                   type="file"
                   accept="image/*"

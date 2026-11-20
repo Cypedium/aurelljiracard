@@ -22,14 +22,14 @@ type Options = {
   persistLayout: (next: UserLayout) => void;
 };
 
-// Boardens admin: lägg till, byt namn, färga, flytta och ta bort listorna (för alla på boarden).
-// Ändringen visas direkt; vid fel återställs listorna
+// The board's admin: add, rename, recolour, move and delete the lists (for everyone on the board).
+// The change shows at once; on an error the lists are restored
 export function useColumnActions({ boardId, headers, setHeaders, userLayout, persistLayout }: Options) {
-  // Kolumnen vars rubrik redigeras
+  // The column whose header is being edited
   const [renamingKey, setRenamingKey] = useState<CardStatus | null>(null);
-  // Formuläret "Add new column" är öppet
+  // The "Add new column" form is open
   const [addingList, setAddingList] = useState(false);
-  // Dialogen "Delete column" är öppen
+  // The "Delete column" dialog is open
   const [deletingList, setDeletingList] = useState(false);
 
   const saveColumn = async (next: BoardHeader[], key: CardStatus) => {
@@ -50,14 +50,14 @@ export function useColumnActions({ boardId, headers, setHeaders, userLayout, per
     saveColumn(renameHeader(headers, key, title), key);
   };
 
-  // null = standardfärgen
+  // null = the default colour
   const recolorColumn = (key: CardStatus, color: string | null) => saveColumn(recolorHeader(headers, key, color), key);
 
-  // Korten följer med listan (de hör till listan via status)
+  // The cards follow the list (they belong to the list through their status)
   const moveList = async (from: CardStatus, to: CardStatus) => {
     const next = moveHeader(headers, from, to);
     if (next === headers) return;
-    // Äldre sparade positioner har bara listans index: spara listans key innan ordningen ändras
+    // Older saved positions only have the list's index: save the list's key before the order changes
     if (userLayout.cards?.some((c) => c.status === undefined)) {
       persistLayout({ ...userLayout, cards: withListKeys(headers, userLayout.cards) });
     }
@@ -71,7 +71,7 @@ export function useColumnActions({ boardId, headers, setHeaders, userLayout, per
     }
   };
 
-  // Ny lista sist på boarden. Tomt namn stänger formuläret
+  // A new list at the end of the board. An empty name closes the form
   const addList = async (title: string) => {
     if (!title.trim()) {
       setAddingList(false);
@@ -86,7 +86,7 @@ export function useColumnActions({ boardId, headers, setHeaders, userLayout, per
     }
   };
 
-  // Bara tomma listor; servern svarar 409 om någon hann lägga ett kort där
+  // Only empty lists; the server answers 409 if someone managed to add a card there
   const removeList = async (key: CardStatus) => {
     const title = headers.find((h) => h.key === key)?.title ?? key;
     try {

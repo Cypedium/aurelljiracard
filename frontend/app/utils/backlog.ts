@@ -1,7 +1,7 @@
 import type { CardStatus } from "./boardLayout";
 
-// Kort i backloggen ligger inte på boarden och har ingen assignee.
-// Aldrig en listnyckel. Måste matcha CardStatus.BACKLOG i server-java
+// Cards in the backlog are not on the board and have no assignee.
+// Never a list key. Must match CardStatus.BACKLOG in server-java
 export const BACKLOG_STATUS = "backlog";
 export type AnyCardStatus = CardStatus | typeof BACKLOG_STATUS;
 
@@ -13,6 +13,6 @@ export const boardCards = <T extends StatusCard>(cards: T[]): T[] => cards.filte
 
 export const backlogCards = <T extends StatusCard>(cards: T[]): T[] => cards.filter(isBacklogCard);
 
-// Kort från innan assignee fanns visar författaren
+// Cards from before assignee existed show the author
 export const assigneeOf = (card: { assignee?: string | null; username: string }): string =>
   card.assignee || card.username;

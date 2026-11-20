@@ -17,7 +17,7 @@ import { MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH, USERNAME_MAX_LENGTH, isRepeti
 import { ROLES } from "../../app/utils/session";
 import { RUDE_WORDS, isRudeUsername } from "../../app/utils/username";
 
-// Regler som frontend och server-java måste vara överens om. server-java testar samma fil (SharedContractTest)
+// Rules the frontend and server-java must agree on. server-java tests the same file (SharedContractTest)
 const contract = JSON.parse(readFileSync(join(__dirname, "..", "..", "..", "shared", "contract.json"), "utf8"));
 
 describe("shared contract (shared/contract.json)", () => {

@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { ROUTES } from '../utils/routes';
 
-// En sida eller ett formulär som sajtens admin har stängt av (feature switches); samma kort som inbjudningssidan
+// A page or form the site admin has switched off (feature switches); the same card as the invite page
 export default function FeatureOff({
   title = 'This page is turned off',
   text = 'An admin has turned this off for now.',

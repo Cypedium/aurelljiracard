@@ -8,8 +8,8 @@ import { readText, removeStored, writeText } from "../utils/storage";
 import { getUsername, hasSession } from "../utils/session";
 import { createStore } from "../utils/store";
 
-// Användarens boards (den egna + de hen är medarbetare på) och den som visas, delade av navbaren och sidorna.
-// Hämtas en gång per inloggning; byter användare i samma flik hämtas de på nytt
+// The user's boards (their own + the ones they collaborate on) and the one shown, shared by the navbar and the pages.
+// Fetched once per login; if another user logs in in the same tab they are fetched again
 type BoardsState = {
   boards: Board[];
   current: Board | null;
@@ -30,7 +30,7 @@ const setState = (boards: Board[], preferredId: string | null) => {
   store.set({ boards, current, loaded: true });
 };
 
-// En inbjudan som öppnades före inloggningen (sidan /invite/[token]) tas emot nu
+// An invite opened before logging in (the /invite/[token] page) is accepted now
 const acceptPendingInvite = async (): Promise<Board | null> => {
   const token = readText(PENDING_INVITE_KEY, "session");
   if (!token) return null;
@@ -46,7 +46,7 @@ const acceptPendingInvite = async (): Promise<Board | null> => {
 };
 
 const load = async (force = false) => {
-  // Utan inloggning svarar API:t 401
+  // Without a login the API answers 401
   if (loading || !hasSession()) return;
   const user = getUsername();
   if (!force && loadedFor === user && store.get().loaded) return;
@@ -64,20 +64,20 @@ const load = async (force = false) => {
   }
 };
 
-// Byter board i navbaren; sidorna hämtar om sina data när current ändras
+// Switches board in the navbar; the pages fetch their data again when current changes
 export const selectBoard = (id: string) => {
   const { boards, current } = store.get();
   if (id === current?._id) return;
   setState(boards, id);
 };
 
-// Efter att ha gått med via en länk: boarden läggs till och visas
+// After joining through a link: the board is added and shown
 export const showJoinedBoard = (board: Board) => {
   const { boards } = store.get();
   setState(boards.some((b) => b._id === board._id) ? boards : [...boards, board], board._id);
 };
 
-// Efter att ha lämnat en board: hämtas om, och den egna visas
+// After leaving a board: fetched again, and your own board is shown
 export const reloadBoards = () => load(true);
 
 export function useBoards() {

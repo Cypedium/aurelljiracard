@@ -12,7 +12,7 @@ import { Toaster as Sonner, type ToasterProps } from "sonner"
 const Toaster = ({ ...props }: ToasterProps) => {
   return (
     <Sonner
-      // Appen har inget mörkt läge
+      // The app has no dark mode
       theme="light"
       className="toaster group font-jira"
       icons={{

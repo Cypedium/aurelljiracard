@@ -1,5 +1,5 @@
-// localStorage/sessionStorage kan kasta (privat läge, blockerad eller full lagring) eller saknas (på servern).
-// Läsning ger då fallback; skrivning hoppas över, så valet gäller bara tills sidan laddas om
+// localStorage/sessionStorage can throw (private mode, blocked or full storage) or be missing (on the server).
+// Reading then gives the fallback; writing is skipped, so the choice only lasts until the page reloads
 export type StorageArea = "local" | "session";
 
 const storage = (area: StorageArea): Storage => (area === "local" ? localStorage : sessionStorage);
@@ -16,7 +16,7 @@ export const writeText = (key: string, value: string, area: StorageArea = "local
   try {
     storage(area).setItem(key, value);
   } catch {
-    // Sparas inte
+    // Not saved
   }
 };
 
@@ -24,11 +24,11 @@ export const removeStored = (key: string, area: StorageArea = "local") => {
   try {
     storage(area).removeItem(key);
   } catch {
-    // Finns inget att ta bort
+    // Nothing to remove
   }
 };
 
-// JSON-värde; normalize gör om ett gammalt eller trasigt värde till ett giltigt. Saknas eller ogiltig JSON → fallback
+// A JSON value; normalize turns an old or broken value into a valid one. Missing or invalid JSON → fallback
 export const readJson = <T>(key: string, normalize: (raw: unknown) => T, fallback: T, area: StorageArea = "local"): T => {
   const raw = readText(key, area);
   if (raw === null) return fallback;

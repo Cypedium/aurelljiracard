@@ -7,21 +7,21 @@ import { Button } from './ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 
 type Props = {
-  // Kolumnens namn, för skärmläsare
+  // The column's name, for screen readers
   title: string;
-  // Användarens egen färg; saknas = standardfärgen
+  // The user's own colour; missing = the default colour
   color?: string;
   defaultColor: string;
-  // null = återställ standardfärgen
+  // null = restore the default colour
   onChange: (color: string | null) => void;
 };
 
-// Penseln i listans hörn: färdiga färger, egen färg (webbläsarens färgväljare) och återställ
+// The brush in the list's corner: preset colours, a custom colour (the browser's colour picker) and reset
 export default function ColumnColorPicker({ title, color, defaultColor, onChange }: Props) {
   const current = color ?? defaultColor;
   const [open, setOpen] = useState(false);
 
-  // Färdig färg eller återställ: spara och stäng
+  // A preset colour or reset: save and close
   const choose = (next: string | null) => {
     onChange(next);
     setOpen(false);
@@ -62,7 +62,7 @@ export default function ColumnColorPicker({ title, color, defaultColor, onChange
         </div>
         <div className="mt-3 flex items-center justify-between gap-2">
           <label className="flex cursor-pointer items-center gap-2 text-sm">
-            {/* Stängs inte här: färgväljaren skickar ändringar medan man drar */}
+            {/* Doesn't close here: the colour picker sends changes while you drag */}
             <input
               type="color"
               value={current}

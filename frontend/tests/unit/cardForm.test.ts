@@ -3,7 +3,7 @@ import { COMMENT_MAX_LENGTH, PRIORITIES, PRODUCT_ID_MAX_LENGTH, cardFormSchema, 
 
 const valid = { type: "task", comment: "Fix the login page", productId: "AGB-12", rating: 3 };
 
-// Första felmeddelandet, eller null om formuläret är giltigt
+// The first error message, or null if the form is valid
 const firstError = (form: object) => {
   const result = cardFormSchema.safeParse(form);
   return result.success ? null : result.error.issues[0].message;

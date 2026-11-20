@@ -10,14 +10,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const checkAuth = () => {
-      // ❌ Ingen token alls → användaren är inte inloggad
+      // No token at all → the user is not logged in
       if (!hasSession()) {
         router.replace(ROUTES.login);
         setIsAuthenticated(false);
         return;
       }
 
-      // ✔ Minst en token finns → låt axios-interceptorn avgöra resten
+      // At least one token exists → let the axios interceptor decide the rest
       setIsAuthenticated(true);
     };
 

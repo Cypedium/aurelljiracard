@@ -3,16 +3,16 @@ import { defaultListColor, type BoardHeader, type CardStatus } from '../utils/bo
 import { cn } from '../lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
-// Övriga props (id, aria-*, ref från FormControl) går till knappen
+// Other props (id, aria-*, ref from FormControl) go to the button
 type Props = Omit<React.ComponentProps<typeof SelectTrigger>, 'value' | 'onChange'> & {
   lists: BoardHeader[];
-  // undefined = inte på boarden (backloggen); visar placeholder
+  // undefined = not on the board (the backlog); shows the placeholder
   value?: CardStatus;
   onChange: (key: CardStatus) => void;
   placeholder?: string;
 };
 
-// Boardens listor med listans färg som en prick; samma utseende som IssueTypeSelect
+// The board's lists with the list's colour as a dot; the same look as IssueTypeSelect
 export default function ListSelect({ lists, value, onChange, placeholder, className, ...triggerProps }: Props) {
   return (
     <Select value={value ?? ''} onValueChange={onChange} disabled={!lists.length}>

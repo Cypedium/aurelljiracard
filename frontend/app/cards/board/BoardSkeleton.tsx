@@ -15,12 +15,12 @@ type Props = {
   gridStyle: CSSProperties;
 };
 
-// Skeleton-kort medan kort, layout och listor hämtas
+// Skeleton cards while cards, layout and lists are fetched
 export default function BoardSkeleton({ headers, columns, gridStyle }: Props) {
   return (
     <div
       className="pointer-events-none absolute inset-0 grid items-start"
-      // Samma sidmarginal som boarden (gridStyle); korten börjar under rubrik och knapp
+      // The same page margin as the board (gridStyle); the cards start below the header and the button
       style={{ ...gridStyle, paddingTop: CARDS_TOP }}
       aria-busy="true"
       aria-label="Loading cards"

@@ -17,24 +17,24 @@ import {
   type UserLayout,
 } from "../utils/boardLayout";
 
-// Hämtar boardens kort och listor och användarens layout. Byts boarden hämtas allt om
+// Fetches the board's cards and lists and the user's layout. When the board changes everything is fetched again
 export function useBoardData(boardId: string) {
   const [cards, setCards] = useState<Card[]>([]);
   const [cardsLoaded, setCardsLoaded] = useState(false);
   const [userLayout, setUserLayout] = useState<UserLayout>(DEFAULT_LAYOUT);
   const [layoutLoaded, setLayoutLoaded] = useState(false);
-  // Boardens listor, delade av dess medlemmar; boardens admin lägger till, byter namn och färg
+  // The board's lists, shared by its members; the board's admin adds, renames and recolours them
   const [headers, setHeaders] = useState<BoardHeader[]>(DEFAULT_HEADERS);
   const [columnsLoaded, setColumnsLoaded] = useState(false);
-  // Alla kort på boarden (även backloggen): deras positioner ersätts när layouten sparas
+  // Every card on the board (the backlog too): their positions are replaced when the layout is saved
   const boardCardIds = useRef<Set<string>>(new Set());
 
-  // 🔥 Hämta card via api.ts (token-rotation ingår)
+  // Fetch the cards via api.ts (includes token rotation)
   const fetchCards = useCallback(async () => {
     try {
       const res = await getCards(boardId);
       boardCardIds.current = new Set((res.data || []).flatMap((c) => (c._id ? [c._id] : [])));
-      // Backloggen visas på /backlog, inte på boarden
+      // The backlog is shown on /backlog, not on the board
       setCards(boardCards(res.data || []));
     } catch (err) {
       reportError("Error fetching cards", err, "Could not load cards.");
@@ -49,7 +49,7 @@ export function useBoardData(boardId: string) {
     fetchCards();
   }, [fetchCards]);
 
-  // 🔥 Hämta layout från server eller localStorage
+  // Fetch the layout from the server or localStorage
   useEffect(() => {
     const loadLayout = async () => {
       try {
@@ -68,7 +68,7 @@ export function useBoardData(boardId: string) {
     loadLayout().finally(() => setLayoutLoaded(true));
   }, []);
 
-  // Boardens listor; om hämtningen misslyckas visas standardlistorna
+  // The board's lists; if fetching fails the default lists are shown
   useEffect(() => {
     let current = true;
     setColumnsLoaded(false);
@@ -78,31 +78,31 @@ export function useBoardData(boardId: string) {
         reportError("Error fetching lists", err, "Could not load the lists.");
       })
       .finally(() => current && setColumnsLoaded(true));
-    // Ett svar för en board användaren redan har lämnat skriver inte över den nya
+    // A response for a board the user has already left doesn't overwrite the new one
     return () => {
       current = false;
     };
   }, [boardId]);
 
-  // 🔥 Spara layout till server via api.ts
+  // Save the layout to the server via api.ts
   const saveLayoutToServer = useCallback(
     debounce(async (newLayout: UserLayout) => {
       try {
         await saveLayout(newLayout);
       } catch (e) {
         logError("Failed to save layout to server", e);
-        // Fast id: upprepade fel ersätter samma toast i stället för att staplas
+        // Fixed id: repeated errors replace the same toast instead of stacking up
         toast.error("Could not save the board layout. It is kept in this browser.", { id: "layout-save" });
       }
     }, 800),
     [],
   );
 
-  // Positionerna för kort på användarens andra boards följer med oförändrade
+  // Positions of cards on the user's other boards come along unchanged
   const persistLayout = (next: UserLayout) => {
     const merged = { ...next, cards: mergeBoardPositions(userLayout.cards, next.cards, boardCardIds.current) };
     setUserLayout(merged);
-    // Sparas till servern även om webbläsaren inte kan spara den
+    // Saved to the server even if the browser can't save it
     writeJson(LAYOUT_STORAGE_KEY, merged);
     saveLayoutToServer(merged);
   };

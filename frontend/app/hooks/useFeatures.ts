@@ -7,8 +7,8 @@ import { ALL_ON, canWrite, isFeatureOn, parseFeatureState, type FeatureKey, type
 import { createStore } from "../utils/store";
 import { useSession } from "./useSession";
 
-// Feature switches och read-only-läge, delade av navbaren och sidorna (docs/feature-switches.md).
-// Hämtas vid första användningen, när fönstret får fokus igen och efter varje 503. Misslyckas hämtningen är allt på
+// Feature switches and read-only mode, shared by the navbar and the pages (docs/feature-switches.md).
+// Fetched on first use, when the window gets focus again and after every 503. If fetching fails everything is on
 const store = createStore<FeatureState>(ALL_ON);
 let started = false;
 let loading = false;
@@ -19,14 +19,14 @@ export const reloadFeatures = async () => {
   try {
     store.set(parseFeatureState((await getFeatures()).data));
   } catch (err) {
-    // Tyst: ett misslyckat anrop betyder att allt är på
+    // Silent: a failed call means everything is on
     logError("Error fetching features", err);
   } finally {
     loading = false;
   }
 };
 
-// Efter att admin ändrat en brytare: visa svaret direkt
+// After the admin changed a switch: show the response at once
 export const setFeatureState = (next: FeatureState) => store.set(next);
 
 const start = () => {
@@ -40,15 +40,15 @@ const start = () => {
 export function useFeatures() {
   useEffect(start, []);
   const snapshot = useSyncExternalStore(store.subscribe, store.get, () => ALL_ON);
-  // Rollen ur access-tokenet; följer in-/utloggning och förnyade tokens
+  // The role from the access token; follows login/logout and refreshed tokens
   const { admin: siteAdmin } = useSession();
   return {
     state: snapshot,
-    // Read-only-läget är på (bannern visas för alla; sajtens admin får en annan text)
+    // Read-only mode is on (everyone sees the banner; the site admin gets a different text)
     readOnly: snapshot.readOnly,
     siteAdmin,
     isOn: (key: FeatureKey) => isFeatureOn(snapshot, key, siteAdmin),
-    // Skrivningar utan egen brytare, t.ex. att spara kortens ordning
+    // Writes without their own switch, e.g. saving the order of the cards
     canWrite: canWrite(snapshot, siteAdmin),
   };
 }

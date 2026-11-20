@@ -3,12 +3,12 @@
 @import 'react-resizable/css/styles.css';
 @import "tw-animate-css";
 
-/* Mörkt läge bara via .dark-klass (används inte), inte via OS-inställningen */
+/* Dark mode only via a .dark class (not used), not via the OS setting */
 @custom-variant dark (&:is(.dark *));
 
-/* Jira-färger och typsnitt för board och formulär, t.ex. text-jira-text, bg-jira-lane */
+/* Jira colours and fonts for the board and forms, e.g. text-jira-text, bg-jira-lane */
 @theme {
-  /* Navbar och footer */
+  /* Navbar and footer */
   --font-brand: Arial, Helvetica, sans-serif;
   --color-brand: #007bff;
   --color-brand-border: #aaa;
@@ -29,7 +29,7 @@
   --color-jira-danger: #c9372c;
   --color-jira-info: #e9f2ff;
 
-  /* Trello-liknande board: listfärger och bakgrund, t.ex. bg-list-todo */
+  /* Trello-like board: list colours and background, e.g. bg-list-todo */
   --color-list-todo: #eed7fc;
   --color-list-todo-text: #352c63;
   --color-list-progress: #f5e989;
@@ -41,14 +41,14 @@
   --color-board-from: #1c2b41;
   --color-board-via: #1d4f91;
   --color-board-to: #2b7bb9;
-  /* Navbarens två rader och text. Board- och navbarfärgerna byts i Account → Settings
-     (app/utils/appearance.ts sätter variablerna på <html>); standardvärdena här ska matcha standardvalet där */
+  /* The navbar's two rows and text. The board and navbar colours are changed in Account → Settings
+     (app/utils/appearance.ts sets the variables on <html>); the defaults here must match the default choice there */
   --color-nav-top: #4a5565;
   --color-nav-sub: #364153;
   --color-nav-text: #9cc8f5;
 }
 
-/* shadcn/ui-tokens (components/ui), mappade till Jira-färgerna ovan */
+/* shadcn/ui tokens (components/ui), mapped to the Jira colours above */
 :root {
   --radius: 0.5rem;
   --background: #ffffff;
@@ -71,8 +71,8 @@
   --ring: #388bff;
 }
 
-/* Kontomenyn (portal): navbarens färger i stället för de vita ytorna. Variablerna ärvs av menyn och dess paneler;
-   ytor och linjer blandas från textfärgen, så att de syns både på mörka och ljusa navbarfärger */
+/* The account menu (portal): the navbar's colours instead of the white surfaces. The menu and its panels inherit the variables;
+   surfaces and lines are mixed from the text colour, so they show on both dark and light navbar colours */
 .nav-theme {
   --popover: var(--color-nav-top);
   --popover-foreground: var(--color-nav-text);
@@ -111,7 +111,7 @@
   --color-ring: var(--ring);
 }
 
-/* Kantfärg bara för shadcn-komponenter (data-slot), så att befintliga `border` inte ändras */
+/* Border colour only for shadcn components (data-slot), so existing `border`s don't change */
 @layer base {
   [data-slot] {
     @apply border-border outline-ring/50;
@@ -137,7 +137,7 @@ button {
   cursor: pointer;
 }
 
-/* Boardens scrollbar: genomskinlig vit på bakgrunden, som i Trello */
+/* The board's scrollbar: translucent white on the background, as in Trello */
 .board-scroll::-webkit-scrollbar {
   height: 12px;
 }
@@ -159,8 +159,8 @@ button {
   }
 }
 
-/* Kortets sammanfattning (Tiptap, app/utils/summaryFormat.ts): samma utseende i editorn och på kortet.
-   Tailwinds preflight nollställer rubriker och listor, så de får sin stil här */
+/* The card's summary (Tiptap, app/utils/summaryFormat.ts): the same look in the editor and on the card.
+   Tailwind's preflight resets headings and lists, so they get their style here */
 .rich-summary {
   line-height: 1.25rem;
   overflow-wrap: anywhere;
@@ -243,7 +243,7 @@ button {
 .rich-summary hr {
   border-color: var(--color-jira-neutral);
 }
-/* Kortets framsida: tre rader som förut, rubriker bara feta, tätare */
+/* The card face: three lines as before, headings only bold, tighter */
 .rich-summary-compact {
   max-height: 3.75rem;
   overflow: hidden;
@@ -259,7 +259,7 @@ button {
   padding: 0 0.25rem;
   font-size: inherit;
 }
-/* Editorn: ingen egen fokusram (rutan runt får ringen) */
+/* The editor: no focus ring of its own (the surrounding box gets the ring) */
 .rich-summary.ProseMirror {
   outline: none;
 }

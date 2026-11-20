@@ -17,16 +17,16 @@ import {
 
 type CardDragOptions = {
   columns: BoardColumns;
-  // Listorna i den ordning boarden visar dem
+  // The lists in the order the board shows them
   headers: BoardHeader[];
-  // Gridens id → kortet
+  // Grid id → the card
   cardById: Map<string, Card>;
   moveCard: (id: string, status: CardStatus) => void;
-  // Sparar kortens ordning ur gridens layout
+  // Saves the order of the cards from the grid's layout
   saveOrder: (layout: Layout) => void;
 };
 
-// Dold lista (smal remsa) under pekaren, om någon
+// The hidden list (narrow strip) under the pointer, if any
 const hiddenListAt = (e: Event): CardStatus | null => {
   const point = eventPoint(e);
   if (!point) return null;
@@ -34,11 +34,11 @@ const hiddenListAt = (e: Event): CardStatus | null => {
   return strip?.getAttribute(HIDDEN_LIST_ATTR) ?? null;
 };
 
-// Att dra ett kort på boarden: kortet hamnar i listan pekaren är över, kan släppas på en dold lista,
-// och byter status när det hamnar i en annan lista
+// Dragging a card on the board: the card lands in the list the pointer is over, can be dropped on a hidden list,
+// and changes status when it lands in another list
 export function useCardDrag({ columns, headers, cardById, moveCard, saveOrder }: CardDragOptions) {
-  // Pekarens x-position. pointermove/pointerdown kommer före react-draggables mus-/touch-event,
-  // så den är aktuell när gridden räknar ut kortets plats
+  // The pointer's x position. pointermove/pointerdown fire before react-draggable's mouse/touch events,
+  // so it is up to date when the grid works out the card's position
   const pointerXRef = useRef<number | null>(null);
   useEffect(() => {
     const track = (e: PointerEvent) => {
@@ -52,7 +52,7 @@ export function useCardDrag({ columns, headers, cardById, moveCard, saveOrder }:
     };
   }, []);
 
-  // Ett draget kort hamnar i listan pekaren är över, som när en lista dras (inte där kortets vänsterkant är)
+  // A dragged card lands in the list the pointer is over, as when a list is dragged (not where the card's left edge is)
   const constraints = useMemo<LayoutConstraint[]>(
     () => [
       gridBounds,
@@ -68,10 +68,10 @@ export function useCardDrag({ columns, headers, cardById, moveCard, saveOrder }:
     [columns],
   );
 
-  // Dold lista som ett draget kort är över (remsan markeras); släpps kortet där flyttas det dit
+  // The hidden list a dragged card is over (the strip is highlighted); a card dropped there moves to it
   const [dropTarget, setDropTarget] = useState<CardStatus | null>(null);
-  // react-grid-layout ritar bara om ett kort när dess props ändras (GridItem är memo), så ett draget kort
-  // står still tills det byter ruta. En ny render per dragsteg ger nya children, så kortet följer pekaren
+  // react-grid-layout only re-renders a card when its props change (GridItem is memo), so a dragged card
+  // stands still until it changes cell. A new render per drag step gives new children, so the card follows the pointer
   const [, setDragFrame] = useState(0);
 
   const onDrag: EventCallback = (_layout, _oldItem, _newItem, _placeholder, e) => {
@@ -81,8 +81,8 @@ export function useCardDrag({ columns, headers, cardById, moveCard, saveOrder }:
 
   const onDragStop: EventCallback = (currentLayout, oldItem, newItem, _placeholder, e) => {
     if (!oldItem || !newItem) return;
-    // Släppt på en dold lista: kortet flyttas dit och hamnar överst
-    // (det saknar sparad position där, se buildCardLayout)
+    // Dropped on a hidden list: the card moves there and lands at the top
+    // (it has no saved position there, see buildCardLayout)
     const hiddenTarget = hiddenListAt(e);
     setDropTarget(null);
     if (hiddenTarget) {
@@ -93,7 +93,7 @@ export function useCardDrag({ columns, headers, cardById, moveCard, saveOrder }:
     const from = columnAtGridX(columns, oldItem.x);
     const to = columnAtGridX(columns, newItem.x);
     if (from === to) return;
-    // Spara radordningen direkt så att kortet inte hoppar när statusen ändras
+    // Save the row order right away so the card doesn't jump when its status changes
     saveOrder(currentLayout);
     const card = cardById.get(newItem.i);
     if (card?._id) moveCard(card._id, statusForColumn(headers, to));

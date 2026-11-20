@@ -1,17 +1,17 @@
 import { sanitizeHexColor } from "./color";
 
-// Ett korts status = nyckeln till en lista. Listorna delas av alla (GET /column) och
-// admins kan lägga till fler; nycklar som CardStatus i server-java
+// A card's status = the key of a list. The lists are shared by everyone (GET /column) and
+// admins can add more; keys like CardStatus in server-java
 export type CardStatus = string;
-// color: valfri listfärg (#rrggbb), delad; saknas = standardfärgen
+// color: optional list colour (#rrggbb), shared; missing = the default colour
 export type BoardHeader = { key: CardStatus; title: string; color?: string };
-// status: listans key (x är listans index, som ändras när en admin flyttar listor); saknas i äldre layouter
+// status: the list's key (x is the list's index, which changes when an admin moves lists); missing in older layouts
 export type SavedCardPosition = { id: string; x: number; y: number; w: number; h: number; status?: CardStatus };
 export type CardPosition = { i: string; x: number; y: number; w: number; h: number };
 export type BoardCard = { id: string; status?: string };
 
-// Standardlistorna (samma som CardStatus.DEFAULT_COLUMNS i server-java); används
-// tills listorna hämtats och om hämtningen misslyckas
+// The default lists (same as CardStatus.DEFAULT_COLUMNS in server-java); used
+// until the lists have been fetched, and if fetching fails
 export const DEFAULT_HEADERS: BoardHeader[] = [
   { key: "todo", title: "To Do" },
   { key: "in-progress", title: "In Progress" },
@@ -19,61 +19,61 @@ export const DEFAULT_HEADERS: BoardHeader[] = [
   { key: "done", title: "Done" },
 ];
 
-// Standardlistan: nya kort utan status hamnar där, så den kan inte tas bort (DEFAULT_CARD_STATUS i servern)
+// The default list: new cards without a status land there, so it can't be deleted (DEFAULT_CARD_STATUS on the server)
 export const DEFAULT_LIST_KEY: CardStatus = "todo";
 
-// Admin: varför en lista inte kan tas bort, eller null. Bara tomma listor (inga kort med listans status)
+// Admin: why a list can't be deleted, or null. Only empty lists (no cards with the list's status)
 export const listDeleteBlocker = (key: CardStatus, cards: { status?: string }[]): string | null => {
   if (key === DEFAULT_LIST_KEY) return "Default list";
   const count = cards.filter((c) => (c.status ?? DEFAULT_LIST_KEY) === key).length;
   return count ? `${count} card${count === 1 ? "" : "s"}` : null;
 };
 
-// Måste matcha ResponsiveGridLayout så att rubrikerna linjerar med kolumnerna
+// Must match ResponsiveGridLayout so that the headers line up with the columns
 export const GRID_MARGIN = 10;
 export const HEADER_HEIGHT = 44;
 export const ROW_HEIGHT = 150;
-// "Add a card"-knappen under rubriken, ovanför korten
+// The "Add a card" button under the header, above the cards
 export const ADD_BUTTON_HEIGHT = 40;
-// Korten börjar under rubrik och knapp
+// The cards start below the header and the button
 export const CARDS_TOP = HEADER_HEIGHT + ADD_BUTTON_HEIGHT;
-// Antal skeleton-kort per lista medan boarden laddas
+// Number of skeleton cards per list while the board loads
 export const SKELETON_CARD_COUNT = 2;
 
-// Listan växer med korten: rubrik + knapp + kort (GRID_MARGIN luft under sista kortet)
+// The list grows with its cards: header + button + cards (GRID_MARGIN of space below the last card)
 export const listHeight = (rows: number): number =>
   CARDS_TOP + rows * (ROW_HEIGHT + GRID_MARGIN);
 
-// Användarens egen layout: bara kortens ordning inom listorna
+// The user's own layout: only the order of the cards within the lists
 export type UserLayout = {
   cards?: SavedCardPosition[];
 };
 
 export const DEFAULT_LAYOUT: UserLayout = {};
 
-// localStorage-nycklar för boardens inställningar (per webbläsare)
+// localStorage keys for the board's settings (per browser)
 export const LAYOUT_STORAGE_KEY = "user_layout";
 export const COLLAPSED_STORAGE_KEY = "collapsed_columns";
 
-// Måste matcha @Size på title i server-java ColumnRequest
+// Must match @Size on title in server-java ColumnRequest
 export const HEADER_TITLE_MAX_LENGTH = 50;
 
 const sanitizeTitle = (title: unknown): string =>
   typeof title === "string" ? title.trim().slice(0, HEADER_TITLE_MAX_LENGTH) : "";
 
-// Standardfärg per lista; samma som --color-list-* i app/root.css
+// Default colour per list; same as --color-list-* in app/root.css
 export const DEFAULT_LIST_COLORS: Record<CardStatus, string> = {
   todo: "#eed7fc",
   "in-progress": "#f5e989",
   test: "#cce0ff",
   done: "#baf3db",
 };
-// Listor som admins lagt till, utan egen färg; samma som --color-jira-lane i app/root.css
+// Lists added by admins, without their own colour; same as --color-jira-lane in app/root.css
 export const NEW_LIST_COLOR = "#f1f2f4";
 
 export const defaultListColor = (key: CardStatus): string => DEFAULT_LIST_COLORS[key] ?? NEW_LIST_COLOR;
 
-// Färgerna i färgväljaren: ljusa Trello-toner överst, mörkare under
+// The colours in the colour picker: light Trello shades on top, darker below
 export const LIST_SWATCHES: { name: string; color: string }[] = [
   { name: "Lavender", color: "#eed7fc" },
   { name: "Yellow", color: "#f5e989" },
@@ -92,11 +92,11 @@ export const LIST_SWATCHES: { name: string; color: string }[] = [
   { name: "Slate", color: "#44546f" },
 ];
 
-// Bara kortpositionerna används; äldre layouter har även cols och headers
+// Only the card positions are used; older layouts also have cols and headers
 export const normalizeLayout = (raw: unknown): UserLayout => ({ cards: (raw as Partial<UserLayout> | null)?.cards });
 
-// Layouten är en per användare, för alla boards hen är med på. När en board sparas ersätts dess kort
-// (boardCardIds) av next; positionerna för kort på andra boards behålls
+// There is one layout per user, for every board they are on. When a board is saved its cards
+// (boardCardIds) are replaced by next; positions of cards on other boards are kept
 export const mergeBoardPositions = (
   saved: SavedCardPosition[] = [],
   next: SavedCardPosition[] = [],
@@ -106,10 +106,10 @@ export const mergeBoardPositions = (
   return [...saved.filter((p) => !boardCardIds.has(p.id) && !nextIds.has(p.id)), ...next];
 };
 
-// Listnycklar som servern skapar dem: små bokstäver och siffror med bindestreck
+// List keys as the server makes them: lowercase letters and digits with hyphens
 const COLUMN_KEY = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
-// Listorna från GET /column: ogiltiga och dubbletter tas bort; inga alls = standardlistorna
+// The lists from GET /column: invalid ones and duplicates are dropped; none at all = the default lists
 export const normalizeColumns = (raw: unknown): BoardHeader[] => {
   if (!Array.isArray(raw)) return DEFAULT_HEADERS;
   const headers: BoardHeader[] = [];
@@ -122,7 +122,7 @@ export const normalizeColumns = (raw: unknown): BoardHeader[] => {
   return headers.length ? headers : DEFAULT_HEADERS;
 };
 
-// Tomt eller oförändrat namn returnerar samma array, så inget sparas
+// An empty or unchanged name returns the same array, so nothing is saved
 export const renameHeader = (
   headers: BoardHeader[],
   key: CardStatus,
@@ -134,7 +134,7 @@ export const renameHeader = (
   return headers.map((h) => (h.key === key ? { ...h, title: clean } : h));
 };
 
-// null återställer standardfärgen; ogiltig eller oförändrad färg returnerar samma array
+// null restores the default colour; an invalid or unchanged colour returns the same array
 export const recolorHeader = (
   headers: BoardHeader[],
   key: CardStatus,
@@ -156,11 +156,11 @@ export const cardKey = (card: { _id?: string }, index: number): string =>
 export const toSavedPositions = (headers: BoardHeader[], layout: readonly CardPosition[]): SavedCardPosition[] =>
   layout.map((l) => ({ id: l.i, x: l.x, y: l.y, w: l.w, h: l.h, status: statusForColumn(headers, l.x) }));
 
-// Äldre sparade positioner har bara listans index: ge dem listans key innan listorna flyttas
+// Older saved positions only have the list's index: give them the list's key before the lists move
 export const withListKeys = (headers: BoardHeader[], saved: SavedCardPosition[] = []): SavedCardPosition[] =>
   saved.map((s) => (s.status === undefined ? { ...s, status: statusForColumn(headers, s.x) } : s));
 
-// Admin: flyttar listan from till listan to:s plats; de andra behåller sin ordning
+// Admin: moves list `from` to the place of list `to`; the others keep their order
 export const moveHeader = (headers: BoardHeader[], from: CardStatus, to: CardStatus): BoardHeader[] => {
   const fromIndex = headers.findIndex((h) => h.key === from);
   const toIndex = headers.findIndex((h) => h.key === to);
@@ -170,15 +170,15 @@ export const moveHeader = (headers: BoardHeader[], from: CardStatus, to: CardSta
   return next;
 };
 
-// Okänd eller saknad status (äldre kort) hamnar i första listan
+// An unknown or missing status (older cards) lands in the first list
 export const columnForStatus = (headers: BoardHeader[], status?: string): number =>
   Math.max(0, headers.findIndex((h) => h.key === status));
 
 export const statusForColumn = (headers: BoardHeader[], x: number): CardStatus =>
   headers[Math.min(Math.max(0, x), headers.length - 1)].key;
 
-// Ihopfällda listor (sparas per webbläsare): unika strängar. Nycklar till listor som
-// inte finns gör ingenting, så valet kan läsas innan listorna hämtats
+// Collapsed lists (saved per browser): unique strings. Keys of lists that
+// don't exist do nothing, so the choice can be read before the lists are fetched
 export const normalizeCollapsed = (raw: unknown): CardStatus[] =>
   Array.isArray(raw) ? [...new Set(raw.filter((k): k is string => typeof k === "string"))] : [];
 
@@ -188,7 +188,7 @@ export const toggleCollapsed = (collapsed: CardStatus[], key: CardStatus): CardS
 export const isColumnCollapsed = (headers: BoardHeader[], collapsed: CardStatus[], x: number): boolean =>
   collapsed.includes(statusForColumn(headers, x));
 
-// Kort i ihopfällda listor tas bort ur gridden; deras positioner sparas ändå
+// Cards in collapsed lists are taken out of the grid; their positions are still saved
 export const splitByCollapsed = <T extends { x: number }>(
   headers: BoardHeader[],
   layout: readonly T[],
@@ -198,20 +198,20 @@ export const splitByCollapsed = <T extends { x: number }>(
   hidden: layout.filter((l) => isColumnCollapsed(headers, collapsed, l.x)),
 });
 
-// Gridden delas i enheter: en utfälld lista är alltid EXPANDED_SPAN enheter bred,
-// en dold lista en enhet (en smal remsa, som i Trello). Dolda listor gör boarden
-// smalare; de andra listorna breddas inte. Fyra utfällda listor fyller skärmen på
-// desktop; fler listor ger horisontell scroll
+// The grid is split into units: an expanded list is always EXPANDED_SPAN units wide,
+// a hidden list one unit (a narrow strip, as in Trello). Hidden lists make the board
+// narrower; the other lists don't get wider. Four expanded lists fill the screen on
+// desktop; more lists scroll horizontally
 export const BOARD_UNITS = 16;
 export const LISTS_PER_SCREEN = 4;
 export const EXPANDED_SPAN = BOARD_UNITS / LISTS_PER_SCREEN;
-// Remsans högsta höjd; långa namn kortas av
+// The strip's maximum height; long names are cut off
 export const COLLAPSED_LIST_MAX_HEIGHT = 280;
 
 export type ColumnSpan = { start: number; span: number; collapsed: boolean };
 export type BoardColumns = { spans: ColumnSpan[]; units: number; expandedSpan: number };
 
-// extraUnits: plats efter listorna, t.ex. för "Add new column"
+// extraUnits: space after the lists, e.g. for "Add new column"
 export const boardColumns = (headers: BoardHeader[], collapsed: CardStatus[], extraUnits = 0): BoardColumns => {
   let start = 0;
   const spans = headers.map((h) => {
@@ -221,12 +221,12 @@ export const boardColumns = (headers: BoardHeader[], collapsed: CardStatus[], ex
     start += span;
     return col;
   });
-  // units = de enheter som används; resten av boarden är tom
+  // units = the units in use; the rest of the board is empty
   return { spans, units: start + extraUnits, expandedSpan: EXPANDED_SPAN };
 };
 
-// Närmaste utfällda lista för en x-position i gridden. Kort snäpper inte till en remsa;
-// släpps ett kort på remsan (HIDDEN_LIST_ATTR) flyttas det överst i den dolda listan
+// The nearest expanded list for an x position in the grid. Cards don't snap to a strip;
+// a card dropped on the strip (HIDDEN_LIST_ATTR) moves to the top of the hidden list
 export const columnAtGridX = ({ spans }: BoardColumns, x: number): number =>
   spans.reduce(
     (best, s, i) =>
@@ -234,10 +234,10 @@ export const columnAtGridX = ({ spans }: BoardColumns, x: number): number =>
     -1,
   );
 
-// Remsan för en dold lista har detta attribut med listans key, så att ett släppt kort hittar den
+// The strip of a hidden list has this attribute with the list's key, so a dropped card can find it
 export const HIDDEN_LIST_ATTR = "data-hidden-list";
 
-// Pekarens position i ett mus- eller touch-event, t.ex. när ett kort släpps
+// The pointer position in a mouse or touch event, e.g. when a card is dropped
 export const eventPoint = (e: Event): { x: number; y: number } | null => {
   const { clientX, clientY } = e as MouseEvent;
   if (typeof clientX === "number") return { x: clientX, y: clientY };
@@ -248,51 +248,51 @@ export const eventPoint = (e: Event): { x: number; y: number } | null => {
 export const snapGridX = (columns: BoardColumns, x: number): number =>
   columns.spans[Math.max(0, columnAtGridX(columns, x))].start;
 
-// Ett draget kort hamnar i listan pekaren är över (index i boardens ordning, som när en lista dras);
-// över en remsa: närmaste utfällda lista. Utan pekare (null): kortets egen x-position
+// A dragged card lands in the list the pointer is over (index in the board's order, as when a list is dragged);
+// over a strip: the nearest expanded list. Without a pointer (null): the card's own x position
 export const cardDragGridX = (columns: BoardColumns, x: number, listIndex: number | null): number =>
   snapGridX(columns, listIndex === null || !columns.spans[listIndex] ? x : columns.spans[listIndex].start);
 
-// Listindex → grid-enheter och tillbaka
+// List index → grid units and back
 export const toGridLayout = <T extends { x: number; w: number }>(layout: readonly T[], columns: BoardColumns): T[] =>
   layout.map((l) => ({ ...l, x: columns.spans[l.x].start, w: columns.expandedSpan }));
 
 export const fromGridLayout = <T extends { x: number; w: number }>(layout: readonly T[], columns: BoardColumns): T[] =>
   layout.map((l) => ({ ...l, x: Math.max(0, columnAtGridX(columns, l.x)), w: 1 }));
 
-// Mobil: luft mellan listan och skärmkanten på båda sidor, så att man kan svepa upp/ner bredvid korten
-// (på korten drar man dem). Desktop använder GRID_MARGIN
+// Mobile: space between the list and the screen edge on both sides, so you can swipe up/down next to the cards
+// (on the cards you drag them). Desktop uses GRID_MARGIN
 export const MOBILE_GUTTER = 20;
 
-// Mobil: en utfälld lista är skärmen minus gutter på båda sidor, en remsa lika många enheter som annars.
-// Med gutter g och n skärmar: n·100% − (n−1)·g, så att listan som snäppts in har g på båda sidor
+// Mobile: an expanded list is the screen minus the gutter on both sides, a strip as many units as otherwise.
+// With gutter g and n screens: n·100% − (n−1)·g, so the list snapped into view has g on both sides
 export const mobileBoardWidth = ({ units, expandedSpan }: BoardColumns, gutter = MOBILE_GUTTER): string => {
   const screens = units / expandedSpan;
   return screens > 1 ? `calc(${screens * 100}% - ${(screens - 1) * gutter}px)` : `${screens * 100}%`;
 };
 
-// Minsta bredd för en utfälld lista på desktop (som Trello); en remsa är en fjärdedel
+// Minimum width of an expanded list on desktop (as in Trello); a strip is a quarter of it
 export const MIN_LIST_WIDTH = 217;
 const MIN_UNIT_WIDTH = MIN_LIST_WIDTH / EXPANDED_SPAN;
 
-// Desktop: fyra utfällda listor fyller skärmen; dolda listor gör boarden smalare.
-// Fler listor delar på skärmens bredd tills de når MIN_LIST_WIDTH, sedan scrollar boarden
+// Desktop: four expanded lists fill the screen; hidden lists make the board narrower.
+// More lists share the screen width until they reach MIN_LIST_WIDTH, then the board scrolls
 export const desktopBoardWidth = ({ units }: BoardColumns): string =>
   `max(${Math.min(units / BOARD_UNITS, 1) * 100}%, ${units * MIN_UNIT_WIDTH}px)`;
 
-// Antal kort per kolumn: visas i rubriken
+// Number of cards per column: shown in the header
 export const countCardsPerColumn = (headers: BoardHeader[], layout: readonly { x: number }[]): number[] =>
   headers.map((_, i) => layout.filter((l) => l.x === i).length);
 
-// Rader per lista (styr höjden); en ihopfälld lista har ingen plats för kort
+// Rows per list (sets the height); a collapsed list has no room for cards
 export const rowsPerColumn = (counts: number[], { spans }: BoardColumns): number[] =>
   counts.map((count, i) => (spans[i]?.collapsed ? 0 : count));
 
-// Varje kort är en kolumn brett och en rad högt. Kolumnen kommer från kortets
-// status (delad av alla). Ordningen inom kolumnen kommer från användarens
-// sparade positioner (listans key, eller index i äldre layouter); kort utan sparad
-// position i sin kolumn (nya kort, eller flyttade av någon annan) hamnar överst,
-// i den ordning de kommer (nyast först).
+// Every card is one column wide and one row high. The column comes from the card's
+// status (shared by everyone). The order within the column comes from the user's
+// saved positions (the list's key, or the index in older layouts); cards without a saved
+// position in their column (new cards, or moved by someone else) land at the top,
+// in the order they come (newest first).
 export const buildCardLayout = (
   headers: BoardHeader[],
   cards: BoardCard[],
@@ -309,7 +309,7 @@ export const buildCardLayout = (
     return { id, x, y, top: y === null ? unsavedRows[x]++ : 0 };
   });
 
-  // Sparade kort flyttas ner under de nya; inbördes ordning behålls
+  // Saved cards move down below the new ones; their relative order is kept
   return placed.map(({ id, x, y, top }) => ({
     i: id,
     x,
@@ -319,20 +319,20 @@ export const buildCardLayout = (
   }));
 };
 
-// Admin: flytta en lista genom att dra rubriken (useListDrag). Listorna (och remsorna) har
-// LIST_KEY_ATTR; element med NO_LIST_DRAG_ATTR (färgväljare, dölj-knapp) startar ingen dragning
+// Admin: move a list by dragging its header (useListDrag). The lists (and the strips) have
+// LIST_KEY_ATTR; elements with NO_LIST_DRAG_ATTR (colour picker, hide button) start no drag
 export const LIST_KEY_ATTR = "data-list-key";
 export const NO_LIST_DRAG_ATTR = "data-no-list-drag";
-// Så långt musen måste röra sig innan det blir en dragning (annars ett klick)
+// How far the mouse must move before it becomes a drag (otherwise a click)
 export const LIST_DRAG_THRESHOLD_PX = 5;
-// Den lyfta listan lutar som i Trello
+// The lifted list tilts as in Trello
 export const LIST_DRAG_TILT_DEG = 4;
-// Nära boardens kant scrollar den i sidled, så här mycket per bildruta
+// Near the board's edge it scrolls sideways, this much per frame
 export const LIST_DRAG_EDGE_PX = 60;
 export const LIST_DRAG_SCROLL_STEP_PX = 12;
 
-// Platsen (index i boardens ordning) under pekarens x, annars den närmaste
-// (pekaren i mellanrummet eller utanför boarden). null utan listor
+// The slot (index in the board's order) under the pointer's x, otherwise the nearest one
+// (pointer in the gap or outside the board). null without lists
 export const nearestListIndexAtX = (lists: readonly { left: number; right: number }[], x: number): number | null => {
   let best: number | null = null;
   let bestDistance = Infinity;
@@ -346,6 +346,6 @@ export const nearestListIndexAtX = (lists: readonly { left: number; right: numbe
   return best;
 };
 
-// Ordningen medan en lista dras: den lyfta listan på platsen pekaren är över
+// The order while a list is dragged: the lifted list in the slot the pointer is over
 export const previewHeaders = (headers: BoardHeader[], from: CardStatus, toIndex: number | null): BoardHeader[] =>
   toIndex === null || !headers[toIndex] ? headers : moveHeader(headers, from, headers[toIndex].key);

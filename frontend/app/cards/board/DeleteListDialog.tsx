@@ -22,15 +22,15 @@ type Props = {
   onConfirm: (key: CardStatus) => void;
 };
 
-// Admin: välj en tom lista att ta bort ("Delete column" i navbaren). Listor med kort och standardlistan
-// visas men går inte att välja, med anledningen bredvid
+// Admin: pick an empty list to delete ("Delete column" in the navbar). Lists with cards and the default list
+// are shown but can't be picked, with the reason next to them
 export default function DeleteListDialog({ open, lists, cards, onClose, onConfirm }: Props) {
   const [selected, setSelected] = useState<CardStatus | null>(null);
 
-  // Första listan som går att ta bort, varje gång dialogen öppnas
+  // The first list that can be deleted, every time the dialog opens
   useEffect(() => {
     if (open) setSelected(lists.find((l) => !listDeleteBlocker(l.key, cards))?.key ?? null);
-    // Bara när dialogen öppnas: ändras korten under tiden ska valet inte hoppa
+    // Only when the dialog opens: if the cards change meanwhile the choice must not jump
   }, [open]);
 
   const selectedTitle = lists.find((l) => l.key === selected)?.title;
@@ -73,7 +73,7 @@ export default function DeleteListDialog({ open, lists, cards, onClose, onConfir
             variant="destructive"
             disabled={!selected}
             onClick={(e) => {
-              // Stängs efter svaret från servern (useColumnActions), så att ett fel syns med dialogen öppen
+              // Closed after the server's response (useColumnActions), so an error shows with the dialog open
               e.preventDefault();
               if (selected) onConfirm(selected);
             }}

@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, jest } from "@jest/globals
 import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios";
 import api from "../../app/api/api";
 
-// Node: sessionStorage i minnet och en window.location att skicka till /login
+// Node: an in-memory sessionStorage and a window.location to send to /login
 const store = new Map<string, string>();
 Object.defineProperty(globalThis, "sessionStorage", {
   value: {
@@ -37,7 +37,7 @@ afterEach(() => {
   jest.restoreAllMocks();
 });
 
-// Svarar 401 på det utgångna tokenet och ok (med headern) på allt annat
+// Answers 401 to the expired token and ok (with the header) to everything else
 const expiredThenOk = async (config: InternalAxiosRequestConfig) => {
   const auth = String(config.headers.Authorization);
   if (auth === "Bearer expired") throw unauthorized(config);
@@ -68,7 +68,7 @@ describe("successful token refresh", () => {
     );
 
     const requests = Promise.all([api.get("/board"), api.get("/user"), api.get("/feature")]);
-    // Låt alla tre få sin 401 innan förnyelsen blir klar
+    // Let all three get their 401 before the refresh finishes
     await new Promise((resolve) => setTimeout(resolve, 0));
     finishRefresh({ data: { accessToken: "new-at", refreshToken: "new-rt" } });
 
@@ -97,7 +97,7 @@ describe("failed token refresh", () => {
     api.defaults.adapter = async (config: InternalAxiosRequestConfig) => {
       throw unauthorized(config);
     };
-    // Refresh-felet bär requesten, med refresh-tokenet i body
+    // The refresh error carries the request, with the refresh token in the body
     const refreshError = new AxiosError("Request failed with status code 403", "ERR_BAD_REQUEST", {
       data: JSON.stringify({ refreshToken: "secret-refresh-token" }),
     } as InternalAxiosRequestConfig);
@@ -106,7 +106,7 @@ describe("failed token refresh", () => {
 
     await expect(api.get("/board")).rejects.toBe(refreshError);
 
-    // Förnyelsen går direkt med axios (inte via api, som annars skulle fånga sin egen 401)
+    // The refresh goes straight through axios (not through api, which would otherwise catch its own 401)
     expect(refresh).toHaveBeenCalledWith(expect.stringMatching(/\/auth\/refresh$/), { refreshToken: "secret-refresh-token" });
 
     expect(log).toHaveBeenCalledWith("Refresh token failed:", "Request failed with status code 403");

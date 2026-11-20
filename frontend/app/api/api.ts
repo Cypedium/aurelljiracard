@@ -16,7 +16,7 @@ const api = axios.create({
   baseURL: API_URL,
 });
 
-// Långsam registrering/inloggning/utloggning (t.ex. cold start i produktion) visar en loading-toast
+// Slow registration/login/logout (e.g. a cold start in production) shows a loading toast
 let loadingText = "";
 const loadingTracker = createLoadingTracker(
   () => toast.loading(loadingText, { id: LOADING_TOAST_ID }),
@@ -24,7 +24,7 @@ const loadingTracker = createLoadingTracker(
   LOADING_TOAST_DELAY_MS
 );
 
-// Request interceptor: lägger till accessToken automatiskt
+// Request interceptor: adds the accessToken automatically
 api.interceptors.request.use(
   (config) => {
     const text = loadingToastText(config.url);
@@ -41,29 +41,29 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// 503 = en avstängd funktion eller read-only-läge (server-java): useFeatures hämtar om /feature
+// 503 = a switched-off feature or read-only mode (server-java): useFeatures fetches /feature again
 const serviceUnavailableListeners = new Set<() => void>();
 export const onServiceUnavailable = (listener: () => void): (() => void) => {
   serviceUnavailableListeners.add(listener);
   return () => serviceUnavailableListeners.delete(listener);
 };
 
-// Pågående förnyelse: samtidiga 401:or väntar på samma, så refresh-tokenet (engångs) skickas bara en gång
+// The refresh in progress: concurrent 401s wait for the same one, so the (single-use) refresh token is sent only once
 let refreshing: Promise<string> | null = null;
 
 const refreshAccessToken = (refreshToken: string): Promise<string> => {
   refreshing ??= axios
-    // Direkt med axios: via api skulle en 401 här fångas av interceptorn igen
+    // Straight through axios: through api, a 401 here would be caught by the interceptor again
     .post<{ accessToken: string; refreshToken: string }>(`${API_URL}/auth/refresh`, { refreshToken })
     .then(({ data }) => {
-      // Båda tokens byts (refresh-tokens är engångs)
+      // Both tokens are replaced (refresh tokens are single-use)
       saveTokens(data.accessToken, data.refreshToken);
       return data.accessToken;
     })
     .catch((refreshError: unknown) => {
-      // Bara meddelandet: axios-felet innehåller requesten, med refresh-tokenet
+      // Only the message: the axios error contains the request, with the refresh token
       logError("Refresh token failed", refreshError);
-      // Tokens ogiltiga → logga ut (även användarnamnet)
+      // Invalid tokens → log out (the username too)
       clearSession();
       window.location.href = ROUTES.login;
       throw refreshError;
@@ -76,15 +76,15 @@ const refreshAccessToken = (refreshToken: string): Promise<string> => {
 
 type RetriableRequest = InternalAxiosRequestConfig & { _retry?: boolean };
 
-// Response interceptor: ett utgånget accessToken (401) förnyas och requesten körs om en gång
+// Response interceptor: an expired accessToken (401) is refreshed and the request is retried once
 const handleResponseError = async (error: AxiosError) => {
   const originalRequest = error.config as RetriableRequest | undefined;
   const status = error.response?.status;
 
-  // Själva felet visar anroparen som vanligt (backendens { message } i en toast)
+  // The error itself is shown by the caller as usual (the backend's { message } in a toast)
   if (status === 503) serviceUnavailableListeners.forEach((listener) => listener());
 
-  // Inte för /auth/*: där betyder 401 t.ex. fel lösenord
+  // Not for /auth/*: there a 401 means e.g. a wrong password
   const isAuthRequest = originalRequest?.url?.startsWith("/auth/");
   if (status !== 401 || !originalRequest || originalRequest._retry || isAuthRequest) throw error;
   originalRequest._retry = true;
@@ -105,7 +105,7 @@ api.interceptors.response.use(
     if (loadingToastText(response.config.url)) loadingTracker.done();
     return response;
   },
-  // done() först när ev. refresh + omkörning är klar, så toasten inte blinkar
+  // done() only once any refresh + retry is finished, so the toast doesn't flicker
   (error) =>
     handleResponseError(error).finally(() => {
       if (loadingToastText(error.config?.url)) loadingTracker.done();
