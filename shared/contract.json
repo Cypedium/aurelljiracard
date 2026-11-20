@@ -1,0 +1,70 @@
+{
+  "$comment": "Rules the frontend and server-java must agree on. Neither imports this file: frontend/tests/unit/contract.test.ts and server-java SharedContractTest check their own constants against it, so drift fails CI. Change it together with both sides.",
+  "roles": ["user", "admin"],
+  "backlogStatus": "backlog",
+  "defaultColumns": [
+    { "key": "todo", "title": "To Do" },
+    { "key": "in-progress", "title": "In Progress" },
+    { "key": "test", "title": "Test" },
+    { "key": "done", "title": "Done" }
+  ],
+  "defaultIssueType": "task",
+  "defaultIssueTypes": [
+    { "key": "task", "label": "Task", "color": "#4bade8", "icon": "check" },
+    { "key": "bug", "label": "Bug", "color": "#c9372c", "icon": "bug" },
+    { "key": "doc", "label": "Doc", "color": "#8270db", "icon": "doc" }
+  ],
+  "issueTypeIcons": ["check", "bug", "doc", "bolt", "star", "flag", "wrench", "light-bulb"],
+  "features": {
+    "enforced": [
+      "register",
+      "createCard",
+      "editCard",
+      "deleteCard",
+      "createColumn",
+      "deleteColumn",
+      "editColumns",
+      "manageIssueTypes",
+      "shareBoard",
+      "joinBoard",
+      "googleConnect"
+    ],
+    "uiOnly": ["backlogPage", "boardSwitcher", "issueTypesPage", "boardBackground", "navbarColour"],
+    "readOnly": "readOnly"
+  },
+  "limits": {
+    "usernameMax": 32,
+    "passwordMin": 8,
+    "passwordMax": 72,
+    "ratingMin": 1,
+    "ratingMax": 5,
+    "summaryMax": 2000,
+    "issueKeyMax": 6,
+    "listTitleMax": 50,
+    "issueTypeLabelMax": 30,
+    "maxIssueTypes": 12
+  },
+  "rudeWords": [
+    "fuck", "shit", "bitch", "cunt", "whore", "slut", "bastard", "asshole", "nigger", "nigga",
+    "faggot", "retard", "hitler", "porn", "penis", "vagina",
+    "fitta", "knull", "javla", "helvete", "horunge", "kuksugare"
+  ],
+  "samples": {
+    "hexColor": {
+      "valid": ["#4bade8", "#ABCDEF", "#000000"],
+      "invalid": ["4bade8", "#abc", "#gggggg", "#4bade80", "", "#4bade8 "]
+    },
+    "issueKey": {
+      "valid": ["MA-100", "a-1", "ABC-12"],
+      "invalid": ["MA100", "MA-", "-1", "1A-1", "MA-1000", "AB-12x"]
+    },
+    "username": {
+      "rude": ["F_u.c-k", "sh1t", "Jävla", "xXhitlerXx", "p0rnstar"],
+      "clean": ["Mike", "Mikael", "Dickens", "Assange", "Åsa"]
+    },
+    "password": {
+      "repetitive": ["aaab-cdef", "12121212", "Passsword1"],
+      "ok": ["Sm0ke-test-pass", "correct horse"]
+    }
+  }
+}
