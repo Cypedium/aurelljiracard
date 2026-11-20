@@ -26,7 +26,7 @@ Two independent npm projects plus a Maven project — always `cd` into one befor
   - `routes/` → `controllers/` → `models/`; `middleware/authMiddleware.js`, `middleware/boardAccess.js` (`requireMember` → `req.boardId`/`req.boardRole`, `requireBoardAdmin`); `utils/jwt.js`, `utils/validate.js`
   - `routes/board.js` mounts `card`, `column`, `issue-type` under `/board/:boardId` after `auth` + `requireMember`; `routes/invite.js` is `POST /invite/:token`
   - `tests/` — Jest + Supertest; models are `jest.mock`ed, no DB
-  - `backupfiles/`, `scripts/` — one-off seed/maintenance scripts, not part of the app (`scripts/migrateBoards.js`: the Mongo version of V11, run by hand before deploying boards)
+  - `scripts/` — one-off maintenance scripts, not part of the app (`scripts/migrateBoards.js`: the Mongo version of V11, run by hand before deploying boards)
 - `frontend/` — Next.js 16 App Router, React 19, TypeScript, Tailwind 4 + CSS modules
   - `app/api/api.ts` — axios instance (attaches token, refreshes on 401 — except for `/auth/*`, where 401 means bad credentials); `app/api/endpoints.ts` — all API calls
   - `app/cards/Cards.tsx` — board: `react-grid-layout` v2, fixed columns To Do / In Progress / Test / Done, width from `useContainerWidth`
