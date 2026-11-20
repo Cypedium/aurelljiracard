@@ -22,7 +22,7 @@ import se.aurell.jiraboard.config.JwtProperties;
 import se.aurell.jiraboard.entity.User;
 
 /**
- * Issues HS256 tokens with the same payloads as server/utils/jwt.js:
+ * Issues HS256 tokens:
  * access { id, username, role } and refresh { id, tokenVersion }.
  */
 @Service

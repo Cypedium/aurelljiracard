@@ -2,8 +2,8 @@ import requests
 import json
 import os
 
-# Set API_URL to target another environment, e.g. https://aurelljiraboard-backend.fly.dev
-BASE_URL = os.environ.get("API_URL", "http://localhost:4000")
+# Set API_URL to target another environment, e.g. https://aurelljiraboardjava.fly.dev
+BASE_URL = os.environ.get("API_URL", "http://localhost:8080")
 
 # ---------------------------------------------------
 # 1. Helper: pretty print JSON

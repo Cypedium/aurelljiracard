@@ -20,7 +20,6 @@ public record AdminUserResponse(
 
     /**
      * An active user refreshes shortly after the 15-minute access token expires.
-     * Must match ONLINE_WINDOW_MS in server/utils/presence.js
      */
     static final Duration ONLINE_WINDOW = Duration.ofMinutes(20);
 

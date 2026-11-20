@@ -10,7 +10,7 @@ public record ColumnRequest(
         @Size(max = 50, message = TITLE_MESSAGE)
         String title,
 
-        // Must match HEX_COLOR in server/controllers/columnController.js
+        // Must match HEX_COLOR in frontend/app/utils/color.ts
         @Pattern(regexp = "^#[0-9a-fA-F]{6}$", message = "List color must be a hex color like #eed7fc.")
         String color) {
 

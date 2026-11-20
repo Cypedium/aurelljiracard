@@ -1,6 +1,6 @@
 # Aurell Jira Board API — Spring Boot + PostgreSQL
 
-A second implementation of the board API, next to the Express + MongoDB one in [`../server`](../server). It exposes the **same endpoints, JSON shapes, status codes and token rules**, so the Next.js frontend works against either backend by changing `NEXT_PUBLIC_API_URL`.
+The board API used by the Next.js frontend (`NEXT_PUBLIC_API_URL`). It started as a port of an Express + MongoDB backend, since retired, and kept its endpoints, JSON shapes (`_id`), status codes and token rules.
 
 How the code is organised (request flow, security, data model, with diagrams): [ARCHITECTURE.md](ARCHITECTURE.md).
 
@@ -32,7 +32,9 @@ src/main/resources/db/migration/   Flyway SQL migrations
 
 ### MongoDB → PostgreSQL
 
-| MongoDB (Express) | PostgreSQL (this API) |
+How the retired Express backend's MongoDB data maps to the tables here:
+
+| MongoDB (Express, retired) | PostgreSQL (this API) |
 |---|---|
 | `ObjectId` `_id` | `UUID` primary key, still serialised as `_id` |
 | `User` document | `users` table, `username` UNIQUE |
@@ -40,7 +42,7 @@ src/main/resources/db/migration/   Flyway SQL migrations
 | `Card` document | `cards` table with a `CHECK` constraint on `rating`, FK `username → users` |
 | `Column` document | `board_columns` table (`V6__board_columns.sql` seeds the four default lists) |
 | `IssueType` document | `issue_types` table (`V8__issue_types.sql` seeds `task`, `bug`, `doc`) |
-| `Board`, `BoardMember` documents | `boards` and `board_members` tables (`V11__boards.sql`); cards, lists and issue types get a `board_id` and per-board unique keys. Mongo seeds a board's lists and types on first read, Postgres when the board is created |
+| `Board`, `BoardMember` documents | `boards` and `board_members` tables (`V11__boards.sql`); cards, lists and issue types get a `board_id` and per-board unique keys; a board's lists and types are seeded when the board is created |
 | `$inc` on `tokenVersion` | atomic `UPDATE … SET token_version = token_version + 1` |
 
 ## Running locally
@@ -120,15 +122,15 @@ Docker must be running: the API tests start a real PostgreSQL container, run the
 
 ## API
 
-Same as the Express API; see the [root README](../README.md#api). Differences that a client can notice:
+All endpoints are listed in the [root README](../README.md#api). Details:
 
-- Ids are UUIDs instead of 24-character ObjectIds.
+- Ids are UUIDs.
 - A body that is not valid JSON, or has a field of the wrong type, returns `400 { "message": "Invalid request body." }`.
-- Sign in with Google exists only here, not in the Express API:
+- Sign in with Google:
   - `POST /auth/google { credential }` (public) verifies Google's ID token and returns `{ accessToken, refreshToken }`. The first sign-in creates a user named after the email address (`mikael.aurell@gmail.com` → `mikael.aurell`, `mikael.aurell2` if taken) without a password.
   - `POST /user/google { credential }` (logged in) connects a Google account to the caller. `409` if it belongs to another user or the caller already has a different one.
   - `401 "Invalid Google credential."`, `503 "Google sign-in is not configured."` when `GOOGLE_CLIENT_ID` is not set.
-- Feature switches and read-only mode exist only here ([docs/feature-switches.md](../docs/feature-switches.md)):
+- Feature switches and read-only mode ([docs/feature-switches.md](../docs/feature-switches.md)):
   - `GET /feature` (public) → `{ readOnly, disabled: [keys] }`; site admins also get `switches: [{ key, enabled, uiOnly, updatedAt, updatedBy }]`.
   - `PUT /feature/{key} { enabled }` (site admins) turns one on or off; for `readOnly`, `enabled: true` turns read-only mode on. Unknown key → `404`.
   - While a feature is off, its endpoints answer `503 "This feature is temporarily disabled."`; in read-only mode every write answers `503 "Aurello is in read-only mode."` except login, refresh, logout and Google sign-in for existing users. Site admins are never blocked.

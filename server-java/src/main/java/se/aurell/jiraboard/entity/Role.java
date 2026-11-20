@@ -5,7 +5,7 @@ import java.util.Arrays;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-/** User role. Must match server/utils/role.js and frontend/app/utils/session.ts. */
+/** User role. Must match ROLES in frontend/app/utils/session.ts. */
 public enum Role {
     USER("user"),
     // May edit and delete any card and manage users

@@ -1,7 +1,7 @@
 import { sanitizeHexColor } from "./color";
 
 // Ett korts status = nyckeln till en lista. Listorna delas av alla (GET /column) och
-// admins kan lägga till fler; nycklar som i server/utils/cardStatus.js
+// admins kan lägga till fler; nycklar som CardStatus i server-java
 export type CardStatus = string;
 // color: valfri listfärg (#rrggbb), delad; saknas = standardfärgen
 export type BoardHeader = { key: CardStatus; title: string; color?: string };
@@ -10,7 +10,7 @@ export type SavedCardPosition = { id: string; x: number; y: number; w: number; h
 export type CardPosition = { i: string; x: number; y: number; w: number; h: number };
 export type BoardCard = { id: string; status?: string };
 
-// Standardlistorna (samma som DEFAULT_COLUMNS i server/utils/cardStatus.js); används
+// Standardlistorna (samma som CardStatus.DEFAULT_COLUMNS i server-java); används
 // tills listorna hämtats och om hämtningen misslyckas
 export const DEFAULT_HEADERS: BoardHeader[] = [
   { key: "todo", title: "To Do" },
@@ -55,7 +55,7 @@ export const DEFAULT_LAYOUT: UserLayout = {};
 export const LAYOUT_STORAGE_KEY = "user_layout";
 export const COLLAPSED_STORAGE_KEY = "collapsed_columns";
 
-// Måste matcha TITLE_MAX_LENGTH i server/controllers/columnController.js
+// Måste matcha @Size på title i server-java ColumnRequest
 export const HEADER_TITLE_MAX_LENGTH = 50;
 
 const sanitizeTitle = (title: unknown): string =>

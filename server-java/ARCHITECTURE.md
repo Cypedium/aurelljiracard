@@ -2,7 +2,7 @@
 
 A walkthrough of the Spring Boot + PostgreSQL API in `server-java/`: how a request travels through the code, what each package does, how authentication works, and how the data is stored. For setup and running, see [README.md](README.md).
 
-The API is a port of the Express API in `server/` and must stay compatible with it: same paths, same `{ message }` error bodies, same status codes, same token rules. The frontend can switch between the two by changing `NEXT_PUBLIC_API_URL`.
+The API started as a port of an Express + MongoDB backend (since retired) and kept its contract: paths, `{ message }` error bodies, status codes and token rules. The frontend (`frontend/app/api/endpoints.ts`) depends on that contract.
 
 ---
 
@@ -72,7 +72,7 @@ flowchart TB
 | `service/` | Business rules: ownership checks, password hashing, token issuing. Owns transactions (`@Transactional`, reads use `readOnly = true`). | Expected errors are thrown as `ApiException`. |
 | `repository/` | Spring Data interfaces; queries are derived from method names or written in JPQL. | No logic. |
 | `entity/` | JPA entities mapped to the tables, plus enums and the `Layout` JSON value. | Mirrors `V1__init.sql`. |
-| `dto/` | Java `record`s for request and response bodies. Validation annotations and their messages live here. | Messages match the Express API word for word. |
+| `dto/` | Java `record`s for request and response bodies. Validation annotations and their messages live here. | Messages match the frontend's zod schemas (`frontend/app/utils/`). |
 | `security/` | Everything JWT: encode/decode, turn a token into a user, 401 responses. | |
 | `config/` | Spring beans and typed config (`application.yml` → records). | |
 | `exception/` | One exception type for expected errors, one handler that turns every error into `{ message }`. | |
@@ -194,7 +194,7 @@ Why each class exists:
 | Class | Why |
 |---|---|
 | `ApiBearerTokenResolver` | The frontend sends its (maybe expired) access token on *every* request, including `/auth/logout` and `/auth/refresh`. Without this, Spring would reject those calls with 401 before they reach the controller. |
-| `AccessTokenConverter` | Turns the verified JWT into an `AuthUser` record, the Java version of `req.user` in Express. It also rejects refresh tokens used as access tokens: they have no `username` claim. |
+| `AccessTokenConverter` | Turns the verified JWT into an `AuthUser` record, the request's identity. It also rejects refresh tokens used as access tokens: they have no `username` claim. |
 | `JsonAuthenticationEntryPoint` | Makes 401s look like the rest of the API (`{ message }`) instead of Spring's default empty body. The frontend refreshes its token on any 401. |
 | `AuthUser` | The logged-in user. Controllers get it with `@AuthenticationPrincipal AuthUser user`. |
 
@@ -249,7 +249,7 @@ sequenceDiagram
 
 ### 5.3 Passwords
 
-- Hashed with BCrypt, strength 10, the same as the Express API. Hashes are interchangeable, so users migrated from MongoDB can log in unchanged.
+- Hashed with BCrypt, strength 10, the same as the retired Express API, so users migrated from MongoDB log in unchanged.
 - Length is 8–72 characters (`@Size`), **and** at most 72 bytes (checked in `AuthService`), because BCrypt silently ignores anything after byte 72.
 - New passwords must not repeat a character three times in a row and need at least 4 different characters (`CredentialRules.isRepetitivePassword`). Login doesn't check these rules, so older passwords keep working.
 - Login returns the same `401 "Invalid credentials."` for an unknown user and for a wrong password, so the response doesn't reveal which usernames exist.
@@ -260,7 +260,7 @@ sequenceDiagram
 
 ### AuthService
 
-- `register`: checks the password byte length and the picture (empty → default picture; otherwise a `data:image/…;base64,` or `http(s)://` URL, at most 1.5 MB). Rejects rude usernames (`CredentialRules.isRudeUsername`, same list as `server/utils/username.js`) and repetitive passwords. Checks that the username is free in any casing (`existsByUsernameIgnoreCase`, `409`); names are still stored as typed. `login` tries the exact name first, then `findFirstByUsernameIgnoreCase`. Saves with a BCrypt hash. A unique-constraint violation from a concurrent registration is also turned into `409`.
+- `register`: checks the password byte length and the picture (empty → default picture; otherwise a `data:image/…;base64,` or `http(s)://` URL, at most 1.5 MB). Rejects rude usernames (`CredentialRules.isRudeUsername`, same list as `frontend/app/utils/username.ts`) and repetitive passwords. Checks that the username is free in any casing (`existsByUsernameIgnoreCase`, `409`); names are still stored as typed. `login` tries the exact name first, then `findFirstByUsernameIgnoreCase`. Saves with a BCrypt hash. A unique-constraint violation from a concurrent registration is also turned into `409`.
 - `login`, `refresh`, `logout`: see 5.2. `logout` never fails; an invalid or missing refresh token simply means there's nothing to revoke.
 
 ### CardService
@@ -353,8 +353,8 @@ erDiagram
     }
 ```
 
-- **`cards.username` is a foreign key to `users.username`**, not to `users.id`. The Express API links cards to users by username, and the frontend compares usernames to decide who may edit a card.
-- **`layout` is JSONB**, mapped to the `Layout` record with `@JdbcTypeCode(SqlTypes.JSON)`. It is embedded on the user like the Mongoose sub-document:
+- **`cards.username` is a foreign key to `users.username`**, not to `users.id`. The original Express API linked cards to users by username, and the frontend compares usernames to decide who may edit a card.
+- **`layout` is JSONB**, mapped to the `Layout` record with `@JdbcTypeCode(SqlTypes.JSON)`. It is embedded on the user:
   ```json
   {
     "cols": 12,
@@ -373,7 +373,7 @@ erDiagram
 
 The schema is owned by Flyway (`src/main/resources/db/migration/V<n>__*.sql`). Hibernate runs with `ddl-auto: validate`: on startup it checks that the entities match the tables and **refuses to start if they don't**. It never changes the schema itself.
 
-To change the schema, add a new `V2__….sql`. Never edit a migration that has already been applied. Board lists and issue types are data, not schema: admins add them with `POST /column` and `POST /issue-type`. A new issue type icon means changing `CardType.ICONS`, `server/utils/cardType.js` and `frontend/app/utils/cardType.ts`.
+To change the schema, add a new `V2__….sql`. Never edit a migration that has already been applied. Board lists and issue types are data, not schema: admins add them with `POST /column` and `POST /issue-type`. A new issue type icon means changing `CardType.ICONS` and `frontend/app/utils/cardType.ts`.
 
 ---
 
@@ -432,7 +432,6 @@ Example: a new endpoint `GET /card/mine`.
 2. **Repository**: `List<Card> findAllByUsernameOrderBySubmittedAtDesc(String username);`. Spring derives the query from the name.
 3. **Service**: a `@Transactional(readOnly = true)` method that takes an `AuthUser` and throws `ApiException` for expected errors.
 4. **Controller**: a thin `@GetMapping("/mine")` with `@AuthenticationPrincipal AuthUser user`. It's protected automatically because it isn't under `/auth/**`.
-5. **Express API**: add the same route to `server/` with the same path, messages and status codes.
-6. **Frontend**: add the call to `frontend/app/api/endpoints.ts` and pin the path in `tests/unit/endpoints.test.ts`.
-7. **Tests**: add cases to `CardApiTest`: the happy path, 401 without a token, and any 403/404 cases.
-8. **Schema**: if the endpoint needs one, add a new Flyway migration (with approval). Never change an applied one.
+5. **Frontend**: add the call to `frontend/app/api/endpoints.ts` and pin the path in `tests/unit/endpoints.test.ts`.
+6. **Tests**: add cases to `CardApiTest`: the happy path, 401 without a token, and any 403/404 cases.
+7. **Schema**: if the endpoint needs one, add a new Flyway migration (with approval). Never change an applied one.

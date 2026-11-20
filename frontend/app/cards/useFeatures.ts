@@ -27,7 +27,7 @@ export const reloadFeatures = async () => {
     state = parseFeatureState((await getFeatures()).data);
     emit();
   } catch (err) {
-    // Tyst: en backend utan /feature (Express) ska inte störa
+    // Tyst: ett misslyckat anrop betyder att allt är på
     logError("Error fetching features", err);
   } finally {
     loading = false;

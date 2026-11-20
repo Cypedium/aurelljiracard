@@ -45,7 +45,6 @@ describe("registerSchema", () => {
   });
 });
 
-// Same cases as server/tests/usernamePassword.test.js
 describe("isRudeUsername", () => {
   it.each(["fuck", "MotherFucker", "sh1t_head", "f.u.c.k", "Jävla", "fitta99"])("rejects %s", (name) => {
     expect(isRudeUsername(name)).toBe(true);

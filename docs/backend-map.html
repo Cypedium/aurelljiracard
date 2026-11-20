@@ -237,25 +237,6 @@ th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; colo
   </div>
 </section>
 
-<section id="twin">
-  <h2>Same API, two backends</h2>
-  <p><code>server/</code> (Express + MongoDB) and <code>server-java/</code> answer the same paths with the same status codes and <code>{ message }</code> errors. Production runs the Java one. This is where each layer lives in both.</p>
-  <div class="tscroll"><table>
-    <thead><tr><th>Layer</th><th>server-java</th><th>server (Express)</th></tr></thead>
-    <tbody>
-      <tr><td>Entry</td><td><code>JiraboardApplication</code>, <code>application.yml</code></td><td><code>server.js</code> (DB + listen), <code>app.js</code> (mounts routes)</td></tr>
-      <tr><td>CORS</td><td><code>SecurityConfig.corsConfigurationSource</code></td><td><code>cors()</code> in <code>app.js</code>, origins from <code>CLIENT_URL</code></td></tr>
-      <tr><td>Token check</td><td><code>ApiBearerTokenResolver</code> → <code>JwtDecoder</code> → <code>AccessTokenConverter</code></td><td><code>middleware/authMiddleware.js</code> → <code>utils/jwt.js</code></td></tr>
-      <tr><td>Admin check</td><td><code>@AdminOnly</code> (<code>@PreAuthorize</code>) on the controller method</td><td><code>middleware/requireAdmin.js</code> on the route</td></tr>
-      <tr><td>Routing + input</td><td><code>controller/*</code> with <code>@Valid</code> DTO records</td><td><code>routes/*</code> → <code>controllers/*</code> with <code>utils/validate.js</code></td></tr>
-      <tr><td>Business rules</td><td><code>service/*</code>, <code>@Transactional</code></td><td>Inside <code>controllers/*</code></td></tr>
-      <tr><td>Data access</td><td><code>repository/*</code> (Spring Data JPA)</td><td><code>models/*</code> (Mongoose)</td></tr>
-      <tr><td>Storage</td><td>PostgreSQL, schema by Flyway</td><td>MongoDB, <code>sanitizeFilter</code> on</td></tr>
-      <tr><td>Errors</td><td><code>ApiException</code> → <code>GlobalExceptionHandler</code></td><td>Error handler at the end of <code>app.js</code></td></tr>
-      <tr><td>IDs</td><td>UUID</td><td>ObjectId (both sent as <code>_id</code>)</td></tr>
-    </tbody>
-  </table></div>
-</section>
 </div>
 
 <script>
@@ -269,7 +250,7 @@ const R = [40, 110, 180, 250, 320, 390, 460]; // row y
 // id: [layer, row y, label, sub, link, height?, x override, w override]
 const N = {
   browser: ["fe", 110, "Next.js board", "app/api/api.ts (axios)", "map", 210],
-  cors: ["sec", 110, "CORS", "CLIENT_URL origins", "twin"],
+  cors: ["sec", 110, "CORS", "CLIENT_URL origins", "tokens"],
   resolver: ["sec", 200, "ApiBearerTokenResolver", "reads Authorization", "tokens"],
   decoder: ["sec", 290, "JwtDecoder + Converter", "HS256 → AuthUser", "tokens"],
   authz: ["sec", 380, "authorizeHttpRequests", "permitAll | authenticated", "tokens"],
@@ -402,7 +383,7 @@ for (const id in N) {
 const G = [
   { id: "cat-auth", name: "Auth", ctrl: "c-auth", files: ["AuthController", "AuthService", "JwtService", "UserRepository", "users"], about: "Public. Register, log in (password or Google), refresh and log out. Returns tokens in the body.", eps: [
     { m: "POST", p: "/auth/register", acc: "public", sum: "Creates an account. The username keeps the casing it was typed with.", edges: [["c-auth","s-auth"],["s-auth","r-user"],["r-user","t-users"]],
-      steps: [["authz","permitAll","/auth/** needs no token"],["c-auth","@Valid RegisterRequest","username, password, optional pictureUrl"],["s-auth","Credential rules","password 8–72 bytes, no char 3× in a row, ≥4 distinct, no rude username, picture ≤ 1.5 MB data: or http(s)"],["r-user","existsByUsernameIgnoreCase","“mike” is taken if “Mike” exists"],["s-auth","BCrypt strength 10","same hash format as the Express server"],["t-users","saveAndFlush","INSERT; a race on the unique name also becomes 409"]],
+      steps: [["authz","permitAll","/auth/** needs no token"],["c-auth","@Valid RegisterRequest","username, password, optional pictureUrl"],["s-auth","Credential rules","password 8–72 bytes, no char 3× in a row, ≥4 distinct, no rude username, picture ≤ 1.5 MB data: or http(s)"],["r-user","existsByUsernameIgnoreCase","“mike” is taken if “Mike” exists"],["s-auth","BCrypt strength 10","same hash format as the retired Express API"],["t-users","saveAndFlush","INSERT; a race on the unique name also becomes 409"]],
       ok: ["201","{ message }"], bad: [["400","validation message"],["409","Username is already taken"]] },
     { m: "POST", p: "/auth/login", acc: "public", sum: "Checks the password and issues an access + refresh token pair. Each login starts a new token family.", edges: [["c-auth","s-auth"],["s-auth","r-user"],["r-user","t-users"],["s-auth","s-jwt"],["s-auth","r-refresh"],["r-refresh","t-refresh"]],
       steps: [["authz","permitAll","no token needed"],["c-auth","@Valid LoginRequest","username + password"],["r-user","findByUsername","exact name first, then findFirstByUsernameIgnoreCase"],["s-auth","passwordEncoder.matches","wrong name or password give the same 401"],["r-user","markActive","sets last_active_at for the admin user list"],["s-jwt","issue tokens","access 15 min { id, username, role }, refresh 7 d { id, tokenVersion, jti }"],["t-refresh","save the jti","new family; the row lives as long as the token"]],

@@ -26,7 +26,7 @@ import se.aurell.jiraboard.security.JwtService;
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    // Same cost factor as the Express API, so password hashes are interchangeable
+    // Same cost factor as the former Express API, so hashes migrated from it still verify
     private static final int BCRYPT_STRENGTH = 10;
 
     @Bean

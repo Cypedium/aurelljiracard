@@ -28,7 +28,7 @@ export const hasSession = (): boolean => Boolean(getAccessToken() || getRefreshT
 
 export const getUsername = (): string => sessionStorage.getItem(USERNAME_KEY) || "";
 
-// Samma roller som backend (server/utils/role.js)
+// Samma roller som backend (server-java Role)
 export const ROLES = ["user", "admin"] as const;
 export type Role = (typeof ROLES)[number];
 

@@ -7,7 +7,7 @@ import java.util.regex.Pattern;
 
 /**
  * Username and new-password rules shared by register and admin rename. Must match
- * server/utils/username.js, server/utils/password.js and frontend/app/utils/username.ts / register.ts.
+ * frontend/app/utils/username.ts / register.ts.
  */
 final class CredentialRules {
 

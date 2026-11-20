@@ -31,7 +31,7 @@ import se.aurell.jiraboard.security.AuthUser;
 /**
  * Boards and who may use them. Every user owns one board and is its admin; others join it as
  * collaborators ({@link Role#USER}) through an invite link. Non-members get 404, so board ids
- * don't reveal that a board exists. Must match server/controllers/boardController.js.
+ * don't reveal that a board exists.
  */
 @Service
 public class BoardService {

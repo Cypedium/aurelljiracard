@@ -4,13 +4,13 @@ import { HEX_COLOR, sanitizeHexColor } from "./color";
 // Ärendetyper delas av alla (GET /issue-type); admins lägger till nya. Kortets type = typens key
 export type CardType = string;
 
-// Ikoner en typ kan ha; måste matcha ISSUE_TYPE_ICONS i server/utils/cardType.js och CardType.ICONS i server-java
+// Ikoner en typ kan ha; måste matcha CardType.ICONS i server-java
 export const ISSUE_TYPE_ICONS = ["check", "bug", "doc", "bolt", "star", "flag", "wrench", "light-bulb"] as const;
 export type IssueTypeIconName = (typeof ISSUE_TYPE_ICONS)[number];
 
 export type IssueType = { key: CardType; label: string; color: string; icon: IssueTypeIconName };
 
-// Standardtyperna; måste matcha DEFAULT_ISSUE_TYPES i server/utils/cardType.js och V8__issue_types.sql.
+// Standardtyperna; måste matcha CardType.DEFAULTS i server-java.
 // Visas tills typerna har hämtats (och om hämtningen misslyckas)
 export const DEFAULT_ISSUE_TYPES: IssueType[] = [
   { key: "task", label: "Task", color: "#4bade8", icon: "check" },
@@ -20,7 +20,7 @@ export const DEFAULT_ISSUE_TYPES: IssueType[] = [
 
 export const DEFAULT_CARD_TYPE: CardType = "task";
 
-// Samma gränser och meddelanden som server/controllers/issueTypeController.js
+// Samma gränser och meddelanden som server-java IssueTypeRequest
 export const ISSUE_TYPE_LABEL_MAX_LENGTH = 30;
 export const MAX_ISSUE_TYPES = 12;
 const LABEL_MESSAGE = `Issue type name is required (max ${ISSUE_TYPE_LABEL_MAX_LENGTH} characters).`;
