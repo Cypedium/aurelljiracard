@@ -1,5 +1,6 @@
-import { beforeEach, describe, expect, it } from "@jest/globals";
+import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 import {
+  SIGNED_OUT,
   canDeleteCard,
   canEditCard,
   clearSession,
@@ -9,8 +10,10 @@ import {
   getUsername,
   hasSession,
   isAdmin,
+  onSessionChange,
   saveSession,
   saveTokens,
+  sessionSnapshot,
   tokenUsername,
 } from "../../app/utils/session";
 
@@ -116,6 +119,47 @@ describe("session", () => {
       expect(tokenUsername(token({ username: "Åsa" }))).toBe("Åsa");
       expect(tokenUsername(token({ role: "user" }))).toBeNull();
       expect(tokenUsername("not-a-jwt")).toBeNull();
+    });
+  });
+
+  describe("change notifications and snapshot", () => {
+    const token = (payload: object) =>
+      `h.${Buffer.from(JSON.stringify(payload)).toString("base64url")}.s`;
+
+    it("notifies on login, token refresh and logout, once each", () => {
+      const listener = jest.fn();
+      const unsubscribe = onSessionChange(listener);
+
+      saveSession("alice", "at", "rt");
+      expect(listener).toHaveBeenCalledTimes(1);
+      saveTokens("at2", "rt2");
+      expect(listener).toHaveBeenCalledTimes(2);
+      clearSession();
+      expect(listener).toHaveBeenCalledTimes(3);
+
+      unsubscribe();
+      saveSession("alice", "at", "rt");
+      expect(listener).toHaveBeenCalledTimes(3);
+    });
+
+    it("reads login, username and admin role", () => {
+      expect(sessionSnapshot()).toEqual(SIGNED_OUT);
+
+      saveSession("alice", token({ username: "alice", role: "admin" }), "rt");
+
+      expect(sessionSnapshot()).toEqual({ loggedIn: true, username: "alice", admin: true });
+    });
+
+    it("returns the same object until something changes", () => {
+      saveSession("alice", token({ role: "user" }), "rt");
+      const first = sessionSnapshot();
+
+      saveTokens(token({ role: "user" }), "rt2");
+      expect(sessionSnapshot()).toBe(first);
+
+      saveTokens(token({ role: "admin" }), "rt3");
+      expect(sessionSnapshot()).not.toBe(first);
+      expect(sessionSnapshot().admin).toBe(true);
     });
   });
 });

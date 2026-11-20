@@ -6,10 +6,10 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useLayoutEffect, useRef, useState, type ComponentType, type SVGProps } from 'react';
 import logo from '../icon.png';
 import { handleLogout } from '../utils/logout';
-import { getUsername, hasSession, isAdmin } from '../utils/session';
 import { BOARD_ACTIONS, onBoardAction, requestBoardAction, type BoardAction } from '../utils/boardActions';
 import { useBoards } from '../hooks/useBoards';
 import { useFeatures } from '../hooks/useFeatures';
+import { useSession } from '../hooks/useSession';
 import { BOARD_ACTION_FEATURES } from '../utils/features';
 import {
   AdjustmentsHorizontalIcon,
@@ -53,10 +53,8 @@ const MobileSubActions = ({ actions }: { actions: SubAction[] }) =>
 
 const Navbar = () => {
   const pathname = usePathname();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userName, setUserName] = useState('');
   // Global admin (sajtens): hanterar användare. Boardens admin (ägaren): listor, ärendetyper, inbjudningar
-  const [admin, setAdmin] = useState(false);
+  const { loggedIn: isLoggedIn, username: userName, admin } = useSession();
   const { boards, current: board, boardAdmin } = useBoards();
   const [menuOpen, setMenuOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
@@ -64,13 +62,6 @@ const Navbar = () => {
   const { isOn, readOnly, siteAdmin } = useFeatures();
 
   useEffect(() => onBoardAction(BOARD_ACTIONS.shareBoard, () => setShareOpen(true)), []);
-
-  // Re-check on every navigation so login/logout is reflected immediately
-  useEffect(() => {
-    setIsLoggedIn(hasSession());
-    setUserName(getUsername());
-    setAdmin(isAdmin());
-  }, [pathname]);
 
   const logoHref = isLoggedIn ? ROUTES.board : ROUTES.home;
   const onBoard = isLoggedIn && pathname === ROUTES.board;

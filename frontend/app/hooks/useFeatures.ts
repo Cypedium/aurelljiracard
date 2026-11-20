@@ -1,11 +1,11 @@
 'use client';
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { onServiceUnavailable } from "../api/api";
 import { getFeatures } from "../api/endpoints";
 import { logError } from "../utils/apiError";
 import { ALL_ON, canWrite, isFeatureOn, parseFeatureState, type FeatureKey, type FeatureState } from "../utils/features";
-import { isAdmin } from "../utils/session";
 import { createStore } from "../utils/store";
+import { useSession } from "./useSession";
 
 // Feature switches och read-only-läge, delade av navbaren och sidorna (docs/feature-switches.md).
 // Hämtas vid första användningen, när fönstret får fokus igen och efter varje 503. Misslyckas hämtningen är allt på
@@ -40,10 +40,8 @@ const start = () => {
 export function useFeatures() {
   useEffect(start, []);
   const snapshot = useSyncExternalStore(store.subscribe, store.get, () => ALL_ON);
-  // Rollen ligger i sessionStorage: läses efter mount (inte vid serverrenderingen) och vid varje ny hämtning,
-  // så att en in-/utloggning syns
-  const [siteAdmin, setSiteAdmin] = useState(false);
-  useEffect(() => setSiteAdmin(isAdmin()), [snapshot]);
+  // Rollen ur access-tokenet; följer in-/utloggning och förnyade tokens
+  const { admin: siteAdmin } = useSession();
   return {
     state: snapshot,
     // Read-only-läget är på (bannern visas för alla; sajtens admin får en annan text)

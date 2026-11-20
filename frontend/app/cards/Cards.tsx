@@ -49,9 +49,10 @@ import {
   toSavedPositions,
   previewHeaders,
 } from "../utils/boardLayout";
-import { canDeleteCard, canEditCard, getUsername } from "../utils/session";
+import { canDeleteCard, canEditCard } from "../utils/session";
 import { BOARD_ACTIONS, onBoardAction } from "../utils/boardActions";
 import { useFeatures } from "../hooks/useFeatures";
+import { useSession } from "../hooks/useSession";
 
 // Den valda boarden (navbaren byter); key gör att allt laddas om när boarden byts
 export default function Home() {
@@ -94,7 +95,7 @@ function BoardView({ boardId, admin }: { boardId: string; admin: boolean }) {
   } = useColumnActions({ boardId, headers, setHeaders, userLayout, persistLayout });
   // Ihopfällda listor: visar bara rubrik och "Add a card"
   const { collapsed, toggleColumn } = useCollapsedLists();
-  const [userName, setUserName] = useState("");
+  const { username: userName } = useSession();
   // Gridden följer boardens bredd så att den fyller skärmen
   const { width, containerRef, mounted } = useContainerWidth();
   // Luft mellan listorna och mot skärmkanten: större på mobil, så att man kan svepa upp/ner bredvid korten.
@@ -104,10 +105,6 @@ function BoardView({ boardId, admin }: { boardId: string; admin: boolean }) {
   // Avstängda funktioner och read-only-läge (backend nekar ändå med 503); sajtens admin ser allt
   const { isOn, canWrite } = useFeatures();
   const canDragCards = isOn("editCard") && canWrite;
-
-  useEffect(() => {
-    setUserName(getUsername());
-  }, []);
 
   // Navbarens "Create card" (nytt kort i första listan) och "Create column" (admin: formuläret sist på boarden)
   useEffect(() => onBoardAction(BOARD_ACTIONS.createCard, () => setCreatingIn(headers[0]?.key ?? null)), [headers, setCreatingIn]);

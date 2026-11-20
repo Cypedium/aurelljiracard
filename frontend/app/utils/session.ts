@@ -5,6 +5,17 @@ const REFRESH_TOKEN_KEY = "refreshToken";
 const USERNAME_KEY = "username";
 export const SESSION_KEYS = [ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY, USERNAME_KEY] as const;
 
+// Inloggning, förnyade tokens och utloggning meddelar prenumeranterna (useSession)
+const sessionListeners = new Set<() => void>();
+const notifySession = () => sessionListeners.forEach((listener) => listener());
+
+export const onSessionChange = (listener: () => void): (() => void) => {
+  sessionListeners.add(listener);
+  return () => {
+    sessionListeners.delete(listener);
+  };
+};
+
 // Äldre versioner sparade inloggningen i localStorage; ta bort den
 export const clearLegacySession = () => SESSION_KEYS.forEach((k) => localStorage.removeItem(k));
 
@@ -12,15 +23,17 @@ export const clearLegacySession = () => SESSION_KEYS.forEach((k) => localStorage
 export const clearSession = () => {
   SESSION_KEYS.forEach((k) => sessionStorage.removeItem(k));
   clearLegacySession();
+  notifySession();
 };
 
 export const getAccessToken = (): string | null => sessionStorage.getItem(ACCESS_TOKEN_KEY);
 export const getRefreshToken = (): string | null => sessionStorage.getItem(REFRESH_TOKEN_KEY);
 
-// Efter /auth/refresh: båda tokens byts (refresh-tokens är engångs)
+// Efter /auth/refresh: båda tokens byts (refresh-tokens är engångs). Rollen kan ha ändrats
 export const saveTokens = (accessToken: string, refreshToken: string) => {
   sessionStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
   sessionStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+  notifySession();
 };
 
 // Minst en token finns → axios-interceptorn avgör resten
@@ -63,6 +76,21 @@ export const saveSession = (username: string, accessToken: string, refreshToken:
   sessionStorage.setItem(USERNAME_KEY, username);
   saveTokens(accessToken, refreshToken);
   clearLegacySession();
+};
+
+// Det UI:t behöver om inloggningen. Samma objekt så länge inget ändrats (krav från useSyncExternalStore)
+export type SessionSnapshot = { loggedIn: boolean; username: string; admin: boolean };
+export const SIGNED_OUT: SessionSnapshot = { loggedIn: false, username: "", admin: false };
+
+let lastSnapshot: SessionSnapshot = SIGNED_OUT;
+
+export const sessionSnapshot = (): SessionSnapshot => {
+  const next = { loggedIn: hasSession(), username: getUsername(), admin: isAdmin() };
+  const prev = lastSnapshot;
+  if (next.loggedIn !== prev.loggedIn || next.username !== prev.username || next.admin !== prev.admin) {
+    lastSnapshot = next;
+  }
+  return lastSnapshot;
 };
 
 // Samma regler som backend: alla på boarden redigerar alla kort (även medarbetare);

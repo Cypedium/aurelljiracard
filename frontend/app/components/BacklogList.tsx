@@ -9,7 +9,8 @@ import { avatarColor, avatarInitials } from '../utils/avatar';
 import { backlogCards } from '../utils/backlog';
 import { DEFAULT_HEADERS } from '../utils/boardLayout';
 import { formatShortDate } from '../utils/date';
-import { canDeleteCard, canEditCard, getUsername } from '../utils/session';
+import { canDeleteCard, canEditCard } from '../utils/session';
+import { useSession } from '../hooks/useSession';
 import { useFeatures } from '../hooks/useFeatures';
 import { useBoards } from '../hooks/useBoards';
 import { CARD_ACTION_CLASS, TABLE_CELL_CLASS as TD_CLASS, TABLE_HEAD_CLASS as TH_CLASS, TABLE_THEAD_CLASS, TABLE_ROW_CLASS, TABLE_WRAPPER_CLASS } from '../utils/styles';
@@ -34,16 +35,12 @@ export default function BacklogList({ refreshKey = 0, onMoved }: BacklogListProp
   // Samma edit- och delete-dialoger som på boarden
   const [editingCard, setEditingCard] = useState<Card | null>(null);
   const [deletingCard, setDeletingCard] = useState<Card | null>(null);
-  const [userName, setUserName] = useState('');
+  const { username: userName } = useSession();
   // Den valda boardens backlog; boardens admin får redigera och ta bort alla kort
   const { current, boardAdmin: admin } = useBoards();
   // Avstängda funktioner döljs; att flytta till boarden är editCard
   const { isOn } = useFeatures();
   const boardId = current?._id ?? null;
-
-  useEffect(() => {
-    setUserName(getUsername());
-  }, []);
 
   const fetchBacklog = useCallback(async () => {
     if (!boardId) return;
