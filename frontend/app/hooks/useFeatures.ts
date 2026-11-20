@@ -5,27 +5,19 @@ import { getFeatures } from "../api/endpoints";
 import { logError } from "../utils/apiError";
 import { ALL_ON, canWrite, isFeatureOn, parseFeatureState, type FeatureKey, type FeatureState } from "../utils/features";
 import { isAdmin } from "../utils/session";
+import { createStore } from "../utils/store";
 
 // Feature switches och read-only-läge, delade av navbaren och sidorna (docs/feature-switches.md).
 // Hämtas vid första användningen, när fönstret får fokus igen och efter varje 503. Misslyckas hämtningen är allt på
-let state: FeatureState = ALL_ON;
+const store = createStore<FeatureState>(ALL_ON);
 let started = false;
 let loading = false;
-const listeners = new Set<() => void>();
-
-const emit = () => listeners.forEach((listener) => listener());
-
-const subscribe = (listener: () => void) => {
-  listeners.add(listener);
-  return () => listeners.delete(listener);
-};
 
 export const reloadFeatures = async () => {
   if (loading) return;
   loading = true;
   try {
-    state = parseFeatureState((await getFeatures()).data);
-    emit();
+    store.set(parseFeatureState((await getFeatures()).data));
   } catch (err) {
     // Tyst: ett misslyckat anrop betyder att allt är på
     logError("Error fetching features", err);
@@ -35,10 +27,7 @@ export const reloadFeatures = async () => {
 };
 
 // Efter att admin ändrat en brytare: visa svaret direkt
-export const setFeatureState = (next: FeatureState) => {
-  state = next;
-  emit();
-};
+export const setFeatureState = (next: FeatureState) => store.set(next);
 
 const start = () => {
   if (started || typeof window === "undefined") return;
@@ -50,7 +39,7 @@ const start = () => {
 
 export function useFeatures() {
   useEffect(start, []);
-  const snapshot = useSyncExternalStore(subscribe, () => state, () => ALL_ON);
+  const snapshot = useSyncExternalStore(store.subscribe, store.get, () => ALL_ON);
   // Rollen ligger i sessionStorage: läses efter mount (inte vid serverrenderingen) och vid varje ny hämtning,
   // så att en in-/utloggning syns
   const [siteAdmin, setSiteAdmin] = useState(false);
