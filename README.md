@@ -7,60 +7,47 @@ A small issue/feedback board. Logged-in users create cards (issue key, summary, 
 | Frontend | Next.js 16 (App Router), React 19, TypeScript, Tailwind 4, shadcn/ui | [`frontend/`](frontend) | `aurelljiraboard` |
 | Backend (used by the frontend) | Java 25, Spring Boot 4, Spring Data JPA, PostgreSQL, Flyway | [`server-java/`](server-java) | `aurelljiraboardjava` |
 | Database | PostgreSQL | — | external (`DB_URL`) |
-| Backend (Node) | Node 22, Express 5, Mongoose 9 (CommonJS) | [`server/`](server) | `aurelljiraboard-backend` |
-| Database (Node) | MongoDB | — | external (`MONGO_URI`) |
 
-`server/` and `server-java/` implement the same API, so the frontend runs against either one; pick it with `NEXT_PUBLIC_API_URL`. The deployed frontend uses `server-java`. See [`server-java/README.md`](server-java/README.md) for the Spring Boot version.
+See [`server-java/README.md`](server-java/README.md) for the backend. An earlier Express + MongoDB backend lived in `server/`; it was retired (see git history) and `server-java` is now the only API.
 
 ## Getting started
 
-Requires Node 22 and a MongoDB connection string.
+Requires Node 22, JDK 25 and Docker.
 
 ```bash
-# Backend (http://localhost:4000)
-cd server
-cp .env.example .env   # then fill in the values
-npm ci
-npm run dev
+# Backend (http://localhost:8080) against a throwaway Postgres container, dev-only secrets
+cd server-java
+./mvnw spring-boot:test-run
 
 # Frontend (http://localhost:3000)
 cd frontend
-echo NEXT_PUBLIC_API_URL=http://localhost:4000 > .env.local
+echo NEXT_PUBLIC_API_URL=http://localhost:8080 > .env.local
 npm ci
 npm run dev
 ```
 
 ### Environment variables
 
-**`server/.env`** (never commit — use `fly secrets set` in production)
-
-| Name | Description |
-|---|---|
-| `MONGO_URI` | MongoDB connection string |
-| `JWT_SECRET` | Secret for 15-minute access tokens |
-| `REFRESH_SECRET` | Secret for 7-day refresh tokens (must differ from `JWT_SECRET`) |
-| `PORT` | Port to listen on (`4000`) |
-| `CLIENT_URL` | Comma-separated allowed CORS origins. Default: `http://localhost:3000,https://aurelljiraboard.fly.dev` |
+**Backend:** see [`server-java/README.md`](server-java/README.md#environment-variables) (`DB_URL`, `JWT_SECRET`, `REFRESH_SECRET`, `CLIENT_URL`, `GOOGLE_CLIENT_ID` …; `fly secrets set` in production).
 
 **Frontend**
 
 | Name | Description |
 |---|---|
 | `NEXT_PUBLIC_API_URL` | Backend base URL. Inlined at build time: `.env.local` for dev, `[build.args]` in `fly.app.toml` for production |
+| `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | Optional. Shows Sign in with Google; same id as the backend's `GOOGLE_CLIENT_ID` |
 
 ## Scripts
 
 | Folder | Command | What it does |
 |---|---|---|
-| `server` | `npm run dev` / `npm start` | Start API with nodemon / node |
-| `server` | `npm test` | Jest + Supertest API tests (models mocked, no DB needed) |
 | `frontend` | `npm run dev` | Next dev server |
 | `frontend` | `npm run build` | Production build (includes type check) |
 | `frontend` | `npm test` | Jest unit tests |
 | `server-java` | `./mvnw spring-boot:test-run` | Start the Spring Boot API on :8080 with a throwaway Postgres container (Docker) |
 | `server-java` | `./mvnw test` | API tests against real Postgres via Testcontainers (Docker) |
 
-`PythonTests/` holds manual smoke scripts that call a running API: `API_URL=http://localhost:4000 python PythonTests/backend/test_backend_prod.py`. They create real users and cards.
+`PythonTests/` holds manual smoke scripts that call a running API: `API_URL=http://localhost:8080 python PythonTests/backend/test_backend_prod.py`. They create real users and cards.
 
 ## API
 
@@ -74,6 +61,7 @@ All routes except `/auth/*` and `/health` require `Authorization: Bearer <access
 | `POST` | `/auth/login` | `{ username, password }` → `{ accessToken, refreshToken }`. The username is matched case-insensitively (exact match first); the token carries the stored name |
 | `POST` | `/auth/refresh` | `{ refreshToken }` → new `{ accessToken, refreshToken }`. Each refresh token works once; sending a used one again revokes that login (`403`), other logins keep working |
 | `POST` | `/auth/logout` | `{ refreshToken }` → revokes all of the user's refresh tokens |
+| `POST` | `/auth/google` | `{ credential }` (Google's ID token) → `{ accessToken, refreshToken }`; the first sign-in creates a user named after the email address. `503` without `GOOGLE_CLIENT_ID` |
 | `GET` | `/board` | Your boards: `[{ _id, name, owner, role }]`, your own board first (`role: "admin"`), then the ones you collaborate on (`role: "user"`). Every user owns exactly one board |
 | `POST` | `/board/:boardId/invite` | **Board admin.** A new invite link token → `201 { token }`; the link is `<frontend>/invite/<token>`. Only a hash is stored, so the token is shown only here; a new one turns off the old one |
 | `DELETE` | `/board/:boardId/invite` | **Board admin.** Turns the invite link off; collaborators who joined stay |
@@ -100,9 +88,12 @@ All routes except `/auth/*` and `/health` require `Authorization: Bearer <access
 | `PATCH` | `/user/:id` | **Admin.** `{ username?, role? }` → updated user. Either change revokes the user's refresh tokens; their cards follow a rename. `409` if the name is taken in any casing (changing only the casing of their own name is allowed), `400` for rude words or if you remove your own admin role |
 | `DELETE` | `/user/:id` | **Admin.** Delete a user; `409` while they still author cards or their own board has cards, `400` for yourself. Cards assigned to them become unassigned; their board and memberships are removed |
 | `POST` | `/user/:id/logout` | **Admin.** Revoke all the user's refresh tokens (logged out within 15 min) |
+| `POST` | `/user/google` | `{ credential }` → connects a Google account to the caller; `409` if it belongs to someone else |
+| `GET` | `/feature` | Public. `{ readOnly, disabled: [keys] }`; site admins also get `switches` ([docs/feature-switches.md](docs/feature-switches.md)) |
+| `PUT` | `/feature/:key` | **Admin.** `{ enabled }` turns a feature on or off (for `readOnly`, `true` = read-only mode on) |
 | `GET` | `/health` | `{ status: "ok" }` |
 
-Errors are returned as `{ message }`. Everything under `/board/:boardId` answers `404 "Board not found."` when you are not a member (so board ids don't reveal a board), and `403 "Board admins only."` when a collaborator tries a board admin action.
+Errors are returned as `{ message }`. Ids are UUIDs; a body that is not valid JSON or has a field of the wrong type returns `400 "Invalid request body."`. A switched-off feature answers `503`, as does every write in read-only mode (site admins are never blocked). Everything under `/board/:boardId` answers `404 "Board not found."` when you are not a member (so board ids don't reveal a board), and `403 "Board admins only."` when a collaborator tries a board admin action.
 
 ### Boards and roles
 
@@ -111,32 +102,14 @@ Every user owns one board and is its **board admin**: they add, rename, move and
 Separately, every user has a global `role`: `user` (default) or `admin`. The global admin manages users (rename, change role, delete, log out) on the **Users** page (`/users`, shown in the navbar for admins only); it gives no rights on other people's boards. The role is sent as a `role` claim in the access token, so a change takes effect at the next login or token refresh (max 15 min). The first admin has to be set in the database:
 
 ```sql
--- server-java (PostgreSQL)
 UPDATE users SET role = 'admin' WHERE username = '<name>';
-```
-
-```js
-// server (MongoDB, mongosh)
-db.users.updateOne({ username: "<name>" }, { $set: { role: "admin" } })
 ```
 
 ## Deployment
 
-[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs the `server` tests, the `server-java` tests (Testcontainers on the runner's Docker) and the frontend type check, tests and build on every PR and push to `main`. It does not deploy: the deploy job is commented out.
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs the `server-java` tests (Testcontainers on the runner's Docker) and the frontend type check, tests and build on every PR and push to `main`. It does not deploy: the deploy job is commented out.
 
-Deploy by hand: `fly deploy -c fly.server.toml` in `server/`, `fly deploy -c fly.app.toml` in `frontend/` (or the `deploy-*.bat` scripts).
+Deploy by hand, backend first when a frontend change needs it:
 
-Backend secrets must be set on Fly once:
-
-```bash
-fly secrets set -a aurelljiraboard-backend MONGO_URI=... JWT_SECRET=... REFRESH_SECRET=... CLIENT_URL=https://aurelljiraboard.fly.dev
-```
-
-Deploy `server-java` by hand too, with `fly deploy -c fly.java.toml` in `server-java/` (see [`server-java/README.md`](server-java/README.md#deployment-flyio)).
-
-### Moving to per-user boards
-
-The board API (`/board/:boardId/...`) replaced the global `/card`, `/column` and `/issue-type` routes, so the backends must be migrated before the new frontend reaches users:
-
-1. **`server-java`** — `fly deploy -c fly.java.toml`. Flyway runs `V11__boards.sql` on start: every user gets a board, and all existing cards, lists and issue types move to the oldest admin's board (the oldest user's if there is no admin), with every other user added to it as a collaborator. The old frontend stops working against it from that moment, so merge right after.
-2. **`server/`** — before the new version starts, run `node scripts/migrateBoards.js` in `server/` with the production `MONGO_URI` (same result as V11; safe to run twice). It also drops the old global unique indexes, which would otherwise block new boards.
+- `server-java`: `fly deploy -c fly.java.toml` in `server-java/` (secrets and setup: [`server-java/README.md`](server-java/README.md#deployment-flyio))
+- Frontend: `fly deploy -c fly.app.toml` in `frontend/` (or `deploy-frontend.bat`)
