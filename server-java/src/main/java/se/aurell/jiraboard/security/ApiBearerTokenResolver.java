@@ -6,7 +6,7 @@ import org.springframework.security.oauth2.server.resource.web.DefaultBearerToke
 
 /**
  * Ignores the Authorization header on public routes. The frontend also sends its (possibly
- * expired) access token to /auth/logout, which must not fail with 401, as in the Express API.
+ * expired) access token to /auth/logout, which must not fail with 401.
  */
 public class ApiBearerTokenResolver implements BearerTokenResolver {
 

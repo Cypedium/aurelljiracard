@@ -31,7 +31,7 @@ public record LayoutRequest(
             @Pattern(regexp = CardStatus.KEY_PATTERN, message = HEADER_MESSAGE)
             String key,
             @NotBlank(message = HEADER_MESSAGE) @Size(max = 50, message = HEADER_MESSAGE) String title,
-            // Optional; must match HEX_COLOR in server/controllers/userController.js
+            // Optional; must match HEX_COLOR in frontend/app/utils/color.ts
             @Pattern(regexp = "^#[0-9a-fA-F]{6}$", message = COLOR_MESSAGE) String color) {
 
         // Backlog is not a board column, so it has no header

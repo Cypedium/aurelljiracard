@@ -22,7 +22,6 @@ public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-    // Same message as server/middleware/requireAdmin.js
     static final String ADMINS_ONLY_MESSAGE = "Admins only.";
 
     @ExceptionHandler(ApiException.class)
@@ -30,7 +29,7 @@ public class GlobalExceptionHandler {
         return respond(e.getStatus(), e.getMessage());
     }
 
-    // Bean Validation on request bodies: return the first violation, like the Express API
+    // Bean Validation on request bodies: return the first violation
     @ExceptionHandler(MethodArgumentNotValidException.class)
     ResponseEntity<MessageResponse> handleValidation(MethodArgumentNotValidException e) {
         String message = e.getBindingResult().getAllErrors().stream()

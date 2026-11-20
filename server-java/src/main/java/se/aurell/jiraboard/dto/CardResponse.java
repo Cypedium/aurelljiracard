@@ -5,7 +5,7 @@ import java.time.Instant;
 import java.util.UUID;
 import se.aurell.jiraboard.entity.Card;
 
-/** Same shape as the Express API, including the MongoDB-style "_id" the frontend reads. */
+/** Includes the MongoDB-style "_id" the frontend reads. */
 public record CardResponse(
         @JsonProperty("_id") UUID id,
         int rating,

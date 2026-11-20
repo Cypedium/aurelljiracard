@@ -8,7 +8,7 @@ import java.lang.annotation.Target;
 import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
- * Only admins may call the annotated endpoint (requireAdmin.js in Express). Others get
+ * Only admins may call the annotated endpoint. Others get
  * 403 "Admins only." from GlobalExceptionHandler. The role comes from the access token
  * ({@link AccessTokenConverter}), so a new role takes effect at the next token refresh.
  */

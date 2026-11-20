@@ -32,7 +32,7 @@ public record CardRequest(
         String status) {
 
     static final String RATING_MESSAGE = "Rating must be an integer between 1 and 5.";
-    // Issue key in Jira format, e.g. MA-100 (same rule as server/ and the frontend)
+    // Issue key in Jira format, e.g. MA-100 (same rule as frontend/app/utils/cardForm.ts)
     static final String PRODUCT_ID_MESSAGE =
             "Issue key must look like MA-100: letters, a hyphen and digits (max 6 characters).";
 }

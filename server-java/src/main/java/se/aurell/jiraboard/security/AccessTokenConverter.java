@@ -10,7 +10,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.InvalidBearerTokenException;
 import se.aurell.jiraboard.entity.Role;
 
-/** Turns a verified access token into an {@link AuthUser} principal (req.user in Express). */
+/** Turns a verified access token into an {@link AuthUser} principal. */
 public class AccessTokenConverter implements Converter<Jwt, AbstractAuthenticationToken> {
 
     @Override

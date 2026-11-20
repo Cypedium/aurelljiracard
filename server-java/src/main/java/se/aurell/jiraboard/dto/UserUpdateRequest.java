@@ -5,7 +5,7 @@ import jakarta.validation.constraints.Size;
 
 /**
  * Body of PATCH /user/{id} (admins only). Fields left out keep their value.
- * {@code role} is checked in UserService so unknown values get the same message as server/.
+ * {@code role} is checked in UserService so unknown values get a clear message.
  */
 public record UserUpdateRequest(
         // Not blank, but not trimmed: usernames are stored as typed

@@ -11,7 +11,7 @@ public record IssueTypeRequest(
         @Size(max = 30, message = LABEL_MESSAGE)
         String label,
 
-        // Must match HEX_COLOR in server/controllers/issueTypeController.js
+        // Must match HEX_COLOR in frontend/app/utils/color.ts
         @NotNull(message = COLOR_MESSAGE)
         @Pattern(regexp = "^#[0-9a-fA-F]{6}$", message = COLOR_MESSAGE)
         String color,

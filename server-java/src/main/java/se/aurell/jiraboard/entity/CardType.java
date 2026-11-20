@@ -5,18 +5,18 @@ import java.util.List;
 
 /**
  * A card's type: the key of an {@link IssueType} on the card's board (the board admin adds new ones).
- * Must match server/utils/cardType.js and frontend/app/utils/cardType.ts.
+ * Must match frontend/app/utils/cardType.ts.
  */
 public final class CardType {
 
     public static final String DEFAULT = "task";
 
-    /** Icons an issue type can have; must match ISSUE_TYPE_ICONS in server/utils/cardType.js. */
+    /** Icons an issue type can have; must match ISSUE_TYPE_ICONS in frontend/app/utils/cardType.ts. */
     /** An issue type a new board starts with. */
     public record Default(String key, String label, String color, String icon) {
     }
 
-    /** Must match DEFAULT_ISSUE_TYPES in server/utils/cardType.js and V11. */
+    /** Must match DEFAULT_ISSUE_TYPES in frontend/app/utils/cardType.ts and V11. */
     public static final List<Default> DEFAULTS = List.of(
             new Default("task", "Task", "#4bade8", "check"),
             new Default("bug", "Bug", "#c9372c", "bug"),

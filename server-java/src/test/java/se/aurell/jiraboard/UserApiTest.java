@@ -337,7 +337,7 @@ class UserApiTest extends ApiIntegrationTest {
         mvc.perform(bearer(get("/user/layout"), token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.headers[0].color").value("#fdd0ec"))
-                // No color: the field is left out, like in the Express API
+                // No color: the field is left out
                 .andExpect(jsonPath("$.headers[1].color").doesNotExist());
     }
 }
