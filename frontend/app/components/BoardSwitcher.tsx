@@ -1,6 +1,6 @@
 'use client';
 import { ClipboardDocumentListIcon } from '@heroicons/react/24/outline';
-import { selectBoard, useBoards } from '../cards/useBoards';
+import { selectBoard, useBoards } from '../hooks/useBoards';
 import { cn } from '../lib/utils';
 import { boardLabel } from '../utils/currentBoard';
 import { NAV_ICON_CLASS, NAV_MENU_CLASS, NAV_MENU_ITEM_CLASS, NAV_MENU_LABEL_CLASS, NAV_MENU_SEPARATOR_CLASS } from '../utils/styles';

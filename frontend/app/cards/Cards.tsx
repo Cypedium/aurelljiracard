@@ -6,9 +6,9 @@ import { useListDrag } from "./useListDrag";
 import { useBoardData } from "./useBoardData";
 import { useCardActions } from "./useCardActions";
 import { useCollapsedLists } from "./useCollapsedLists";
-import { useIsMobile } from "./useIsMobile";
+import { useIsMobile } from "../hooks/useIsMobile";
 import { useColumnActions } from "./useColumnActions";
-import { useBoards } from "./useBoards";
+import { useBoards } from "../hooks/useBoards";
 import AddListForm from "./board/AddListForm";
 import BoardCard from "./board/BoardCard";
 import BoardSkeleton from "./board/BoardSkeleton";
@@ -51,7 +51,7 @@ import {
 } from "../utils/boardLayout";
 import { canDeleteCard, canEditCard, getUsername } from "../utils/session";
 import { BOARD_ACTIONS, onBoardAction } from "../utils/boardActions";
-import { useFeatures } from "./useFeatures";
+import { useFeatures } from "../hooks/useFeatures";
 
 // Den valda boarden (navbaren byter); key gör att allt laddas om när boarden byts
 export default function Home() {

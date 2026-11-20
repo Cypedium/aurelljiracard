@@ -4,8 +4,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { createIssueType } from '../api/endpoints';
-import { useBoards } from '../cards/useBoards';
-import { addIssueType, useIssueTypes } from '../cards/useIssueTypes';
+import { useBoards } from '../hooks/useBoards';
+import { addIssueType, useIssueTypes } from '../hooks/useIssueTypes';
 import { apiErrorMessage, isConflictError, logError } from '../utils/apiError';
 import { DUPLICATE_ERROR_TYPE, ISSUE_KEY_CHECK_DELAY_MS } from '../utils/cardForm';
 import {

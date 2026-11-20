@@ -1,7 +1,7 @@
 'use client';
 import FeatureOff from "../components/FeatureOff";
 import RegisterForm from "../components/RegisterForm";
-import { useFeatures } from "../cards/useFeatures";
+import { useFeatures } from "../hooks/useFeatures";
 import Welcome from "../components/Welcome";
 
 export default function RegisterPage() {

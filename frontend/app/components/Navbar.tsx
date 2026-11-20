@@ -8,8 +8,8 @@ import logo from '../icon.png';
 import { handleLogout } from '../utils/logout';
 import { getUsername, hasSession, isAdmin } from '../utils/session';
 import { BOARD_ACTIONS, onBoardAction, requestBoardAction, type BoardAction } from '../utils/boardActions';
-import { useBoards } from '../cards/useBoards';
-import { useFeatures } from '../cards/useFeatures';
+import { useBoards } from '../hooks/useBoards';
+import { useFeatures } from '../hooks/useFeatures';
 import { BOARD_ACTION_FEATURES } from '../utils/features';
 import {
   AdjustmentsHorizontalIcon,

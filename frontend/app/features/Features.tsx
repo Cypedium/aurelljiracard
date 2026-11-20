@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { setFeature } from '../api/endpoints';
-import { reloadFeatures, useFeatures } from '../cards/useFeatures';
+import { reloadFeatures, useFeatures } from '../hooks/useFeatures';
 import { reportError } from '../utils/apiError';
 import {
   FEATURE_GROUPS,

@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import Layout from "../components/Layout";
 import BacklogList from "../components/BacklogList";
 import FeatureOff from "../components/FeatureOff";
-import { useFeatures } from "../cards/useFeatures";
+import { useFeatures } from "../hooks/useFeatures";
 import CardForm from "../cards/card/Card";
 import { Dialog, DialogContent, DialogTitle } from "../components/ui/dialog";
 import { BACKLOG_STATUS } from "../utils/backlog";
