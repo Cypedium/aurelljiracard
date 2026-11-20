@@ -3,7 +3,7 @@ import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useLayoutEffect, useRef, useState, type ComponentType, type SVGProps } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type ComponentType, type ReactNode, type SVGProps } from 'react';
 import logo from '../icon.png';
 import { handleLogout } from '../utils/logout';
 import { BOARD_ACTIONS, onBoardAction, requestBoardAction, type BoardAction } from '../utils/boardActions';
@@ -27,14 +27,43 @@ import {
   XMarkIcon,
 } from '@heroicons/react/24/outline';
 import { ROUTES } from '../utils/routes';
-import { NAV_ICON_CLASS, NAV_ICON_SUB_CLASS, NAV_LINK_CLASS, NAV_MOBILE_SUB_LIST_CLASS, NAV_SUB_ROW_BUTTON_CLASS } from '../utils/styles';
+import {
+  NAV_ICON_CLASS,
+  NAV_ICON_SUB_CLASS,
+  NAV_LINK_CLASS,
+  NAV_MOBILE_SUB_LIST_CLASS,
+  NAV_PAGE_LINK_CLASS,
+  NAV_SUB_ROW_BUTTON_CLASS,
+} from '../utils/styles';
 
 // Bara för inloggade: laddas när de visas, så att /login och /register slipper deras kod (Radix-popover/select/dialog)
 const AccountMenu = dynamic(() => import('./AccountMenu'));
 const BoardSwitcher = dynamic(() => import('./BoardSwitcher'));
 const ShareBoardDialog = dynamic(() => import('./ShareBoardDialog'));
 
-type SubAction = { label: string; action: BoardAction; Icon: ComponentType<SVGProps<SVGSVGElement>> };
+type NavIcon = ComponentType<SVGProps<SVGSVGElement>>;
+type SubAction = { label: string; action: BoardAction; Icon: NavIcon };
+
+type NavItemProps = {
+  href: string;
+  label: string;
+  Icon: NavIcon;
+  pathname: string;
+  onNavigate: () => void;
+  // Mobil: sidans knappar under länken
+  children?: ReactNode;
+};
+
+// En sidlänk i navbaren: ikon och text, understruken på den aktuella sidan (rad två mäter just den länken)
+const NavItem = ({ href, label, Icon, pathname, onNavigate, children }: NavItemProps) => (
+  <li onClick={onNavigate}>
+    <Link href={href} aria-current={pathname === href ? 'page' : undefined} className={NAV_PAGE_LINK_CLASS}>
+      <Icon className={NAV_ICON_CLASS} aria-hidden />
+      {label}
+    </Link>
+    {children}
+  </li>
+);
 
 const MobileSubActions = ({ actions }: { actions: SubAction[] }) =>
   actions.length > 0 && (
@@ -57,6 +86,7 @@ const Navbar = () => {
   const { loggedIn: isLoggedIn, username: userName, admin } = useSession();
   const { boards, current: board, boardAdmin } = useBoards();
   const [menuOpen, setMenuOpen] = useState(false);
+  const closeMenu = () => setMenuOpen(false);
   const [shareOpen, setShareOpen] = useState(false);
   // Avstängda funktioner döljs (sajtens admin ser allt)
   const { isOn, readOnly, siteAdmin } = useFeatures();
@@ -86,22 +116,15 @@ const Navbar = () => {
   // en board, till vänster om kontoknappen (desktop) / sist i hamburgermenyn (mobil); ett byte stannar på sidan
   const showSwitcher = isLoggedIn && Boolean(board) && boards.length > 1 && isOn('boardSwitcher');
 
-  // Rad två börjar under sin länk (Board / Backlog / Issue types). null = vänsterställd (mobil, där länken är dold)
+  // Rad två börjar under den aktuella sidans länk (Board / Backlog / Issue types). null = vänsterställd
+  // (mobil, där länken är dold)
   const headerRef = useRef<HTMLElement>(null);
-  const backlogLinkRef = useRef<HTMLAnchorElement>(null);
-  const issueTypesLinkRef = useRef<HTMLAnchorElement>(null);
-  const boardLinkRef = useRef<HTMLAnchorElement>(null);
   const [subRowStart, setSubRowStart] = useState<number | null>(null);
+  const hasSubRow = subActions.length > 0;
 
   useLayoutEffect(() => {
-    const link: HTMLElement | null = onBoard
-      ? boardLinkRef.current
-      : onBacklog
-        ? backlogLinkRef.current
-        : onIssueTypes
-          ? issueTypesLinkRef.current
-          : null;
     const header = headerRef.current;
+    const link = hasSubRow ? header?.querySelector<HTMLElement>('a[aria-current="page"]') : null;
     if (!link || !header) {
       setSubRowStart(null);
       return;
@@ -116,7 +139,7 @@ const Navbar = () => {
     observer.observe(link);
     observer.observe(header);
     return () => observer.disconnect();
-  }, [onBoard, onBacklog, onIssueTypes, admin, boardAdmin, board, userName]);
+  }, [pathname, hasSubRow, admin, boardAdmin, board, userName]);
 
   return (
     <header ref={headerRef} className="fixed z-1000 w-full font-brand">
@@ -124,7 +147,7 @@ const Navbar = () => {
       {menuOpen && (
         <div
           className="fixed inset-0 bg-black/40 backdrop-blur-sm md:hidden"
-          onClick={() => setMenuOpen(false)}
+          onClick={closeMenu}
           aria-hidden
         />
       )}
@@ -158,7 +181,7 @@ const Navbar = () => {
         >
           {/* Mobil: stäng-krysset i menyns övre högra hörn */}
           <li className="absolute top-3 right-3 md:hidden">
-            <button type="button" className="block rounded-md text-nav-text hover:bg-white/10" onClick={() => setMenuOpen(false)} aria-label="Close menu">
+            <button type="button" className="block rounded-md text-nav-text hover:bg-white/10" onClick={closeMenu} aria-label="Close menu">
               <XMarkIcon className="size-8" aria-hidden />
             </button>
           </li>
@@ -171,73 +194,29 @@ const Navbar = () => {
           </li>
           {isLoggedIn && (
             <>
-              <li onClick={() => setMenuOpen(false)}>
-                <Link
-                  ref={boardLinkRef}
-                  href={ROUTES.board}
-                  aria-current={pathname === ROUTES.board ? 'page' : undefined}
-                  className={`${NAV_LINK_CLASS} underline-offset-8 aria-[current=page]:underline`}
-                >
-                  <ViewColumnsIcon className={NAV_ICON_CLASS} aria-hidden />
-                  Board
-                </Link>
-              </li>
+              <NavItem href={ROUTES.board} label="Board" Icon={ViewColumnsIcon} pathname={pathname} onNavigate={closeMenu} />
               {/* Mobil: boardens knappar (Create card, Share …), som annars ligger i rad två */}
               {onBoard && (
-                <li className="md:hidden" onClick={() => setMenuOpen(false)}>
+                <li className="md:hidden" onClick={closeMenu}>
                   <MobileSubActions actions={subActions} />
                 </li>
               )}
               {isOn('backlogPage') && (
-              <li onClick={() => setMenuOpen(false)}>
-                <Link
-                  ref={backlogLinkRef}
-                  href={ROUTES.backlog}
-                  aria-current={pathname === ROUTES.backlog ? 'page' : undefined}
-                  className={`${NAV_LINK_CLASS} underline-offset-8 aria-[current=page]:underline`}
-                >
-                  <QueueListIcon className={NAV_ICON_CLASS} aria-hidden />
-                  Backlog
-                </Link>
-                {onBacklog && <MobileSubActions actions={subActions} />}
-              </li>
+                <NavItem href={ROUTES.backlog} label="Backlog" Icon={QueueListIcon} pathname={pathname} onNavigate={closeMenu}>
+                  {onBacklog && <MobileSubActions actions={subActions} />}
+                </NavItem>
               )}
               {/* Bara för sajtens admin; backend nekar andra (403) */}
-              {admin && (
-                <li onClick={() => setMenuOpen(false)}>
-                  <Link href={ROUTES.users} className={NAV_LINK_CLASS}>
-                    <UsersIcon className={NAV_ICON_CLASS} aria-hidden />
-                    Users
-                  </Link>
-                </li>
-              )}
+              {admin && <NavItem href={ROUTES.users} label="Users" Icon={UsersIcon} pathname={pathname} onNavigate={closeMenu} />}
               {/* Sajtens admin: feature switches och read-only-läget (docs/feature-switches.md) */}
               {admin && (
-                <li onClick={() => setMenuOpen(false)}>
-                  <Link
-                    href={ROUTES.features}
-                    aria-current={pathname === ROUTES.features ? 'page' : undefined}
-                    className={`${NAV_LINK_CLASS} underline-offset-8 aria-[current=page]:underline`}
-                  >
-                    <AdjustmentsHorizontalIcon className={NAV_ICON_CLASS} aria-hidden />
-                    Features
-                  </Link>
-                </li>
+                <NavItem href={ROUTES.features} label="Features" Icon={AdjustmentsHorizontalIcon} pathname={pathname} onNavigate={closeMenu} />
               )}
               {/* Den valda boardens ärendetyper: bara dess admin */}
               {boardAdmin && isOn('issueTypesPage') && (
-                <li onClick={() => setMenuOpen(false)}>
-                  <Link
-                    ref={issueTypesLinkRef}
-                    href={ROUTES.issueTypes}
-                    aria-current={pathname === ROUTES.issueTypes ? 'page' : undefined}
-                    className={`${NAV_LINK_CLASS} underline-offset-8 aria-[current=page]:underline`}
-                  >
-                    <TagIcon className={NAV_ICON_CLASS} aria-hidden />
-                    Issue types
-                  </Link>
+                <NavItem href={ROUTES.issueTypes} label="Issue types" Icon={TagIcon} pathname={pathname} onNavigate={closeMenu}>
                   {onIssueTypes && <MobileSubActions actions={subActions} />}
-                </li>
+                </NavItem>
               )}
             </>
           )}
@@ -248,7 +227,7 @@ const Navbar = () => {
               {/* Vilken board som visas (typsnitt och storlek som länkarna), till vänster om kontoknappen */}
               {showSwitcher && (
                 <li className="md:ml-auto">
-                  <BoardSwitcher onSelected={() => setMenuOpen(false)} />
+                  <BoardSwitcher onSelected={closeMenu} />
                 </li>
               )}
               {/* Avataren öppnar kontomenyn (konto, utseende, Log out). Mobil: i navraden, till höger */}
@@ -268,11 +247,11 @@ const Navbar = () => {
           ) : (
             <>
               {isOn('register') && (
-                <li key="register" onClick={() => setMenuOpen(false)}>
+                <li key="register" onClick={closeMenu}>
                   <Link href={ROUTES.register} className={NAV_LINK_CLASS}>Register User</Link>
                 </li>
               )}
-              <li key="login" onClick={() => setMenuOpen(false)}>
+              <li key="login" onClick={closeMenu}>
                 <Link href={ROUTES.login} className={NAV_LINK_CLASS}>Login</Link>
               </li>
             </>

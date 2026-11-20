@@ -108,6 +108,8 @@ export const NAV_MENU_SEPARATOR_CLASS = "bg-white/20!";
 // Navbarens länkar: ikon före texten (som Trellos sidomeny); ljusare bakgrund vid hovring, som knapparna i rad två
 export const NAV_LINK_CLASS =
   "flex items-center gap-2 rounded-md px-2 py-1 transition-colors hover:bg-white/10 focus-visible:bg-white/10";
+// Sidlänkarna (Board, Backlog …): understruken när man är på sidan
+export const NAV_PAGE_LINK_CLASS = `${NAV_LINK_CLASS} underline-offset-8 aria-[current=page]:underline`;
 export const NAV_ICON_CLASS = "size-5 shrink-0";
 export const NAV_ICON_SUB_CLASS = "size-4 shrink-0";
 export const NAV_SUB_ROW_BUTTON_CLASS = "flex items-center gap-1.5 rounded-md px-2 py-0.5 hover:bg-white/10";
