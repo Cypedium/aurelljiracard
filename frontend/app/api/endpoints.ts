@@ -1,5 +1,5 @@
 // app/api/endpoints.ts
-// Paths must match the backend mounts in server/app.js: /auth, /board, /invite, /user.
+// Paths must match the server-java controllers: /auth, /board, /invite, /user, /feature.
 // Cards, lists and issue types belong to a board: /board/:boardId/card|column|issue-type
 import api from "./api";
 import type { CardStatus, UserLayout } from "../utils/boardLayout";
@@ -171,7 +171,7 @@ export const deleteUser = (id: string) => api.delete(`/user/${id}`);
 // Revokes all the user's refresh tokens
 export const revokeUserSessions = (id: string) => api.post(`/user/${id}/logout`);
 
-// Feature switches (server-java only). Public: read-only mode and the keys that are off; admins also get switches
+// Feature switches. Public: read-only mode and the keys that are off; admins also get switches
 export const getFeatures = () => api.get<unknown>("/feature");
 
 // Site admin: turn a feature on/off; for "readOnly", enabled = read-only mode on

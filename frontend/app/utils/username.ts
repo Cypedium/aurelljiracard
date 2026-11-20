@@ -1,4 +1,4 @@
-// Same word list and normalisation as the backend (server/utils/username.js, server-java CredentialRules)
+// Same word list and normalisation as the backend (server-java CredentialRules)
 export const USERNAME_TAKEN_MESSAGE = "Username already taken.";
 export const RUDE_USERNAME_MESSAGE = "Username contains inappropriate words.";
 

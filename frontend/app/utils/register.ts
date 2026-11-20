@@ -3,7 +3,7 @@ import { RUDE_USERNAME_MESSAGE, isRudeUsername } from "./username";
 
 // Base64 grows ~33%, so this stays under the backend's 1.5 MB data-URL limit
 export const MAX_PICTURE_BYTES = 1024 * 1024;
-// Same limits and messages as the backend (server/utils/username.js, server/utils/password.js)
+// Same limits and messages as the backend (server-java RegisterRequest, CredentialRules)
 export const USERNAME_MAX_LENGTH = 32;
 export const MIN_PASSWORD_LENGTH = 8;
 export const MAX_PASSWORD_LENGTH = 72;

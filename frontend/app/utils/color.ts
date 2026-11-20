@@ -1,6 +1,6 @@
 // Färgverktyg för #rrggbb-färger (listor, ärendetyper, utseende)
 
-// Måste matcha HEX_COLOR i server/controllers/columnController.js
+// Måste matcha HEX_COLOR i server-java ColumnRequest
 export const HEX_COLOR = /^#[0-9a-f]{6}$/i;
 
 // Giltig färg med gemener, annars undefined

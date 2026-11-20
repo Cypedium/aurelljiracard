@@ -13,7 +13,7 @@ const spies = {
 
 const B = "b1";
 
-// Paths must match the backend mounts in server/app.js
+// Paths must match the server-java controllers
 describe("API endpoints", () => {
   beforeEach(() => {
     Object.values(spies).forEach((spy) => spy.mockReset().mockResolvedValue(okResponse));

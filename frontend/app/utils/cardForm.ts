@@ -10,7 +10,7 @@ leoProfanity.loadDictionary("sv");
 
 export const PRIORITIES = [1, 2, 3, 4, 5];
 
-// Samma gränser och meddelanden som backend (server/controllers/cardController.js)
+// Samma gränser och meddelanden som backend (server-java CardRequest)
 export const COMMENT_MAX_LENGTH = 2000;
 // Issue key i Jira-format, t.ex. MA-100: bokstäver, bindestreck, siffror
 export const PRODUCT_ID_MAX_LENGTH = 6;
