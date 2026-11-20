@@ -85,7 +85,7 @@ CI (`.github/workflows/ci.yml`) runs all of the commands above except `spring-bo
 - **Validation**: validate type and length of every body field before touching the DB: Bean Validation annotations on the request record (`@NotBlank`, `@Size`, `@Min`/`@Max`) with the same messages as the frontend schemas; checks that annotations can't express (password byte length, picture URL, card status) go in the service as `ApiException.badRequest`. Unknown `type` values are rejected by `IssueTypeService.requireCardType`; `status` by `ColumnService.requireCardStatus`.
 - **Logging**: never log tokens, passwords, `DB_URL`/`DB_PASSWORD` or full request bodies. Only `GlobalExceptionHandler` logs unexpected errors (type + message); return expected errors by throwing `ApiException`, not by building `ResponseEntity`s in controllers.
 - **UI style**: board and forms follow Jira's look (colours `#172b4d` text, `#44546f` secondary, `#0c66e4` primary, `#f1f2f4` lanes). Reuse these in new UI. shadcn tokens (`--primary`, `--border`, `--ring` …) in `app/root.css` are mapped to these colours; there is no dark mode (`dark:` only applies under a `.dark` class). Portaled content (dialogs, toasts) needs `font-jira` itself.
-- Comments in the codebase mix Swedish and English; either is fine, keep new ones short.
+- Comments in `frontend/` are in English — write new ones in English too; keep them short.
 
 ## Config and secrets
 
