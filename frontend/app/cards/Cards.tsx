@@ -1,7 +1,7 @@
 "use client";
-import React, { useEffect, useState, useMemo, useRef } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import { ResponsiveGridLayout, useContainerWidth } from "react-grid-layout";
-import { gridBounds, type LayoutConstraint } from "react-grid-layout/core";
+import { useCardDrag } from "./useCardDrag";
 import { useListDrag } from "./useListDrag";
 import { useBoardData } from "./useBoardData";
 import { useCardActions } from "./useCardActions";
@@ -20,7 +20,6 @@ import ListDragPreview from "./board/ListDragPreview";
 import ListHeader from "./board/ListHeader";
 import {
   CardPosition,
-  CardStatus,
   CARDS_TOP,
   COLLAPSED_LIST_MAX_HEIGHT,
   EXPANDED_SPAN,
@@ -32,19 +31,12 @@ import {
   desktopBoardWidth,
   buildCardLayout,
   cardKey,
-  cardDragGridX,
-  columnAtGridX,
-  eventPoint,
-  HIDDEN_LIST_ATTR,
-  LIST_KEY_ATTR,
-  nearestListIndexAtX,
   countCardsPerColumn,
   fromGridLayout,
   listHeight,
   mobileBoardWidth,
   rowsPerColumn,
   splitByCollapsed,
-  statusForColumn,
   toGridLayout,
   toSavedPositions,
   previewHeaders,
@@ -161,55 +153,26 @@ function BoardView({ boardId, admin }: { boardId: string; admin: boolean }) {
     () => boardColumns(boardHeaders, collapsed, showAddList ? EXPANDED_SPAN : 0),
     [boardHeaders, collapsed, showAddList],
   );
-  // Pekarens x-position. pointermove/pointerdown kommer före react-draggables mus-/touch-event,
-  // så den är aktuell när gridden räknar ut kortets plats
-  const pointerXRef = useRef<number | null>(null);
-  useEffect(() => {
-    const track = (e: PointerEvent) => {
-      pointerXRef.current = e.clientX;
-    };
-    window.addEventListener("pointerdown", track, true);
-    window.addEventListener("pointermove", track, true);
-    return () => {
-      window.removeEventListener("pointerdown", track, true);
-      window.removeEventListener("pointermove", track, true);
-    };
-  }, []);
-  // Ett draget kort hamnar i listan pekaren är över, som när en lista dras (inte där kortets vänsterkant är)
-  const constraints = useMemo<LayoutConstraint[]>(
-    () => [
-      gridBounds,
-      {
-        name: "boardColumn",
-        constrainPosition: (_item, x, y) => {
-          const pointerX = pointerXRef.current;
-          const lists = Array.from(document.querySelectorAll(`[${LIST_KEY_ATTR}]`), (el) => el.getBoundingClientRect());
-          return { x: cardDragGridX(columns, x, pointerX === null ? null : nearestListIndexAtX(lists, pointerX)), y };
-        },
-      },
-    ],
-    [columns],
-  );
-  // Dold lista som ett draget kort är över (remsan markeras); släpps kortet där flyttas det dit
-  const [dropTarget, setDropTarget] = useState<CardStatus | null>(null);
-  // react-grid-layout ritar bara om ett kort när dess props ändras (GridItem är memo), så ett draget kort
-  // står still tills det byter ruta. En ny render per dragsteg ger nya children, så kortet följer pekaren
-  const [, setDragFrame] = useState(0);
-  const hiddenListAt = (e: Event): CardStatus | null => {
-    const point = eventPoint(e);
-    if (!point) return null;
-    const strip = document.elementsFromPoint(point.x, point.y).find((el) => el.hasAttribute(HIDDEN_LIST_ATTR));
-    return strip?.getAttribute(HIDDEN_LIST_ATTR) ?? null;
-  };
   // Gridens positioner (enheter) → sparade positioner (kolumner), plus korten i dolda listor
-  const savedPositions = (currentLayout: readonly CardPosition[]) =>
-    toSavedPositions(boardHeaders, [...fromGridLayout(currentLayout, columns), ...hiddenLayout]);
+  const saveOrder = (currentLayout: readonly CardPosition[]) =>
+    persistLayout({
+      ...userLayout,
+      cards: toSavedPositions(boardHeaders, [...fromGridLayout(currentLayout, columns), ...hiddenLayout]),
+    });
+  const cardById = new Map(cards.map((fb, i) => [cardKey(fb, i), fb]));
+  // Ett kort som dras: pekarens lista, dolda listor som mål, ny status när det byter lista
+  const { constraints, dropTarget, onDrag, onDragStop } = useCardDrag({
+    columns,
+    headers: boardHeaders,
+    cardById,
+    moveCard,
+    saveOrder,
+  });
 
   // Listan som dras: dess kort döljs i gridden och visas i förhandsvisningen i stället, i samma ordning
   const dragIndex = draggingList ? boardHeaders.findIndex((h) => h.key === draggingList) : -1;
   const dragLayout = dragIndex < 0 ? [] : visibleLayout.filter((l) => l.x === dragIndex).sort((a, b) => a.y - b.y);
   const draggedCardIds = new Set(dragLayout.map((l) => l.i));
-  const cardById = new Map(cards.map((fb, i) => [cardKey(fb, i), fb]));
   const dragCards = dragLayout.flatMap((l) => cardById.get(l.i) ?? []);
 
   // Antal kort per kolumn: visas i rubriken och styr listans höjd
@@ -317,31 +280,10 @@ function BoardView({ boardId, admin }: { boardId: string; admin: boolean }) {
               onLayoutChange={(currentLayout) => {
                 // Förhandsvisningen medan en lista dras sparas inte, inte heller i read-only-läget
                 if (listDrag || !canWrite) return;
-                persistLayout({ ...userLayout, cards: savedPositions(currentLayout) });
+                saveOrder(currentLayout);
               }}
-              onDrag={(_layout, _oldItem, _newItem, _placeholder, e) => {
-                setDropTarget(hiddenListAt(e));
-                setDragFrame((n) => n + 1);
-              }}
-              onDragStop={(currentLayout, oldItem, newItem, _placeholder, e) => {
-                if (!oldItem || !newItem) return;
-                // Släppt på en dold lista: kortet flyttas dit och hamnar överst
-                // (det saknar sparad position där, se buildCardLayout)
-                const hiddenTarget = hiddenListAt(e);
-                setDropTarget(null);
-                if (hiddenTarget) {
-                  const moved = cardById.get(newItem.i);
-                  if (moved?._id) moveCard(moved._id, hiddenTarget);
-                  return;
-                }
-                const from = columnAtGridX(columns, oldItem.x);
-                const to = columnAtGridX(columns, newItem.x);
-                if (from === to) return;
-                // Spara radordningen direkt så att kortet inte hoppar när statusen ändras
-                persistLayout({ ...userLayout, cards: savedPositions(currentLayout) });
-                const card = cardById.get(newItem.i);
-                if (card?._id) moveCard(card._id, statusForColumn(boardHeaders, to));
-              }}
+              onDrag={onDrag}
+              onDragStop={onDragStop}
             >
               {/* react-grid-layout styr ytterdiven (style, className, ref), så den ligger kvar här */}
               {cards
