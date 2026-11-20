@@ -42,6 +42,13 @@ api.interceptors.request.use(
 );
 
 // Response interceptor: förnyar ett utgånget accessToken, med kö för samtidiga requests
+// 503 = en avstängd funktion eller read-only-läge (server-java): useFeatures hämtar om /feature
+const serviceUnavailableListeners = new Set<() => void>();
+export const onServiceUnavailable = (listener: () => void): (() => void) => {
+  serviceUnavailableListeners.add(listener);
+  return () => serviceUnavailableListeners.delete(listener);
+};
+
 let isRefreshing = false;
 let failedQueue: any[] = [];
 
@@ -55,6 +62,9 @@ const processQueue = (error: any, token: string | null = null) => {
 
 const handleResponseError = async (error: any) => {
     const originalRequest = error.config;
+
+    // Själva felet visar anroparen som vanligt (backendens { message } i en toast)
+    if (error.response?.status === 503) serviceUnavailableListeners.forEach((listener) => listener());
 
     // AccessToken expired → 401. Inte för /auth/*: där betyder 401 t.ex. fel lösenord
     const isAuthRequest = originalRequest?.url?.startsWith("/auth/");

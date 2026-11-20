@@ -53,6 +53,8 @@ abstract class ApiIntegrationTest {
         cardRepository.deleteAll();
         // Boards, their members, lists and issue types go with their owner (ON DELETE CASCADE, V11)
         userRepository.deleteAll();
+        // Every feature on and read-only mode off (V12 seeds them so)
+        jdbc.update("UPDATE feature_switches SET disabled = false, updated_at = NULL, updated_by = NULL");
     }
 
     /** The user's own board (GET /board lists it first). */

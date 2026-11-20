@@ -1,6 +1,12 @@
-# Feature switches and read-only mode (plan)
+# Feature switches and read-only mode
 
-Status: **planned, not implemented**. Agreed 2026-11-17.
+Status: **implemented** on `feature/feature-switches` (agreed 2026-11-17, built 2026-11-19). Differences from the plan below:
+
+- The annotation is `@RequiresFeature(Feature.X)`, not `@Feature`, so it doesn't clash with the `Feature` enum. `@AdminOnly` handlers count as read-only exempt (admins are exempt anyway, and everyone else gets 403 instead of 503).
+- `theme` is left out until the dark-mode branch is merged (it adds the key with its own migration): 17 keys, 5 navbar switches.
+- The card form has no "Backlog" choice in its list select, so `backlogPage` only hides the link and the page.
+- A 503 is shown by the caller like any other error (the backend's `{ message }`); `api.ts` only triggers the refetch of `/feature`, so there is no second toast.
+- Turned-off actions disappear, except "Add a card" in a list header, which stays as an invisible placeholder so the cards below don't move.
 
 A site admin can switch individual features off for everyone else, or put the whole site in read-only mode. The **backend refuses** the request (`503`). The frontend only hides the buttons to match. Hiding a button is never the protection.
 
@@ -205,5 +211,5 @@ flowchart LR
 
 ## 11. Before starting
 
-- [ ] Approve the schema change (`V12__feature_switches.sql`, section 5)
-- [ ] Confirm the Features page lives at `/features` with a navbar link next to Users
+- [x] Approve the schema change (`V12__feature_switches.sql`, section 5) — approved 2026-11-19
+- [x] Confirm the Features page lives at `/features` with a navbar link next to Users

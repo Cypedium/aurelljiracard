@@ -10,6 +10,7 @@ import { backlogCards } from '../utils/backlog';
 import { DEFAULT_HEADERS } from '../utils/boardLayout';
 import { formatShortDate } from '../utils/date';
 import { canDeleteCard, canEditCard, getUsername } from '../utils/session';
+import { useFeatures } from '../cards/useFeatures';
 import { useBoards } from '../cards/useBoards';
 import { CARD_ACTION_CLASS, TABLE_CELL_CLASS as TD_CLASS, TABLE_HEAD_CLASS as TH_CLASS, TABLE_THEAD_CLASS, TABLE_ROW_CLASS, TABLE_WRAPPER_CLASS } from '../utils/styles';
 import IssueTypeIcon from './IssueTypeIcon';
@@ -36,6 +37,8 @@ export default function BacklogList({ refreshKey = 0, onMoved }: BacklogListProp
   const [userName, setUserName] = useState('');
   // Den valda boardens backlog; boardens admin får redigera och ta bort alla kort
   const { current, boardAdmin: admin } = useBoards();
+  // Avstängda funktioner döljs; att flytta till boarden är editCard
+  const { isOn } = useFeatures();
   const boardId = current?._id ?? null;
 
   useEffect(() => {
@@ -147,19 +150,21 @@ export default function BacklogList({ refreshKey = 0, onMoved }: BacklogListProp
                 <td className={`${TD_CLASS} text-right`}>
                   <div className="flex items-center justify-end gap-1">
                     {/* Edit och delete på egna kort, eller alla för admin (syns vid hover, som på boarden) */}
-                    {canEditCard(card) && (
+                    {canEditCard(card) && isOn('editCard') && (
                       <button className={CARD_ACTION_CLASS} aria-label="Edit card" title="Edit" onClick={() => setEditingCard(card)}>
                         <PencilIcon className="size-4" aria-hidden />
                       </button>
                     )}
-                    {canDeleteCard(card, userName, admin) && (
+                    {canDeleteCard(card, userName, admin) && isOn('deleteCard') && (
                       <button className={CARD_ACTION_CLASS} aria-label="Delete card" title="Delete" onClick={() => setDeletingCard(card)}>
                         <TrashIcon className="size-4" aria-hidden />
                       </button>
                     )}
-                    <Button size="sm" disabled={movingId === card._id} onClick={() => moveToBoard(card)}>
-                      Move to board
-                    </Button>
+                    {isOn('editCard') && (
+                      <Button size="sm" disabled={movingId === card._id} onClick={() => moveToBoard(card)}>
+                        Move to board
+                      </Button>
+                    )}
                   </div>
                 </td>
               </tr>

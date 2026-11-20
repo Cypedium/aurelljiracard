@@ -16,7 +16,9 @@ import org.springframework.web.bind.annotation.RestController;
 import se.aurell.jiraboard.dto.IssueTypeRequest;
 import se.aurell.jiraboard.dto.IssueTypeResponse;
 import se.aurell.jiraboard.dto.MessageResponse;
+import se.aurell.jiraboard.entity.Feature;
 import se.aurell.jiraboard.security.AuthUser;
+import se.aurell.jiraboard.security.RequiresFeature;
 import se.aurell.jiraboard.service.IssueTypeService;
 
 /** A board's issue types; members read them, the board admin changes them (checked in IssueTypeService). */
@@ -35,6 +37,7 @@ public class IssueTypeController {
         return issueTypeService.getAll(boardId, user);
     }
 
+    @RequiresFeature(Feature.MANAGE_ISSUE_TYPES)
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public IssueTypeResponse create(@PathVariable UUID boardId, @Valid @RequestBody IssueTypeRequest request,
@@ -42,6 +45,7 @@ public class IssueTypeController {
         return issueTypeService.create(boardId, request, user);
     }
 
+    @RequiresFeature(Feature.MANAGE_ISSUE_TYPES)
     @DeleteMapping("/{key}")
     public MessageResponse delete(@PathVariable UUID boardId, @PathVariable String key,
             @AuthenticationPrincipal AuthUser user) {

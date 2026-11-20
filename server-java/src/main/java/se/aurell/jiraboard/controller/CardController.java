@@ -19,7 +19,9 @@ import se.aurell.jiraboard.dto.CardRequest;
 import se.aurell.jiraboard.dto.CardResponse;
 import se.aurell.jiraboard.dto.CardStatusRequest;
 import se.aurell.jiraboard.dto.MessageResponse;
+import se.aurell.jiraboard.entity.Feature;
 import se.aurell.jiraboard.security.AuthUser;
+import se.aurell.jiraboard.security.RequiresFeature;
 import se.aurell.jiraboard.service.CardService;
 
 /** Cards on one board; access is checked in CardService. */
@@ -38,6 +40,7 @@ public class CardController {
         return cardService.getAll(boardId, user);
     }
 
+    @RequiresFeature(Feature.CREATE_CARD)
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public MessageResponse create(@PathVariable UUID boardId, @Valid @RequestBody CardRequest request,
@@ -46,18 +49,21 @@ public class CardController {
         return new MessageResponse("Card saved successfully!");
     }
 
+    @RequiresFeature(Feature.EDIT_CARD)
     @PutMapping("/{id}")
     public CardResponse update(@PathVariable UUID boardId, @PathVariable UUID id,
             @Valid @RequestBody CardRequest request, @AuthenticationPrincipal AuthUser user) {
         return cardService.update(boardId, id, request, user);
     }
 
+    @RequiresFeature(Feature.EDIT_CARD)
     @PatchMapping("/{id}/status")
     public CardResponse updateStatus(@PathVariable UUID boardId, @PathVariable UUID id,
             @Valid @RequestBody CardStatusRequest request, @AuthenticationPrincipal AuthUser user) {
         return cardService.updateStatus(boardId, id, request.status(), user);
     }
 
+    @RequiresFeature(Feature.DELETE_CARD)
     @DeleteMapping("/{id}")
     public MessageResponse delete(@PathVariable UUID boardId, @PathVariable UUID id,
             @AuthenticationPrincipal AuthUser user) {

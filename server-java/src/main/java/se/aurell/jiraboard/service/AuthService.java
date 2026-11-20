@@ -45,16 +45,18 @@ public class AuthService {
     private final JwtService jwtService;
     private final GoogleTokenVerifier googleTokenVerifier;
     private final BoardService boardService;
+    private final FeatureService featureService;
 
     public AuthService(UserRepository userRepository, RefreshTokenRepository refreshTokenRepository,
             PasswordEncoder passwordEncoder, JwtService jwtService, GoogleTokenVerifier googleTokenVerifier,
-            BoardService boardService) {
+            BoardService boardService, FeatureService featureService) {
         this.userRepository = userRepository;
         this.refreshTokenRepository = refreshTokenRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.googleTokenVerifier = googleTokenVerifier;
         this.boardService = boardService;
+        this.featureService = featureService;
     }
 
     @Transactional
@@ -114,6 +116,8 @@ public class AuthService {
     }
 
     private User createGoogleUser(GoogleIdentity google) {
+        // Registration off or read-only mode: no new users (existing ones still sign in)
+        featureService.requireUserCreationAllowed();
         String base = googleUsernameBase(google.email());
         String username = base;
         // "mikael.aurell" taken → "mikael.aurell2", "mikael.aurell3" …, still at most 32 characters

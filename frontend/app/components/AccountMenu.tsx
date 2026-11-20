@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { ArrowRightStartOnRectangleIcon, Bars2Icon, ChevronRightIcon, LinkIcon, PhotoIcon, UserIcon } from '@heroicons/react/24/outline';
 import logo from '../icon.png';
 import { connectGoogle } from '../api/endpoints';
+import { useFeatures } from '../cards/useFeatures';
 import { apiErrorMessage } from '../utils/apiError';
 import { backgroundSwatch, boardBackground, type Appearance } from '../utils/appearance';
 import { loadAppearance, saveAppearance } from '../utils/appearanceStore';
@@ -41,6 +42,8 @@ const MenuItem = ({ Icon, label, end, active = false, onClick }: MenuItemProps) 
 export default function AccountMenu({ username }: { username: string }) {
   const [open, setOpen] = useState(false);
   const [panel, setPanel] = useState<Panel | null>(null);
+  // Avstängda inställningar döljs (sajtens admin ser allt)
+  const { isOn } = useFeatures();
   const [appearance, setAppearance] = useState<Appearance>(loadAppearance);
 
   const changeAppearance = (next: Appearance) => {
@@ -100,18 +103,26 @@ export default function AccountMenu({ username }: { username: string }) {
             </span>
             <span className="min-w-0 truncate text-sm font-medium">{username}</span>
           </div>
-          <MenuItem
-            Icon={LinkIcon}
-            label="Google sign-in"
-            active={panel === 'google'}
-            onClick={() => togglePanel('google')}
-          />
+          {isOn('googleConnect') && (
+            <MenuItem
+              Icon={LinkIcon}
+              label="Google sign-in"
+              active={panel === 'google'}
+              onClick={() => togglePanel('google')}
+            />
+          )}
 
-          <hr className="my-2 border-jira-neutral" />
-          <h2 className={`${ACCOUNT_MENU_HEADING_CLASS} flex items-center gap-1.5`}>
-            <Image src={logo} alt="" className="size-4" />
-            Aurello
-          </h2>
+          {/* Avsnittet försvinner när båda inställningarna är avstängda */}
+          {(isOn('boardBackground') || isOn('navbarColour')) && (
+            <>
+              <hr className="my-2 border-jira-neutral" />
+              <h2 className={`${ACCOUNT_MENU_HEADING_CLASS} flex items-center gap-1.5`}>
+                <Image src={logo} alt="" className="size-4" />
+                Aurello
+              </h2>
+            </>
+          )}
+          {isOn('boardBackground') && (
           <MenuItem
             Icon={PhotoIcon}
             label="Board background"
@@ -125,6 +136,8 @@ export default function AccountMenu({ username }: { username: string }) {
             }
             onClick={() => togglePanel('background')}
           />
+          )}
+          {isOn('navbarColour') && (
           <MenuItem
             Icon={Bars2Icon}
             label="Navbar colour"
@@ -132,6 +145,7 @@ export default function AccountMenu({ username }: { username: string }) {
             end={<NavbarPreview appearance={appearance} themeKey={appearance.navbar} />}
             onClick={() => togglePanel('navbar')}
           />
+          )}
 
           {/* Log out för sig längst ned */}
           <hr className="mt-6 mb-2 border-jira-neutral" />

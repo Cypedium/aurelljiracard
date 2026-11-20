@@ -6,6 +6,7 @@ import type { CardStatus, UserLayout } from "../utils/boardLayout";
 import type { CardType, IssueType, IssueTypeIconName } from "../utils/cardType";
 import type { AnyCardStatus } from "../utils/backlog";
 import type { Role } from "../utils/session";
+import type { FeatureSwitch, SwitchKey } from "../utils/features";
 
 export type Card = {
   _id?: string;
@@ -169,3 +170,10 @@ export const deleteUser = (id: string) => api.delete(`/user/${id}`);
 
 // Revokes all the user's refresh tokens
 export const revokeUserSessions = (id: string) => api.post(`/user/${id}/logout`);
+
+// Feature switches (server-java only). Public: read-only mode and the keys that are off; admins also get switches
+export const getFeatures = () => api.get<unknown>("/feature");
+
+// Site admin: turn a feature on/off; for "readOnly", enabled = read-only mode on
+export const setFeature = (key: SwitchKey, enabled: boolean) =>
+  api.put<FeatureSwitch>(`/feature/${encodeURIComponent(key)}`, { enabled });

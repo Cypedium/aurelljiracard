@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import Layout from "../components/Layout";
 import BacklogList from "../components/BacklogList";
+import FeatureOff from "../components/FeatureOff";
+import { useFeatures } from "../cards/useFeatures";
 import CardForm from "../cards/card/Card";
 import { Dialog, DialogContent, DialogTitle } from "../components/ui/dialog";
 import { BACKLOG_STATUS } from "../utils/backlog";
@@ -10,6 +12,8 @@ import { BOARD_ACTIONS, onBoardAction } from "../utils/boardActions";
 
 export default function BacklogPage() {
   const [creating, setCreating] = useState(false);
+  // Navbar-brytaren backlogPage: sidan visas inte (korten finns kvar)
+  const { isOn } = useFeatures();
   // Ökas när ett kort lagts till, så att listan hämtas igen
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -28,8 +32,14 @@ export default function BacklogPage() {
       <div className="min-h-[calc(100dvh-60px)] bg-linear-135 from-board-from via-board-via to-board-to px-4 pt-30 pb-6 font-jira">
         <div className="mx-auto flex max-w-[960px] flex-col gap-4">
           {/* Ingen synlig rubrik (navbaren visar sidan); kvar för skärmläsare */}
-          <h1 className="sr-only">Backlog</h1>
-          <BacklogList refreshKey={refreshKey} />
+          {isOn("backlogPage") ? (
+            <>
+              <h1 className="sr-only">Backlog</h1>
+              <BacklogList refreshKey={refreshKey} />
+            </>
+          ) : (
+            <FeatureOff />
+          )}
         </div>
 
         <Dialog open={creating} onOpenChange={setCreating}>

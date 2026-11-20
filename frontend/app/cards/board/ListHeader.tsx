@@ -29,6 +29,8 @@ type Props = {
   onRecolor: (color: string | null) => void;
   onHide: () => void;
   onAddCard: () => void;
+  // Av när createCard är avstängd: knappen behåller sin plats, så att korten under inte flyttar
+  canAddCard?: boolean;
 };
 
 // En synlig listas rubrik (admin: klicka för att byta namn, dra för att flytta) och "Add a card"
@@ -46,6 +48,7 @@ export default function ListHeader({
   onRecolor,
   onHide,
   onAddCard,
+  canAddCard = true,
 }: Props) {
   const color = listColor(header);
 
@@ -125,9 +128,11 @@ export default function ListHeader({
         <button
           type="button"
           {...{ [NO_LIST_DRAG_ATTR]: "" }}
-          className={`pointer-events-auto flex h-8 w-fit shrink-0 items-center gap-2 rounded-lg px-2 text-sm font-medium ${LIST_BUTTON_HOVER_CLASS} ${color.className}`}
+          className={`pointer-events-auto flex h-8 w-fit shrink-0 items-center gap-2 rounded-lg px-2 text-sm font-medium ${LIST_BUTTON_HOVER_CLASS} ${color.className} ${canAddCard ? "" : "invisible"}`}
           style={color.style}
           onClick={onAddCard}
+          disabled={!canAddCard}
+          aria-hidden={!canAddCard || undefined}
         >
           {/* Samma ikon som "Create card" i navbaren */}
           <PencilSquareIcon className="size-4" aria-hidden />

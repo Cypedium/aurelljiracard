@@ -5,6 +5,7 @@ export const ROUTES = {
   backlog: "/backlog",
   issueTypes: "/issue-types",
   users: "/users",
+  features: "/features",
   login: "/login",
   register: "/register",
 } as const;

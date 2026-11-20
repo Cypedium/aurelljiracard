@@ -10,6 +10,10 @@ export const apiErrorMessage = (error: unknown, fallback: string): string => {
   return fallback;
 };
 
+// 503 = funktionen är avstängd eller Aurello är i read-only-läge (server-java)
+export const isServiceUnavailable = (error: unknown): boolean =>
+  isAxiosError(error) && error.response?.status === 503;
+
 // 409 = konflikt, t.ex. ett issue key som redan finns
 export const isConflictError = (error: unknown): boolean =>
   isAxiosError(error) && error.response?.status === 409;

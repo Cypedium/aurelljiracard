@@ -50,6 +50,8 @@ describe("API endpoints", () => {
     ["updateUser", () => endpoints.updateUser("u1", { role: "admin" }), "patch", "/user/u1"],
     ["deleteUser", () => endpoints.deleteUser("u1"), "delete", "/user/u1"],
     ["revokeUserSessions", () => endpoints.revokeUserSessions("u1"), "post", "/user/u1/logout"],
+    ["getFeatures", () => endpoints.getFeatures(), "get", "/feature"],
+    ["setFeature", () => endpoints.setFeature("readOnly", true), "put", "/feature/readOnly"],
   ] as const)("%s calls %s %s", async (_name, call, method, path) => {
     await call();
 

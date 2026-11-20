@@ -18,7 +18,9 @@ import se.aurell.jiraboard.dto.ColumnOrderRequest;
 import se.aurell.jiraboard.dto.ColumnRequest;
 import se.aurell.jiraboard.dto.ColumnResponse;
 import se.aurell.jiraboard.dto.MessageResponse;
+import se.aurell.jiraboard.entity.Feature;
 import se.aurell.jiraboard.security.AuthUser;
+import se.aurell.jiraboard.security.RequiresFeature;
 import se.aurell.jiraboard.service.ColumnService;
 
 /** A board's lists; members read them, the board admin changes them (checked in ColumnService). */
@@ -37,6 +39,7 @@ public class ColumnController {
         return columnService.getAll(boardId, user);
     }
 
+    @RequiresFeature(Feature.CREATE_COLUMN)
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ColumnResponse create(@PathVariable UUID boardId, @Valid @RequestBody ColumnRequest request,
@@ -45,12 +48,14 @@ public class ColumnController {
     }
 
     /** Board admin: moves lists; body {@code {"keys": [...]}} with every list key in the new order. */
+    @RequiresFeature(Feature.EDIT_COLUMNS)
     @PutMapping
     public List<ColumnResponse> reorder(@PathVariable UUID boardId, @Valid @RequestBody ColumnOrderRequest request,
             @AuthenticationPrincipal AuthUser user) {
         return columnService.reorder(boardId, request, user);
     }
 
+    @RequiresFeature(Feature.EDIT_COLUMNS)
     @PutMapping("/{key}")
     public ColumnResponse update(@PathVariable UUID boardId, @PathVariable String key,
             @Valid @RequestBody ColumnRequest request, @AuthenticationPrincipal AuthUser user) {
@@ -58,6 +63,7 @@ public class ColumnController {
     }
 
     /** Board admin: deletes an empty list; never the default list (todo). */
+    @RequiresFeature(Feature.DELETE_COLUMN)
     @DeleteMapping("/{key}")
     public MessageResponse delete(@PathVariable UUID boardId, @PathVariable String key,
             @AuthenticationPrincipal AuthUser user) {

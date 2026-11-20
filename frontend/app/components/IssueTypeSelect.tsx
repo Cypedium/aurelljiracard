@@ -5,6 +5,7 @@ import IssueTypeIcon from './IssueTypeIcon';
 import NewIssueTypeDialog from './NewIssueTypeDialog';
 import { useIssueTypes } from '../cards/useIssueTypes';
 import { useBoards } from '../cards/useBoards';
+import { useFeatures } from '../cards/useFeatures';
 import { MAX_ISSUE_TYPES, type CardType } from '../utils/cardType';
 import { cn } from '../lib/utils';
 import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, SelectValue } from './ui/select';
@@ -22,7 +23,10 @@ const NEW_TYPE_VALUE = '__new__';
 // Boardens admin: sist finns "New issue type", som lägger till en typ på boarden och väljer den
 export default function IssueTypeSelect({ value, onChange, className, ...triggerProps }: Props) {
   const types = useIssueTypes();
-  const { boardAdmin: admin } = useBoards();
+  // "New issue type": boardens admin, när manageIssueTypes är på
+  const { boardAdmin } = useBoards();
+  const { isOn } = useFeatures();
+  const admin = boardAdmin && isOn('manageIssueTypes');
   const [creating, setCreating] = useState(false);
 
   return (

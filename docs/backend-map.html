@@ -202,7 +202,7 @@ th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; colo
 
 <section id="catalog">
   <h2>Endpoint catalog</h2>
-  <p>Six controllers, 25 endpoints. Access is checked in two places: the filter chain lets <code>/auth/**</code> and <code>/health</code> through without a token, and admin endpoints carry <code>@AdminOnly</code>, which checks the role in the token before the controller method runs (403 <code>Admins only.</code>).</p>
+  <p>Seven controllers, 27 endpoints. Access is checked in three places: the filter chain lets <code>/auth/**</code>, <code>/health</code> and <code>GET /feature</code> through without a token; admin endpoints carry <code>@AdminOnly</code>, which checks the role in the token before the controller method runs (403 <code>Admins only.</code>); and <code>FeatureInterceptor</code> runs between them: for everyone but site admins, a handler with <code>@RequiresFeature</code> whose switch is off, or any write while read-only mode is on (except <code>@ReadOnlyExempt</code>: login, refresh, logout, Google sign-in), answers 503 before the controller (<code>docs/feature-switches.md</code>).</p>
   <div class="cat" id="cat"></div>
 </section>
 
@@ -217,7 +217,7 @@ th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; colo
 <section id="data-model">
   <h2>Data model</h2>
   <figure>
-    <div class="scroll"><svg id="er" viewBox="0 0 1100 560" role="img" aria-label="Seven tables: each user owns one board; board_members links users to boards with a role; cards, board_columns and issue_types belong to a board; cards reference users by username and assignee; refresh_tokens belongs to users"></svg></div>
+    <div class="scroll"><svg id="er" viewBox="0 0 1100 620" role="img" aria-label="Eight tables: each user owns one board; board_members links users to boards with a role; cards, board_columns and issue_types belong to a board; cards reference users by username and assignee; refresh_tokens belongs to users; feature_switches records the admin who changed a switch"></svg></div>
     <figcaption>Only <code>cards → users</code> and <code>refresh_tokens → users</code> are real foreign keys; deleting a user also deletes their refresh tokens. Renaming a user cascades into <code>cards.username</code> and <code>cards.assignee</code>; deleting a user sets their assigned cards to unassigned. <code>status</code> and <code>type</code> are plain strings, validated by <code>ColumnService.requireCardStatus</code> and <code>IssueTypeService.requireCardType</code>, and a list or type can only be deleted when no card uses it (409).</figcaption>
   </figure>
   <h3>Flyway migrations</h3>
@@ -232,6 +232,8 @@ th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; colo
     <div><b>V8</b><span><code>issue_types</code> + 3 default types</span></div>
     <div><b>V9</b><span><code>refresh_tokens</code>: single-use refresh tokens</span></div>
     <div><b>V10</b><span>Google sign-in: <code>google_sub</code>, <code>email</code>, nullable <code>password_hash</code></span></div>
+    <div><b>V11</b><span><code>boards</code>, <code>board_members</code>; earlier data moved to the oldest admin's board</span></div>
+    <div><b>V12</b><span><code>feature_switches</code>: feature switches and read-only mode</span></div>
   </div>
 </section>
 
@@ -279,6 +281,7 @@ const N = {
   "c-user": ["ctrl", 390, "UserController", "/user", "cat-user"],
   "c-health": ["ctrl", 460, "HealthController", "/health", "cat-health"],
   "c-board": ["ctrl", 530, "BoardController", "/board, /invite", "cat-board"],
+  "c-feature": ["ctrl", 600, "FeatureController", "/feature", "cat-feature"],
   "s-jwt": ["svc", 40, "JwtService", "sign + decode tokens", "tokens"],
   "s-auth": ["svc", 110, "AuthService", "BCrypt, tokens", "cat-auth"],
   "s-card": ["svc", 180, "CardService", "ownership, backlog", "cat-card"],
@@ -286,6 +289,7 @@ const N = {
   "s-type": ["svc", 320, "IssueTypeService", "requireCardType", "cat-type"],
   "s-user": ["svc", 390, "UserService", "admin, layout", "cat-user"],
   "s-board": ["svc", 460, "BoardService", "membership, invites", "cat-board"],
+  "s-feature": ["svc", 600, "FeatureService", "switches, read-only", "cat-feature"],
   "r-user": ["repo", 110, "UserRepository", "revokeTokens, markActive", "data-model"],
   "r-card": ["repo", 215, "CardRepository", "existsBy…", "data-model"],
   "r-column": ["repo", 300, "BoardColumnRepository", "by position", "data-model"],
@@ -298,7 +302,9 @@ const N = {
   "t-refresh": ["db", 470, "refresh_tokens", "jti PK, family_id", "data-model"],
   "r-board": ["repo", 555, "Board(Member)Repository", "findBoardsOf, findMembers", "data-model"],
   "t-boards": ["db", 555, "boards, members", "owner_id UNIQUE", "data-model"],
-  handler: ["err", 625, "GlobalExceptionHandler", "ApiException → status + { message }", "catalog", 44, X.ctrl, X.svc + W.svc - X.ctrl],
+  "r-feature": ["repo", 625, "FeatureSwitchRepository", "findDisabledKeys", "data-model"],
+  "t-feature": ["db", 625, "feature_switches", "feature_key PK", "data-model"],
+  handler: ["err", 695, "GlobalExceptionHandler", "ApiException → status + { message }", "catalog", 44, X.ctrl, X.svc + W.svc - X.ctrl],
 };
 const box = id => { const n = N[id]; const x = n[6] ?? X[n[0] === "err" && id === "entry" ? "sec" : n[0]]; const w = n[7] ?? W[n[0] === "err" ? "sec" : n[0]]; return { x, y: n[1], w, h: n[5] || H }; };
 
@@ -311,8 +317,8 @@ const E = [
   ["resolver", "authz", "public", { side: "l", lx: 205 }],
   ["authz", "entry", "no token", { v: 1, cls: "err dash" }],
   ["entry", "browser", "401", { d: "M230,492 C190,492 150,420 150,322", cls: "err dash", lp: [176, 440] }],
-  ["handler", "browser", "4xx { message }", { d: "M490,647 C300,647 60,647 60,322", cls: "err dash", lp: [300, 640] }],
-  ["authz", "c-auth"], ["authz", "c-card"], ["authz", "c-column"], ["authz", "c-type"], ["authz", "c-user"], ["authz", "c-health"], ["authz", "c-board"],
+  ["handler", "browser", "4xx/503 { message }", { d: "M490,717 C300,717 60,717 60,322", cls: "err dash", lp: [300, 710] }],
+  ["authz", "c-auth"], ["authz", "c-card"], ["authz", "c-column"], ["authz", "c-type"], ["authz", "c-user"], ["authz", "c-health"], ["authz", "c-board"], ["authz", "c-feature"],
   ["c-auth", "s-auth"], ["c-card", "s-card"], ["c-column", "s-column"], ["c-type", "s-type"], ["c-user", "s-user"], ["c-board", "s-board"],
   ["s-auth", "s-jwt", "sign", { v: 1, up: 1 }],
   ["s-card", "s-column", "status?", { v: 1 }],
@@ -325,6 +331,7 @@ const E = [
   ["s-card", "s-board", "member?", { side: "l", lx: 712 }], ["s-column", "s-board", "", { side: "l" }], ["s-type", "s-board", "", { side: "l" }],
   ["s-auth", "s-board", "new board", { side: "l", lx: 712 }],
   ["s-board", "r-board"], ["r-board", "t-boards"],
+  ["c-feature", "s-feature"], ["s-feature", "r-feature"], ["r-feature", "t-feature"],
   ["t-cards", "t-users", "FK", { side: "r", lx: 1452 }],
   ["t-cards", "t-columns", "status", { side: "r", cls: "dash", lx: 1452 }],
   ["t-cards", "t-types", "type", { side: "r2", cls: "dash", lx: 1476 }],
@@ -332,7 +339,7 @@ const E = [
 const eid = (a, b) => a + ">" + b;
 
 const svg = document.getElementById("arch");
-svg.setAttribute("viewBox", "0 0 1500 690");
+svg.setAttribute("viewBox", "0 0 1500 760");
 const el = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
 const defs = el("defs", {}, svg);
 for (const [id, cls] of [["mn", "mk-n"], ["mh", "mk-h"], ["me", "mk-e"]]) {
@@ -501,6 +508,14 @@ const G = [
       steps: [["s-board","requireMember","not on the board → 404 Board not found."],["s-board","yourself?","collaborator: leaves; owner: 400"],["s-board","someone else","board admin only, else 403"],["t-boards","board_members DELETE","they get 404 on the board right away"]],
       ok: ["200","{ message }"], bad: [["400","You cannot leave your own board."],["403","Board admins only."],["404","Member not found."]] },
   ]},
+  { id: "cat-feature", name: "Features", ctrl: "c-feature", files: ["FeatureController", "FeatureService", "FeatureInterceptor", "FeatureSwitchRepository", "feature_switches"], about: "Site-admin kill switches and read-only mode (server-java only). FeatureInterceptor enforces them on the other controllers with 503; site admins are never blocked. Five navbar switches only hide links in the frontend.", eps: [
+    { m: "GET", p: "/feature", acc: "public", sum: "Read-only mode and the keys that are off. Site admins also get every switch with who changed it last.", edges: [["c-feature","s-feature"],["s-feature","r-feature"],["r-feature","t-feature"]],
+      steps: [["authz","permitAll (GET only)","the register page needs it before login; a valid token still identifies site admins"],["s-feature","state (readOnly)","one SELECT of all rows; a missing row reads as on"],["r-feature","findAll","writes disabled = readOnly; other disabled keys listed"],["s-feature","admin?","AuthUser.isAdmin adds switches [{ key, enabled, uiOnly, updatedAt, updatedBy }]"]],
+      ok: ["200","{ readOnly, disabled, switches? }"], bad: [] },
+    { m: "PUT", p: "/feature/{key}", acc: "admin", sum: "Turns a feature on or off; for readOnly, enabled = read-only mode on. Takes effect on the next request, on every machine.", edges: [["c-feature","s-feature"],["s-feature","r-feature"],["r-feature","t-feature"],["t-feature","t-users"]],
+      steps: [["c-feature","@AdminOnly","ROLE_ADMIN from the token, else 403 (exempt from read-only, so admins can always turn it off)"],["c-feature","@Valid FeatureUpdateRequest","{ enabled: boolean }"],["s-feature","Feature.fromApiKey","one of the 16 features or readOnly, else 404"],["t-feature","UPDATE","disabled, updated_at, updated_by (FK users, ON DELETE SET NULL)"]],
+      ok: ["200","{ key, enabled, uiOnly, updatedAt, updatedBy }"], bad: [["400","enabled must be true or false."],["403","Admins only."],["404","Unknown feature."]] },
+  ]},
   { id: "cat-health", name: "Health", ctrl: "c-health", files: ["HealthController"], about: "Public liveness check for Fly.", eps: [
     { m: "GET", p: "/health", acc: "public", sum: "Answers without touching the database.", edges: [],
       steps: [["resolver","Authorization ignored","public"],["c-health","health()","returns a fixed map"]],
@@ -606,6 +621,7 @@ const T = {
   issue_types: [820, 210, ["PK (board_id, type_key)", "label ≤ 30", "color #rrggbb", "icon", "position"]],
   refresh_tokens: [430, 300, ["id UUID PK (the jti)", "family_id (one login)", "user_id FK → users, cascade", "expires_at", "used_at (null = unused)"]],
   boards: [820, 400, ["id UUID PK", "owner_id FK → users UNIQUE", "invite_token_hash UNIQUE", "created_at"]],
+  feature_switches: [430, 470, ["feature_key PK (writes = read-only)", "disabled BOOLEAN", "updated_at", "updated_by FK → users, SET NULL"]],
   board_members: [40, 300, ["PK (board_id, user_id)", "board_id FK → boards, cascade", "user_id FK → users, cascade", "role user | admin", "joined_at"]],
 };
 const RH = 20, TW = 240;
@@ -633,6 +649,7 @@ rel("cards", 7, "issue_types", 0, "checked in IssueTypeService", true, true);
 rel("refresh_tokens", 2, "users", 0, "ON DELETE CASCADE", false, false);
 rel("cards", 9, "boards", 0, "FK board_id", false, true);
 rel("boards", 1, "users", 0, "owner, cascade", false, false);
+rel("feature_switches", 3, "users", 0, "updated_by, SET NULL", false, false);
 })();
 </script>
 </body>
