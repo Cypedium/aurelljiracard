@@ -1,5 +1,5 @@
 'use client';
-import { useIssueTypes } from "../cards/useIssueTypes";
+import { useIssueTypes } from "../hooks/useIssueTypes";
 import { issueTypeOf, type IssueType } from "../utils/cardType";
 import { ISSUE_TYPE_ICON } from "../utils/styles";
 

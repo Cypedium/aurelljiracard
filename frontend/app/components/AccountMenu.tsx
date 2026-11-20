@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { ArrowRightStartOnRectangleIcon, Bars2Icon, ChevronRightIcon, LinkIcon, PhotoIcon, UserIcon } from '@heroicons/react/24/outline';
 import logo from '../icon.png';
 import { connectGoogle } from '../api/endpoints';
-import { useFeatures } from '../cards/useFeatures';
+import { useFeatures } from '../hooks/useFeatures';
 import { apiErrorMessage } from '../utils/apiError';
 import { backgroundSwatch, boardBackground, type Appearance } from '../utils/appearance';
 import { loadAppearance, saveAppearance } from '../utils/appearanceStore';

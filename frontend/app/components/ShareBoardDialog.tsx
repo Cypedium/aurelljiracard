@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { TrashIcon } from '@heroicons/react/16/solid';
 import { createInvite, deleteInvite, getMembers, removeMember, type Board, type BoardMember } from '../api/endpoints';
-import { reloadBoards } from '../cards/useBoards';
+import { reloadBoards } from '../hooks/useBoards';
 import { reportError } from '../utils/apiError';
 import { avatarColor, avatarInitials } from '../utils/avatar';
 import { inviteUrl, isBoardAdmin } from '../utils/currentBoard';

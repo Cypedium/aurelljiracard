@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { getCards, getColumns, submitCard, updateCard, updateCardStatus, type Card as CardData } from '../../api/endpoints';
 import { toast } from 'sonner';
-import { useBoards } from '../useBoards';
+import { useBoards } from '../../hooks/useBoards';
 import {
   DUPLICATE_ERROR_TYPE,
   DUPLICATE_PRODUCT_ID_MESSAGE,

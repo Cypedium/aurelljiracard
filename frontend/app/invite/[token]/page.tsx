@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { joinBoard } from "../../api/endpoints";
-import { showJoinedBoard } from "../../cards/useBoards";
+import { showJoinedBoard } from "../../hooks/useBoards";
 import { isServiceUnavailable, logError, reportError } from "../../utils/apiError";
 import { PENDING_INVITE_KEY } from "../../utils/currentBoard";
 import { hasSession } from "../../utils/session";

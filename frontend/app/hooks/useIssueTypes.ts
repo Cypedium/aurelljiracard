@@ -3,21 +3,14 @@ import { useEffect, useSyncExternalStore } from "react";
 import { getIssueTypes } from "../api/endpoints";
 import { reportError } from "../utils/apiError";
 import { DEFAULT_ISSUE_TYPES, normalizeIssueTypes, type IssueType } from "../utils/cardType";
+import { createStore } from "../utils/store";
 import { useBoards } from "./useBoards";
 
 // Den visade boardens ärendetyper, delade av alla komponenter (kort, backlog, formulär). Hämtas en gång
 // per board och sidladdning; standardtyperna visas tills de har hämtats
 let boardId: string | null = null;
-let issueTypes: IssueType[] = DEFAULT_ISSUE_TYPES;
 let loading: string | null = null;
-const listeners = new Set<() => void>();
-
-const emit = () => listeners.forEach((listener) => listener());
-
-const subscribe = (listener: () => void) => {
-  listeners.add(listener);
-  return () => listeners.delete(listener);
-};
+const store = createStore<IssueType[]>(DEFAULT_ISSUE_TYPES);
 
 const load = (id: string | null) => {
   if (!id || id === boardId || id === loading) return;
@@ -27,8 +20,7 @@ const load = (id: string | null) => {
       // Användaren hann byta board: svaret gäller inte längre
       if (loading !== id) return;
       boardId = id;
-      issueTypes = normalizeIssueTypes(res.data);
-      emit();
+      store.set(normalizeIssueTypes(res.data));
     })
     .catch((err) => {
       // Fast id: flera komponenter kan försöka igen, då ersätter toasten sig själv
@@ -40,22 +32,17 @@ const load = (id: string | null) => {
 };
 
 // Board admin: en ny typ syns direkt i alla dropdowns
-export const addIssueType = (type: IssueType) => {
-  issueTypes = [...issueTypes.filter((t) => t.key !== type.key), type];
-  emit();
-};
+export const addIssueType = (type: IssueType) =>
+  store.set([...store.get().filter((t) => t.key !== type.key), type]);
 
 // Board admin: en borttagen typ försvinner direkt ur alla dropdowns
-export const removeIssueType = (key: string) => {
-  issueTypes = issueTypes.filter((t) => t.key !== key);
-  emit();
-};
+export const removeIssueType = (key: string) => store.set(store.get().filter((t) => t.key !== key));
 
 export function useIssueTypes(): IssueType[] {
   const { current } = useBoards();
   const id = current?._id ?? null;
   useEffect(() => load(id), [id]);
-  const types = useSyncExternalStore(subscribe, () => issueTypes, () => DEFAULT_ISSUE_TYPES);
+  const types = useSyncExternalStore(store.subscribe, store.get, () => DEFAULT_ISSUE_TYPES);
   // En annan boards typer visas aldrig, inte ens medan den nya boardens hämtas
   return id && id === boardId ? types : DEFAULT_ISSUE_TYPES;
 }

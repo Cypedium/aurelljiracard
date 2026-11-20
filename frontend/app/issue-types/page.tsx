@@ -4,8 +4,8 @@ import { useRouter } from "next/navigation";
 import Layout from "../components/Layout";
 import IssueTypes from "./IssueTypes";
 import FeatureOff from "../components/FeatureOff";
-import { useFeatures } from "../cards/useFeatures";
-import { useBoards } from "../cards/useBoards";
+import { useFeatures } from "../hooks/useFeatures";
+import { useBoards } from "../hooks/useBoards";
 import { ROUTES } from "../utils/routes";
 
 export default function IssueTypesPage() {
