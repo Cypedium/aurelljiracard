@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
 import { toast } from "sonner";
 import { logError } from "../utils/apiError";
 import { clearSession, getAccessToken, getRefreshToken, saveTokens } from "../utils/session";
@@ -41,7 +41,6 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor: förnyar ett utgånget accessToken, med kö för samtidiga requests
 // 503 = en avstängd funktion eller read-only-läge (server-java): useFeatures hämtar om /feature
 const serviceUnavailableListeners = new Set<() => void>();
 export const onServiceUnavailable = (listener: () => void): (() => void) => {
@@ -49,84 +48,56 @@ export const onServiceUnavailable = (listener: () => void): (() => void) => {
   return () => serviceUnavailableListeners.delete(listener);
 };
 
-let isRefreshing = false;
-let failedQueue: any[] = [];
+// Pågående förnyelse: samtidiga 401:or väntar på samma, så refresh-tokenet (engångs) skickas bara en gång
+let refreshing: Promise<string> | null = null;
 
-const processQueue = (error: any, token: string | null = null) => {
-  failedQueue.forEach((prom) => {
-    if (error) prom.reject(error);
-    else prom.resolve(token);
-  });
-  failedQueue = [];
+const refreshAccessToken = (refreshToken: string): Promise<string> => {
+  refreshing ??= axios
+    // Direkt med axios: via api skulle en 401 här fångas av interceptorn igen
+    .post<{ accessToken: string; refreshToken: string }>(`${API_URL}/auth/refresh`, { refreshToken })
+    .then(({ data }) => {
+      // Båda tokens byts (refresh-tokens är engångs)
+      saveTokens(data.accessToken, data.refreshToken);
+      return data.accessToken;
+    })
+    .catch((refreshError: unknown) => {
+      // Bara meddelandet: axios-felet innehåller requesten, med refresh-tokenet
+      logError("Refresh token failed", refreshError);
+      // Tokens ogiltiga → logga ut (även användarnamnet)
+      clearSession();
+      window.location.href = ROUTES.login;
+      throw refreshError;
+    })
+    .finally(() => {
+      refreshing = null;
+    });
+  return refreshing;
 };
 
-const handleResponseError = async (error: any) => {
-    const originalRequest = error.config;
+type RetriableRequest = InternalAxiosRequestConfig & { _retry?: boolean };
 
-    // Själva felet visar anroparen som vanligt (backendens { message } i en toast)
-    if (error.response?.status === 503) serviceUnavailableListeners.forEach((listener) => listener());
+// Response interceptor: ett utgånget accessToken (401) förnyas och requesten körs om en gång
+const handleResponseError = async (error: AxiosError) => {
+  const originalRequest = error.config as RetriableRequest | undefined;
+  const status = error.response?.status;
 
-    // AccessToken expired → 401. Inte för /auth/*: där betyder 401 t.ex. fel lösenord
-    const isAuthRequest = originalRequest?.url?.startsWith("/auth/");
-    if (error.response?.status === 401 && !originalRequest._retry && !isAuthRequest) {
-      originalRequest._retry = true;
+  // Själva felet visar anroparen som vanligt (backendens { message } i en toast)
+  if (status === 503) serviceUnavailableListeners.forEach((listener) => listener());
 
-      const refreshToken = getRefreshToken();
-      if (!refreshToken) {
-        window.location.href = ROUTES.login;
-        return Promise.reject(error);
-      }
+  // Inte för /auth/*: där betyder 401 t.ex. fel lösenord
+  const isAuthRequest = originalRequest?.url?.startsWith("/auth/");
+  if (status !== 401 || !originalRequest || originalRequest._retry || isAuthRequest) throw error;
+  originalRequest._retry = true;
 
-      // Om refresh redan pågår → vänta i kön
-      if (isRefreshing) {
-        return new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject });
-        })
-          .then((newToken) => {
-            originalRequest.headers.Authorization = `Bearer ${newToken}`;
-            return api(originalRequest);
-          })
-          .catch((err) => Promise.reject(err));
-      }
+  const refreshToken = getRefreshToken();
+  if (!refreshToken) {
+    window.location.href = ROUTES.login;
+    throw error;
+  }
 
-      isRefreshing = true;
-
-      try {
-        const res = await axios.post(`${API_URL}/auth/refresh`, { refreshToken });
-
-        const newAccessToken = res.data.accessToken;
-        const newRefreshToken = res.data.refreshToken;
-
-        // Båda tokens byts (refresh-tokens är engångs)
-        saveTokens(newAccessToken, newRefreshToken);
-
-        // Uppdatera default header
-        api.defaults.headers.common.Authorization = `Bearer ${newAccessToken}`;
-
-        processQueue(null, newAccessToken);
-
-        // Kör om originalrequesten
-        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-        return api(originalRequest);
-
-      } catch (refreshError) {
-        // Bara meddelandet: axios-felet innehåller requesten, med refresh-tokenet
-        logError("Refresh token failed", refreshError);
-
-        processQueue(refreshError, null);
-
-        // Tokens ogiltiga → logga ut (även användarnamnet)
-        clearSession();
-        window.location.href = ROUTES.login;
-
-        return Promise.reject(refreshError);
-
-      } finally {
-        isRefreshing = false;
-      }
-    }
-
-    return Promise.reject(error);
+  const newAccessToken = await refreshAccessToken(refreshToken);
+  originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+  return api(originalRequest);
 };
 
 api.interceptors.response.use(
