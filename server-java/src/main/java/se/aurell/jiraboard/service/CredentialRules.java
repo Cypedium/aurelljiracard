@@ -16,8 +16,9 @@ final class CredentialRules {
     static final String PASSWORD_LENGTH_MESSAGE = "Password must be 8-72 characters.";
     static final String PASSWORD_REPEAT_MESSAGE = "Password must not repeat characters (e.g. aaa or 1212).";
 
-    // Matched as substrings, so short words that hide inside normal names (ass, dick, cock) are left out
-    private static final List<String> RUDE_WORDS = List.of(
+    // Matched as substrings, so short words that hide inside normal names (ass, dick, cock) are left out.
+    // Must match shared/contract.json (SharedContractTest)
+    static final List<String> RUDE_WORDS = List.of(
             "fuck", "shit", "bitch", "cunt", "whore", "slut", "bastard", "asshole", "nigger", "nigga",
             "faggot", "retard", "hitler", "porn", "penis", "vagina",
             "fitta", "knull", "javla", "helvete", "horunge", "kuksugare");
