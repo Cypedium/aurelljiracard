@@ -1,9 +1,0 @@
-Så här ser hela flödet ut nu
-1. AccessToken går ut → backend svarar 401
-2. Din interceptor fångar 401
-3. Den skickar refreshToken till /refresh
-4. Backend verifierar refreshToken
-5. Backend skickar tillbaka en ny accessToken
-6. Interceptorn sparar den
-7. Requesten körs om automatiskt
-8. Användaren märker ingenting
