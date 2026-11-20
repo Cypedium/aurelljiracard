@@ -59,6 +59,7 @@ An npm project (`frontend/`) and a Maven project (`server-java/`, the only backe
   - The API contract (paths, `_id`, `{ message }` errors, status codes, token rules) is what the frontend's `endpoints.ts` relies on; change both together. UUID ids; `400 "Invalid request body."` for malformed JSON/wrong field types; Google sign-in (`POST /auth/google`, `POST /user/google`, `security/GoogleTokenVerifier`); feature switches (`/feature`, 503s)
   - Schema only via Flyway (`src/main/resources/db/migration/V<n>__*.sql`); Hibernate runs `ddl-auto: validate`. Never edit an applied migration
   - Tests use Testcontainers — Docker must be running. Dev-only secrets live in `src/test/resources/application-dev.yml`
+- `shared/contract.json` — rules both sides must agree on: roles, backlog status, default lists and issue types, icons, feature keys, length/count limits, the rude-word list, and samples (hex colours, issue keys, usernames, passwords). Neither side imports it; `frontend/tests/unit/contract.test.ts` and `server-java` `service/SharedContractTest` (limits read from the request records' annotations) check their own constants against it, so drift fails CI. Changing one of these rules = change the contract, the frontend and Java together
 - `docs/backend-map.html` — standalone interactive map of `server-java` (endpoint data is hand-written in its `<script>`); update it when endpoints, services, repositories or tables change
 - `PythonTests/` — manual smoke scripts against a running API (create real data; not run in CI)
 
