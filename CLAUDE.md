@@ -103,7 +103,7 @@ CI (`.github/workflows/ci.yml`) runs all of the commands above except `spring-bo
 
 ## Deployment
 
-Pushes to `main` deploy both Fly apps after CI passes (`fly.server.toml`, `fly.app.toml`, region `arn`). Changing Dockerfiles, Fly configs or workflows affects production — call it out in the PR. `server-java` is deployed by hand as Fly app `aurelljiraboardjava` (`fly deploy -c fly.java.toml` in `server-java/`, `Dockerfile.java`, external PostgreSQL via `DB_URL`); CI runs its tests (job `server-java`, which also gates the Fly deploys) but does not deploy it. The production frontend (`fly.app.toml` `NEXT_PUBLIC_API_URL`) points at `aurelljiraboardjava`, so deploy `server-java` before a change that needs it reaches `main`.
+All Fly apps are deployed by hand (region `arn`); the CI deploy job is commented out in `ci.yml`, so CI only tests. Frontend: `fly deploy -c fly.app.toml` in `frontend/`; Express: `fly deploy -c fly.server.toml` in `server/`; `server-java`: Fly app `aurelljiraboardjava` (`fly deploy -c fly.java.toml` in `server-java/`, `Dockerfile.java`, external PostgreSQL via `DB_URL`). Changing Dockerfiles, Fly configs or workflows affects production — call it out in the PR. The production frontend (`fly.app.toml` `NEXT_PUBLIC_API_URL`) points at `aurelljiraboardjava`, so deploy `server-java` before a change that needs it reaches `main`.
 
 ## Data model
 
