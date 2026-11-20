@@ -12,15 +12,15 @@ type Options = {
   fetchCards: () => void;
 };
 
-// Skapa, redigera, ta bort och flytta kort, plus dialogernas tillstånd
+// Create, edit, delete and move cards, plus the dialogs' state
 export function useCardActions({ boardId, cards, setCards, fetchCards }: Options) {
   const [editingCard, setEditingCard] = useState<Card | null>(null);
-  // Kortet som väntar på bekräftelse i delete-dialogen
+  // The card waiting for confirmation in the delete dialog
   const [deletingCard, setDeletingCard] = useState<Card | null>(null);
-  // Kolumnen där ett nytt kort skapas ("Add a card")
+  // The column where a new card is created ("Add a card")
   const [creatingIn, setCreatingIn] = useState<CardStatus | null>(null);
 
-  // Flytta kortet direkt och spara statusen; vid fel flyttas det tillbaka
+  // Move the card at once and save the status; on an error it moves back
   const moveCard = async (id: string, status: CardStatus) => {
     const previous = cards.find((fb) => fb._id === id)?.status;
     const setStatus = (s?: AnyCardStatus) =>

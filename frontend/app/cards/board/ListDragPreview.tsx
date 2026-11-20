@@ -9,13 +9,13 @@ type Props = {
   ref: Ref<HTMLDivElement>;
   header: BoardHeader;
   count: number;
-  // Listans kort i ordning uppifrån
+  // The list's cards in order from the top
   cards: Card[];
-  // Bredd och position från useListDrag
+  // Width and position from useListDrag
   style: CSSProperties;
 };
 
-// Den lyfta listan följer musen, lutad (useListDrag flyttar den)
+// The lifted list follows the mouse, tilted (useListDrag moves it)
 export default function ListDragPreview({ ref, header, count, cards, style }: Props) {
   const color = listColor(header);
 
@@ -30,9 +30,9 @@ export default function ListDragPreview({ ref, header, count, cards, style }: Pr
         <span className="min-w-0 flex-1 truncate px-3 py-1 text-sm font-semibold">{header.title}</span>
         <span className="text-sm opacity-80">{count}</span>
       </div>
-      {/* Samma ordning som listan: rubrik, "Add a card", korten */}
+      {/* The same order as the list: header, "Add a card", the cards */}
       <div className="flex h-8 w-fit shrink-0 items-center gap-2 px-2 text-sm font-medium">
-        {/* Samma ikon som "Create card" i navbaren */}
+        {/* The same icon as "Create card" in the navbar */}
         <PencilSquareIcon className="size-4" aria-hidden />
         Add a card
       </div>

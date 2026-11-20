@@ -20,25 +20,25 @@ import { Button } from './ui/button';
 import { toPlainLine, toPlainText } from '../utils/summaryFormat';
 
 type BacklogListProps = {
-  // Ändras av föräldern för att hämta listan igen (t.ex. efter att ett kort lagts till)
+  // Changed by the parent to fetch the list again (e.g. after a card was added)
   refreshKey?: number;
-  // Anropas när ett kort har flyttats till boarden
+  // Called when a card has been moved to the board
   onMoved?: (card: Card) => void;
 };
 
-// Kort tas från backloggen till första kolumnen (To Do) och tilldelas den som flyttar
+// Cards are taken from the backlog to the first column (To Do) and assigned to whoever moves them
 const TARGET_STATUS = DEFAULT_HEADERS[0].key;
 
 export default function BacklogList({ refreshKey = 0, onMoved }: BacklogListProps) {
   const [cards, setCards] = useState<Card[] | null>(null);
   const [movingId, setMovingId] = useState<string | null>(null);
-  // Samma edit- och delete-dialoger som på boarden
+  // The same edit and delete dialogs as on the board
   const [editingCard, setEditingCard] = useState<Card | null>(null);
   const [deletingCard, setDeletingCard] = useState<Card | null>(null);
   const { username: userName } = useSession();
-  // Den valda boardens backlog; boardens admin får redigera och ta bort alla kort
+  // The selected board's backlog; the board's admin may edit and delete every card
   const { current, boardAdmin: admin } = useBoards();
-  // Avstängda funktioner döljs; att flytta till boarden är editCard
+  // Switched-off features are hidden; moving to the board is editCard
   const { isOn } = useFeatures();
   const boardId = current?._id ?? null;
 
@@ -73,7 +73,7 @@ export default function BacklogList({ refreshKey = 0, onMoved }: BacklogListProp
   };
 
   const handleCardSaved = (updated: Card) => {
-    // Flyttat till en lista i edit-dialogen: kortet försvinner ur backloggen
+    // Moved to a list in the edit dialog: the card leaves the backlog
     setCards((prev) => (prev ? backlogCards(prev.map((c) => (c._id === updated._id ? updated : c))) : null));
     setEditingCard(null);
   };
@@ -94,11 +94,11 @@ export default function BacklogList({ refreshKey = 0, onMoved }: BacklogListProp
     return <p className="rounded-lg bg-white p-6 text-center text-sm text-jira-secondary">The backlog is empty.</p>;
   }
 
-  // Mobil: Created och Reporter döljs så att tabellen får plats
+  // Mobile: Created and Reporter are hidden so the table fits
   return (
     <>
       <div className={TABLE_WRAPPER_CLASS}>
-        {/* Små kolumner får sin innehållsbredd; Summary tar resten och kortas med … */}
+        {/* Small columns get their content width; Summary takes the rest and is cut off with … */}
         <table className="w-full text-sm text-jira-text [&_td]:whitespace-nowrap [&_th]:whitespace-nowrap">
           <thead className={TABLE_THEAD_CLASS}>
             <tr>
@@ -146,7 +146,7 @@ export default function BacklogList({ refreshKey = 0, onMoved }: BacklogListProp
                 </td>
                 <td className={`${TD_CLASS} text-right`}>
                   <div className="flex items-center justify-end gap-1">
-                    {/* Edit och delete på egna kort, eller alla för admin (syns vid hover, som på boarden) */}
+                    {/* Edit and delete on your own cards, or all of them for the admin (shown on hover, as on the board) */}
                     {canEditCard(card) && isOn('editCard') && (
                       <button className={CARD_ACTION_CLASS} aria-label="Edit card" title="Edit" onClick={() => setEditingCard(card)}>
                         <PencilIcon className="size-4" aria-hidden />

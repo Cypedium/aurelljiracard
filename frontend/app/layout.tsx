@@ -15,7 +15,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      {/* Typsnitten är Arial (font-brand) och systemets (font-jira) i root.css; inga webbfonter att ladda */}
+      {/* The fonts are Arial (font-brand) and the system's (font-jira) in root.css; no web fonts to load */}
       <body className="antialiased">
         <ClientLayout>{children}</ClientLayout>
       </body>

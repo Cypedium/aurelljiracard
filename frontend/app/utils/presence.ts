@@ -1,9 +1,9 @@
-// Användarlistan (admin): när en användare senast var aktiv. "Online" räknar backenden ut
+// The user list (admin): when a user was last active. The backend works out "Online"
 const MINUTE_MS = 60 * 1000;
 const HOUR_MS = 60 * MINUTE_MS;
 const DAY_MS = 24 * HOUR_MS;
 
-// "Last seen 5 min ago" osv.; null = har inte loggat in sedan funktionen lades till
+// "Last seen 5 min ago" etc.; null = hasn't logged in since the feature was added
 export const lastSeenLabel = (lastActiveAt: string | null | undefined, now: number = Date.now()): string => {
   if (!lastActiveAt) return "Never seen";
   const ago = Math.max(0, now - Date.parse(lastActiveAt));

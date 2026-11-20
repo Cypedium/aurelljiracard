@@ -15,7 +15,7 @@ import CardForm from "../card/Card";
 import { toPlainText } from "../../utils/summaryFormat";
 
 type CardFormDialogProps = {
-  // Kortet som redigeras, eller listan där ett nytt kort skapas
+  // The card being edited, or the list where a new card is created
   editingCard: Card | null;
   creatingIn: CardStatus | null;
   onSaved: (card: Card) => void;
@@ -23,17 +23,17 @@ type CardFormDialogProps = {
   onClose: () => void;
 };
 
-// Skapa eller redigera ett kort. Radix sköter fokus, Escape, klick utanför och scroll-lås
+// Create or edit a card. Radix handles focus, Escape, clicks outside and scroll lock
 export function CardFormDialog({ editingCard, creatingIn, onSaved, onCreated, onClose }: CardFormDialogProps) {
   return (
     <Dialog open={Boolean(editingCard || creatingIn)} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
         showCloseButton={false}
         aria-describedby={undefined}
-        // Formuläret har egen bakgrund och skugga
+        // The form has its own background and shadow
         className="max-h-[calc(100dvh-2rem)] gap-0 overflow-y-auto border-0 bg-transparent p-0 font-jira shadow-none sm:max-w-[640px]"
       >
-        {/* Formulärets synliga rubrik är en vanlig h2, så dialogen får en dold titel */}
+        {/* The form's visible heading is a plain h2, so the dialog gets a hidden title */}
         <DialogTitle className="sr-only">{editingCard ? "Edit card" : "Create card"}</DialogTitle>
         <CardForm
           card={editingCard ?? undefined}
@@ -48,7 +48,7 @@ export function CardFormDialog({ editingCard, creatingIn, onSaved, onCreated, on
 }
 
 type DeleteCardDialogProps = {
-  // Kortet som väntar på bekräftelse
+  // The card waiting for confirmation
   card: Card | null;
   onClose: () => void;
   onConfirm: (id: string) => void;

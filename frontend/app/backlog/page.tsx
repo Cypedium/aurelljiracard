@@ -12,12 +12,12 @@ import { BOARD_ACTIONS, onBoardAction } from "../utils/boardActions";
 
 export default function BacklogPage() {
   const [creating, setCreating] = useState(false);
-  // Navbar-brytaren backlogPage: sidan visas inte (korten finns kvar)
+  // The backlogPage navbar switch: the page is not shown (the cards remain)
   const { isOn } = useFeatures();
-  // Ökas när ett kort lagts till, så att listan hämtas igen
+  // Increased when a card has been added, so the list is fetched again
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // Navbarens "Create card" öppnar formuläret (nytt kort i backloggen)
+  // The navbar's "Create card" opens the form (a new card in the backlog)
   useEffect(() => onBoardAction(BOARD_ACTIONS.createCard, () => setCreating(true)), []);
 
   const handleCreated = () => {
@@ -28,10 +28,10 @@ export default function BacklogPage() {
 
   return (
     <Layout>
-      {/* Samma bakgrund som boarden; pt eftersom navbaren (två rader) är fixed */}
+      {/* The same background as the board; pt because the navbar (two rows) is fixed */}
       <div className="min-h-[calc(100dvh-60px)] bg-linear-135 from-board-from via-board-via to-board-to px-4 pt-30 pb-6 font-jira">
         <div className="mx-auto flex max-w-[960px] flex-col gap-4">
-          {/* Ingen synlig rubrik (navbaren visar sidan); kvar för skärmläsare */}
+          {/* No visible heading (the navbar shows the page); kept for screen readers */}
           {isOn("backlogPage") ? (
             <>
               <h1 className="sr-only">Backlog</h1>
@@ -46,7 +46,7 @@ export default function BacklogPage() {
           <DialogContent
             showCloseButton={false}
             aria-describedby={undefined}
-            // Formuläret har egen bakgrund och skugga
+            // The form has its own background and shadow
             className="max-h-[calc(100dvh-2rem)] gap-0 overflow-y-auto border-0 bg-transparent p-0 font-jira shadow-none sm:max-w-[640px]"
           >
             <DialogTitle className="sr-only">Add to backlog</DialogTitle>

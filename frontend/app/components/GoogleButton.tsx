@@ -11,15 +11,15 @@ import {
 } from '../utils/google';
 
 type Props = {
-  // Googles ID-token; skickas till backend (/auth/google eller /user/google)
+  // Google's ID token; sent to the backend (/auth/google or /user/google)
   onCredential: (credential: string) => void;
   text?: GoogleButtonText;
 };
 
-// Googles egen knapp (ritas av deras skript). Utan NEXT_PUBLIC_GOOGLE_CLIENT_ID visas ingenting
+// Google's own button (drawn by their script). Without NEXT_PUBLIC_GOOGLE_CLIENT_ID nothing is shown
 export default function GoogleButton({ onCredential, text = 'signin_with' }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
-  // Senaste callbacken utan att knappen ritas om vid varje render
+  // The latest callback, without redrawing the button on every render
   const onCredentialRef = useRef(onCredential);
   useEffect(() => {
     onCredentialRef.current = onCredential;

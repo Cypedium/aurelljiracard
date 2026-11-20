@@ -18,12 +18,12 @@ type Props = {
   onClose: () => void;
 };
 
-// Navbarens "Share" (boardens admin): skapa och kopiera en inbjudningslänk, ta bort medarbetare.
-// "Members" (medarbetare): se vilka som är med och lämna boarden
+// The navbar's "Share" (the board's admin): create and copy an invite link, remove collaborators.
+// "Members" (collaborators): see who is on the board and leave it
 export default function ShareBoardDialog({ board, open, onClose }: Props) {
   const admin = isBoardAdmin(board);
   const [members, setMembers] = useState<BoardMember[] | null>(null);
-  // Länken visas bara när den har skapats: servern sparar bara en hash av den
+  // The link is shown only right after it is created: the server only keeps a hash of it
   const [link, setLink] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -82,7 +82,7 @@ export default function ShareBoardDialog({ board, open, onClose }: Props) {
       toast.success(`${member.username} was removed from the board.`);
     }, 'Could not remove the member.');
 
-  // Medarbetare: boarden försvinner ur listan och den egna visas
+  // Collaborators: the board disappears from the list and your own board is shown
   const leave = (me: BoardMember) =>
     run(async () => {
       await removeMember(board._id, me._id);

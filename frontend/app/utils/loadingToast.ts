@@ -1,5 +1,5 @@
 export const LOADING_TOAST_ID = "loading-data";
-// Bara registrering, inloggning och utloggning visar loading-toasten; data som laddas visar skeletons
+// Only registration, login and logout show the loading toast; data that loads shows skeletons
 const LOADING_TOAST_TEXTS: Record<string, string> = {
   "/auth/register": "Creating account, please wait…",
   "/auth/login": "Logging in, please wait…",
@@ -7,12 +7,12 @@ const LOADING_TOAST_TEXTS: Record<string, string> = {
   "/auth/logout": "Logging out, please wait…",
 };
 export const loadingToastText = (url?: string): string | null => (url && LOADING_TOAST_TEXTS[url]) || null;
-// Visas bara om anropet dröjer, t.ex. när Fly väcker en stoppad maskin (cold start)
+// Shown only if the call takes a while, e.g. when Fly wakes a stopped machine (cold start)
 export const LOADING_TOAST_DELAY_MS = 800;
 
 export type LoadingTracker = { start: () => void; done: () => void };
 
-// Räknar pågående anrop: show() efter delayMs om något fortfarande pågår, hide() när alla är klara
+// Counts calls in progress: show() after delayMs if any is still running, hide() when all are done
 export function createLoadingTracker(show: () => void, hide: () => void, delayMs: number): LoadingTracker {
   let pending = 0;
   let timer: ReturnType<typeof setTimeout> | null = null;

@@ -91,7 +91,7 @@ describe("session", () => {
   });
 
   describe("role", () => {
-    // header.payload.signature; signaturen kontrolleras inte i frontend
+    // header.payload.signature; the signature isn't checked in the frontend
     const token = (payload: object) =>
       `h.${Buffer.from(JSON.stringify(payload)).toString("base64url")}.s`;
 

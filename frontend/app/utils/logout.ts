@@ -10,7 +10,7 @@ export const handleLogout = async () => {
     // Revokes the refresh token server-side
     if (refreshToken) await logoutUser(refreshToken);
   } catch (err) {
-    // Bara meddelandet: axios-felet innehåller requesten, med refresh-tokenet
+    // Only the message: the axios error contains the request, with the refresh token
     logError("Logout request failed", err);
   } finally {
     clearSession();

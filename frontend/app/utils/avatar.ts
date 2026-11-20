@@ -1,4 +1,4 @@
-// Jira-liknande avatarfärger, väljs stabilt per användarnamn
+// Jira-like avatar colours, picked consistently per username
 export const AVATAR_COLORS = ["#0052cc", "#00875a", "#ff5630", "#6554c0", "#ff991f", "#00a3bf"];
 
 export const avatarColor = (name: string): string => {

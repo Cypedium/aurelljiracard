@@ -1,5 +1,5 @@
-// Ett delat tillstånd på modulnivå för useSyncExternalStore: alla som prenumererar får varje nytt värde.
-// set meddelar alltid; React ritar bara om när get() ger ett nytt objekt
+// Shared module-level state for useSyncExternalStore: every subscriber gets each new value.
+// set always notifies; React only re-renders when get() returns a new object
 export type Store<T> = {
   get: () => T;
   set: (next: T) => void;

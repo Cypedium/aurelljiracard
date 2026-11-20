@@ -26,12 +26,12 @@ import { FormControl } from './ui/form';
 type Tool = {
   label: string;
   Icon: ComponentType<SVGProps<SVGSVGElement>>;
-  // Namnet (och attributen) som editor.isActive känner igen
+  // The name (and attributes) that editor.isActive recognises
   active: [string, Record<string, unknown>?];
   run: (chain: ChainedCommands) => ChainedCommands;
 };
 
-// Kortkommandon står i title; Tiptap har dem inbyggda, liksom markdown medan man skriver ("- ", "# ", **fet**)
+// Keyboard shortcuts are in the title; Tiptap has them built in, as well as markdown while typing ("- ", "# ", **bold**)
 const TOOLS: Tool[] = [
   { label: 'Bold (Ctrl+B)', Icon: BoldIcon, active: ['bold'], run: (c) => c.toggleBold() },
   { label: 'Italic (Ctrl+I)', Icon: ItalicIcon, active: ['italic'], run: (c) => c.toggleItalic() },
@@ -45,22 +45,22 @@ const TOOLS: Tool[] = [
 ];
 
 type Props = {
-  // react-hook-form-fältet för sammanfattningen (markdown)
+  // The react-hook-form field for the summary (markdown)
   field: Pick<ControllerRenderProps, 'onChange' | 'onBlur' | 'ref'> & { value: string };
   placeholder?: string;
 };
 
-// Sammanfattningen med formatering medan man skriver (Tiptap). Sparas som markdown via @tiptap/markdown,
-// se utils/summaryFormat.ts. Renderas inuti en FormItem
+// The summary with formatting while typing (Tiptap). Saved as markdown via @tiptap/markdown,
+// see utils/summaryFormat.ts. Rendered inside a FormItem
 export default function SummaryEditor({ field, placeholder }: Props) {
-  // Senaste värdet editorn själv skickade; ett annat värde kommer utifrån (formuläret laddar ett kort)
+  // The last value the editor itself sent; any other value comes from outside (the form loads a card)
   const emitted = useRef(field.value);
 
   const editor = useEditor({
     extensions: [...SUMMARY_EXTENSIONS, Markdown.configure({ markedOptions: MARKED_OPTIONS })],
     content: field.value,
     contentType: 'markdown',
-    // Next renderar på servern först; editorn skapas i webbläsaren
+    // Next renders on the server first; the editor is created in the browser
     immediatelyRender: false,
     editorProps: {
       attributes: { class: `${SUMMARY_CLASS} ${SUMMARY_EDITOR_CONTENT_CLASS}`, 'aria-label': 'Summary', 'aria-multiline': 'true', role: 'textbox' },
@@ -79,7 +79,7 @@ export default function SummaryEditor({ field, placeholder }: Props) {
     editor.commands.setContent(field.value, { contentType: 'markdown', emitUpdate: false });
   }, [editor, field.value]);
 
-  // Ett valideringsfel flyttar fokus hit (react-hook-form anropar focus på ref:en)
+  // A validation error moves focus here (react-hook-form calls focus on the ref)
   const { ref } = field;
   useEffect(() => {
     if (editor) ref({ focus: () => editor.commands.focus() });
@@ -103,7 +103,7 @@ export default function SummaryEditor({ field, placeholder }: Props) {
             title={label}
             aria-pressed={state?.active[i] ?? false}
             disabled={!editor}
-            // Behåll fokus och markering i editorn
+            // Keep focus and the selection in the editor
             onMouseDown={(event) => event.preventDefault()}
             onClick={() => editor && run(editor.chain().focus()).run()}
           >

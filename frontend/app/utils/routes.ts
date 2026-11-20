@@ -1,4 +1,4 @@
-// Sidornas sökvägar (mapparna under app/). "/" skickar vidare till boarden eller inloggningen
+// The pages' paths (the folders under app/). "/" redirects to the board or the login
 export const ROUTES = {
   home: "/",
   board: "/cards",

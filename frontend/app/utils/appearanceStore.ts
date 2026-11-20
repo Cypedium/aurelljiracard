@@ -1,11 +1,11 @@
 import { APPEARANCE_STORAGE_KEY, DEFAULT_APPEARANCE, appearanceVars, normalizeAppearance, type Appearance } from "./appearance";
 import { readJson, writeJson } from "./storage";
 
-// Läser valet ur localStorage (standard om det saknas eller är trasigt)
+// Reads the choice from localStorage (the default if it is missing or broken)
 export const loadAppearance = (): Appearance =>
   readJson(APPEARANCE_STORAGE_KEY, normalizeAppearance, DEFAULT_APPEARANCE);
 
-// Sätter CSS-variablerna på <html>; de går före standardvärdena i root.css
+// Sets the CSS variables on <html>; they win over the defaults in root.css
 export const applyAppearance = (appearance: Appearance) => {
   const root = document.documentElement;
   for (const [name, value] of Object.entries(appearanceVars(appearance))) root.style.setProperty(name, value);

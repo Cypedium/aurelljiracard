@@ -18,14 +18,14 @@ import { PICKER_GROUP_HEADING_CLASS, PICKER_SWATCH_CLASS } from '../utils/styles
 
 export type AppearanceView = 'background' | 'navbar';
 
-// Bock mitt i den valda rutan, som i Trello
+// A check mark in the middle of the chosen swatch, as in Trello
 const Selected = () => (
   <span className="absolute inset-0 m-auto flex size-6 items-center justify-center rounded-full bg-black/55 text-white">
     <CheckIcon className="size-4" strokeWidth={2.5} aria-hidden />
   </span>
 );
 
-// Navbarens två rader i miniatyr, med textfärgen den får ihop med boardens bakgrund
+// The navbar's two rows in miniature, with the text colour they get with the board's background
 export const NavbarPreview = ({ appearance, themeKey }: { appearance: Appearance; themeKey: string }) => {
   const theme = navbarTheme(themeKey);
   const color = navbarTextColor(boardBackground(appearance.background), theme);
@@ -39,7 +39,7 @@ export const NavbarPreview = ({ appearance, themeKey }: { appearance: Appearance
   );
 };
 
-// Egen färg med webbläsarens färgväljare; valet gäller medan man drar i den
+// A custom colour with the browser's colour picker; the choice applies while you drag in it
 const CustomColor = ({ value, selected, onChange }: { value: string; selected: boolean; onChange: (hex: string) => void }) => (
   <label
     className={`flex cursor-pointer items-center gap-3 rounded-md px-2 py-2 text-sm hover:bg-jira-hover ${selected ? 'ring-2 ring-jira-primary' : ''}`}
@@ -56,7 +56,7 @@ const CustomColor = ({ value, selected, onChange }: { value: string; selected: b
   </label>
 );
 
-// Stäng-krysset i övre högra hörnet på kontomenyn och dess paneler; stänger hela menyn
+// The close button in the top right corner of the account menu and its panels; closes the whole menu
 export const CloseButton = ({ onClose, className = '' }: { onClose: () => void; className?: string }) => (
   <button
     type="button"
@@ -68,7 +68,7 @@ export const CloseButton = ({ onClose, className = '' }: { onClose: () => void; 
   </button>
 );
 
-// Rubrik på en panel i kontomenyn; tillbaka-pilen bara på mobil, där panelen ersätter menyn
+// The heading of a panel in the account menu; the back arrow only on mobile, where the panel replaces the menu
 export const PanelHeader = ({ title, onBack, onClose }: { title: string; onBack: () => void; onClose: () => void }) => (
   <div className="relative flex min-h-7 items-center justify-center">
     <button
@@ -92,8 +92,8 @@ type PickerProps = {
   onClose: () => void;
 };
 
-// En väljare i kontomenyn. Desktop: en panel till vänster om menyn (som Trellos "Tema").
-// Mobil: i menyns ställe, med tillbaka-pil. Valet gäller direkt
+// A picker in the account menu. Desktop: a panel to the left of the menu (like Trello's "Theme").
+// Mobile: in place of the menu, with a back arrow. The choice applies at once
 export function AppearancePicker({ view, appearance, onChange, onBack, onClose }: PickerProps) {
   const backgroundButton = (b: BoardBackground, sizeClass: string) => (
     <button

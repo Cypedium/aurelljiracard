@@ -3,7 +3,7 @@ const nextJest = require("next/jest");
 
 const createJestConfig = nextJest({ dir: "./" });
 
-// Paket i node_modules som bara finns som ESM och måste kompileras för Jest (marked används av @tiptap/markdown)
+// Packages in node_modules that only ship as ESM and must be compiled for Jest (marked is used by @tiptap/markdown)
 const ESM_PACKAGES = ["marked"];
 
 module.exports = async () => {
@@ -11,7 +11,7 @@ module.exports = async () => {
     testEnvironment: "node",
     testMatch: ["<rootDir>/tests/unit/**/*.test.ts"],
   })();
-  // next/jest kompilerar inget i node_modules utom sin egen lista; lägg till våra paket i den
+  // next/jest compiles nothing in node_modules except its own list; add our packages to it
   const [nodeModules, ...rest] = config.transformIgnorePatterns;
   if (!nodeModules.includes("(geist|")) throw new Error("next/jest changed its transformIgnorePatterns; update jest.config.js");
   config.transformIgnorePatterns = [nodeModules.replace("(geist|", `(${ESM_PACKAGES.join("|")}|geist|`), ...rest];

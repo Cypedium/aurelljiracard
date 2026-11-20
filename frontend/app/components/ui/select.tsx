@@ -1,4 +1,4 @@
-// SelectContent: z-[1002], över dialogerna (z-[1001]) som formuläret ligger i
+// SelectContent: z-[1002], above the dialogs (z-[1001]) the form sits in
 "use client"
 
 import * as React from "react"

@@ -49,7 +49,7 @@ export default function Users() {
     const renamedSelf = editingUser?.username === me && updated.username !== me;
     setEditingUser(null);
     if (renamedSelf) {
-      // Våra tokens har det gamla namnet och är återkallade: logga in igen
+      // Our tokens have the old name and are revoked: log in again
       toast.success('Your name was changed. Please log in again.');
       handleLogout();
       return;
@@ -71,7 +71,7 @@ export default function Users() {
   const logOutUser = async (user: PublicUser) => {
     try {
       await revokeUserSessions(user._id);
-      // Backenden räknar dem som utloggade direkt
+      // The backend counts them as logged out at once
       setUsers((prev) => prev?.map((u) => (u._id === user._id ? { ...u, online: false } : u)) ?? null);
       toast.success(`${user.username} will be logged out within 15 minutes.`);
     } catch (err) {
@@ -109,7 +109,7 @@ export default function Users() {
                       >
                         {avatarInitials(user.username)}
                       </span>
-                      {/* Grön prick = inloggad nu */}
+                      {/* Green dot = logged in now */}
                       <span
                         role="img"
                         aria-label={user.online ? 'Online' : 'Offline'}
@@ -132,7 +132,7 @@ export default function Users() {
                     </span>
                   </td>
                   <td className={`${TD_CLASS} max-sm:hidden`}>
-                    {/* Online nu, annars när användaren senast var aktiv. Dold på mobil så att Actions får plats (pricken vid namnet syns) */}
+                    {/* Online now, otherwise when the user was last active. Hidden on mobile so Actions fits (the dot by the name shows) */}
                     <span className="whitespace-nowrap text-jira-secondary">
                       {user.online ? (
                         <span className="font-medium text-jira-text">Online</span>
@@ -180,12 +180,12 @@ export default function Users() {
         </table>
       </div>
 
-      {/* Radix sköter fokus, Escape, klick utanför och scroll-lås */}
+      {/* Radix handles focus, Escape, clicks outside and scroll lock */}
       <Dialog open={Boolean(editingUser)} onOpenChange={(open) => !open && setEditingUser(null)}>
         <DialogContent
           showCloseButton={false}
           aria-describedby={undefined}
-          // Formuläret har egen bakgrund och skugga
+          // The form has its own background and shadow
           className="gap-0 border-0 bg-transparent p-0 font-jira shadow-none sm:max-w-[480px]"
         >
           <DialogTitle className="sr-only">Edit user</DialogTitle>

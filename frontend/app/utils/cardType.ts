@@ -1,17 +1,17 @@
 import { z } from "zod";
 import { HEX_COLOR, sanitizeHexColor } from "./color";
 
-// Ärendetyper delas av alla (GET /issue-type); admins lägger till nya. Kortets type = typens key
+// Issue types are shared by everyone (GET /issue-type); admins add new ones. A card's type = the type's key
 export type CardType = string;
 
-// Ikoner en typ kan ha; måste matcha CardType.ICONS i server-java
+// Icons a type can have; must match CardType.ICONS in server-java
 export const ISSUE_TYPE_ICONS = ["check", "bug", "doc", "bolt", "star", "flag", "wrench", "light-bulb"] as const;
 export type IssueTypeIconName = (typeof ISSUE_TYPE_ICONS)[number];
 
 export type IssueType = { key: CardType; label: string; color: string; icon: IssueTypeIconName };
 
-// Standardtyperna; måste matcha CardType.DEFAULTS i server-java.
-// Visas tills typerna har hämtats (och om hämtningen misslyckas)
+// The default types; must match CardType.DEFAULTS in server-java.
+// Shown until the types have been fetched (and if fetching fails)
 export const DEFAULT_ISSUE_TYPES: IssueType[] = [
   { key: "task", label: "Task", color: "#4bade8", icon: "check" },
   { key: "bug", label: "Bug", color: "#c9372c", icon: "bug" },
@@ -20,12 +20,12 @@ export const DEFAULT_ISSUE_TYPES: IssueType[] = [
 
 export const DEFAULT_CARD_TYPE: CardType = "task";
 
-// Samma gränser och meddelanden som server-java IssueTypeRequest
+// The same limits and messages as server-java IssueTypeRequest
 export const ISSUE_TYPE_LABEL_MAX_LENGTH = 30;
 export const MAX_ISSUE_TYPES = 12;
 const LABEL_MESSAGE = `Issue type name is required (max ${ISSUE_TYPE_LABEL_MAX_LENGTH} characters).`;
 
-// Färger för en ny typ: mörka nog för en vit ikon
+// Colours for a new type: dark enough for a white icon
 export const ISSUE_TYPE_SWATCHES: { name: string; color: string }[] = [
   { name: "Blue", color: "#4bade8" },
   { name: "Green", color: "#1f845a" },
@@ -40,7 +40,7 @@ export const ISSUE_TYPE_SWATCHES: { name: string; color: string }[] = [
 const isIconName = (icon: unknown): icon is IssueTypeIconName =>
   typeof icon === "string" && (ISSUE_TYPE_ICONS as readonly string[]).includes(icon);
 
-// Typerna från GET /issue-type: ogiltiga och dubbletter tas bort, okänd ikon blir en bock; inga alls = standardtyperna
+// The types from GET /issue-type: invalid ones and duplicates are dropped, an unknown icon becomes a check; none at all = the default types
 export const normalizeIssueTypes = (raw: unknown): IssueType[] => {
   if (!Array.isArray(raw)) return DEFAULT_ISSUE_TYPES;
   const types: IssueType[] = [];
@@ -54,13 +54,13 @@ export const normalizeIssueTypes = (raw: unknown): IssueType[] => {
   return types.length ? types : DEFAULT_ISSUE_TYPES;
 };
 
-// Kortets typ; okänd eller saknad typ (äldre kort, eller innan typerna hämtats) visas som Task
+// The card's type; an unknown or missing type (older cards, or before the types are fetched) shows as Task
 export const issueTypeOf = (types: IssueType[], key?: string): IssueType =>
   types.find((t) => t.key === key) ??
   types.find((t) => t.key === DEFAULT_CARD_TYPE) ??
   DEFAULT_ISSUE_TYPES[0];
 
-// Namnet på en ny typ får inte finnas redan (skiftläge och mellanslag runt om spelar ingen roll)
+// A new type's name must not exist already (case and surrounding spaces don't matter)
 export const DUPLICATE_ISSUE_TYPE_MESSAGE = "Issue type already exists.";
 
 export const isTakenIssueTypeLabel = (types: Pick<IssueType, "label">[], label: string): boolean => {
@@ -68,7 +68,7 @@ export const isTakenIssueTypeLabel = (types: Pick<IssueType, "label">[], label: 
   return name !== "" && types.some((t) => t.label.trim().toLowerCase() === name);
 };
 
-// Antal kort per typ; kort utan typ räknas som Task. Typer som används kan inte tas bort
+// Number of cards per type; cards without a type count as Task. Types in use can't be deleted
 export const countCardsByType = (cards: { type?: string }[]): Record<string, number> =>
   cards.reduce<Record<string, number>>((counts, { type }) => {
     const key = type || DEFAULT_CARD_TYPE;
@@ -76,7 +76,7 @@ export const countCardsByType = (cards: { type?: string }[]): Record<string, num
     return counts;
   }, {});
 
-// Admin: formuläret för en ny typ (NewIssueTypeDialog)
+// Admin: the form for a new type (NewIssueTypeDialog)
 export const issueTypeFormSchema = z.object({
   label: z.string().trim().min(1, LABEL_MESSAGE).max(ISSUE_TYPE_LABEL_MAX_LENGTH, LABEL_MESSAGE),
   color: z.string().regex(HEX_COLOR, "Please pick a color."),

@@ -14,11 +14,11 @@ type Props = {
   onDelete: () => void;
 };
 
-// Ett kort på boarden. Ytterdiven (som react-grid-layout styr) ligger kvar i Cards.tsx
+// A card on the board. The outer div (which react-grid-layout controls) stays in Cards.tsx
 export default function BoardCard({ card, canEdit, canDelete, onEdit, onDelete }: Props) {
   const assignee = assigneeOf(card);
 
-  // Edit och delete (syns vid hover) på egna kort, eller alla för admin. Datumet visas i edit-dialogen
+  // Edit and delete (shown on hover) on your own cards, or all of them for the admin. The date is shown in the edit dialog
   const actions =
     canEdit || canDelete ? (
       <div className="flex shrink-0 items-center">
@@ -35,11 +35,11 @@ export default function BoardCard({ card, canEdit, canDelete, onEdit, onDelete }
       </div>
     ) : null;
 
-  // Dubbelklick öppnar edit-dialogen, för samma användare som ser edit-knappen (rapportören eller admin).
-  // Inte på knapparna: två snabba klick på delete ska inte också öppna edit
+  // A double click opens the edit dialog, for the same users who see the edit button (the reporter or the admin).
+  // Not on the buttons: two quick clicks on delete must not also open edit
   const editOnDoubleClick = (e: MouseEvent<HTMLDivElement>) => {
     if ((e.target as HTMLElement).closest("button")) return;
-    // Dubbelklicket markerar annars ett ord i sammanfattningen
+    // Otherwise the double click selects a word in the summary
     window.getSelection()?.removeAllRanges();
     onEdit();
   };

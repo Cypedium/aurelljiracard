@@ -7,7 +7,7 @@ type Props = {
   onSubmit: (title: string) => void;
 };
 
-// Admin: ny lista sist på boarden, öppnas från navbarens "Create column" (platsen räknas in i columns.units)
+// Admin: a new list at the end of the board, opened from the navbar's "Create column" (its space is counted in columns.units)
 export default function AddListForm({ onClose, onSubmit }: Props) {
   return (
     <div className="snap-start px-2" style={{ gridColumn: `span ${EXPANDED_SPAN}` }}>

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "@jest/globals";
 import { readJson, readText, removeStored, writeJson, writeText } from "../../app/utils/storage";
 
-// Node: lagringen i minnet; broken = lagring som kastar (privat läge, blockerad, full)
+// Node: in-memory storage; broken = storage that throws (private mode, blocked, full)
 const local = new Map<string, string>();
 const session = new Map<string, string>();
 let broken = false;

@@ -48,7 +48,7 @@ export type PublicUser = {
   username: string;
   pictureUrl?: string;
   role: Role;
-  // Bara för admins: senast inloggad/förnyad token (ISO) och om användaren är inloggad nu
+  // Admins only: last login/token refresh (ISO) and whether the user is logged in now
   lastActiveAt?: string | null;
   online?: boolean;
 };
@@ -127,7 +127,7 @@ export const getColumns = (boardId: string) => api.get<BoardColumn[]>(onBoard(bo
 export const createColumn = (boardId: string, changes: ColumnChanges) =>
   api.post<BoardColumn>(onBoard(boardId, "/column"), changes);
 
-// Board admin: listornas ordning; keys = alla listor, i den nya ordningen
+// Board admin: the order of the lists; keys = every list, in the new order
 export const reorderColumns = (boardId: string, keys: CardStatus[]) =>
   api.put<BoardColumn[]>(onBoard(boardId, "/column"), { keys });
 

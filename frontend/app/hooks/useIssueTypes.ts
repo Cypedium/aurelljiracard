@@ -6,8 +6,8 @@ import { DEFAULT_ISSUE_TYPES, normalizeIssueTypes, type IssueType } from "../uti
 import { createStore } from "../utils/store";
 import { useBoards } from "./useBoards";
 
-// Den visade boardens ärendetyper, delade av alla komponenter (kort, backlog, formulär). Hämtas en gång
-// per board och sidladdning; standardtyperna visas tills de har hämtats
+// The shown board's issue types, shared by every component (cards, backlog, forms). Fetched once
+// per board and page load; the default types are shown until they have been fetched
 let boardId: string | null = null;
 let loading: string | null = null;
 const store = createStore<IssueType[]>(DEFAULT_ISSUE_TYPES);
@@ -17,13 +17,13 @@ const load = (id: string | null) => {
   loading = id;
   getIssueTypes(id)
     .then((res) => {
-      // Användaren hann byta board: svaret gäller inte längre
+      // The user switched board in the meantime: the response no longer applies
       if (loading !== id) return;
       boardId = id;
       store.set(normalizeIssueTypes(res.data));
     })
     .catch((err) => {
-      // Fast id: flera komponenter kan försöka igen, då ersätter toasten sig själv
+      // Fixed id: several components may retry, and the toast then replaces itself
       reportError("Error fetching issue types", err, "Could not load the issue types.", "issue-types");
     })
     .finally(() => {
@@ -31,11 +31,11 @@ const load = (id: string | null) => {
     });
 };
 
-// Board admin: en ny typ syns direkt i alla dropdowns
+// Board admin: a new type shows at once in every dropdown
 export const addIssueType = (type: IssueType) =>
   store.set([...store.get().filter((t) => t.key !== type.key), type]);
 
-// Board admin: en borttagen typ försvinner direkt ur alla dropdowns
+// Board admin: a deleted type disappears at once from every dropdown
 export const removeIssueType = (key: string) => store.set(store.get().filter((t) => t.key !== key));
 
 export function useIssueTypes(): IssueType[] {
@@ -43,6 +43,6 @@ export function useIssueTypes(): IssueType[] {
   const id = current?._id ?? null;
   useEffect(() => load(id), [id]);
   const types = useSyncExternalStore(store.subscribe, store.get, () => DEFAULT_ISSUE_TYPES);
-  // En annan boards typer visas aldrig, inte ens medan den nya boardens hämtas
+  // Another board's types are never shown, not even while the new board's types are fetched
   return id && id === boardId ? types : DEFAULT_ISSUE_TYPES;
 }

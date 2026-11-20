@@ -46,7 +46,7 @@ import { BOARD_ACTIONS, onBoardAction } from "../utils/boardActions";
 import { useFeatures } from "../hooks/useFeatures";
 import { useSession } from "../hooks/useSession";
 
-// Den valda boarden (navbaren byter); key gör att allt laddas om när boarden byts
+// The selected board (the navbar switches it); key reloads everything when the board changes
 export default function Home() {
   const { current, loaded, boardAdmin } = useBoards();
   if (!current) {
@@ -55,7 +55,7 @@ export default function Home() {
   return <BoardView key={current._id} boardId={current._id} admin={boardAdmin} />;
 }
 
-// admin = boardens admin (ägaren): listor, alla kort. Backend kontrollerar själv
+// admin = the board's admin (its owner): lists, every card. The backend checks for itself
 function BoardView({ boardId, admin }: { boardId: string; admin: boolean }) {
   const { cards, setCards, cardsLoaded, fetchCards, userLayout, layoutLoaded, persistLayout, headers, setHeaders, columnsLoaded } =
     useBoardData(boardId);
@@ -85,39 +85,39 @@ function BoardView({ boardId, admin }: { boardId: string; admin: boolean }) {
     moveList,
     addList,
   } = useColumnActions({ boardId, headers, setHeaders, userLayout, persistLayout });
-  // Ihopfällda listor: visar bara rubrik och "Add a card"
+  // Collapsed lists: show only the header and "Add a card"
   const { collapsed, toggleColumn } = useCollapsedLists();
   const { username: userName } = useSession();
-  // Gridden följer boardens bredd så att den fyller skärmen
+  // The grid follows the board's width so that it fills the screen
   const { width, containerRef, mounted } = useContainerWidth();
-  // Luft mellan listorna och mot skärmkanten: större på mobil, så att man kan svepa upp/ner bredvid korten.
-  // Samma värde i CSS-griddarna (bakgrund, rubriker) och i react-grid-layout (korten), så att de linjerar
+  // Space between the lists and to the screen edge: larger on mobile, so you can swipe up/down next to the cards.
+  // The same value in the CSS grids (background, headers) and in react-grid-layout (the cards), so they line up
   const gutter = useIsMobile() ? MOBILE_GUTTER : GRID_MARGIN;
   const boardScrollRef = useRef<HTMLDivElement>(null);
-  // Avstängda funktioner och read-only-läge (backend nekar ändå med 503); sajtens admin ser allt
+  // Switched-off features and read-only mode (the backend refuses with 503 anyway); the site admin sees everything
   const { isOn, canWrite } = useFeatures();
   const canDragCards = isOn("editCard") && canWrite;
 
-  // Navbarens "Create card" (nytt kort i första listan) och "Create column" (admin: formuläret sist på boarden)
+  // The navbar's "Create card" (new card in the first list) and "Create column" (admin: the form at the end of the board)
   useEffect(() => onBoardAction(BOARD_ACTIONS.createCard, () => setCreatingIn(headers[0]?.key ?? null)), [headers, setCreatingIn]);
   useEffect(() => {
     if (!admin) return;
     return onBoardAction(BOARD_ACTIONS.createColumn, () => setAddingList(true));
   }, [admin, setAddingList]);
-  // Navbarens "Delete column" (admin): dialogen där en tom lista väljs
+  // The navbar's "Delete column" (admin): the dialog where an empty list is picked
   useEffect(() => {
     if (!admin) return;
     return onBoardAction(BOARD_ACTIONS.deleteColumn, () => setDeletingList(true));
   }, [admin, setDeletingList]);
-  // Formuläret ligger sist på boarden: scrolla dit när det har ritats
+  // The form sits at the end of the board: scroll there once it has rendered
   useEffect(() => {
     const board = boardScrollRef.current;
     if (admin && addingList && board) board.scrollTo({ left: board.scrollWidth, behavior: "smooth" });
   }, [admin, addingList]);
 
-  // Admin: listan som dras i sin rubrik följer musen (lutad). Medan den dras visas boarden i den nya
-  // ordningen (boardHeaders): de andra listorna och deras kort flyttar undan och den lyfta listans plats
-  // är en mörk platshållare. Åtgärderna (spara, byta namn) använder alltid headers
+  // Admin: a list dragged by its header follows the mouse (tilted). While it is dragged the board is shown in the new
+  // order (boardHeaders): the other lists and their cards move aside and the lifted list's slot
+  // is a dark placeholder. The actions (save, rename) always use headers
   const { drag: listDrag, onPointerDown: onListPointerDown, previewRef, previewStyle } = useListDrag({
     scrollRef: boardScrollRef,
     onDrop: (from, toIndex) => moveList(from, headers[toIndex]?.key ?? from),
@@ -128,9 +128,9 @@ function BoardView({ boardId, admin }: { boardId: string; admin: boolean }) {
     [headers, listDrag],
   );
 
-  // Räknas fram vid varje render, så gridden får aldrig en tom layout som
-  // sedan sparas över den riktiga. Väntar på listorna: annars hamnar kort i
-  // tillagda listor tillfälligt i första listan och den ordningen sparas
+  // Computed on every render, so the grid never gets an empty layout that
+  // is then saved over the real one. Waits for the lists: otherwise cards in
+  // added lists land in the first list for a moment and that order is saved
   const gridLayout = useMemo(
     () =>
       layoutLoaded && columnsLoaded
@@ -146,21 +146,21 @@ function BoardView({ boardId, admin }: { boardId: string; admin: boolean }) {
   const { visible: visibleLayout, hidden: hiddenLayout } = splitByCollapsed(boardHeaders, gridLayout, collapsed);
   const visibleIds = new Set(visibleLayout.map((l) => l.i));
 
-  // Dolda listor blir smala remsor; gridden räknar i enheter i stället för kolumner.
-  // Formuläret för en ny lista (navbarens "Create column") får plats sist medan det är öppet
+  // Hidden lists become narrow strips; the grid counts in units instead of columns.
+  // The form for a new list (the navbar's "Create column") gets room at the end while it is open
   const showAddList = admin && addingList;
   const columns = useMemo(
     () => boardColumns(boardHeaders, collapsed, showAddList ? EXPANDED_SPAN : 0),
     [boardHeaders, collapsed, showAddList],
   );
-  // Gridens positioner (enheter) → sparade positioner (kolumner), plus korten i dolda listor
+  // Grid positions (units) → saved positions (columns), plus the cards in hidden lists
   const saveOrder = (currentLayout: readonly CardPosition[]) =>
     persistLayout({
       ...userLayout,
       cards: toSavedPositions(boardHeaders, [...fromGridLayout(currentLayout, columns), ...hiddenLayout]),
     });
   const cardById = new Map(cards.map((fb, i) => [cardKey(fb, i), fb]));
-  // Ett kort som dras: pekarens lista, dolda listor som mål, ny status när det byter lista
+  // A dragged card: the pointer's list, hidden lists as targets, a new status when it changes list
   const { constraints, dropTarget, onDrag, onDragStop } = useCardDrag({
     columns,
     headers: boardHeaders,
@@ -169,15 +169,15 @@ function BoardView({ boardId, admin }: { boardId: string; admin: boolean }) {
     saveOrder,
   });
 
-  // Listan som dras: dess kort döljs i gridden och visas i förhandsvisningen i stället, i samma ordning
+  // The list being dragged: its cards are hidden in the grid and shown in the preview instead, in the same order
   const dragIndex = draggingList ? boardHeaders.findIndex((h) => h.key === draggingList) : -1;
   const dragLayout = dragIndex < 0 ? [] : visibleLayout.filter((l) => l.x === dragIndex).sort((a, b) => a.y - b.y);
   const draggedCardIds = new Set(dragLayout.map((l) => l.i));
   const dragCards = dragLayout.flatMap((l) => cardById.get(l.i) ?? []);
 
-  // Antal kort per kolumn: visas i rubriken och styr listans höjd
+  // Number of cards per column: shown in the header and sets the list's height
   const columnCounts = countCardsPerColumn(boardHeaders, gridLayout);
-  // Skeleton-korten visas medan kort, layout och listor hämtas
+  // The skeleton cards show while cards, layout and lists are fetched
   const boardLoading = !cardsLoaded || !layoutLoaded || !columnsLoaded;
   const columnRows = rowsPerColumn(
     boardLoading ? columnCounts.map(() => SKELETON_CARD_COUNT) : columnCounts,
@@ -192,8 +192,8 @@ function BoardView({ boardId, admin }: { boardId: string; admin: boolean }) {
 
   return (
     <div id="cards-container" className="flex flex-1 flex-col font-jira">
-      {/* Mobil: varje lista är en skärm bred och man sveper mellan dem (snap).
-          md och uppåt: alla listor får plats i skärmens bredd */}
+      {/* Mobile: every list is one screen wide and you swipe between them (snap).
+          md and up: every list fits in the screen's width */}
       <div
         ref={boardScrollRef}
         className="board-scroll flex-1 snap-x snap-mandatory overflow-x-auto overscroll-x-contain md:snap-none"
@@ -201,8 +201,8 @@ function BoardView({ boardId, admin }: { boardId: string; admin: boolean }) {
       >
         <div
           ref={containerRef}
-          // Mobil: en skärmbredd per synlig lista. Desktop: fast listbredd, dolda listor
-          // breddar inte de andra. Gridden läser bredden via useContainerWidth
+          // Mobile: one screen width per visible list. Desktop: fixed list width, hidden lists
+          // don't widen the others. The grid reads the width via useContainerWidth
           className="relative w-(--board-width) md:w-(--board-width-md)"
           style={
             {
@@ -221,7 +221,7 @@ function BoardView({ boardId, admin }: { boardId: string; admin: boolean }) {
             gridStyle={columnGrid}
           />
 
-          {/* Rubriker och "Add a card", ovanför gridden så att de går att klicka */}
+          {/* Headers and "Add a card", above the grid so they can be clicked */}
           <div className="pointer-events-none absolute inset-0 z-[1] grid items-start" style={columnGrid}>
             {boardHeaders.map((h, i) => {
               const count = boardLoading ? null : columnCounts[i];
@@ -261,8 +261,8 @@ function BoardView({ boardId, admin }: { boardId: string; admin: boolean }) {
 
           {!layoutLoaded || !mounted ? null : visibleLayout.length > 0 && (
             <ResponsiveGridLayout
-              // Ny gridd när antalet enheter eller listornas ordning ändras (lista döljs, visas eller flyttas): annars räknar
-              // react-grid-layout om de gamla positionerna och korten hamnar fel
+              // A new grid when the number of units or the order of the lists changes (a list is hidden, shown or moved): otherwise
+              // react-grid-layout recalculates the old positions and the cards end up in the wrong place
               key={`${columns.units}:${boardHeaders.map((h) => h.key).join()}`}
               className="gridLayout"
               layouts={{ lg: toGridLayout(visibleLayout, columns) }}
@@ -273,26 +273,26 @@ function BoardView({ boardId, admin }: { boardId: string; admin: boolean }) {
               width={width}
               margin={[gutter, GRID_MARGIN]}
               containerPadding={[gutter, CARDS_TOP]}
-              // Avstängd editCard eller read-only: korten ligger still
+              // editCard switched off or read-only: the cards stay put
               dragConfig={{ cancel: ".no-drag", enabled: canDragCards }}
-              // Korten har fast storlek (1x1), så inget resize-handtag
+              // The cards have a fixed size (1x1), so no resize handle
               resizeConfig={{ enabled: false }}
               onLayoutChange={(currentLayout) => {
-                // Förhandsvisningen medan en lista dras sparas inte, inte heller i read-only-läget
+                // The preview while a list is dragged is not saved, nor anything in read-only mode
                 if (listDrag || !canWrite) return;
                 saveOrder(currentLayout);
               }}
               onDrag={onDrag}
               onDragStop={onDragStop}
             >
-              {/* react-grid-layout styr ytterdiven (style, className, ref), så den ligger kvar här */}
+              {/* react-grid-layout controls the outer div (style, className, ref), so it stays here */}
               {cards
                 .map((fb, i) => ({ fb, id: cardKey(fb, i) }))
                 .filter(({ id }) => visibleIds.has(id))
                 .map(({ fb, id }) => (
                   <div
                     key={fb._id || fb.username + fb.submittedAt}
-                    // Luft mellan kortet och kolumnens kanter. Korten i en lyft lista visas i förhandsvisningen
+                    // Space between the card and the column's edges. The cards of a lifted list show in the preview
                     className={`px-2 ${draggedCardIds.has(id) ? "invisible" : ""}`}
                   >
                     <BoardCard

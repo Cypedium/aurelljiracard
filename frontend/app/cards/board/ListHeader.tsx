@@ -15,13 +15,13 @@ import { LIST_BUTTON_HOVER_CLASS, listColor } from "../../utils/styles";
 
 type Props = {
   header: BoardHeader;
-  // null medan boarden laddar
+  // null while the board loads
   count: number | null;
   span: number;
   height: number;
   admin: boolean;
   renaming: boolean;
-  // Listan lyfts: innehållet döljs, platshållaren ritas i bakgrundslagret
+  // The list is lifted: the content is hidden, the placeholder is drawn in the background layer
   dragging: boolean;
   onDragStart: (e: ReactPointerEvent<HTMLElement>) => void;
   onStartRename: () => void;
@@ -29,11 +29,11 @@ type Props = {
   onRecolor: (color: string | null) => void;
   onHide: () => void;
   onAddCard: () => void;
-  // Av när createCard är avstängd: knappen behåller sin plats, så att korten under inte flyttar
+  // Off when createCard is switched off: the button keeps its place, so the cards below don't move
   canAddCard?: boolean;
 };
 
-// En synlig listas rubrik (admin: klicka för att byta namn, dra för att flytta) och "Add a card"
+// A visible list's header (admin: click to rename, drag to move) and "Add a card"
 export default function ListHeader({
   header,
   count,
@@ -58,8 +58,8 @@ export default function ListHeader({
       className={`flex flex-col px-2 ${dragging ? "[&>*]:invisible" : ""}`}
       style={{ gridColumn: `span ${span}`, height }}
     >
-      {/* Admin: dra var som helst i rubriken och raden med "Add a card" för att flytta listan (för alla).
-          Knappar har NO_LIST_DRAG_ATTR; klick på namnet byter namn, dra från det flyttar listan */}
+      {/* Admin: drag anywhere in the header and the "Add a card" row to move the list (for everyone).
+          Buttons have NO_LIST_DRAG_ATTR; a click on the name renames, dragging from it moves the list */}
       <div
         onPointerDown={admin && !renaming ? onDragStart : undefined}
         title={admin ? "Drag to move the list (for everyone)" : undefined}
@@ -81,7 +81,7 @@ export default function ListHeader({
               onKeyDown={(e) => {
                 if (e.key === "Enter") e.currentTarget.blur();
                 if (e.key === "Escape") {
-                  // Ångra: blur sparar då samma namn, dvs ingenting
+                  // Undo: blur then saves the same name, i.e. nothing
                   e.currentTarget.value = header.title;
                   e.currentTarget.blur();
                 }
@@ -134,7 +134,7 @@ export default function ListHeader({
           disabled={!canAddCard}
           aria-hidden={!canAddCard || undefined}
         >
-          {/* Samma ikon som "Create card" i navbaren */}
+          {/* The same icon as "Create card" in the navbar */}
           <PencilSquareIcon className="size-4" aria-hidden />
           Add a card
         </button>

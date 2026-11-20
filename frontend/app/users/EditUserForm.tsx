@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 
 type EditUserFormProps = {
   user: PublicUser;
-  // Den inloggade admin själv: rollen kan inte ändras (backend nekar också)
+  // The logged-in admin themselves: the role can't be changed (the backend refuses too)
   isSelf: boolean;
   onSaved: (user: PublicUser) => void;
   onCancel: () => void;
@@ -40,7 +40,7 @@ export default function EditUserForm({ user, isSelf, onSaved, onCancel }: EditUs
       onSaved(res.data);
     } catch (error) {
       logError('Update user error', error);
-      // Upptaget namn (409) visas under fältet
+      // A taken name (409) is shown under the field
       if (isConflictError(error)) {
         form.setError('username', { message: apiErrorMessage(error, 'Username already taken.') }, { shouldFocus: true });
         return;

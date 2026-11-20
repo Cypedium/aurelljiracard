@@ -1,12 +1,12 @@
-// Navbarens knappar ("Create card", "Delete column", "Create column", "Create Issue type") ber sidan (boarden, backloggen
-// eller Issue types) öppna sina formulär.
-// Navbaren och sidan är skilda komponenter, så de pratar via en delad EventTarget
+// The navbar's buttons ("Create card", "Delete column", "Create column", "Create Issue type") ask the page (the board, the backlog
+// or Issue types) to open its forms.
+// The navbar and the page are separate components, so they talk through a shared EventTarget
 export const BOARD_ACTIONS = {
   createCard: "create-card",
   createColumn: "create-column",
   deleteColumn: "delete-column",
   createIssueType: "create-issue-type",
-  // "Share" (boardens admin) / "Members" (medarbetare): dialogen med inbjudningslänk och medlemmar
+  // "Share" (the board's admin) / "Members" (collaborators): the dialog with the invite link and the members
   shareBoard: "share-board",
 } as const;
 
@@ -18,7 +18,7 @@ export const requestBoardAction = (action: BoardAction): void => {
   target.dispatchEvent(new Event(action));
 };
 
-// Returnerar en funktion som slutar lyssna (för useEffect)
+// Returns a function that stops listening (for useEffect)
 export const onBoardAction = (action: BoardAction, handler: () => void): (() => void) => {
   target.addEventListener(action, handler);
   return () => target.removeEventListener(action, handler);

@@ -1,13 +1,13 @@
-// Färgverktyg för #rrggbb-färger (listor, ärendetyper, utseende)
+// Colour tools for #rrggbb colours (lists, issue types, appearance)
 
-// Måste matcha HEX_COLOR i server-java ColumnRequest
+// Must match HEX_COLOR in server-java ColumnRequest
 export const HEX_COLOR = /^#[0-9a-f]{6}$/i;
 
-// Giltig färg med gemener, annars undefined
+// A valid colour in lowercase, otherwise undefined
 export const sanitizeHexColor = (color: unknown): string | undefined =>
   typeof color === "string" && HEX_COLOR.test(color) ? color.toLowerCase() : undefined;
 
-// Blandar två färger; amount 0 = a, 1 = b
+// Mixes two colours; amount 0 = a, 1 = b
 export const mixHex = (a: string, b: string, amount: number): string => {
   const channel = (hex: string, i: number) => parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16);
   return `#${[0, 1, 2]
@@ -24,16 +24,16 @@ const luminance = (hex: string): number => {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 };
 
-// Jiras mörka text (--color-jira-text) och vit
+// Jira's dark text (--color-jira-text) and white
 export const DARK_TEXT = "#172b4d";
 export const LIGHT_TEXT = "#ffffff";
 
-// WCAG-kontrast mellan två färger, 1–21
+// WCAG contrast between two colours, 1–21
 export const contrastRatio = (a: string, b: string): number => {
   const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
   return (hi + 0.05) / (lo + 0.05);
 };
 
-// Mörk eller vit text, den som ger högst kontrast mot bakgrunden
+// Dark or white text, whichever gives the higher contrast against the background
 export const readableTextColor = (background: string): string =>
   contrastRatio(background, DARK_TEXT) >= contrastRatio(background, LIGHT_TEXT) ? DARK_TEXT : LIGHT_TEXT;

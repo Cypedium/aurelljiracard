@@ -1,7 +1,7 @@
 import { TABLE_THEAD_CLASS, TABLE_WRAPPER_CLASS } from '../utils/styles';
 import { Skeleton } from './ui/skeleton';
 
-// Visas medan en tabell (backlog, users, issue types) hämtas
+// Shown while a table (backlog, users, issue types) is fetched
 export default function TableSkeleton({ rows = 5 }: { rows?: number }) {
   return (
     <div className={TABLE_WRAPPER_CLASS} aria-busy="true" aria-label="Loading">

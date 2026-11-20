@@ -29,28 +29,28 @@ import { Input } from './ui/input';
 type Props = {
   open: boolean;
   onClose: () => void;
-  // Den nya typen, så att formuläret som öppnade dialogen kan välja den
+  // The new type, so the form that opened the dialog can select it
   onCreated: (type: IssueType) => void;
 };
 
-// Vald färg/ikon: ring runt knappen
+// Selected colour/icon: a ring around the button
 const PICKED_CLASS = 'ring-2 ring-jira-focus ring-offset-2';
 
-// Admin: ny ärendetyp för alla. Öppnas från "New issue type" i IssueTypeSelect
+// Admin: a new issue type for everyone. Opened from "New issue type" in IssueTypeSelect
 export default function NewIssueTypeDialog({ open, onClose, onCreated }: Props) {
   const form = useForm<IssueTypeFormValues>({
     resolver: zodResolver(issueTypeFormSchema),
     defaultValues: EMPTY_ISSUE_TYPE_FORM,
   });
 
-  // Tomt formulär varje gång dialogen öppnas
+  // An empty form every time the dialog opens
   useEffect(() => {
     if (open) form.reset(EMPTY_ISSUE_TYPE_FORM);
   }, [open, form]);
 
   const preview = form.watch();
 
-  // Samma kontroll som för Issue key i kortformuläret: ett namn som redan finns visas under fältet medan man skriver
+  // The same check as for Issue key in the card form: a name that already exists is shown under the field while typing
   const types = useIssueTypes();
   const boardId = useBoards().current?._id ?? null;
   const showDuplicate = (message = DUPLICATE_ISSUE_TYPE_MESSAGE, focus = false) =>
@@ -94,14 +94,14 @@ export default function NewIssueTypeDialog({ open, onClose, onCreated }: Props) 
       <DialogContent
         showCloseButton={false}
         aria-describedby={undefined}
-        // Formuläret har egen bakgrund och skugga
+        // The form has its own background and shadow
         className="gap-0 border-0 bg-transparent p-0 font-jira shadow-none sm:max-w-[420px]"
       >
         <DialogTitle className="sr-only">New issue type</DialogTitle>
         <Form {...form}>
           <form
             className="w-full overflow-hidden rounded-xl bg-white text-sm text-jira-text shadow-[0_8px_12px_rgba(9,30,66,0.15),0_0_1px_rgba(9,30,66,0.31)]"
-            // Dialogen ligger i kortformuläret i React-trädet: submit får inte bubbla dit
+            // The dialog sits inside the card form in the React tree: submit must not bubble up there
             onSubmit={(e) => {
               e.stopPropagation();
               form.handleSubmit(onSubmit)(e);

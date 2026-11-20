@@ -1,4 +1,4 @@
-// PopoverContent: z-[1002], samma lager som SelectContent (över Navbar och dialoger)
+// PopoverContent: z-[1002], the same layer as SelectContent (above the Navbar and dialogs)
 "use client"
 
 import * as React from "react"

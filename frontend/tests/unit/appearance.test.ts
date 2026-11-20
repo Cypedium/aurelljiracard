@@ -77,7 +77,7 @@ describe("appearance", () => {
     const pink = boardBackground("pink");
     const grey = navbarTheme("grey");
     expect(navbarTextColor(pink, grey)).toBe(pink.text);
-    // Samma färg som navbaren: läsbar text i stället
+    // The same colour as the navbar: readable text instead
     expect(navbarTextColor({ ...pink, text: grey.top }, grey)).toBe("#ffffff");
   });
 

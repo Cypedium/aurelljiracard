@@ -19,15 +19,15 @@ export default function CardPage() {
 
   useEffect(() => {
     if (!hasSession()) {
-      router.replace(ROUTES.home); // root tar hand om redirect till login
+      router.replace(ROUTES.home); // the root page handles the redirect to login
     } else {
-      setAllowed(true); // visa formuläret
+      setAllowed(true); // show the form
     }
   }, []);
 
-  if (!allowed) return null; // visa inget innan redirect/allow
+  if (!allowed) return null; // show nothing before redirect/allow
 
-  // Samma bakgrund som boarden; pt eftersom navbaren är fixed
+  // The same background as the board; pt because the navbar is fixed
   return (
     <div className="min-h-[calc(100dvh-60px)] bg-linear-135 from-board-from via-board-via to-board-to px-4 pt-20 pb-6">
       <div className="mx-auto flex w-full max-w-[640px] gap-1 font-jira" role="tablist">
@@ -49,7 +49,7 @@ export default function CardPage() {
       {tab === "new" ? (
         <Card />
       ) : (
-        // Ett kort från backloggen hamnar i To Do och tilldelas dig; sedan till boarden
+        // A card from the backlog lands in To Do and is assigned to you; then on to the board
         <div className="mx-auto mb-6 w-full max-w-[640px] font-jira">
           <BacklogList onMoved={() => router.push(ROUTES.home)} />
         </div>

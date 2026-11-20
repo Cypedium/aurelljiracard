@@ -1,4 +1,4 @@
-// Typer för bildimporter (t.ex. `import icon from "../icon.png"`).
-// next-env.d.ts har samma referens men är gitignorerad och skapas först av `next build`/`next dev`,
-// så `tsc --noEmit` i CI behöver den här filen.
+// Types for image imports (e.g. `import icon from "../icon.png"`).
+// next-env.d.ts has the same reference but is gitignored and only created by `next build`/`next dev`,
+// so `tsc --noEmit` in CI needs this file.
 /// <reference types="next/image-types/global" />

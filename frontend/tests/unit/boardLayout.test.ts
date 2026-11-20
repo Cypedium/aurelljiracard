@@ -53,14 +53,14 @@ import { contrastRatio, readableTextColor } from "../../app/utils/color";
 
 const H = DEFAULT_HEADERS;
 describe("storage keys", () => {
-  // Ändras nycklarna tappar användarna sina sparade boardinställningar
+  // If the keys change, users lose their saved board settings
   it("keeps the localStorage keys stable", () => {
     expect(LAYOUT_STORAGE_KEY).toBe("user_layout");
     expect(COLLAPSED_STORAGE_KEY).toBe("collapsed_columns");
   });
 });
 
-// Standardlistorna plus en som en admin lagt till
+// The default lists plus one an admin added
 const WITH_REVIEW = [...DEFAULT_HEADERS, { key: "review", title: "Review" }];
 
 describe("normalizeLayout", () => {
@@ -68,7 +68,7 @@ describe("normalizeLayout", () => {
     const cards = [{ id: "a", x: 1, y: 0, w: 1, h: 1 }];
     expect(normalizeLayout({ cols: 12, headers: [], cards } as any)).toEqual({ ...DEFAULT_LAYOUT, cards });
     expect(normalizeLayout({})).toEqual({ ...DEFAULT_LAYOUT, cards: undefined });
-    // Sparad JSON kan vara vad som helst, t.ex. null
+    // Saved JSON can be anything, e.g. null
     expect(normalizeLayout(null)).toEqual({ ...DEFAULT_LAYOUT, cards: undefined });
   });
 });
@@ -336,7 +336,7 @@ describe("collapsed columns", () => {
   });
 });
 
-// Minsta bredd på desktop i px för så många enheter (en utfälld lista = EXPANDED_SPAN enheter)
+// Minimum desktop width in px for this many units (an expanded list = EXPANDED_SPAN units)
 const minWidth = (units: number) => `${(units * MIN_LIST_WIDTH) / EXPANDED_SPAN}px`;
 
 describe("board columns", () => {
@@ -374,19 +374,19 @@ describe("board columns", () => {
   it("snaps a grid position to the nearest visible list", () => {
     const columns = boardColumns(H, ["in-progress"]);
     expect(columnAtGridX(columns, 0)).toBe(0);
-    expect(columnAtGridX(columns, 4)).toBe(2); // remsan hoppas över
+    expect(columnAtGridX(columns, 4)).toBe(2); // the strip is skipped
     expect(columnAtGridX(columns, 8)).toBe(3);
     expect(snapGridX(columns, 6)).toBe(5);
   });
 
   it("places a dragged card in the list under the pointer", () => {
     const columns = boardColumns(H, ["in-progress"]);
-    // Kortets vänsterkant nära lista 0, men pekaren över lista 2
+    // The card's left edge near list 0, but the pointer over list 2
     expect(cardDragGridX(columns, 1, 2)).toBe(5);
     expect(cardDragGridX(columns, 8, 0)).toBe(0);
-    // Över remsan (lista 1): närmaste utfällda lista
+    // Over the strip (list 1): the nearest expanded list
     expect(cardDragGridX(columns, 0, 1)).toBe(5);
-    // Ingen pekare eller okänt index: kortets egen position
+    // No pointer or an unknown index: the card's own position
     expect(cardDragGridX(columns, 6, null)).toBe(5);
     expect(cardDragGridX(columns, 6, 9)).toBe(5);
   });
@@ -402,7 +402,7 @@ describe("board columns", () => {
   it("lets more than four lists share the screen until they reach the minimum width", () => {
     const columns = boardColumns(WITH_REVIEW, []);
     expect(columns.units).toBe(20);
-    // 5 × MIN_LIST_WIDTH; boarden scrollar först när skärmen är smalare än så
+    // 5 × MIN_LIST_WIDTH; the board only scrolls when the screen is narrower than that
     expect(desktopBoardWidth(columns)).toBe(`max(100%, ${5 * MIN_LIST_WIDTH}px)`);
     expect(mobileBoardWidth(columns)).toBe(`calc(500% - ${4 * MOBILE_GUTTER}px)`);
   });
@@ -411,7 +411,7 @@ describe("board columns", () => {
     const columns = boardColumns(H, [], EXPANDED_SPAN);
     expect(columns.units).toBe(BOARD_UNITS + EXPANDED_SPAN);
     expect(columns.spans.map((s) => s.start)).toEqual([0, 4, 8, 12]);
-    // Kort snäpper aldrig till platsen för "Add new column"
+    // Cards never snap to the slot of "Add new column"
     expect(columnAtGridX(columns, 17)).toBe(3);
   });
 
