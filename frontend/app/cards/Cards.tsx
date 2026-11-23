@@ -45,12 +45,14 @@ import { canDeleteCard, canEditCard } from "../utils/session";
 import { BOARD_ACTIONS, onBoardAction } from "../utils/boardActions";
 import { useFeatures } from "../hooks/useFeatures";
 import { useSession } from "../hooks/useSession";
+import { useLanguage } from "../hooks/useLanguage";
 
 // The selected board (the navbar switches it); key reloads everything when the board changes
 export default function Home() {
   const { current, loaded, boardAdmin } = useBoards();
+  const { t } = useLanguage();
   if (!current) {
-    return loaded ? <p className="pt-10 text-center font-jira text-white">You have no board yet.</p> : null;
+    return loaded ? <p className="pt-10 text-center font-jira text-white">{t("You have no board yet.")}</p> : null;
   }
   return <BoardView key={current._id} boardId={current._id} admin={boardAdmin} />;
 }

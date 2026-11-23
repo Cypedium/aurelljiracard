@@ -5,14 +5,17 @@ import Card from "./Card";
 import BacklogList from "../../components/BacklogList";
 import { hasSession } from "../../utils/session";
 import { ROUTES } from "../../utils/routes";
+import { useLanguage } from "../../hooks/useLanguage";
+import { msg } from "../../utils/i18n";
 
 type Tab = "new" | "backlog";
 const TABS: { key: Tab; label: string }[] = [
-  { key: "new", label: "New card" },
-  { key: "backlog", label: "From backlog" },
+  { key: "new", label: msg("New card") },
+  { key: "backlog", label: msg("From backlog") },
 ];
 
 export default function CardPage() {
+  const { t } = useLanguage();
   const router = useRouter();
   const [allowed, setAllowed] = useState(false);
   const [tab, setTab] = useState<Tab>("new");
@@ -41,7 +44,7 @@ export default function CardPage() {
             }`}
             onClick={() => setTab(key)}
           >
-            {label}
+            {t(label)}
           </button>
         ))}
       </div>

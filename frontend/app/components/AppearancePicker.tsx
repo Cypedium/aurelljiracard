@@ -1,5 +1,6 @@
 'use client';
 import { CheckIcon, ChevronLeftIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { useLanguage } from '../hooks/useLanguage';
 import {
   BOARD_COLORS,
   BOARD_GRADIENTS,
@@ -40,49 +41,59 @@ export const NavbarPreview = ({ appearance, themeKey }: { appearance: Appearance
 };
 
 // A custom colour with the browser's colour picker; the choice applies while you drag in it
-const CustomColor = ({ value, selected, onChange }: { value: string; selected: boolean; onChange: (hex: string) => void }) => (
-  <label
-    className={`flex cursor-pointer items-center gap-3 rounded-md px-2 py-2 text-sm hover:bg-jira-hover ${selected ? 'ring-2 ring-jira-primary' : ''}`}
-  >
-    <input
-      type="color"
-      value={value}
-      onChange={(e) => onChange(e.target.value.toLowerCase())}
-      className="h-8 w-12 shrink-0 cursor-pointer rounded border border-jira-neutral bg-white p-0.5"
-    />
-    <span className="flex-1 font-medium">Custom colour</span>
-    <span className="font-mono text-xs text-jira-secondary">{value}</span>
-    {selected && <CheckIcon className="size-4 text-jira-primary" strokeWidth={2.5} aria-hidden />}
-  </label>
-);
+const CustomColor = ({ value, selected, onChange }: { value: string; selected: boolean; onChange: (hex: string) => void }) => {
+  const { t } = useLanguage();
+  return (
+    <label
+      className={`flex cursor-pointer items-center gap-3 rounded-md px-2 py-2 text-sm hover:bg-jira-hover ${selected ? 'ring-2 ring-jira-primary' : ''}`}
+    >
+      <input
+        type="color"
+        value={value}
+        onChange={(e) => onChange(e.target.value.toLowerCase())}
+        className="h-8 w-12 shrink-0 cursor-pointer rounded border border-jira-neutral bg-white p-0.5"
+      />
+      <span className="flex-1 font-medium">{t('Custom colour')}</span>
+      <span className="font-mono text-xs text-jira-secondary">{value}</span>
+      {selected && <CheckIcon className="size-4 text-jira-primary" strokeWidth={2.5} aria-hidden />}
+    </label>
+  );
+};
 
 // The close button in the top right corner of the account menu and its panels; closes the whole menu
-export const CloseButton = ({ onClose, className = '' }: { onClose: () => void; className?: string }) => (
-  <button
-    type="button"
-    onClick={onClose}
-    className={`rounded-md p-1 text-jira-secondary hover:bg-jira-hover hover:text-jira-text ${className}`}
-    aria-label="Close menu"
-  >
-    <XMarkIcon className="size-5" aria-hidden />
-  </button>
-);
-
-// The heading of a panel in the account menu; the back arrow only on mobile, where the panel replaces the menu
-export const PanelHeader = ({ title, onBack, onClose }: { title: string; onBack: () => void; onClose: () => void }) => (
-  <div className="relative flex min-h-7 items-center justify-center">
+export const CloseButton = ({ onClose, className = '' }: { onClose: () => void; className?: string }) => {
+  const { t } = useLanguage();
+  return (
     <button
       type="button"
-      onClick={onBack}
-      className="absolute left-0 rounded-md p-1 text-jira-secondary hover:bg-jira-hover md:hidden"
-      aria-label="Back to the menu"
+      onClick={onClose}
+      className={`rounded-md p-1 text-jira-secondary hover:bg-jira-hover hover:text-jira-text ${className}`}
+      aria-label={t('Close menu')}
     >
-      <ChevronLeftIcon className="size-5" aria-hidden />
+      <XMarkIcon className="size-5" aria-hidden />
     </button>
-    <h2 className="text-sm font-semibold text-jira-secondary">{title}</h2>
-    <CloseButton onClose={onClose} className="absolute right-0" />
-  </div>
-);
+  );
+};
+
+// The heading of a panel in the account menu; the back arrow only on mobile, where the panel replaces the menu.
+// title is already translated
+export const PanelHeader = ({ title, onBack, onClose }: { title: string; onBack: () => void; onClose: () => void }) => {
+  const { t } = useLanguage();
+  return (
+    <div className="relative flex min-h-7 items-center justify-center">
+      <button
+        type="button"
+        onClick={onBack}
+        className="absolute left-0 rounded-md p-1 text-jira-secondary hover:bg-jira-hover md:hidden"
+        aria-label={t('Back to the menu')}
+      >
+        <ChevronLeftIcon className="size-5" aria-hidden />
+      </button>
+      <h2 className="text-sm font-semibold text-jira-secondary">{title}</h2>
+      <CloseButton onClose={onClose} className="absolute right-0" />
+    </div>
+  );
+};
 
 type PickerProps = {
   view: AppearanceView;
@@ -95,15 +106,16 @@ type PickerProps = {
 // A picker in the account menu. Desktop: a panel to the left of the menu (like Trello's "Theme").
 // Mobile: in place of the menu, with a back arrow. The choice applies at once
 export function AppearancePicker({ view, appearance, onChange, onBack, onClose }: PickerProps) {
+  const { t } = useLanguage();
   const backgroundButton = (b: BoardBackground, sizeClass: string) => (
     <button
       key={b.key}
       type="button"
       className={`${PICKER_SWATCH_CLASS} ${sizeClass}`}
       style={{ background: backgroundSwatch(b) }}
-      aria-label={b.name}
+      aria-label={t(b.name)}
       aria-pressed={appearance.background === b.key}
-      title={b.name}
+      title={t(b.name)}
       onClick={() => onChange({ ...appearance, background: b.key })}
     >
       {appearance.background === b.key && <Selected />}
@@ -119,14 +131,14 @@ export function AppearancePicker({ view, appearance, onChange, onBack, onClose }
       onClick={() => onChange({ ...appearance, navbar: n.key })}
     >
       <NavbarPreview appearance={appearance} themeKey={n.key} />
-      <span className="min-w-0 flex-1 truncate font-medium">{n.name}</span>
+      <span className="min-w-0 flex-1 truncate font-medium">{t(n.name)}</span>
       {appearance.navbar === n.key && <CheckIcon className="size-4 shrink-0 text-jira-primary" strokeWidth={2.5} aria-hidden />}
     </button>
   );
 
   return (
     <div className="flex flex-col gap-4">
-      <PanelHeader title={view === 'background' ? 'Board background' : 'Navbar colour'} onBack={onBack} onClose={onClose} />
+      <PanelHeader title={view === 'background' ? t('Board background') : t('Navbar colour')} onBack={onBack} onClose={onClose} />
 
       {view === 'background' ? (
         <>
@@ -138,13 +150,13 @@ export function AppearancePicker({ view, appearance, onChange, onBack, onClose }
             selected={isCustomColor(appearance.background)}
             onChange={(hex) => onChange({ ...appearance, background: hex })}
           />
-          <p className="text-xs text-jira-subtle">The navbar text follows the board colour. Saved in this browser.</p>
+          <p className="text-xs text-jira-subtle">{t('The navbar text follows the board colour. Saved in this browser.')}</p>
         </>
       ) : (
         <>
-          <h4 className={PICKER_GROUP_HEADING_CLASS}>Greys</h4>
+          <h4 className={PICKER_GROUP_HEADING_CLASS}>{t('Greys')}</h4>
           <div className="-mt-2 grid grid-cols-2 gap-1">{NAVBAR_GREYS.map(navbarButton)}</div>
-          <h4 className={PICKER_GROUP_HEADING_CLASS}>Colours</h4>
+          <h4 className={PICKER_GROUP_HEADING_CLASS}>{t('Colours')}</h4>
           <div className="-mt-2 grid grid-cols-2 gap-1">{NAVBAR_COLORS.map(navbarButton)}</div>
           <CustomColor
             value={navbarTheme(appearance.navbar).top}
@@ -152,8 +164,9 @@ export function AppearancePicker({ view, appearance, onChange, onBack, onClose }
             onChange={(hex) => onChange({ ...appearance, navbar: hex })}
           />
           <p className="text-xs text-jira-subtle">
-            The row below the top row gets a darker shade. Text that would match the navbar turns white or dark. Saved in
-            this browser.
+            {t(
+              'The row below the top row gets a darker shade. Text that would match the navbar turns white or dark. Saved in this browser.',
+            )}
           </p>
         </>
       )}

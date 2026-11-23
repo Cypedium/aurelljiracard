@@ -16,6 +16,8 @@ import {
   type BoardHeader,
   type UserLayout,
 } from "../utils/boardLayout";
+import { msg } from "../utils/i18n";
+import { t } from "../utils/languageStore";
 
 // Fetches the board's cards and lists and the user's layout. When the board changes everything is fetched again
 export function useBoardData(boardId: string) {
@@ -37,7 +39,7 @@ export function useBoardData(boardId: string) {
       // The backlog is shown on /backlog, not on the board
       setCards(boardCards(res.data || []));
     } catch (err) {
-      reportError("Error fetching cards", err, "Could not load cards.");
+      reportError("Error fetching cards", err, msg("Could not load cards."));
     } finally {
       setCardsLoaded(true);
     }
@@ -75,7 +77,7 @@ export function useBoardData(boardId: string) {
     getColumns(boardId)
       .then((res) => current && setHeaders(normalizeColumns(res.data)))
       .catch((err) => {
-        reportError("Error fetching lists", err, "Could not load the lists.");
+        reportError("Error fetching lists", err, msg("Could not load the lists."));
       })
       .finally(() => current && setColumnsLoaded(true));
     // A response for a board the user has already left doesn't overwrite the new one
@@ -92,7 +94,7 @@ export function useBoardData(boardId: string) {
       } catch (e) {
         logError("Failed to save layout to server", e);
         // Fixed id: repeated errors replace the same toast instead of stacking up
-        toast.error("Could not save the board layout. It is kept in this browser.", { id: "layout-save" });
+        toast.error(t("Could not save the board layout. It is kept in this browser."), { id: "layout-save" });
       }
     }, 800),
     [],

@@ -1,3 +1,5 @@
+import { msg } from "./i18n";
+
 // The login is kept in sessionStorage: it survives a reload but disappears
 // when the window/tab is closed (= logged out). Read and write only through the functions here
 const ACCESS_TOKEN_KEY = "accessToken";
@@ -44,6 +46,8 @@ export const getUsername = (): string => sessionStorage.getItem(USERNAME_KEY) ||
 // The same roles as the backend (server-java Role)
 export const ROLES = ["user", "admin"] as const;
 export type Role = (typeof ROLES)[number];
+// The roles' names in the UI (shown translated)
+export const ROLE_LABELS: Record<Role, string> = { user: msg("User"), admin: msg("Admin") };
 
 // The access token's payload (UI only; the backend checks for itself). Invalid → {}
 const tokenPayload = (accessToken: string): Record<string, unknown> => {

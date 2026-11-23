@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { HEX_COLOR, sanitizeHexColor } from "./color";
+import { msg, type Translate } from "./i18n";
 
 // Issue types are shared by everyone (GET /issue-type); admins add new ones. A card's type = the type's key
 export type CardType = string;
@@ -7,34 +8,50 @@ export type CardType = string;
 // Icons a type can have; must match CardType.ICONS in server-java
 export const ISSUE_TYPE_ICONS = ["check", "bug", "doc", "bolt", "star", "flag", "wrench", "light-bulb"] as const;
 export type IssueTypeIconName = (typeof ISSUE_TYPE_ICONS)[number];
+// The icons' names for screen readers and tooltips (shown translated)
+export const ISSUE_TYPE_ICON_NAMES: Record<IssueTypeIconName, string> = {
+  check: msg("Check mark"),
+  bug: msg("Bug"),
+  doc: msg("Document"),
+  bolt: msg("Lightning"),
+  star: msg("Star"),
+  flag: msg("Flag"),
+  wrench: msg("Wrench"),
+  "light-bulb": msg("Light bulb"),
+};
 
 export type IssueType = { key: CardType; label: string; color: string; icon: IssueTypeIconName };
 
 // The default types; must match CardType.DEFAULTS in server-java.
 // Shown until the types have been fetched (and if fetching fails)
 export const DEFAULT_ISSUE_TYPES: IssueType[] = [
-  { key: "task", label: "Task", color: "#4bade8", icon: "check" },
-  { key: "bug", label: "Bug", color: "#c9372c", icon: "bug" },
-  { key: "doc", label: "Doc", color: "#8270db", icon: "doc" },
+  { key: "task", label: msg("Task"), color: "#4bade8", icon: "check" },
+  { key: "bug", label: msg("Bug"), color: "#c9372c", icon: "bug" },
+  { key: "doc", label: msg("Doc"), color: "#8270db", icon: "doc" },
 ];
+
+// The default types keep their English label in the database and are shown translated; added types as typed
+export const issueTypeLabel = (type: IssueType, t: Translate): string =>
+  DEFAULT_ISSUE_TYPES.some((d) => d.key === type.key && d.label === type.label) ? t(type.label) : type.label;
 
 export const DEFAULT_CARD_TYPE: CardType = "task";
 
 // The same limits and messages as server-java IssueTypeRequest
 export const ISSUE_TYPE_LABEL_MAX_LENGTH = 30;
 export const MAX_ISSUE_TYPES = 12;
+// Same text as the backend's message, so the Swedish comes from the backend entry
 const LABEL_MESSAGE = `Issue type name is required (max ${ISSUE_TYPE_LABEL_MAX_LENGTH} characters).`;
 
 // Colours for a new type: dark enough for a white icon
 export const ISSUE_TYPE_SWATCHES: { name: string; color: string }[] = [
-  { name: "Blue", color: "#4bade8" },
-  { name: "Green", color: "#1f845a" },
-  { name: "Red", color: "#c9372c" },
-  { name: "Purple", color: "#8270db" },
-  { name: "Orange", color: "#e56910" },
-  { name: "Teal", color: "#2898bd" },
-  { name: "Magenta", color: "#ae4787" },
-  { name: "Gray", color: "#626f86" },
+  { name: msg("Blue"), color: "#4bade8" },
+  { name: msg("Green"), color: "#1f845a" },
+  { name: msg("Red"), color: "#c9372c" },
+  { name: msg("Purple"), color: "#8270db" },
+  { name: msg("Orange"), color: "#e56910" },
+  { name: msg("Teal"), color: "#2898bd" },
+  { name: msg("Magenta"), color: "#ae4787" },
+  { name: msg("Gray"), color: "#626f86" },
 ];
 
 const isIconName = (icon: unknown): icon is IssueTypeIconName =>
@@ -61,7 +78,7 @@ export const issueTypeOf = (types: IssueType[], key?: string): IssueType =>
   DEFAULT_ISSUE_TYPES[0];
 
 // A new type's name must not exist already (case and surrounding spaces don't matter)
-export const DUPLICATE_ISSUE_TYPE_MESSAGE = "Issue type already exists.";
+export const DUPLICATE_ISSUE_TYPE_MESSAGE = msg("Issue type already exists.");
 
 export const isTakenIssueTypeLabel = (types: Pick<IssueType, "label">[], label: string): boolean => {
   const name = label.trim().toLowerCase();
@@ -79,8 +96,8 @@ export const countCardsByType = (cards: { type?: string }[]): Record<string, num
 // Admin: the form for a new type (NewIssueTypeDialog)
 export const issueTypeFormSchema = z.object({
   label: z.string().trim().min(1, LABEL_MESSAGE).max(ISSUE_TYPE_LABEL_MAX_LENGTH, LABEL_MESSAGE),
-  color: z.string().regex(HEX_COLOR, "Please pick a color."),
-  icon: z.enum(ISSUE_TYPE_ICONS, { message: "Please pick an icon." }),
+  color: z.string().regex(HEX_COLOR, msg("Please pick a color.")),
+  icon: z.enum(ISSUE_TYPE_ICONS, { message: msg("Please pick an icon.") }),
 });
 
 export type IssueTypeFormValues = z.infer<typeof issueTypeFormSchema>;

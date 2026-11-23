@@ -18,6 +18,8 @@ import IssueTypeIcon from './IssueTypeIcon';
 import TableSkeleton from './TableSkeleton';
 import { Button } from './ui/button';
 import { toPlainLine, toPlainText } from '../utils/summaryFormat';
+import { useLanguage } from '../hooks/useLanguage';
+import { msg } from '../utils/i18n';
 
 type BacklogListProps = {
   // Changed by the parent to fetch the list again (e.g. after a card was added)
@@ -31,6 +33,7 @@ const TARGET_STATUS = DEFAULT_HEADERS[0].key;
 
 export default function BacklogList({ refreshKey = 0, onMoved }: BacklogListProps) {
   const [cards, setCards] = useState<Card[] | null>(null);
+  const { t } = useLanguage();
   const [movingId, setMovingId] = useState<string | null>(null);
   // The same edit and delete dialogs as on the board
   const [editingCard, setEditingCard] = useState<Card | null>(null);
@@ -48,7 +51,7 @@ export default function BacklogList({ refreshKey = 0, onMoved }: BacklogListProp
       const res = await getCards(boardId);
       setCards(backlogCards(res.data || []));
     } catch (err) {
-      reportError('Error fetching backlog', err, 'Could not load the backlog.');
+      reportError('Error fetching backlog', err, msg('Could not load the backlog.'));
       setCards([]);
     }
   }, [boardId]);
@@ -63,10 +66,10 @@ export default function BacklogList({ refreshKey = 0, onMoved }: BacklogListProp
     try {
       const res = await updateCardStatus(boardId, card._id, TARGET_STATUS);
       setCards((prev) => prev?.filter((c) => c._id !== card._id) ?? null);
-      toast.success(`${card.productId} moved to the board and assigned to you.`);
+      toast.success(t('{key} moved to the board and assigned to you.', { key: card.productId }));
       onMoved?.(res.data);
     } catch (err) {
-      reportError('Error moving card', err, 'Could not move card.');
+      reportError('Error moving card', err, msg('Could not move card.'));
     } finally {
       setMovingId(null);
     }
@@ -84,14 +87,14 @@ export default function BacklogList({ refreshKey = 0, onMoved }: BacklogListProp
       await deleteCard(boardId, id);
       setCards((prev) => prev?.filter((c) => c._id !== id) ?? null);
     } catch (err) {
-      reportError('Error deleting card', err, 'Could not delete card.');
+      reportError('Error deleting card', err, msg('Could not delete card.'));
     }
   };
 
   if (cards === null) return <TableSkeleton />;
 
   if (cards.length === 0) {
-    return <p className="rounded-lg bg-white p-6 text-center text-sm text-jira-secondary">The backlog is empty.</p>;
+    return <p className="rounded-lg bg-white p-6 text-center text-sm text-jira-secondary">{t('The backlog is empty.')}</p>;
   }
 
   // Mobile: Created and Reporter are hidden so the table fits
@@ -102,13 +105,13 @@ export default function BacklogList({ refreshKey = 0, onMoved }: BacklogListProp
         <table className="w-full text-sm text-jira-text [&_td]:whitespace-nowrap [&_th]:whitespace-nowrap">
           <thead className={TABLE_THEAD_CLASS}>
             <tr>
-              <th scope="col" className={TH_CLASS}>Key</th>
-              <th scope="col" className={TH_CLASS}>Summary</th>
-              <th scope="col" className={`${TH_CLASS} text-center`}>Priority</th>
-              <th scope="col" className={`${TH_CLASS} max-[480px]:hidden`}>Created</th>
-              <th scope="col" className={`${TH_CLASS} text-center max-[480px]:hidden`}>Reporter</th>
+              <th scope="col" className={TH_CLASS}>{t('Key')}</th>
+              <th scope="col" className={TH_CLASS}>{t('Summary')}</th>
+              <th scope="col" className={`${TH_CLASS} text-center`}>{t('Priority')}</th>
+              <th scope="col" className={`${TH_CLASS} max-[480px]:hidden`}>{t('Created')}</th>
+              <th scope="col" className={`${TH_CLASS} text-center max-[480px]:hidden`}>{t('Reporter')}</th>
               <th scope="col" className={TH_CLASS}>
-                <span className="sr-only">Actions</span>
+                <span className="sr-only">{t('Actions')}</span>
               </th>
             </tr>
           </thead>
@@ -127,7 +130,7 @@ export default function BacklogList({ refreshKey = 0, onMoved }: BacklogListProp
                 <td className={`${TD_CLASS} text-center`}>
                   <span
                     className="inline-block min-w-5 rounded-full bg-jira-neutral px-1.5 text-center text-xs/4"
-                    title={`Priority: ${card.rating}/5`}
+                    title={t('Priority: {rating}/5', { rating: card.rating })}
                   >
                     {card.rating}
                   </span>
@@ -139,7 +142,7 @@ export default function BacklogList({ refreshKey = 0, onMoved }: BacklogListProp
                   <span
                     className="inline-flex size-6 items-center justify-center rounded-full text-[10px] font-semibold text-white"
                     style={{ background: avatarColor(card.username) }}
-                    title={`Created by ${card.username}`}
+                    title={t('Created by {username}', { username: card.username })}
                   >
                     {avatarInitials(card.username)}
                   </span>
@@ -148,18 +151,18 @@ export default function BacklogList({ refreshKey = 0, onMoved }: BacklogListProp
                   <div className="flex items-center justify-end gap-1">
                     {/* Edit and delete on your own cards, or all of them for the admin (shown on hover, as on the board) */}
                     {canEditCard(card) && isOn('editCard') && (
-                      <button className={CARD_ACTION_CLASS} aria-label="Edit card" title="Edit" onClick={() => setEditingCard(card)}>
+                      <button className={CARD_ACTION_CLASS} aria-label={t('Edit card')} title={t('Edit')} onClick={() => setEditingCard(card)}>
                         <PencilIcon className="size-4" aria-hidden />
                       </button>
                     )}
                     {canDeleteCard(card, userName, admin) && isOn('deleteCard') && (
-                      <button className={CARD_ACTION_CLASS} aria-label="Delete card" title="Delete" onClick={() => setDeletingCard(card)}>
+                      <button className={CARD_ACTION_CLASS} aria-label={t('Delete card')} title={t('Delete')} onClick={() => setDeletingCard(card)}>
                         <TrashIcon className="size-4" aria-hidden />
                       </button>
                     )}
                     {isOn('editCard') && (
                       <Button size="sm" disabled={movingId === card._id} onClick={() => moveToBoard(card)}>
-                        Move to board
+                        {t('Move to board')}
                       </Button>
                     )}
                   </div>

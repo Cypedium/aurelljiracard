@@ -2,6 +2,7 @@ import type { PointerEvent as ReactPointerEvent } from "react";
 import { EyeSlashIcon } from "@heroicons/react/16/solid";
 import { PencilSquareIcon } from "@heroicons/react/24/outline";
 import ColumnColorPicker from "../../components/ColumnColorPicker";
+import { useLanguage } from "../../hooks/useLanguage";
 import {
   CARDS_TOP,
   HEADER_HEIGHT,
@@ -9,6 +10,7 @@ import {
   LIST_KEY_ATTR,
   NO_LIST_DRAG_ATTR,
   defaultListColor,
+  listTitle,
   type BoardHeader,
 } from "../../utils/boardLayout";
 import { LIST_BUTTON_HOVER_CLASS, listColor } from "../../utils/styles";
@@ -51,6 +53,10 @@ export default function ListHeader({
   canAddCard = true,
 }: Props) {
   const color = listColor(header);
+  const { t } = useLanguage();
+  // A default list's name in the current language. Saving it unchanged must not store the translation
+  const title = listTitle(header, t);
+  const rename = (value: string) => onRename(value === title ? header.title : value);
 
   return (
     <div
@@ -62,7 +68,7 @@ export default function ListHeader({
           Buttons have NO_LIST_DRAG_ATTR; a click on the name renames, dragging from it moves the list */}
       <div
         onPointerDown={admin && !renaming ? onDragStart : undefined}
-        title={admin ? "Drag to move the list (for everyone)" : undefined}
+        title={admin ? t("Drag to move the list (for everyone)") : undefined}
         className={`flex shrink-0 flex-col ${admin ? "pointer-events-auto cursor-grab" : ""}`}
         style={{ height: CARDS_TOP }}
       >
@@ -73,16 +79,16 @@ export default function ListHeader({
           {renaming ? (
             <input
               autoFocus
-              aria-label="Column name"
+              aria-label={t("Column name")}
               maxLength={HEADER_TITLE_MAX_LENGTH}
-              defaultValue={header.title}
+              defaultValue={title}
               onFocus={(e) => e.currentTarget.select()}
-              onBlur={(e) => onRename(e.currentTarget.value)}
+              onBlur={(e) => rename(e.currentTarget.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter") e.currentTarget.blur();
                 if (e.key === "Escape") {
                   // Undo: blur then saves the same name, i.e. nothing
-                  e.currentTarget.value = header.title;
+                  e.currentTarget.value = title;
                   e.currentTarget.blur();
                 }
               }}
@@ -91,22 +97,22 @@ export default function ListHeader({
           ) : admin ? (
             <button
               type="button"
-              title="Click to rename (for everyone)"
+              title={t("Click to rename (for everyone)")}
               className="pointer-events-auto min-w-0 flex-1 truncate rounded-md px-2 py-1 text-left text-sm font-semibold"
               onClick={onStartRename}
             >
-              <span className="inline-block hover:bg-black/10 rounded px-1">{header.title}</span>
+              <span className="inline-block hover:bg-black/10 rounded px-1">{title}</span>
             </button>
           ) : (
-            <span className="min-w-0 flex-1 truncate px-2 py-1 text-sm font-semibold" title={header.title}>
-              {header.title}
+            <span className="min-w-0 flex-1 truncate px-2 py-1 text-sm font-semibold" title={title}>
+              {title}
             </span>
           )}
           <span className="text-sm opacity-80">{count}</span>
           {admin && (
             <span className="contents" {...{ [NO_LIST_DRAG_ATTR]: "" }}>
               <ColumnColorPicker
-                title={header.title}
+                title={title}
                 color={header.color}
                 defaultColor={defaultListColor(header.key)}
                 onChange={onRecolor}
@@ -115,9 +121,9 @@ export default function ListHeader({
           )}
           <button
             type="button"
-            aria-label={`Hide ${header.title}`}
+            aria-label={t("Hide {title}", { title })}
             aria-expanded
-            title="Hide list"
+            title={t("Hide list")}
             {...{ [NO_LIST_DRAG_ATTR]: "" }}
             className="pointer-events-auto rounded-md p-1 opacity-70 hover:bg-black/10 hover:opacity-100"
             onClick={onHide}
@@ -136,7 +142,7 @@ export default function ListHeader({
         >
           {/* The same icon as "Create card" in the navbar */}
           <PencilSquareIcon className="size-4" aria-hidden />
-          Add a card
+          {t("Add a card")}
         </button>
       </div>
     </div>

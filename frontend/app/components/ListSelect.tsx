@@ -2,6 +2,8 @@
 import { defaultListColor, type BoardHeader, type CardStatus } from '../utils/boardLayout';
 import { cn } from '../lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { useLanguage } from '../hooks/useLanguage';
+import { listTitle } from '../utils/boardLayout';
 
 // Other props (id, aria-*, ref from FormControl) go to the button
 type Props = Omit<React.ComponentProps<typeof SelectTrigger>, 'value' | 'onChange'> & {
@@ -14,6 +16,7 @@ type Props = Omit<React.ComponentProps<typeof SelectTrigger>, 'value' | 'onChang
 
 // The board's lists with the list's colour as a dot; the same look as IssueTypeSelect
 export default function ListSelect({ lists, value, onChange, placeholder, className, ...triggerProps }: Props) {
+  const { t } = useLanguage();
   return (
     <Select value={value ?? ''} onValueChange={onChange} disabled={!lists.length}>
       <SelectTrigger {...triggerProps} className={cn('w-full max-w-[240px] font-medium text-jira-text', className)}>
@@ -27,7 +30,7 @@ export default function ListSelect({ lists, value, onChange, placeholder, classN
               style={{ background: list.color ?? defaultListColor(list.key) }}
               aria-hidden
             />
-            <span className="truncate">{list.title}</span>
+            <span className="truncate">{listTitle(list, t)}</span>
           </SelectItem>
         ))}
       </SelectContent>

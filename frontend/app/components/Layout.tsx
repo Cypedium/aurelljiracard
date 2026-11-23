@@ -3,10 +3,12 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { hasSession } from "../utils/session";
 import { ROUTES } from "../utils/routes";
+import { useLanguage } from "../hooks/useLanguage";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const { t } = useLanguage();
 
   useEffect(() => {
     const checkAuth = () => {
@@ -25,7 +27,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   }, [router]);
 
   if (isAuthenticated === null) {
-    return <div className="py-10 pt-24 text-center font-jira text-white">Loading...</div>;
+    return <div className="py-10 pt-24 text-center font-jira text-white">{t("Loading…")}</div>;
   }
 
   if (!isAuthenticated) return null;

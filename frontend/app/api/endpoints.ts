@@ -7,6 +7,7 @@ import type { CardType, IssueType, IssueTypeIconName } from "../utils/cardType";
 import type { AnyCardStatus } from "../utils/backlog";
 import type { Role } from "../utils/session";
 import type { FeatureSwitch, SwitchKey } from "../utils/features";
+import type { Language } from "../utils/i18n";
 
 export type Card = {
   _id?: string;
@@ -157,6 +158,11 @@ export const getUsers = () => api.get<PublicUser[]>("/user");
 export const getLayout = () => api.get<Partial<UserLayout>>("/user/layout");
 
 export const saveLayout = (layout: UserLayout) => api.put("/user/layout", layout);
+
+// The UI language the user picked; null until they pick one (then the browser's language is used)
+export const getLanguage = () => api.get<{ language?: Language | null }>("/user/language");
+
+export const saveLanguage = (language: Language) => api.put<{ language: Language }>("/user/language", { language });
 
 // Connects a Google account to the logged-in user (409 if it belongs to someone else)
 export const connectGoogle = (credential: string) => api.post("/user/google", { credential });

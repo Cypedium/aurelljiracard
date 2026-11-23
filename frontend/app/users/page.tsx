@@ -5,8 +5,10 @@ import Layout from "../components/Layout";
 import Users from "./Users";
 import { isAdmin } from "../utils/session";
 import { ROUTES } from "../utils/routes";
+import { useLanguage } from "../hooks/useLanguage";
 
 export default function UsersPage() {
+  const { t } = useLanguage();
   const router = useRouter();
   const [allowed, setAllowed] = useState(false);
 
@@ -23,7 +25,7 @@ export default function UsersPage() {
         {allowed && (
           <div className="mx-auto flex max-w-[960px] flex-col gap-4">
             {/* No visible heading (the navbar shows the page); kept for screen readers */}
-            <h1 className="sr-only">Users</h1>
+            <h1 className="sr-only">{t("Users")}</h1>
             <Users />
           </div>
         )}

@@ -1,4 +1,8 @@
+import { msg } from "./i18n";
+
+// Shown translated (t(strength)) in the registration form
 export type PasswordStrength = "Weak" | "Medium" | "Strong";
+export const PASSWORD_STRENGTHS = [msg("Weak"), msg("Medium"), msg("Strong")] as const;
 
 export default function checkPasswordStrength(password: string): PasswordStrength {
   if (password.length < 6) return "Weak";

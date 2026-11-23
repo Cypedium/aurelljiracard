@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { RUDE_USERNAME_MESSAGE, isRudeUsername } from "./username";
+import { msg } from "./i18n";
 
 // Base64 grows ~33%, so this stays under the backend's 1.5 MB data-URL limit
 export const MAX_PICTURE_BYTES = 1024 * 1024;
@@ -18,7 +19,7 @@ export const readAsDataUrl = (file: Blob) =>
 
 const USERNAME_MESSAGE = `Username is required (max ${USERNAME_MAX_LENGTH} characters).`;
 const PASSWORD_MESSAGE = `Password must be ${MIN_PASSWORD_LENGTH}-${MAX_PASSWORD_LENGTH} characters.`;
-export const PASSWORD_REPEAT_MESSAGE = "Password must not repeat characters (e.g. aaa or 1212).";
+export const PASSWORD_REPEAT_MESSAGE = msg("Password must not repeat characters (e.g. aaa or 1212).");
 const MIN_DISTINCT_CHARACTERS = 4;
 
 // "aaa" anywhere, or too few different characters ("12121212"). Only for new passwords, not login
@@ -43,14 +44,14 @@ export const registerSchema = z.object({
   picture: z
     .custom<Blob>()
     .nullable()
-    .refine((p) => !p || p.size <= MAX_PICTURE_BYTES, "Profile picture must be smaller than 1 MB."),
+    .refine((p) => !p || p.size <= MAX_PICTURE_BYTES, msg("Profile picture must be smaller than 1 MB.")),
 });
 
 export type RegisterValues = z.infer<typeof registerSchema>;
 
 export const loginSchema = z.object({
-  username: z.string().refine(notBlank, "Username is required."),
-  password: z.string().min(1, "Password is required."),
+  username: z.string().refine(notBlank, msg("Username is required.")),
+  password: z.string().min(1, msg("Password is required.")),
 });
 
 export type LoginValues = z.infer<typeof loginSchema>;

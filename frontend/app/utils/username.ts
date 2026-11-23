@@ -1,6 +1,8 @@
+import { msg } from "./i18n";
+
 // Same word list and normalisation as the backend (server-java CredentialRules)
-export const USERNAME_TAKEN_MESSAGE = "Username already taken.";
-export const RUDE_USERNAME_MESSAGE = "Username contains inappropriate words.";
+export const USERNAME_TAKEN_MESSAGE = msg("Username already taken.");
+export const RUDE_USERNAME_MESSAGE = msg("Username contains inappropriate words.");
 
 // Matched as substrings, so short words that hide inside normal names (ass, dick, cock) are left out.
 // Must match shared/contract.json (contract.test.ts)

@@ -9,6 +9,8 @@ import { useFeatures } from '../hooks/useFeatures';
 import { MAX_ISSUE_TYPES, type CardType } from '../utils/cardType';
 import { cn } from '../lib/utils';
 import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, SelectValue } from './ui/select';
+import { useLanguage } from '../hooks/useLanguage';
+import { issueTypeLabel } from '../utils/cardType';
 
 // Other props (id, aria-*, ref from FormControl) go to the button
 type Props = Omit<React.ComponentProps<typeof SelectTrigger>, 'value' | 'onChange'> & {
@@ -28,6 +30,7 @@ export default function IssueTypeSelect({ value, onChange, className, ...trigger
   const { isOn } = useFeatures();
   const admin = boardAdmin && isOn('manageIssueTypes');
   const [creating, setCreating] = useState(false);
+  const { t } = useLanguage();
 
   return (
     <>
@@ -36,10 +39,10 @@ export default function IssueTypeSelect({ value, onChange, className, ...trigger
           <SelectValue />
         </SelectTrigger>
         <SelectContent position="popper" className="font-jira text-jira-text">
-          {types.map((t) => (
-            <SelectItem key={t.key} value={t.key}>
-              <IssueTypeIcon type={t.key} />
-              <span className="truncate">{t.label}</span>
+          {types.map((type) => (
+            <SelectItem key={type.key} value={type.key}>
+              <IssueTypeIcon type={type.key} />
+              <span className="truncate">{issueTypeLabel(type, t)}</span>
             </SelectItem>
           ))}
           {admin && (
@@ -51,7 +54,7 @@ export default function IssueTypeSelect({ value, onChange, className, ...trigger
                 className="text-jira-secondary"
               >
                 <PlusIcon className="size-4" aria-hidden />
-                {types.length >= MAX_ISSUE_TYPES ? `Max ${MAX_ISSUE_TYPES} issue types` : 'New issue type'}
+                {types.length >= MAX_ISSUE_TYPES ? t('Max {max} issue types', { max: MAX_ISSUE_TYPES }) : t('New issue type')}
               </SelectItem>
             </>
           )}

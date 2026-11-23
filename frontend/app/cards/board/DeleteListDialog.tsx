@@ -13,6 +13,8 @@ import {
   AlertDialogTitle,
 } from '../../components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { useLanguage } from '../../hooks/useLanguage';
+import { listTitle } from '../../utils/boardLayout';
 
 type Props = {
   open: boolean;
@@ -26,6 +28,7 @@ type Props = {
 // are shown but can't be picked, with the reason next to them
 export default function DeleteListDialog({ open, lists, cards, onClose, onConfirm }: Props) {
   const [selected, setSelected] = useState<CardStatus | null>(null);
+  const { t } = useLanguage();
 
   // The first list that can be deleted, every time the dialog opens
   useEffect(() => {
@@ -33,25 +36,26 @@ export default function DeleteListDialog({ open, lists, cards, onClose, onConfir
     // Only when the dialog opens: if the cards change meanwhile the choice must not jump
   }, [open]);
 
-  const selectedTitle = lists.find((l) => l.key === selected)?.title;
+  const selectedList = lists.find((l) => l.key === selected);
+  const selectedTitle = selectedList ? listTitle(selectedList, t) : undefined;
 
   return (
     <AlertDialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <AlertDialogContent className="font-jira text-jira-text">
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete column</AlertDialogTitle>
+          <AlertDialogTitle>{t('Delete column')}</AlertDialogTitle>
           <AlertDialogDescription>
-            The list is removed from the board for everyone. Only empty lists can be deleted.
+            {t('The list is removed from the board for everyone. Only empty lists can be deleted.')}
           </AlertDialogDescription>
         </AlertDialogHeader>
 
         <Select value={selected ?? ''} onValueChange={setSelected}>
-          <SelectTrigger aria-label="List to delete" className="w-full font-medium text-jira-text">
-            <SelectValue placeholder="No empty lists" />
+          <SelectTrigger aria-label={t('List to delete')} className="w-full font-medium text-jira-text">
+            <SelectValue placeholder={t('No empty lists')} />
           </SelectTrigger>
           <SelectContent position="popper" className="font-jira text-jira-text">
             {lists.map((list) => {
-              const blocker = listDeleteBlocker(list.key, cards);
+              const blocker = listDeleteBlocker(list.key, cards, t);
               return (
                 <SelectItem key={list.key} value={list.key} disabled={Boolean(blocker)}>
                   <span
@@ -59,7 +63,7 @@ export default function DeleteListDialog({ open, lists, cards, onClose, onConfir
                     style={{ background: list.color ?? defaultListColor(list.key) }}
                     aria-hidden
                   />
-                  <span className="truncate">{list.title}</span>
+                  <span className="truncate">{listTitle(list, t)}</span>
                   {blocker && <span className="ml-auto pl-3 text-xs text-jira-secondary">{blocker}</span>}
                 </SelectItem>
               );
@@ -68,7 +72,7 @@ export default function DeleteListDialog({ open, lists, cards, onClose, onConfir
         </Select>
 
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel>{t('Cancel')}</AlertDialogCancel>
           <AlertDialogAction
             variant="destructive"
             disabled={!selected}
@@ -78,7 +82,7 @@ export default function DeleteListDialog({ open, lists, cards, onClose, onConfir
               if (selected) onConfirm(selected);
             }}
           >
-            {selectedTitle ? `Delete ${selectedTitle}` : 'Delete'}
+            {selectedTitle ? t('Delete {title}', { title: selectedTitle }) : t('Delete')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

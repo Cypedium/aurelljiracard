@@ -6,7 +6,9 @@ import { ArrowRightStartOnRectangleIcon, Bars2Icon, ChevronRightIcon, LinkIcon, 
 import logo from '../icon.png';
 import { connectGoogle } from '../api/endpoints';
 import { useFeatures } from '../hooks/useFeatures';
+import { useLanguage } from '../hooks/useLanguage';
 import { apiErrorMessage } from '../utils/apiError';
+import { msg } from '../utils/i18n';
 import { backgroundSwatch, boardBackground, type Appearance } from '../utils/appearance';
 import { loadAppearance, saveAppearance } from '../utils/appearanceStore';
 import { avatarInitials } from '../utils/avatar';
@@ -14,6 +16,7 @@ import { GOOGLE_CLIENT_ID } from '../utils/google';
 import { handleLogout } from '../utils/logout';
 import { AppearancePicker, CloseButton, NavbarPreview, PanelHeader, type AppearanceView } from './AppearancePicker';
 import GoogleButton from './GoogleButton';
+import LanguageSwitch from './LanguageSwitch';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { ACCOUNT_AVATAR_CLASS, ACCOUNT_MENU_ACTIVE_ITEM_CLASS, ACCOUNT_MENU_ALIGN_OFFSET, ACCOUNT_MENU_CLASS, ACCOUNT_MENU_HEADING_CLASS, ACCOUNT_MENU_ITEM_CLASS, NAV_ACCOUNT_BUTTON_CLASS, NAV_ICON_SUB_CLASS } from '../utils/styles';
 
@@ -45,6 +48,7 @@ export default function AccountMenu({ username }: { username: string }) {
   // Switched-off settings are hidden (the site admin sees everything)
   const { isOn } = useFeatures();
   const [appearance, setAppearance] = useState<Appearance>(loadAppearance);
+  const { t } = useLanguage();
 
   const changeAppearance = (next: Appearance) => {
     setAppearance(next);
@@ -59,11 +63,11 @@ export default function AccountMenu({ username }: { username: string }) {
   const handleConnect = async (credential: string) => {
     try {
       await connectGoogle(credential);
-      toast.success('Google account connected. You can now sign in with Google.');
+      toast.success(t('Google account connected. You can now sign in with Google.'));
       close();
     } catch (error) {
       // E.g. 409: the Google account already belongs to another user
-      toast.error(apiErrorMessage(error, 'Could not connect the Google account.'));
+      toast.error(apiErrorMessage(error, msg('Could not connect the Google account.')));
     }
   };
 
@@ -76,7 +80,7 @@ export default function AccountMenu({ username }: { username: string }) {
       }}
     >
       <PopoverTrigger
-        aria-label={`Account (logged in as ${username})`}
+        aria-label={t('Account (logged in as {username})', { username })}
         title={username}
         className={NAV_ACCOUNT_BUTTON_CLASS}
       >
@@ -89,12 +93,12 @@ export default function AccountMenu({ username }: { username: string }) {
         alignOffset={ACCOUNT_MENU_ALIGN_OFFSET}
         collisionPadding={0}
         sideOffset={8}
-        aria-label="Account menu"
+        aria-label={t('Account menu')}
         className={ACCOUNT_MENU_CLASS}
       >
         <div className={`${panel ? 'hidden md:block' : ''} py-2`}>
           <div className="flex items-start justify-between pr-2">
-            <h2 className={ACCOUNT_MENU_HEADING_CLASS}>Account</h2>
+            <h2 className={ACCOUNT_MENU_HEADING_CLASS}>{t('Account')}</h2>
             <CloseButton onClose={close} className="mt-1" />
           </div>
           <div className="flex items-center gap-3 px-4 py-2">
@@ -106,7 +110,7 @@ export default function AccountMenu({ username }: { username: string }) {
           {isOn('googleConnect') && (
             <MenuItem
               Icon={LinkIcon}
-              label="Google sign-in"
+              label={t('Google sign-in')}
               active={panel === 'google'}
               onClick={() => togglePanel('google')}
             />
@@ -125,7 +129,7 @@ export default function AccountMenu({ username }: { username: string }) {
           {isOn('boardBackground') && (
           <MenuItem
             Icon={PhotoIcon}
-            label="Board background"
+            label={t('Board background')}
             active={panel === 'background'}
             end={
               <span
@@ -140,18 +144,22 @@ export default function AccountMenu({ username }: { username: string }) {
           {isOn('navbarColour') && (
           <MenuItem
             Icon={Bars2Icon}
-            label="Navbar colour"
+            label={t('Navbar colour')}
             active={panel === 'navbar'}
             end={<NavbarPreview appearance={appearance} themeKey={appearance.navbar} />}
             onClick={() => togglePanel('navbar')}
           />
           )}
 
+          {/* The UI language: saved on the account */}
+          <hr className="my-2 border-jira-neutral" />
+          <LanguageSwitch />
+
           {/* Log out on its own at the bottom */}
           <hr className="mt-6 mb-2 border-jira-neutral" />
           <button type="button" onClick={handleLogout} className={ACCOUNT_MENU_ITEM_CLASS}>
             <ArrowRightStartOnRectangleIcon className="size-5 shrink-0 text-jira-secondary" aria-hidden />
-            Log out
+            {t('Log out')}
           </button>
         </div>
 
@@ -159,14 +167,14 @@ export default function AccountMenu({ username }: { username: string }) {
           <div className="max-h-[calc(100dvh-6rem)] overflow-y-auto p-4 md:absolute md:top-0 md:right-full md:mr-2 md:w-[340px] md:rounded-md md:border md:border-border md:bg-popover md:shadow-md">
             {panel === 'google' ? (
               <div className="flex flex-col gap-3">
-                <PanelHeader title="Google sign-in" onBack={() => setPanel(null)} onClose={close} />
+                <PanelHeader title={t('Google sign-in')} onBack={() => setPanel(null)} onClose={close} />
                 <p className="text-sm text-jira-secondary">
-                  Connect your Google account to sign in with Google instead of your password.
+                  {t('Connect your Google account to sign in with Google instead of your password.')}
                 </p>
                 {GOOGLE_CLIENT_ID ? (
                   <GoogleButton text="continue_with" onCredential={handleConnect} />
                 ) : (
-                  <p className="text-sm text-jira-subtle">Google sign-in is not configured.</p>
+                  <p className="text-sm text-jira-subtle">{t('Google sign-in is not configured.')}</p>
                 )}
               </div>
             ) : (

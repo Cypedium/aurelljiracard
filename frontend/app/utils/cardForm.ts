@@ -4,6 +4,7 @@ import type { Card } from "../api/endpoints";
 import { DEFAULT_CARD_TYPE } from "./cardType";
 import { BACKLOG_STATUS } from "./backlog";
 import { columnForStatus, type BoardHeader, type CardStatus } from "./boardLayout";
+import { msg } from "./i18n";
 
 leoProfanity.loadDictionary();
 leoProfanity.loadDictionary("sv");
@@ -16,7 +17,8 @@ export const COMMENT_MAX_LENGTH = 2000;
 export const PRODUCT_ID_MAX_LENGTH = 6;
 export const PRODUCT_ID_PATTERN = /^[A-Za-z]+-[0-9]+$/;
 export const PRODUCT_ID_MESSAGE = `Issue key must look like MA-100: letters, a hyphen and digits (max ${PRODUCT_ID_MAX_LENGTH} characters).`;
-const PROFANITY_MESSAGE = "Your text contains inappropriate language. Please remove it and try again.";
+const RATING_MESSAGE = msg("Please select a time tracking 1 to 5.");
+const PROFANITY_MESSAGE = msg("Your text contains inappropriate language. Please remove it and try again.");
 const isClean = (text: string) => !leoProfanity.check(text);
 
 const requiredText = (max: number, message: string) =>
@@ -24,11 +26,11 @@ const requiredText = (max: number, message: string) =>
 
 export const cardFormSchema = z.object({
   // A type key from GET /issue-type; the server checks that the type exists
-  type: z.string().min(1, "Please select an issue type."),
+  type: z.string().min(1, msg("Please select an issue type.")),
   comment: requiredText(COMMENT_MAX_LENGTH, `Summary is required (max ${COMMENT_MAX_LENGTH} characters).`),
   productId: requiredText(PRODUCT_ID_MAX_LENGTH, PRODUCT_ID_MESSAGE).regex(PRODUCT_ID_PATTERN, PRODUCT_ID_MESSAGE),
   // 0 = nothing chosen yet
-  rating: z.number().int().min(1, "Please select a time tracking 1 to 5.").max(5, "Please select a time tracking 1 to 5."),
+  rating: z.number().int().min(1, RATING_MESSAGE).max(5, RATING_MESSAGE),
 });
 
 export type CardFormValues = z.infer<typeof cardFormSchema>;
@@ -45,7 +47,7 @@ export const cardToFormValues = (card: Card): CardFormValues => ({
 });
 
 // The same message as the backend (409); checked while typing, the server checks again on save
-export const DUPLICATE_PRODUCT_ID_MESSAGE = "Issue key already exists.";
+export const DUPLICATE_PRODUCT_ID_MESSAGE = msg("Issue key already exists.");
 export const ISSUE_KEY_CHECK_DELAY_MS = 300;
 // The error's type in the form, so only that error is cleared when you type another key
 export const DUPLICATE_ERROR_TYPE = "duplicate";

@@ -13,6 +13,7 @@ import {
 import type { CardStatus } from "../../utils/boardLayout";
 import CardForm from "../card/Card";
 import { toPlainText } from "../../utils/summaryFormat";
+import { useLanguage } from "../../hooks/useLanguage";
 
 type CardFormDialogProps = {
   // The card being edited, or the list where a new card is created
@@ -25,6 +26,7 @@ type CardFormDialogProps = {
 
 // Create or edit a card. Radix handles focus, Escape, clicks outside and scroll lock
 export function CardFormDialog({ editingCard, creatingIn, onSaved, onCreated, onClose }: CardFormDialogProps) {
+  const { t } = useLanguage();
   return (
     <Dialog open={Boolean(editingCard || creatingIn)} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
@@ -34,7 +36,7 @@ export function CardFormDialog({ editingCard, creatingIn, onSaved, onCreated, on
         className="max-h-[calc(100dvh-2rem)] gap-0 overflow-y-auto border-0 bg-transparent p-0 font-jira shadow-none sm:max-w-[640px]"
       >
         {/* The form's visible heading is a plain h2, so the dialog gets a hidden title */}
-        <DialogTitle className="sr-only">{editingCard ? "Edit card" : "Create card"}</DialogTitle>
+        <DialogTitle className="sr-only">{editingCard ? t("Edit card") : t("Create card")}</DialogTitle>
         <CardForm
           card={editingCard ?? undefined}
           status={creatingIn ?? undefined}
@@ -55,19 +57,20 @@ type DeleteCardDialogProps = {
 };
 
 export function DeleteCardDialog({ card, onClose, onConfirm }: DeleteCardDialogProps) {
+  const { t } = useLanguage();
   return (
     <AlertDialog open={Boolean(card)} onOpenChange={(open) => !open && onClose()}>
       <AlertDialogContent className="font-jira text-jira-text">
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete this card?</AlertDialogTitle>
+          <AlertDialogTitle>{t("Delete this card?")}</AlertDialogTitle>
           <AlertDialogDescription className="line-clamp-3 wrap-anywhere">
             {card?.productId}: {toPlainText(card?.comment ?? "")}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel>{t("Cancel")}</AlertDialogCancel>
           <AlertDialogAction variant="destructive" onClick={() => card?._id && onConfirm(card._id)}>
-            Delete
+            {t("Delete")}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

@@ -9,6 +9,7 @@ import {
   loadingToastText,
 } from "../utils/loadingToast";
 import { ROUTES } from "../utils/routes";
+import { t } from "../utils/languageStore";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -19,7 +20,7 @@ const api = axios.create({
 // Slow registration/login/logout (e.g. a cold start in production) shows a loading toast
 let loadingText = "";
 const loadingTracker = createLoadingTracker(
-  () => toast.loading(loadingText, { id: LOADING_TOAST_ID }),
+  () => toast.loading(t(loadingText), { id: LOADING_TOAST_ID }),
   () => toast.dismiss(LOADING_TOAST_ID),
   LOADING_TOAST_DELAY_MS
 );

@@ -5,6 +5,7 @@ import { avatarColor, avatarInitials } from "../../utils/avatar";
 import { assigneeOf } from "../../utils/backlog";
 import { CARD_ACTION_CLASS } from "../../utils/styles";
 import CardFace from "./CardFace";
+import { useLanguage } from "../../hooks/useLanguage";
 
 type Props = {
   card: Card;
@@ -17,18 +18,19 @@ type Props = {
 // A card on the board. The outer div (which react-grid-layout controls) stays in Cards.tsx
 export default function BoardCard({ card, canEdit, canDelete, onEdit, onDelete }: Props) {
   const assignee = assigneeOf(card);
+  const { t } = useLanguage();
 
   // Edit and delete (shown on hover) on your own cards, or all of them for the admin. The date is shown in the edit dialog
   const actions =
     canEdit || canDelete ? (
       <div className="flex shrink-0 items-center">
         {canEdit && (
-          <button className={CARD_ACTION_CLASS} aria-label="Edit card" title="Edit" onClick={onEdit}>
+          <button className={CARD_ACTION_CLASS} aria-label={t("Edit card")} title={t("Edit")} onClick={onEdit}>
             <PencilIcon className="size-4" aria-hidden />
           </button>
         )}
         {canDelete && (
-          <button className={CARD_ACTION_CLASS} aria-label="Delete card" title="Delete" onClick={onDelete}>
+          <button className={CARD_ACTION_CLASS} aria-label={t("Delete card")} title={t("Delete")} onClick={onDelete}>
             <TrashIcon className="size-4" aria-hidden />
           </button>
         )}
@@ -53,14 +55,14 @@ export default function BoardCard({ card, canEdit, canDelete, onEdit, onDelete }
     >
       <span
         className="min-w-5 shrink-0 rounded-full bg-jira-neutral px-1.5 text-center text-xs/4"
-        title={`Time tracking: ${card.rating}/5`}
+        title={t("Time tracking: {rating}/5", { rating: card.rating })}
       >
         {card.rating}
       </span>
       <span
         className="inline-flex size-6 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white"
         style={{ background: avatarColor(assignee) }}
-        title={`Assignee: ${assignee}`}
+        title={t("Assignee: {assignee}", { assignee })}
       >
         {avatarInitials(assignee)}
       </span>
