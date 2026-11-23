@@ -3,6 +3,7 @@ package se.aurell.jiraboard;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -241,6 +242,39 @@ class UserApiTest extends ApiIntegrationTest {
         mvc.perform(bearer(get("/user/usernames"), token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", containsInAnyOrder("alice", "bob")));
+    }
+
+    @Test
+    void newUserHasNoLanguageUntilTheyPickOne() throws Exception {
+        String alice = accessToken("alice");
+        String bob = accessToken("bob");
+        mvc.perform(bearer(get("/user/language"), alice))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.language").value(nullValue()));
+
+        mvc.perform(bearer(json(put("/user/language"), """
+                {"language": "sv"}"""), alice))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.language").value("sv"));
+
+        mvc.perform(bearer(get("/user/language"), alice))
+                .andExpect(jsonPath("$.language").value("sv"));
+        // Per user: bob still hasn't picked one
+        mvc.perform(bearer(get("/user/language"), bob))
+                .andExpect(jsonPath("$.language").value(nullValue()));
+    }
+
+    @Test
+    void languageMustBeAKnownOne() throws Exception {
+        String token = accessToken("alice");
+        for (String body : new String[] {"{\"language\": \"de\"}", "{\"language\": \"SV\"}", "{\"language\": \"\"}", "{}"}) {
+            mvc.perform(bearer(json(put("/user/language"), body), token))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.message").value("Language must be one of: en, sv."));
+        }
+        mvc.perform(json(put("/user/language"), """
+                {"language": "en"}"""))
+                .andExpect(status().isUnauthorized());
     }
 
     @Test

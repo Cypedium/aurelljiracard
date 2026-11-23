@@ -57,6 +57,11 @@ public class User {
     @Column(name = "logged_out_at")
     private Instant loggedOutAt;
 
+    // The UI language picked in the account menu; null = not picked (the frontend follows the browser)
+    @Convert(converter = EnumConverters.LanguageConverter.class)
+    @Column(length = 2)
+    private Language language;
+
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(nullable = false)
     private Layout layout = Layout.empty();
@@ -143,6 +148,14 @@ public class User {
 
     public Instant getLoggedOutAt() {
         return loggedOutAt;
+    }
+
+    public Language getLanguage() {
+        return language;
+    }
+
+    public void setLanguage(Language language) {
+        this.language = language;
     }
 
     public Layout getLayout() {

@@ -4,6 +4,7 @@ import { deleteCard, updateCardStatus, type Card } from "../api/endpoints";
 import { reportError } from "../utils/apiError";
 import type { AnyCardStatus } from "../utils/backlog";
 import type { CardStatus } from "../utils/boardLayout";
+import { msg } from "../utils/i18n";
 
 type Options = {
   boardId: string;
@@ -31,7 +32,7 @@ export function useCardActions({ boardId, cards, setCards, fetchCards }: Options
       await updateCardStatus(boardId, id, status);
     } catch (err) {
       setStatus(previous);
-      reportError("Error moving card", err, "Could not move card.");
+      reportError("Error moving card", err, msg("Could not move card."));
     }
   };
 
@@ -55,7 +56,7 @@ export function useCardActions({ boardId, cards, setCards, fetchCards }: Options
       await deleteCard(boardId, id);
       setCards((prev) => prev.filter((fb) => fb._id !== id));
     } catch (err) {
-      reportError("Error deleting card", err, "Could not delete card.");
+      reportError("Error deleting card", err, msg("Could not delete card."));
     }
   };
 

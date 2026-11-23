@@ -22,6 +22,8 @@ import {
   SUMMARY_PLACEHOLDER_CLASS,
 } from '../utils/styles';
 import { FormControl } from './ui/form';
+import { useLanguage } from '../hooks/useLanguage';
+import { msg } from '../utils/i18n';
 
 type Tool = {
   label: string;
@@ -33,15 +35,15 @@ type Tool = {
 
 // Keyboard shortcuts are in the title; Tiptap has them built in, as well as markdown while typing ("- ", "# ", **bold**)
 const TOOLS: Tool[] = [
-  { label: 'Bold (Ctrl+B)', Icon: BoldIcon, active: ['bold'], run: (c) => c.toggleBold() },
-  { label: 'Italic (Ctrl+I)', Icon: ItalicIcon, active: ['italic'], run: (c) => c.toggleItalic() },
-  { label: 'Strikethrough (Ctrl+Shift+S)', Icon: StrikethroughIcon, active: ['strike'], run: (c) => c.toggleStrike() },
-  { label: 'Code (Ctrl+E)', Icon: CodeBracketIcon, active: ['code'], run: (c) => c.toggleCode() },
-  { label: 'Heading', Icon: H1Icon, active: ['heading', { level: 1 }], run: (c) => c.toggleHeading({ level: 1 }) },
-  { label: 'Large text', Icon: H2Icon, active: ['heading', { level: 2 }], run: (c) => c.toggleHeading({ level: 2 }) },
-  { label: 'Bullet list', Icon: ListBulletIcon, active: ['bulletList'], run: (c) => c.toggleBulletList() },
-  { label: 'Numbered list', Icon: NumberedListIcon, active: ['orderedList'], run: (c) => c.toggleOrderedList() },
-  { label: 'To-do list', Icon: CheckCircleIcon, active: ['taskList'], run: (c) => c.toggleTaskList() },
+  { label: msg('Bold (Ctrl+B)'), Icon: BoldIcon, active: ['bold'], run: (c) => c.toggleBold() },
+  { label: msg('Italic (Ctrl+I)'), Icon: ItalicIcon, active: ['italic'], run: (c) => c.toggleItalic() },
+  { label: msg('Strikethrough (Ctrl+Shift+S)'), Icon: StrikethroughIcon, active: ['strike'], run: (c) => c.toggleStrike() },
+  { label: msg('Code (Ctrl+E)'), Icon: CodeBracketIcon, active: ['code'], run: (c) => c.toggleCode() },
+  { label: msg('Heading'), Icon: H1Icon, active: ['heading', { level: 1 }], run: (c) => c.toggleHeading({ level: 1 }) },
+  { label: msg('Large text'), Icon: H2Icon, active: ['heading', { level: 2 }], run: (c) => c.toggleHeading({ level: 2 }) },
+  { label: msg('Bullet list'), Icon: ListBulletIcon, active: ['bulletList'], run: (c) => c.toggleBulletList() },
+  { label: msg('Numbered list'), Icon: NumberedListIcon, active: ['orderedList'], run: (c) => c.toggleOrderedList() },
+  { label: msg('To-do list'), Icon: CheckCircleIcon, active: ['taskList'], run: (c) => c.toggleTaskList() },
 ];
 
 type Props = {
@@ -53,6 +55,7 @@ type Props = {
 // The summary with formatting while typing (Tiptap). Saved as markdown via @tiptap/markdown,
 // see utils/summaryFormat.ts. Rendered inside a FormItem
 export default function SummaryEditor({ field, placeholder }: Props) {
+  const { t } = useLanguage();
   // The last value the editor itself sent; any other value comes from outside (the form loads a card)
   const emitted = useRef(field.value);
 
@@ -63,7 +66,7 @@ export default function SummaryEditor({ field, placeholder }: Props) {
     // Next renders on the server first; the editor is created in the browser
     immediatelyRender: false,
     editorProps: {
-      attributes: { class: `${SUMMARY_CLASS} ${SUMMARY_EDITOR_CONTENT_CLASS}`, 'aria-label': 'Summary', 'aria-multiline': 'true', role: 'textbox' },
+      attributes: { class: `${SUMMARY_CLASS} ${SUMMARY_EDITOR_CONTENT_CLASS}`, 'aria-label': t('Summary'), 'aria-multiline': 'true', role: 'textbox' },
     },
     onUpdate: ({ editor: e }) => {
       const markdown = e.isEmpty ? '' : e.getMarkdown();
@@ -93,14 +96,14 @@ export default function SummaryEditor({ field, placeholder }: Props) {
 
   return (
     <>
-      <div className="mb-1 flex flex-wrap items-center gap-0.5" role="toolbar" aria-label="Summary formatting">
+      <div className="mb-1 flex flex-wrap items-center gap-0.5" role="toolbar" aria-label={t('Summary formatting')}>
         {TOOLS.map(({ label, Icon, run }, i) => (
           <button
             key={label}
             type="button"
             className={EDITOR_TOOL_CLASS}
-            aria-label={label}
-            title={label}
+            aria-label={t(label)}
+            title={t(label)}
             aria-pressed={state?.active[i] ?? false}
             disabled={!editor}
             // Keep focus and the selection in the editor

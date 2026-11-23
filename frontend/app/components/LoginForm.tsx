@@ -13,8 +13,11 @@ import { Button } from "./ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "./ui/form";
 import { Input } from "./ui/input";
 import { ROUTES } from "../utils/routes";
+import { useLanguage } from '../hooks/useLanguage';
+import { msg } from '../utils/i18n';
 
 export default function LoginForm() {
+  const { t } = useLanguage();
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: { username: "", password: "" },
@@ -28,7 +31,7 @@ export default function LoginForm() {
       window.location.href = ROUTES.board;
     } catch (error) {
       // The backend's message (e.g. 401 "Invalid credentials."), otherwise we didn't reach the server
-      toast.error(apiErrorMessage(error, "Could not reach the server. Please try again."));
+      toast.error(apiErrorMessage(error, msg("Could not reach the server. Please try again.")));
     }
   };
 
@@ -39,21 +42,21 @@ export default function LoginForm() {
       saveSession(tokenUsername(data.accessToken) ?? "", data.accessToken, data.refreshToken);
       window.location.href = ROUTES.board;
     } catch (error) {
-      toast.error(apiErrorMessage(error, "Could not sign in with Google. Please try again."));
+      toast.error(apiErrorMessage(error, msg("Could not sign in with Google. Please try again.")));
     }
   };
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleLogin)} className={AUTH_FORM_CLASS} noValidate>
-        <h2 className="text-xl font-semibold">Login</h2>
+        <h2 className="text-xl font-semibold">{t("Login")}</h2>
 
         <FormField
           control={form.control}
           name="username"
           render={({ field }) => (
             <FormItem className={FORM_ITEM_CLASS}>
-              <FormLabel className={LABEL_CLASS}>Username</FormLabel>
+              <FormLabel className={LABEL_CLASS}>{t("Username")}</FormLabel>
               <FormControl>
                 <Input type="text" autoComplete="username" className="bg-white" {...field} />
               </FormControl>
@@ -67,7 +70,7 @@ export default function LoginForm() {
           name="password"
           render={({ field }) => (
             <FormItem className={FORM_ITEM_CLASS}>
-              <FormLabel className={LABEL_CLASS}>Password</FormLabel>
+              <FormLabel className={LABEL_CLASS}>{t("Password")}</FormLabel>
               <FormControl>
                 <Input type="password" autoComplete="current-password" className="bg-white" {...field} />
               </FormControl>
@@ -77,7 +80,7 @@ export default function LoginForm() {
         />
 
         <Button type="submit" className="mt-6 w-full" disabled={form.formState.isSubmitting}>
-          Login
+          {t("Login")}
         </Button>
 
         {GOOGLE_CLIENT_ID && (

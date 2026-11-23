@@ -1,16 +1,33 @@
 import { describe, expect, it } from "@jest/globals";
 import type { Board } from "../../app/api/endpoints";
-import { OWN_BOARD_LABEL, boardLabel, inviteUrl, isBoardAdmin, pickBoard } from "../../app/utils/currentBoard";
+import { OWN_BOARD_LABEL, boardLabel, inviteUrl, isBoardAdmin, pickBoard, swedishGenitive } from "../../app/utils/currentBoard";
+import { translate, type Translate } from "../../app/utils/i18n";
 
 const own: Board = { _id: "b1", name: "alice's board", owner: "alice", role: "admin" };
 const shared: Board = { _id: "b2", name: "bob's board", owner: "bob", role: "user" };
+const english: Translate = (text, params) => translate("en", text, params);
+const swedish: Translate = (text, params) => translate("sv", text, params);
 
 describe("boardLabel", () => {
   it("calls the user's own board My board and keeps the owner's name on shared ones", () => {
-    expect(boardLabel(own)).toBe(OWN_BOARD_LABEL);
+    expect(boardLabel(own, english)).toBe(OWN_BOARD_LABEL);
     expect(OWN_BOARD_LABEL).toBe("My board");
-    expect(boardLabel(shared)).toBe("bob's board");
+    expect(boardLabel(shared, english)).toBe("bob's board");
   });
+
+  it("names boards in Swedish with the Swedish genitive", () => {
+    expect(boardLabel(own, swedish)).toBe("Min tavla");
+    expect(boardLabel(shared, swedish)).toBe("bobs tavla");
+    expect(boardLabel({ ...shared, owner: "Lars" }, swedish)).toBe("Lars tavla");
+  });
+
+  it.each([
+    ["Mikael", "Mikaels"],
+    ["Lars", "Lars"],
+    ["Max", "Max"],
+    ["Fritz", "Fritz"],
+    ["Åsa", "Åsas"],
+  ])("swedishGenitive(%p) = %p", (name, genitive) => expect(swedishGenitive(name)).toBe(genitive));
 });
 
 describe("pickBoard", () => {

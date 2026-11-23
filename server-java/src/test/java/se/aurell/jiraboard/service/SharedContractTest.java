@@ -17,11 +17,13 @@ import org.junit.jupiter.api.Test;
 import se.aurell.jiraboard.dto.CardRequest;
 import se.aurell.jiraboard.dto.ColumnRequest;
 import se.aurell.jiraboard.dto.IssueTypeRequest;
+import se.aurell.jiraboard.dto.LanguageRequest;
 import se.aurell.jiraboard.dto.LayoutRequest;
 import se.aurell.jiraboard.dto.RegisterRequest;
 import se.aurell.jiraboard.entity.CardStatus;
 import se.aurell.jiraboard.entity.CardType;
 import se.aurell.jiraboard.entity.Feature;
+import se.aurell.jiraboard.entity.Language;
 import se.aurell.jiraboard.entity.Role;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
@@ -59,6 +61,14 @@ class SharedContractTest {
 
     private static int limit(String name) {
         return contract.get("limits").get(name).asInt();
+    }
+
+    @Test
+    void languages() {
+        assertThat(Arrays.stream(Language.values()).map(Language::getValue).toList())
+                .isEqualTo(strings(contract.get("languages")));
+        // The validation message lists the same values
+        assertThat(LanguageRequest.MESSAGE).isEqualTo("Language must be one of: " + Language.ALLOWED + ".");
     }
 
     @Test

@@ -1,6 +1,7 @@
 'use client';
 import { useIssueTypes } from "../hooks/useIssueTypes";
-import { issueTypeOf, type IssueType } from "../utils/cardType";
+import { useLanguage } from "../hooks/useLanguage";
+import { issueTypeLabel, issueTypeOf, type IssueType } from "../utils/cardType";
 import { ISSUE_TYPE_ICON } from "../utils/styles";
 
 // The card's type (key), or a type directly (the preview in NewIssueTypeDialog)
@@ -8,7 +9,10 @@ type Props = { type?: string; issueType?: Pick<IssueType, "label" | "color" | "i
 
 export default function IssueTypeIcon({ type, issueType }: Props) {
   const types = useIssueTypes();
-  const { label, color, icon } = issueType ?? issueTypeOf(types, type);
+  const { t } = useLanguage();
+  // The preview's label is as typed; a board type's default label is translated
+  const { color, icon } = issueType ?? issueTypeOf(types, type);
+  const label = issueType ? issueType.label : issueTypeLabel(issueTypeOf(types, type), t);
   const Icon = ISSUE_TYPE_ICON[icon];
   return (
     <span

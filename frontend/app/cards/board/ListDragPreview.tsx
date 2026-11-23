@@ -4,6 +4,8 @@ import type { Card } from "../../api/endpoints";
 import { HEADER_HEIGHT, ROW_HEIGHT, type BoardHeader } from "../../utils/boardLayout";
 import { listColor } from "../../utils/styles";
 import CardFace from "./CardFace";
+import { useLanguage } from "../../hooks/useLanguage";
+import { listTitle } from "../../utils/boardLayout";
 
 type Props = {
   ref: Ref<HTMLDivElement>;
@@ -17,6 +19,7 @@ type Props = {
 
 // The lifted list follows the mouse, tilted (useListDrag moves it)
 export default function ListDragPreview({ ref, header, count, cards, style }: Props) {
+  const { t } = useLanguage();
   const color = listColor(header);
 
   return (
@@ -27,14 +30,14 @@ export default function ListDragPreview({ ref, header, count, cards, style }: Pr
       style={{ ...style, maxHeight: "80vh", ...color.style }}
     >
       <div className="flex items-center gap-2 pr-1" style={{ height: HEADER_HEIGHT }}>
-        <span className="min-w-0 flex-1 truncate px-3 py-1 text-sm font-semibold">{header.title}</span>
+        <span className="min-w-0 flex-1 truncate px-3 py-1 text-sm font-semibold">{listTitle(header, t)}</span>
         <span className="text-sm opacity-80">{count}</span>
       </div>
       {/* The same order as the list: header, "Add a card", the cards */}
       <div className="flex h-8 w-fit shrink-0 items-center gap-2 px-2 text-sm font-medium">
         {/* The same icon as "Create card" in the navbar */}
         <PencilSquareIcon className="size-4" aria-hidden />
-        Add a card
+        {t("Add a card")}
       </div>
       {cards.map((card) => (
         <CardFace

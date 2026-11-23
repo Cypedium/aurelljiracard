@@ -23,9 +23,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '../components/ui/alert-dialog';
+import { useLanguage } from '../hooks/useLanguage';
+import { msg } from '../utils/i18n';
+import { ROLE_LABELS } from '../utils/session';
 
 export default function Users() {
   const [users, setUsers] = useState<PublicUser[] | null>(null);
+  const { t } = useLanguage();
   const [editingUser, setEditingUser] = useState<PublicUser | null>(null);
   const [deletingUser, setDeletingUser] = useState<PublicUser | null>(null);
   const me = getUsername();
@@ -36,7 +40,7 @@ export default function Users() {
       const usersRes = await getUsers();
       setUsers([...usersRes.data].sort((a, b) => a.username.localeCompare(b.username)));
     } catch (err) {
-      reportError('Error fetching users', err, 'Could not load users.');
+      reportError('Error fetching users', err, msg('Could not load users.'));
       setUsers([]);
     }
   }, []);
@@ -50,11 +54,11 @@ export default function Users() {
     setEditingUser(null);
     if (renamedSelf) {
       // Our tokens have the old name and are revoked: log in again
-      toast.success('Your name was changed. Please log in again.');
+      toast.success(t('Your name was changed. Please log in again.'));
       handleLogout();
       return;
     }
-    toast.success(`${updated.username} updated. They must log in again within 15 minutes.`);
+    toast.success(t('{username} updated. They must log in again within 15 minutes.', { username: updated.username }));
     fetchUsers();
   };
 
@@ -62,9 +66,9 @@ export default function Users() {
     try {
       await deleteUser(user._id);
       setUsers((prev) => prev?.filter((u) => u._id !== user._id) ?? null);
-      toast.success(`${user.username} deleted.`);
+      toast.success(t('{username} deleted.', { username: user.username }));
     } catch (err) {
-      reportError('Error deleting user', err, 'Could not delete user.');
+      reportError('Error deleting user', err, msg('Could not delete user.'));
     }
   };
 
@@ -73,9 +77,9 @@ export default function Users() {
       await revokeUserSessions(user._id);
       // The backend counts them as logged out at once
       setUsers((prev) => prev?.map((u) => (u._id === user._id ? { ...u, online: false } : u)) ?? null);
-      toast.success(`${user.username} will be logged out within 15 minutes.`);
+      toast.success(t('{username} will be logged out within 15 minutes.', { username: user.username }));
     } catch (err) {
-      reportError('Error logging out user', err, 'Could not log out user.');
+      reportError('Error logging out user', err, msg('Could not log out user.'));
     }
   };
 
@@ -87,16 +91,16 @@ export default function Users() {
         <table className="w-full text-sm text-jira-text">
           <thead className={TABLE_THEAD_CLASS}>
             <tr>
-              <th scope="col" className={TH_CLASS}>User</th>
-              <th scope="col" className={TH_CLASS}>Role</th>
-              <th scope="col" className={`${TH_CLASS} max-sm:hidden`}>Status</th>
-              <th scope="col" className={`${TH_CLASS} text-right`}>Actions</th>
+              <th scope="col" className={TH_CLASS}>{t('User')}</th>
+              <th scope="col" className={TH_CLASS}>{t('Role')}</th>
+              <th scope="col" className={`${TH_CLASS} max-sm:hidden`}>{t('Status')}</th>
+              <th scope="col" className={`${TH_CLASS} text-right`}>{t('Actions')}</th>
             </tr>
           </thead>
           <tbody>
             {users.map((user) => {
               const isSelf = user.username === me;
-              const deleteBlocked = isSelf ? 'You cannot delete yourself' : null;
+              const deleteBlocked = isSelf ? t('You cannot delete yourself') : null;
 
               return (
                 <tr key={user._id} className={TABLE_ROW_CLASS}>
@@ -112,13 +116,13 @@ export default function Users() {
                       {/* Green dot = logged in now */}
                       <span
                         role="img"
-                        aria-label={user.online ? 'Online' : 'Offline'}
-                        title={user.online ? 'Online' : 'Offline'}
+                        aria-label={user.online ? t('Online') : t('Offline')}
+                        title={user.online ? t('Online') : t('Offline')}
                         className={`-mr-1.5 size-2 shrink-0 rounded-full ${user.online ? 'bg-[#22a06b]' : 'bg-jira-border'}`}
                       />
                       <span className="min-w-0 truncate font-medium" title={user.username}>
                         {user.username}
-                        {isSelf && <span className="ml-1 font-normal text-jira-secondary">(you)</span>}
+                        {isSelf && <span className="ml-1 font-normal text-jira-secondary">{t('(you)')}</span>}
                       </span>
                     </div>
                   </td>
@@ -128,17 +132,17 @@ export default function Users() {
                         user.role === 'admin' ? 'bg-jira-info text-jira-primary' : 'bg-jira-neutral text-jira-secondary'
                       }`}
                     >
-                      {user.role}
+                      {t(ROLE_LABELS[user.role])}
                     </span>
                   </td>
                   <td className={`${TD_CLASS} max-sm:hidden`}>
                     {/* Online now, otherwise when the user was last active. Hidden on mobile so Actions fits (the dot by the name shows) */}
                     <span className="whitespace-nowrap text-jira-secondary">
                       {user.online ? (
-                        <span className="font-medium text-jira-text">Online</span>
+                        <span className="font-medium text-jira-text">{t('Online')}</span>
                       ) : (
                         <span title={user.lastActiveAt ? new Date(user.lastActiveAt).toLocaleString() : undefined}>
-                          {lastSeenLabel(user.lastActiveAt)}
+                          {lastSeenLabel(user.lastActiveAt, undefined, t)}
                         </span>
                       )}
                     </span>
@@ -147,16 +151,16 @@ export default function Users() {
                     <div className="flex items-center justify-end">
                       <button
                         className={ACTION_CLASS}
-                        aria-label={`Edit ${user.username}`}
-                        title="Edit name and role"
+                        aria-label={t('Edit {username}', { username: user.username })}
+                        title={t('Edit name and role')}
                         onClick={() => setEditingUser(user)}
                       >
                         <PencilIcon className="size-4" aria-hidden />
                       </button>
                       <button
                         className={ACTION_CLASS}
-                        aria-label={`Log out ${user.username}`}
-                        title={isSelf ? 'Use Logout in the menu' : 'Log out from all sessions'}
+                        aria-label={t('Log out {username}', { username: user.username })}
+                        title={isSelf ? t('Use Log out in the account menu') : t('Log out from all sessions')}
                         disabled={isSelf}
                         onClick={() => logOutUser(user)}
                       >
@@ -164,8 +168,8 @@ export default function Users() {
                       </button>
                       <button
                         className={ACTION_CLASS}
-                        aria-label={`Delete ${user.username}`}
-                        title={deleteBlocked ?? 'Delete user'}
+                        aria-label={t('Delete {username}', { username: user.username })}
+                        title={deleteBlocked ?? t('Delete user')}
                         disabled={Boolean(deleteBlocked)}
                         onClick={() => setDeletingUser(user)}
                       >
@@ -188,7 +192,7 @@ export default function Users() {
           // The form has its own background and shadow
           className="gap-0 border-0 bg-transparent p-0 font-jira shadow-none sm:max-w-[480px]"
         >
-          <DialogTitle className="sr-only">Edit user</DialogTitle>
+          <DialogTitle className="sr-only">{t('Edit user')}</DialogTitle>
           {editingUser && (
             <EditUserForm
               user={editingUser}
@@ -205,13 +209,13 @@ export default function Users() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete {deletingUser?.username}?</AlertDialogTitle>
             <AlertDialogDescription>
-              The account is removed permanently. Cards assigned to this user become unassigned.
+              {t('The account is removed permanently. Cards assigned to this user become unassigned.')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('Cancel')}</AlertDialogCancel>
             <AlertDialogAction variant="destructive" onClick={() => deletingUser && removeUser(deletingUser)}>
-              Delete
+              {t('Delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

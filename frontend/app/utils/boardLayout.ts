@@ -1,4 +1,5 @@
 import { sanitizeHexColor } from "./color";
+import { interpolate, msg, type Translate } from "./i18n";
 
 // A card's status = the key of a list. The lists are shared by everyone (GET /column) and
 // admins can add more; keys like CardStatus in server-java
@@ -13,20 +14,30 @@ export type BoardCard = { id: string; status?: string };
 // The default lists (same as CardStatus.DEFAULT_COLUMNS in server-java); used
 // until the lists have been fetched, and if fetching fails
 export const DEFAULT_HEADERS: BoardHeader[] = [
-  { key: "todo", title: "To Do" },
-  { key: "in-progress", title: "In Progress" },
-  { key: "test", title: "Test" },
-  { key: "done", title: "Done" },
+  { key: "todo", title: msg("To Do") },
+  { key: "in-progress", title: msg("In Progress") },
+  { key: "test", title: msg("Test") },
+  { key: "done", title: msg("Done") },
 ];
+
+// The default lists keep their English title in the database and are shown translated; renamed and added
+// lists are shown as typed
+export const listTitle = (header: BoardHeader, t: Translate): string =>
+  DEFAULT_HEADERS.some((d) => d.key === header.key && d.title === header.title) ? t(header.title) : header.title;
 
 // The default list: new cards without a status land there, so it can't be deleted (DEFAULT_CARD_STATUS on the server)
 export const DEFAULT_LIST_KEY: CardStatus = "todo";
 
 // Admin: why a list can't be deleted, or null. Only empty lists (no cards with the list's status)
-export const listDeleteBlocker = (key: CardStatus, cards: { status?: string }[]): string | null => {
-  if (key === DEFAULT_LIST_KEY) return "Default list";
+export const listDeleteBlocker = (
+  key: CardStatus,
+  cards: { status?: string }[],
+  t: Translate = interpolate,
+): string | null => {
+  if (key === DEFAULT_LIST_KEY) return t(msg("Default list"));
   const count = cards.filter((c) => (c.status ?? DEFAULT_LIST_KEY) === key).length;
-  return count ? `${count} card${count === 1 ? "" : "s"}` : null;
+  if (!count) return null;
+  return count === 1 ? t(msg("1 card")) : t(msg("{count} cards"), { count });
 };
 
 // Must match ResponsiveGridLayout so that the headers line up with the columns
@@ -75,21 +86,21 @@ export const defaultListColor = (key: CardStatus): string => DEFAULT_LIST_COLORS
 
 // The colours in the colour picker: light Trello shades on top, darker below
 export const LIST_SWATCHES: { name: string; color: string }[] = [
-  { name: "Lavender", color: "#eed7fc" },
-  { name: "Yellow", color: "#f5e989" },
-  { name: "Light blue", color: "#cce0ff" },
-  { name: "Mint", color: "#baf3db" },
-  { name: "Pink", color: "#fdd0ec" },
-  { name: "Peach", color: "#fedec8" },
-  { name: "Rose", color: "#ffd5d2" },
-  { name: "Sky", color: "#c6edfb" },
-  { name: "Lime", color: "#d3f1a7" },
-  { name: "Light grey", color: "#dcdfe4" },
-  { name: "Purple", color: "#6e5dc6" },
-  { name: "Green", color: "#1f845a" },
-  { name: "Blue", color: "#0c66e4" },
-  { name: "Red", color: "#c9372c" },
-  { name: "Slate", color: "#44546f" },
+  { name: msg("Lavender"), color: "#eed7fc" },
+  { name: msg("Yellow"), color: "#f5e989" },
+  { name: msg("Light blue"), color: "#cce0ff" },
+  { name: msg("Mint"), color: "#baf3db" },
+  { name: msg("Pink"), color: "#fdd0ec" },
+  { name: msg("Peach"), color: "#fedec8" },
+  { name: msg("Rose"), color: "#ffd5d2" },
+  { name: msg("Sky"), color: "#c6edfb" },
+  { name: msg("Lime"), color: "#d3f1a7" },
+  { name: msg("Light grey"), color: "#dcdfe4" },
+  { name: msg("Purple"), color: "#6e5dc6" },
+  { name: msg("Green"), color: "#1f845a" },
+  { name: msg("Blue"), color: "#0c66e4" },
+  { name: msg("Red"), color: "#c9372c" },
+  { name: msg("Slate"), color: "#44546f" },
 ];
 
 // Only the card positions are used; older layouts also have cols and headers

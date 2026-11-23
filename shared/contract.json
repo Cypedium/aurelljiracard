@@ -1,6 +1,7 @@
 {
   "$comment": "Rules the frontend and server-java must agree on. Neither imports this file: frontend/tests/unit/contract.test.ts and server-java SharedContractTest check their own constants against it, so drift fails CI. Change it together with both sides.",
   "roles": ["user", "admin"],
+  "languages": ["en", "sv"],
   "backlogStatus": "backlog",
   "defaultColumns": [
     { "key": "todo", "title": "To Do" },

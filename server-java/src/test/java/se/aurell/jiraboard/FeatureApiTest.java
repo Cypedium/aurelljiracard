@@ -136,6 +136,11 @@ class FeatureApiTest extends ApiIntegrationTest {
         mvc.perform(bearer(json(put("/user/layout"), "{}"), alice))
                 .andExpect(status().isServiceUnavailable())
                 .andExpect(jsonPath("$.message").value(READ_ONLY));
+        // A personal setting like the layout: the frontend keeps the choice locally until writes are back
+        mvc.perform(bearer(json(put("/user/language"), """
+                {"language": "sv"}"""), alice))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.message").value(READ_ONLY));
         mvc.perform(json(post("/auth/register"), """
                 {"username": "bob", "password": "%s"}""".formatted(PASSWORD)))
                 .andExpect(status().isServiceUnavailable());

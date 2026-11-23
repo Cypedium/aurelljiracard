@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { cn } from "@/app/lib/utils"
+import { useLanguage } from "@/app/hooks/useLanguage"
 import type { Label as LabelPrimitive } from "radix-ui"
 import { Slot } from "radix-ui"
 import {
@@ -137,7 +138,9 @@ function FormDescription({ className, ...props }: React.ComponentProps<"p">) {
 
 function FormMessage({ className, ...props }: React.ComponentProps<"p">) {
   const { error, formMessageId } = useFormField()
-  const body = error ? String(error?.message ?? "") : props.children
+  // Schema messages are English (same as the backend's); shown in the current language
+  const { t } = useLanguage()
+  const body = error ? t(String(error?.message ?? "")) : props.children
 
   if (!body) {
     return null

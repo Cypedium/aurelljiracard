@@ -35,6 +35,7 @@ import {
   NAV_PAGE_LINK_CLASS,
   NAV_SUB_ROW_BUTTON_CLASS,
 } from '../utils/styles';
+import { useLanguage } from '../hooks/useLanguage';
 
 // Logged-in users only: loaded when shown, so /login and /register skip their code (Radix popover/select/dialog)
 const AccountMenu = dynamic(() => import('./AccountMenu'));
@@ -90,6 +91,7 @@ const Navbar = () => {
   const [shareOpen, setShareOpen] = useState(false);
   // Switched-off features are hidden (the site admin sees everything)
   const { isOn, readOnly, siteAdmin } = useFeatures();
+  const { t } = useLanguage();
 
   useEffect(() => onBoardAction(BOARD_ACTIONS.shareBoard, () => setShareOpen(true)), []);
 
@@ -100,16 +102,16 @@ const Navbar = () => {
 
   // Row two's buttons for the current page. Only the board's admin adds / deletes columns (the backend refuses others)
   const subActions: SubAction[] = [
-    ...(onBoard || onBacklog ? [{ label: 'Create card', action: BOARD_ACTIONS.createCard, Icon: PencilSquareIcon }] : []),
+    ...(onBoard || onBacklog ? [{ label: t('Create card'), action: BOARD_ACTIONS.createCard, Icon: PencilSquareIcon }] : []),
     ...(onBoard && boardAdmin
       ? [
-          { label: 'Create column', action: BOARD_ACTIONS.createColumn, Icon: PlusIcon },
-          { label: 'Delete column', action: BOARD_ACTIONS.deleteColumn, Icon: TrashIcon },
+          { label: t('Create column'), action: BOARD_ACTIONS.createColumn, Icon: PlusIcon },
+          { label: t('Delete column'), action: BOARD_ACTIONS.deleteColumn, Icon: TrashIcon },
         ]
       : []),
     // The owner invites; collaborators see who is on the board and can leave
-    ...(onBoard && board ? [{ label: boardAdmin ? 'Share' : 'Members', action: BOARD_ACTIONS.shareBoard, Icon: boardAdmin ? ShareIcon : UserGroupIcon }] : []),
-    ...(onIssueTypes ? [{ label: 'Create Issue type', action: BOARD_ACTIONS.createIssueType, Icon: PlusIcon }] : []),
+    ...(onBoard && board ? [{ label: boardAdmin ? t('Share') : t('Members'), action: BOARD_ACTIONS.shareBoard, Icon: boardAdmin ? ShareIcon : UserGroupIcon }] : []),
+    ...(onIssueTypes ? [{ label: t('Create Issue type'), action: BOARD_ACTIONS.createIssueType, Icon: PlusIcon }] : []),
   ].filter(({ action }) => isOn(BOARD_ACTION_FEATURES[action]));
 
   // The Board link always comes first after the logo. The board switcher shows on every page when you are logged in and have more than
@@ -158,7 +160,7 @@ const Navbar = () => {
         <button
           className={`block text-nav-text md:hidden ${menuOpen ? 'invisible' : ''}`}
           onClick={() => setMenuOpen(true)}
-          aria-label="Open menu"
+          aria-label={t('Open menu')}
           aria-expanded={menuOpen}
         >
           <Bars3Icon className="size-8" aria-hidden />
@@ -181,7 +183,7 @@ const Navbar = () => {
         >
           {/* Mobile: the close button in the menu's top right corner */}
           <li className="absolute top-3 right-3 md:hidden">
-            <button type="button" className="block rounded-md text-nav-text hover:bg-white/10" onClick={closeMenu} aria-label="Close menu">
+            <button type="button" className="block rounded-md text-nav-text hover:bg-white/10" onClick={closeMenu} aria-label={t('Close menu')}>
               <XMarkIcon className="size-8" aria-hidden />
             </button>
           </li>
@@ -194,7 +196,7 @@ const Navbar = () => {
           </li>
           {isLoggedIn && (
             <>
-              <NavItem href={ROUTES.board} label="Board" Icon={ViewColumnsIcon} pathname={pathname} onNavigate={closeMenu} />
+              <NavItem href={ROUTES.board} label={t('Board')} Icon={ViewColumnsIcon} pathname={pathname} onNavigate={closeMenu} />
               {/* Mobile: the board's buttons (Create card, Share …), which are otherwise in row two */}
               {onBoard && (
                 <li className="md:hidden" onClick={closeMenu}>
@@ -202,19 +204,19 @@ const Navbar = () => {
                 </li>
               )}
               {isOn('backlogPage') && (
-                <NavItem href={ROUTES.backlog} label="Backlog" Icon={QueueListIcon} pathname={pathname} onNavigate={closeMenu}>
+                <NavItem href={ROUTES.backlog} label={t('Backlog')} Icon={QueueListIcon} pathname={pathname} onNavigate={closeMenu}>
                   {onBacklog && <MobileSubActions actions={subActions} />}
                 </NavItem>
               )}
               {/* Site admin only; the backend refuses others (403) */}
-              {admin && <NavItem href={ROUTES.users} label="Users" Icon={UsersIcon} pathname={pathname} onNavigate={closeMenu} />}
+              {admin && <NavItem href={ROUTES.users} label={t('Users')} Icon={UsersIcon} pathname={pathname} onNavigate={closeMenu} />}
               {/* Site admin: feature switches and read-only mode (docs/feature-switches.md) */}
               {admin && (
-                <NavItem href={ROUTES.features} label="Features" Icon={AdjustmentsHorizontalIcon} pathname={pathname} onNavigate={closeMenu} />
+                <NavItem href={ROUTES.features} label={t('Features')} Icon={AdjustmentsHorizontalIcon} pathname={pathname} onNavigate={closeMenu} />
               )}
               {/* The selected board's issue types: its admin only */}
               {boardAdmin && isOn('issueTypesPage') && (
-                <NavItem href={ROUTES.issueTypes} label="Issue types" Icon={TagIcon} pathname={pathname} onNavigate={closeMenu}>
+                <NavItem href={ROUTES.issueTypes} label={t('Issue types')} Icon={TagIcon} pathname={pathname} onNavigate={closeMenu}>
                   {onIssueTypes && <MobileSubActions actions={subActions} />}
                 </NavItem>
               )}
@@ -239,7 +241,7 @@ const Navbar = () => {
                 <li key="logout" className={`self-end md:self-auto ${showSwitcher ? '' : 'md:ml-auto'}`}>
                   <button onClick={handleLogout} className={NAV_LINK_CLASS}>
                     <ArrowRightStartOnRectangleIcon className={NAV_ICON_CLASS} aria-hidden />
-                    Logout
+                    {t('Log out')}
                   </button>
                 </li>
               )}
@@ -248,11 +250,11 @@ const Navbar = () => {
             <>
               {isOn('register') && (
                 <li key="register" onClick={closeMenu}>
-                  <Link href={ROUTES.register} className={NAV_LINK_CLASS}>Register User</Link>
+                  <Link href={ROUTES.register} className={NAV_LINK_CLASS}>{t('Register User')}</Link>
                 </li>
               )}
               <li key="login" onClick={closeMenu}>
-                <Link href={ROUTES.login} className={NAV_LINK_CLASS}>Login</Link>
+                <Link href={ROUTES.login} className={NAV_LINK_CLASS}>{t('Login')}</Link>
               </li>
             </>
           )}
@@ -287,8 +289,8 @@ const Navbar = () => {
           className={`px-[3%] py-1 text-center font-jira text-sm ${siteAdmin ? 'bg-[#e9f2ff] text-[#0055cc]' : 'bg-[#fff7d6] text-[#7f5f01]'}`}
         >
           {siteAdmin
-            ? 'Read-only mode is on for everyone else. You can still make changes.'
-            : 'Aurello is in read-only mode. You can look around, but changes are paused for now.'}
+            ? t('Read-only mode is on for everyone else. You can still make changes.')
+            : t('Aurello is in read-only mode. You can look around, but changes are paused for now.')}
         </div>
       )}
 

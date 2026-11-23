@@ -23,10 +23,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '../components/ui/alert-dialog';
+import { useLanguage } from '../hooks/useLanguage';
+import { msg } from '../utils/i18n';
+import { issueTypeLabel } from '../utils/cardType';
 
 // The board's admin: the board's issue types with their card counts. New ones are added here or in the card form; unused ones can be deleted
 export default function IssueTypes() {
   const boardId = useBoards().current?._id ?? null;
+  const { t } = useLanguage();
   // manageIssueTypes switched off: no deleting (and no "Create Issue type" in the navbar)
   const canManage = useFeatures().isOn('manageIssueTypes');
   const [types, setTypes] = useState<IssueType[] | null>(null);
@@ -41,7 +45,7 @@ export default function IssueTypes() {
       setTypes(normalizeIssueTypes(typesRes.data));
       setCardCounts(countCardsByType(cardsRes.data || []));
     } catch (err) {
-      reportError('Error fetching issue types', err, 'Could not load issue types.');
+      reportError('Error fetching issue types', err, msg('Could not load issue types.'));
       setTypes([]);
     }
   }, [boardId]);
@@ -56,9 +60,9 @@ export default function IssueTypes() {
       await deleteIssueType(boardId, type.key);
       setTypes((prev) => prev?.filter((t) => t.key !== type.key) ?? null);
       removeIssueType(type.key);
-      toast.success(`Issue type ${type.label} deleted.`);
+      toast.success(t('Issue type {name} deleted.', { name: issueTypeLabel(type, t) }));
     } catch (err) {
-      reportError('Error deleting issue type', err, 'Could not delete issue type.');
+      reportError('Error deleting issue type', err, msg('Could not delete issue type.'));
     }
   };
 
@@ -69,7 +73,7 @@ export default function IssueTypes() {
       onBoardAction(BOARD_ACTIONS.createIssueType, () => {
         if (typeCount === null) return;
         if (typeCount >= MAX_ISSUE_TYPES) {
-          toast.error(`There can be at most ${MAX_ISSUE_TYPES} issue types.`, { id: 'issue-types-full' });
+          toast.error(t('There can be at most {max} issue types.', { max: MAX_ISSUE_TYPES }), { id: 'issue-types-full' });
           return;
         }
         setCreating(true);
@@ -80,7 +84,7 @@ export default function IssueTypes() {
   return (
     <>
       {/* No visible heading (the navbar shows the page); kept for screen readers */}
-      <h1 className="sr-only">Issue types</h1>
+      <h1 className="sr-only">{t('Issue types')}</h1>
 
       {types === null ? (
         <TableSkeleton />
@@ -89,10 +93,10 @@ export default function IssueTypes() {
           <table className="w-full text-sm text-jira-text">
             <thead className={TABLE_THEAD_CLASS}>
               <tr>
-                <th scope="col" className={TH_CLASS}>Issue type</th>
-                <th scope="col" className={`${TH_CLASS} max-[480px]:hidden`}>Key</th>
-                <th scope="col" className={`${TH_CLASS} text-right`}>Cards</th>
-                <th scope="col" className={`${TH_CLASS} text-right`}>Actions</th>
+                <th scope="col" className={TH_CLASS}>{t('Issue type')}</th>
+                <th scope="col" className={`${TH_CLASS} max-[480px]:hidden`}>{t('Key')}</th>
+                <th scope="col" className={`${TH_CLASS} text-right`}>{t('Cards')}</th>
+                <th scope="col" className={`${TH_CLASS} text-right`}>{t('Actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -100,9 +104,9 @@ export default function IssueTypes() {
                 const isDefault = type.key === DEFAULT_CARD_TYPE;
                 const cards = cardCounts[type.key] ?? 0;
                 const deleteBlocked = isDefault
-                  ? 'The default issue type cannot be deleted'
+                  ? t('The default issue type cannot be deleted')
                   : cards > 0
-                    ? `Change or delete its ${cards} card${cards === 1 ? '' : 's'} first`
+                    ? cards === 1 ? t('Change or delete its card first') : t('Change or delete its {count} cards first', { count: cards })
                     : null;
 
                 return (
@@ -110,9 +114,9 @@ export default function IssueTypes() {
                     <td className={TD_CLASS}>
                       <div className="flex min-w-0 items-center gap-3">
                         <IssueTypeIcon issueType={type} />
-                        <span className="min-w-0 truncate font-medium" title={type.label}>
-                          {type.label}
-                          {isDefault && <span className="ml-1 font-normal text-jira-secondary">(default)</span>}
+                        <span className="min-w-0 truncate font-medium" title={issueTypeLabel(type, t)}>
+                          {issueTypeLabel(type, t)}
+                          {isDefault && <span className="ml-1 font-normal text-jira-secondary">{t('(default)')}</span>}
                         </span>
                       </div>
                     </td>
@@ -124,8 +128,8 @@ export default function IssueTypes() {
                       <div className={`flex items-center justify-end ${canManage ? '' : 'invisible'}`}>
                         <button
                           className={ACTION_CLASS}
-                          aria-label={`Delete ${type.label}`}
-                          title={deleteBlocked ?? 'Delete issue type'}
+                          aria-label={t('Delete {title}', { title: issueTypeLabel(type, t) })}
+                          title={deleteBlocked ?? t('Delete issue type')}
                           disabled={Boolean(deleteBlocked)}
                           onClick={() => setDeletingType(type)}
                         >
@@ -153,13 +157,13 @@ export default function IssueTypes() {
       <AlertDialog open={Boolean(deletingType)} onOpenChange={(open) => !open && setDeletingType(null)}>
         <AlertDialogContent className="font-jira text-jira-text">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete {deletingType?.label}?</AlertDialogTitle>
-            <AlertDialogDescription>The issue type is removed for everyone. No cards use it.</AlertDialogDescription>
+            <AlertDialogTitle>{t('Delete {title}?', { title: deletingType ? issueTypeLabel(deletingType, t) : '' })}</AlertDialogTitle>
+            <AlertDialogDescription>{t('The issue type is removed for everyone. No cards use it.')}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('Cancel')}</AlertDialogCancel>
             <AlertDialogAction variant="destructive" onClick={() => deletingType && removeType(deletingType)}>
-              Delete
+              {t('Delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

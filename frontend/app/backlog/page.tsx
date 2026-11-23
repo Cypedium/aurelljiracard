@@ -9,8 +9,10 @@ import CardForm from "../cards/card/Card";
 import { Dialog, DialogContent, DialogTitle } from "../components/ui/dialog";
 import { BACKLOG_STATUS } from "../utils/backlog";
 import { BOARD_ACTIONS, onBoardAction } from "../utils/boardActions";
+import { useLanguage } from "../hooks/useLanguage";
 
 export default function BacklogPage() {
+  const { t } = useLanguage();
   const [creating, setCreating] = useState(false);
   // The backlogPage navbar switch: the page is not shown (the cards remain)
   const { isOn } = useFeatures();
@@ -23,7 +25,7 @@ export default function BacklogPage() {
   const handleCreated = () => {
     setCreating(false);
     setRefreshKey((k) => k + 1);
-    toast.success("Card added to the backlog.");
+    toast.success(t("Card added to the backlog."));
   };
 
   return (
@@ -34,7 +36,7 @@ export default function BacklogPage() {
           {/* No visible heading (the navbar shows the page); kept for screen readers */}
           {isOn("backlogPage") ? (
             <>
-              <h1 className="sr-only">Backlog</h1>
+              <h1 className="sr-only">{t("Backlog")}</h1>
               <BacklogList refreshKey={refreshKey} />
             </>
           ) : (
@@ -49,7 +51,7 @@ export default function BacklogPage() {
             // The form has its own background and shadow
             className="max-h-[calc(100dvh-2rem)] gap-0 overflow-y-auto border-0 bg-transparent p-0 font-jira shadow-none sm:max-w-[640px]"
           >
-            <DialogTitle className="sr-only">Add to backlog</DialogTitle>
+            <DialogTitle className="sr-only">{t("Add to backlog")}</DialogTitle>
             <CardForm status={BACKLOG_STATUS} onCreated={handleCreated} onCancel={() => setCreating(false)} />
           </DialogContent>
         </Dialog>

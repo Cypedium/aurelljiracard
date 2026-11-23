@@ -1,10 +1,12 @@
+import { msg } from "./i18n";
+
 export const LOADING_TOAST_ID = "loading-data";
-// Only registration, login and logout show the loading toast; data that loads shows skeletons
+// Only registration, login and logout show the loading toast; data that loads shows skeletons. Shown translated
 const LOADING_TOAST_TEXTS: Record<string, string> = {
-  "/auth/register": "Creating account, please wait…",
-  "/auth/login": "Logging in, please wait…",
-  "/auth/google": "Logging in, please wait…",
-  "/auth/logout": "Logging out, please wait…",
+  "/auth/register": msg("Creating account, please wait…"),
+  "/auth/login": msg("Logging in, please wait…"),
+  "/auth/google": msg("Logging in, please wait…"),
+  "/auth/logout": msg("Logging out, please wait…"),
 };
 export const loadingToastText = (url?: string): string | null => (url && LOADING_TOAST_TEXTS[url]) || null;
 // Shown only if the call takes a while, e.g. when Fly wakes a stopped machine (cold start)

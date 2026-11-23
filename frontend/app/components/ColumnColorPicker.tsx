@@ -5,6 +5,7 @@ import { LIST_SWATCHES } from '../utils/boardLayout';
 import { readableTextColor } from '../utils/color';
 import { Button } from './ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { useLanguage } from '../hooks/useLanguage';
 
 type Props = {
   // The column's name, for screen readers
@@ -19,6 +20,7 @@ type Props = {
 // The brush in the list's corner: preset colours, a custom colour (the browser's colour picker) and reset
 export default function ColumnColorPicker({ title, color, defaultColor, onChange }: Props) {
   const current = color ?? defaultColor;
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
 
   // A preset colour or reset: save and close
@@ -32,25 +34,25 @@ export default function ColumnColorPicker({ title, color, defaultColor, onChange
       <PopoverTrigger asChild>
         <button
           type="button"
-          aria-label={`Change color of ${title}`}
-          title="Change color"
+          aria-label={t('Change color of {title}', { title })}
+          title={t('Change color')}
           className="pointer-events-auto rounded-md p-1 opacity-70 hover:bg-black/10 hover:opacity-100"
         >
           <PaintBrushIcon className="size-4" aria-hidden />
         </button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-60 font-jira text-jira-text">
-        <p className="mb-2 text-xs font-semibold text-jira-secondary">Column color</p>
-        <div className="grid grid-cols-5 gap-2" role="group" aria-label="Colors">
+        <p className="mb-2 text-xs font-semibold text-jira-secondary">{t('Column color')}</p>
+        <div className="grid grid-cols-5 gap-2" role="group" aria-label={t('Colors')}>
           {LIST_SWATCHES.map((s) => {
             const selected = s.color === current;
             return (
               <button
                 key={s.color}
                 type="button"
-                aria-label={s.name}
+                aria-label={t(s.name)}
                 aria-pressed={selected}
-                title={s.name}
+                title={t(s.name)}
                 className="flex h-8 items-center justify-center rounded-md outline-none hover:ring-2 hover:ring-jira-border focus-visible:ring-2 focus-visible:ring-jira-focus"
                 style={{ backgroundColor: s.color, color: readableTextColor(s.color) }}
                 onClick={() => choose(s.color)}
@@ -69,10 +71,10 @@ export default function ColumnColorPicker({ title, color, defaultColor, onChange
               onChange={(e) => onChange(e.target.value)}
               className="size-7 cursor-pointer rounded border-0 bg-transparent p-0"
             />
-            Custom…
+            {t('Custom…')}
           </label>
           <Button variant="ghost" size="sm" disabled={!color} onClick={() => choose(null)}>
-            Reset
+            {t('Reset')}
           </Button>
         </div>
       </PopoverContent>

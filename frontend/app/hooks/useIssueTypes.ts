@@ -5,6 +5,7 @@ import { reportError } from "../utils/apiError";
 import { DEFAULT_ISSUE_TYPES, normalizeIssueTypes, type IssueType } from "../utils/cardType";
 import { createStore } from "../utils/store";
 import { useBoards } from "./useBoards";
+import { msg } from "../utils/i18n";
 
 // The shown board's issue types, shared by every component (cards, backlog, forms). Fetched once
 // per board and page load; the default types are shown until they have been fetched
@@ -24,7 +25,7 @@ const load = (id: string | null) => {
     })
     .catch((err) => {
       // Fixed id: several components may retry, and the toast then replaces itself
-      reportError("Error fetching issue types", err, "Could not load the issue types.", "issue-types");
+      reportError("Error fetching issue types", err, msg("Could not load the issue types."), "issue-types");
     })
     .finally(() => {
       if (loading === id) loading = null;

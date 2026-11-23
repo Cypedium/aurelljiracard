@@ -1,6 +1,7 @@
 // Feature switches and read-only mode (docs/feature-switches.md). The backend (server-java) refuses with 503;
 // here the buttons are only hidden to match. The navbar switches (UI-only) hide links and settings.
 import { BOARD_ACTIONS, type BoardAction } from "./boardActions";
+import { interpolate, msg, type Translate } from "./i18n";
 
 // Must match the Feature enum in server-java (the API keys; read-only mode is called "readOnly" and stands on its own)
 export const ENFORCED_FEATURE_KEYS = [
@@ -78,12 +79,18 @@ export const canWrite = (state: FeatureState, siteAdmin: boolean): boolean => si
 
 // "Changed by root, 19 Nov 14:32" on the admin page; null if the switch was never changed.
 // A deleted admin gives only the time
-export const featureChangedLabel = (sw: Pick<FeatureSwitch, "updatedAt" | "updatedBy"> | undefined, locale = "en-GB"): string | null => {
+export const featureChangedLabel = (
+  sw: Pick<FeatureSwitch, "updatedAt" | "updatedBy"> | undefined,
+  locale = "en-GB",
+  t: Translate = interpolate,
+): string | null => {
   if (!sw?.updatedAt) return null;
   const when = new Date(sw.updatedAt);
   if (Number.isNaN(when.getTime())) return null;
   const time = when.toLocaleString(locale, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
-  return sw.updatedBy ? `Changed by ${sw.updatedBy}, ${time}` : `Changed ${time}`;
+  return sw.updatedBy
+    ? t(msg("Changed by {user}, {time}"), { user: sw.updatedBy, time })
+    : t(msg("Changed {time}"), { time });
 };
 
 // The navbar's buttons → their switch
@@ -101,50 +108,50 @@ export type FeatureGroup = { title: string; uiOnly: boolean; features: FeatureIn
 
 export const READ_ONLY_INFO: FeatureInfo = {
   key: READ_ONLY_KEY,
-  name: "Read-only mode",
-  hides: "Shows a banner; every create, edit, delete and drag is off",
-  blocks: "Every write except login, refresh and logout",
+  name: msg("Read-only mode"),
+  hides: msg("Shows a banner; every create, edit, delete and drag is off"),
+  blocks: msg("Every write except login, refresh and logout"),
 };
 
 export const FEATURE_GROUPS: FeatureGroup[] = [
   {
-    title: "Accounts",
+    title: msg("Accounts"),
     uiOnly: false,
     features: [
-      { key: "register", name: "Registration", hides: "“Register User” link; the register page shows a message", blocks: "POST /auth/register, first Google sign-in" },
-      { key: "joinBoard", name: "Join boards", hides: "Invite page shows “temporarily disabled”", blocks: "POST /invite/{token}" },
-      { key: "googleConnect", name: "Connect Google", hides: "“Google sign-in” in the account menu", blocks: "POST /user/google" },
+      { key: "register", name: msg("Registration"), hides: msg("“Register User” link; the register page shows a message"), blocks: msg("POST /auth/register, first Google sign-in") },
+      { key: "joinBoard", name: msg("Join boards"), hides: msg("Invite page shows “temporarily disabled”"), blocks: msg("POST /invite/{token}") },
+      { key: "googleConnect", name: msg("Connect Google"), hides: msg("“Google sign-in” in the account menu"), blocks: msg("POST /user/google") },
     ],
   },
   {
-    title: "Navbar second row",
+    title: msg("Navbar second row"),
     uiOnly: false,
     features: [
-      { key: "createCard", name: "Create card", hides: "“Create card”", blocks: "POST /board/{id}/card" },
-      { key: "createColumn", name: "Create column", hides: "“Create column”", blocks: "POST /board/{id}/column" },
-      { key: "deleteColumn", name: "Delete column", hides: "“Delete column”", blocks: "DELETE /board/{id}/column/{key}" },
-      { key: "shareBoard", name: "Share", hides: "“Share” / “Members” (also leaving a board)", blocks: "POST/DELETE …/invite, DELETE …/member/{userId}" },
+      { key: "createCard", name: msg("Create card"), hides: msg("“Create card”"), blocks: msg("POST /board/{id}/card") },
+      { key: "createColumn", name: msg("Create column"), hides: msg("“Create column”"), blocks: msg("POST /board/{id}/column") },
+      { key: "deleteColumn", name: msg("Delete column"), hides: msg("“Delete column”"), blocks: msg("DELETE /board/{id}/column/{key}") },
+      { key: "shareBoard", name: msg("Share"), hides: msg("“Share” / “Members” (also leaving a board)"), blocks: msg("POST/DELETE …/invite, DELETE …/member/{userId}") },
     ],
   },
   {
-    title: "Board",
+    title: msg("Board"),
     uiOnly: false,
     features: [
-      { key: "editCard", name: "Edit cards", hides: "Edit in the card dialog, dragging cards", blocks: "PUT …/card/{id}, PATCH …/card/{id}/status" },
-      { key: "deleteCard", name: "Delete cards", hides: "Delete in the card dialog", blocks: "DELETE …/card/{id}" },
-      { key: "editColumns", name: "Edit lists", hides: "Rename/recolour in the list header, dragging list headers", blocks: "PUT /board/{id}/column/{key}, PUT /board/{id}/column" },
-      { key: "manageIssueTypes", name: "Manage issue types", hides: "“Create Issue type”, delete on the Issue types page", blocks: "POST, DELETE /board/{id}/issue-type" },
+      { key: "editCard", name: msg("Edit cards"), hides: msg("Edit in the card dialog, dragging cards"), blocks: msg("PUT …/card/{id}, PATCH …/card/{id}/status") },
+      { key: "deleteCard", name: msg("Delete cards"), hides: msg("Delete in the card dialog"), blocks: msg("DELETE …/card/{id}") },
+      { key: "editColumns", name: msg("Edit lists"), hides: msg("Rename/recolour in the list header, dragging list headers"), blocks: msg("PUT /board/{id}/column/{key}, PUT /board/{id}/column") },
+      { key: "manageIssueTypes", name: msg("Manage issue types"), hides: msg("“Create Issue type”, delete on the Issue types page"), blocks: msg("POST, DELETE /board/{id}/issue-type") },
     ],
   },
   {
-    title: "Navbar",
+    title: msg("Navbar"),
     uiOnly: true,
     features: [
-      { key: "backlogPage", name: "Backlog", hides: "“Backlog” link, the Backlog choice in the card form; /backlog shows “turned off”", blocks: "GET /board/{id}/card" },
-      { key: "boardSwitcher", name: "Board switcher", hides: "The board dropdown", blocks: "The Board link; the board last chosen stays shown" },
-      { key: "issueTypesPage", name: "Issue types page", hides: "“Issue types” link; /issue-types shows “turned off”", blocks: "Creating types from the card form (Manage issue types)" },
-      { key: "boardBackground", name: "Board background", hides: "“Board background” in the account menu", blocks: "The saved background keeps applying" },
-      { key: "navbarColour", name: "Navbar colour", hides: "“Navbar colour” in the account menu", blocks: "The saved colour keeps applying" },
+      { key: "backlogPage", name: msg("Backlog"), hides: msg("“Backlog” link, the Backlog choice in the card form; /backlog shows “turned off”"), blocks: msg("GET /board/{id}/card") },
+      { key: "boardSwitcher", name: msg("Board switcher"), hides: msg("The board dropdown"), blocks: msg("The Board link; the board last chosen stays shown") },
+      { key: "issueTypesPage", name: msg("Issue types page"), hides: msg("“Issue types” link; /issue-types shows “turned off”"), blocks: msg("Creating types from the card form (Manage issue types)") },
+      { key: "boardBackground", name: msg("Board background"), hides: msg("“Board background” in the account menu"), blocks: msg("The saved background keeps applying") },
+      { key: "navbarColour", name: msg("Navbar colour"), hides: msg("“Navbar colour” in the account menu"), blocks: msg("The saved colour keeps applying") },
     ],
   },
 ];

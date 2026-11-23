@@ -3,6 +3,7 @@ import FeatureOff from "../components/FeatureOff";
 import RegisterForm from "../components/RegisterForm";
 import { useFeatures } from "../hooks/useFeatures";
 import Welcome from "../components/Welcome";
+import { msg } from "../utils/i18n";
 
 export default function RegisterPage() {
   // The register switch (or read-only): the backend refuses new users with 503
@@ -15,8 +16,8 @@ export default function RegisterPage() {
         <RegisterForm />
       ) : (
         <FeatureOff
-          title="Registration is closed for now"
-          text="New accounts can't be created at the moment. Please try again later."
+          title={msg("Registration is closed for now")}
+          text={msg("New accounts can't be created at the moment. Please try again later.")}
           showBoardLink={false}
         />
       )}

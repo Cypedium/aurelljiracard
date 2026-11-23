@@ -4,7 +4,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { updateUser, type PublicUser } from '../api/endpoints';
 import { apiErrorMessage, isConflictError, logError } from '../utils/apiError';
-import { ROLES, type Role } from '../utils/session';
+import { ROLES, ROLE_LABELS } from '../utils/session';
+import { useLanguage } from '../hooks/useLanguage';
+import { msg } from '../utils/i18n';
 import { changedUserFields, editUserSchema, type EditUserValues } from '../utils/userForm';
 import { FIELD_ERROR_CLASS, FORM_ITEM_CLASS, LABEL_CLASS, SECTION_PADDING } from '../utils/styles';
 import { Button } from '../components/ui/button';
@@ -20,9 +22,10 @@ type EditUserFormProps = {
   onCancel: () => void;
 };
 
-const ROLE_LABELS: Record<Role, string> = { user: 'User', admin: 'Admin' };
+
 
 export default function EditUserForm({ user, isSelf, onSaved, onCancel }: EditUserFormProps) {
+  const { t } = useLanguage();
   const current: EditUserValues = { username: user.username, role: user.role };
   const form = useForm<EditUserValues>({
     resolver: zodResolver(editUserSchema),
@@ -42,10 +45,10 @@ export default function EditUserForm({ user, isSelf, onSaved, onCancel }: EditUs
       logError('Update user error', error);
       // A taken name (409) is shown under the field
       if (isConflictError(error)) {
-        form.setError('username', { message: apiErrorMessage(error, 'Username already taken.') }, { shouldFocus: true });
+        form.setError('username', { message: apiErrorMessage(error, msg('Username already taken.')) }, { shouldFocus: true });
         return;
       }
-      toast.error(apiErrorMessage(error, 'Could not update user.'));
+      toast.error(apiErrorMessage(error, msg('Could not update user.')));
     }
   };
 
@@ -57,7 +60,7 @@ export default function EditUserForm({ user, isSelf, onSaved, onCancel }: EditUs
         noValidate
       >
         <header className={`${SECTION_PADDING} bg-linear-135 from-board-from via-board-via to-board-to py-5`}>
-          <h2 className="text-xl font-semibold text-white">Edit user</h2>
+          <h2 className="text-xl font-semibold text-white">{t('Edit user')}</h2>
         </header>
 
         <div className={`${SECTION_PADDING} flex flex-col pt-2 pb-4`}>
@@ -66,7 +69,7 @@ export default function EditUserForm({ user, isSelf, onSaved, onCancel }: EditUs
             name="username"
             render={({ field }) => (
               <FormItem className={FORM_ITEM_CLASS}>
-                <FormLabel className={LABEL_CLASS}>Username</FormLabel>
+                <FormLabel className={LABEL_CLASS}>{t('Username')}</FormLabel>
                 <FormControl>
                   <Input className="bg-white text-jira-text" autoComplete="off" {...field} />
                 </FormControl>
@@ -80,7 +83,7 @@ export default function EditUserForm({ user, isSelf, onSaved, onCancel }: EditUs
             name="role"
             render={({ field }) => (
               <FormItem className={FORM_ITEM_CLASS}>
-                <FormLabel className={LABEL_CLASS}>Role</FormLabel>
+                <FormLabel className={LABEL_CLASS}>{t('Role')}</FormLabel>
                 <Select value={field.value} onValueChange={field.onChange} disabled={isSelf}>
                   <FormControl>
                     <SelectTrigger className="w-full max-w-[240px] font-medium text-jira-text">
@@ -90,7 +93,7 @@ export default function EditUserForm({ user, isSelf, onSaved, onCancel }: EditUs
                   <SelectContent position="popper" className="font-jira text-jira-text">
                     {ROLES.map((role) => (
                       <SelectItem key={role} value={role}>
-                        {ROLE_LABELS[role]}
+                        {t(ROLE_LABELS[role])}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -102,17 +105,17 @@ export default function EditUserForm({ user, isSelf, onSaved, onCancel }: EditUs
 
           <p className="mt-4 text-xs text-jira-secondary">
             {isSelf
-              ? 'You cannot change your own role. Renaming yourself logs you out.'
-              : 'Changing the name or role logs the user out; their cards follow the new name.'}
+              ? t('You cannot change your own role. Renaming yourself logs you out.')
+              : t('Changing the name or role logs the user out; their cards follow the new name.')}
           </p>
         </div>
 
         <footer className={`${SECTION_PADDING} flex justify-end gap-2 border-t border-jira-neutral py-3`}>
           <Button type="button" variant="ghost" onClick={onCancel}>
-            Cancel
+            {t('Cancel')}
           </Button>
           <Button type="submit" disabled={form.formState.isSubmitting}>
-            Save
+            {t('Save')}
           </Button>
         </footer>
       </form>

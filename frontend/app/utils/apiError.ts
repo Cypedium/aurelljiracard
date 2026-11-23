@@ -1,13 +1,15 @@
 import { isAxiosError } from "axios";
 import { toast } from "sonner";
+import { t } from "./languageStore";
 
-// The backend's { message } if there is one, otherwise the fallback (network error, unknown error)
+// The backend's { message } if there is one, otherwise the fallback (network error, unknown error).
+// Both are English and shown in the current language (app/i18n/sv.ts has every backend message)
 export const apiErrorMessage = (error: unknown, fallback: string): string => {
   if (isAxiosError(error)) {
     const message = error.response?.data?.message;
-    if (typeof message === "string" && message.trim()) return message;
+    if (typeof message === "string" && message.trim()) return t(message);
   }
-  return fallback;
+  return t(fallback);
 };
 
 // 503 = the feature is switched off or Aurello is in read-only mode (server-java)

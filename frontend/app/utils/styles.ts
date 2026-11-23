@@ -135,6 +135,10 @@ export const ACCOUNT_MENU_ITEM_CLASS =
 // Selected row (panel open): blue with a border on the left, as in Trello
 export const ACCOUNT_MENU_ACTIVE_ITEM_CLASS =
   "bg-jira-info text-jira-primary shadow-[inset_2px_0_0_var(--color-jira-primary)] hover:bg-jira-info";
+// The language switch's flags: the chosen one lit up with a ring, the other faded
+export const LANGUAGE_OPTION_CLASS =
+  "flex rounded px-1.5 py-1 opacity-50 grayscale-[40%] transition hover:opacity-100 hover:grayscale-0 aria-checked:opacity-100 aria-checked:grayscale-0 aria-checked:ring-2 aria-checked:ring-jira-primary focus-visible:outline-2 focus-visible:outline-jira-focus";
+export const LANGUAGE_FLAG_CLASS = "h-4 w-auto rounded-[2px] shadow-[0_0_0_1px_rgba(0,0,0,0.15)]";
 
 // The colour pickers in the account menu (board background, navbar colour)
 export const PICKER_GROUP_HEADING_CLASS = "text-xs font-semibold uppercase text-jira-secondary";

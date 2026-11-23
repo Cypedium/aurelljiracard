@@ -21,4 +21,18 @@ final class EnumConverters {
             return value == null ? null : Role.fromValue(value);
         }
     }
+
+    // null = the user hasn't picked a language (the CHECK in V13 allows only known values)
+    @Converter
+    static class LanguageConverter implements AttributeConverter<Language, String> {
+        @Override
+        public String convertToDatabaseColumn(Language language) {
+            return language == null ? null : language.getValue();
+        }
+
+        @Override
+        public Language convertToEntityAttribute(String value) {
+            return value == null ? null : Language.parse(value).orElse(null);
+        }
+    }
 }

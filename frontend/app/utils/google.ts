@@ -14,7 +14,7 @@ type GoogleIdentity = {
   initialize: (config: { client_id: string; callback: (response: { credential: string }) => void }) => void;
   renderButton: (
     parent: HTMLElement,
-    options: { theme: "outline"; size: "large"; text: GoogleButtonText; shape: "rectangular"; width: number },
+    options: { theme: "outline"; size: "large"; text: GoogleButtonText; shape: "rectangular"; width: number; locale?: string },
   ) => void;
 };
 

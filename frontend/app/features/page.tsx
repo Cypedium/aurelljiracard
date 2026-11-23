@@ -5,8 +5,10 @@ import Layout from "../components/Layout";
 import Features from "./Features";
 import { isAdmin } from "../utils/session";
 import { ROUTES } from "../utils/routes";
+import { useLanguage } from "../hooks/useLanguage";
 
 export default function FeaturesPage() {
+  const { t } = useLanguage();
   const router = useRouter();
   const [allowed, setAllowed] = useState(false);
 
@@ -23,7 +25,7 @@ export default function FeaturesPage() {
         {allowed && (
           <div className="mx-auto flex max-w-[960px] flex-col gap-4">
             {/* No visible heading (the navbar shows the page); kept for screen readers */}
-            <h1 className="sr-only">Features</h1>
+            <h1 className="sr-only">{t("Features")}</h1>
             <Features />
           </div>
         )}

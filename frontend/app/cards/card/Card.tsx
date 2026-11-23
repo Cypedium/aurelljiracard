@@ -31,6 +31,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '../../components/ui/input';
 import SummaryEditor from '../../components/SummaryEditor';
 import { ROUTES } from '../../utils/routes';
+import { useLanguage } from '../../hooks/useLanguage';
+import { msg } from '../../utils/i18n';
 
 type CardProps = {
   // Set when editing an existing card; omitted on the create page
@@ -47,6 +49,7 @@ const required = <span className="text-jira-danger">*</span>;
 
 export default function Card({ card, onSaved, onCancel, status, onCreated }: CardProps = {}) {
   const isEdit = Boolean(card?._id);
+  const { t } = useLanguage();
   const router = useRouter();
   // The form is only shown on a board page, once the board has loaded
   const boardId = useBoards().current?._id ?? null;
@@ -121,16 +124,16 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
             saved = (await updateCardStatus(boardId, card._id, movedTo)).data;
           } catch (error) {
             // The changes are saved, only the move failed
-            reportError('Move error', error, 'Card saved, but it could not be moved.');
+            reportError('Move error', error, msg('Card saved, but it could not be moved.'));
             onSaved?.(saved);
             return;
           }
         }
         onSaved?.(saved);
-        toast.success('Card updated.');
+        toast.success(t('Card updated.'));
       } catch (error) {
         logError('Update error', error);
-        showError(error, 'Failed to save card.', fields.productId);
+        showError(error, msg('Failed to save card.'), fields.productId);
       }
       return;
     }
@@ -145,13 +148,13 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
       }
 
       // The toaster is in the layout, so it stays visible after the navigation
-      toast.success(res.data.message || 'Card submitted!');
+      toast.success(res.data.message ? t(res.data.message) : t('Card submitted!'));
       form.reset(EMPTY_CARD_FORM);
       router.push(ROUTES.home);
 
     } catch (error) {
       logError('Submission error', error);
-      showError(error, 'Failed to submit card.', fields.productId);
+      showError(error, msg('Failed to submit card.'), fields.productId);
     }
   };
 
@@ -165,13 +168,13 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
         {/* The same gradient as the board */}
         <header className={`${SECTION_PADDING} bg-linear-135 from-board-from via-board-via to-board-to py-5`}>
           <h2 className="text-xl font-semibold text-white" id="card-form-title">
-            {isEdit ? 'Edit card' : 'Create card'}
+            {isEdit ? t('Edit card') : t('Create card')}
           </h2>
         </header>
 
         <div className={`${SECTION_PADDING} flex flex-col pt-4 pb-4`}>
           <p className="text-xs text-jira-secondary">
-            Required fields are marked with an asterisk {required}
+            {t('Required fields are marked with an asterisk')} {required}
           </p>
 
           {/* Issue type and the list side by side; stacked on narrow screens */}
@@ -181,7 +184,7 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
               name="type"
               render={({ field }) => (
                 <FormItem className={`${FORM_ITEM_CLASS} min-w-[180px] flex-1`}>
-                  <FormLabel className={LABEL_CLASS}>Issue type {required}</FormLabel>
+                  <FormLabel className={LABEL_CLASS}>{t('Issue type')} {required}</FormLabel>
                   <FormControl>
                     <IssueTypeSelect value={field.value} onChange={field.onChange} />
                   </FormControl>
@@ -192,14 +195,14 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
 
             <div className={`${FORM_ITEM_CLASS} min-w-[180px] flex-1`}>
               <label htmlFor="card-list" className={LABEL_CLASS}>
-                List
+                {t('List')}
               </label>
               <ListSelect
                 id="card-list"
                 lists={lists}
                 value={selectedList}
                 onChange={setMovedTo}
-                placeholder={currentStatus === BACKLOG_STATUS ? 'Backlog' : 'Loading lists…'}
+                placeholder={currentStatus === BACKLOG_STATUS ? t('Backlog') : t('Loading lists…')}
               />
             </div>
           </div>
@@ -209,8 +212,8 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
             name="comment"
             render={({ field }) => (
               <FormItem className={FORM_ITEM_CLASS}>
-                <FormLabel className={LABEL_CLASS}>Summary {required}</FormLabel>
-                <SummaryEditor field={field} placeholder="What needs to be done?" />
+                <FormLabel className={LABEL_CLASS}>{t('Summary')} {required}</FormLabel>
+                <SummaryEditor field={field} placeholder={t('What needs to be done?')} />
                 <FormMessage className={FIELD_ERROR_CLASS} />
               </FormItem>
             )}
@@ -221,9 +224,9 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
             name="productId"
             render={({ field }) => (
               <FormItem className={FORM_ITEM_CLASS}>
-                <FormLabel className={LABEL_CLASS}>Issue key {required}</FormLabel>
+                <FormLabel className={LABEL_CLASS}>{t('Issue key')} {required}</FormLabel>
                 <FormControl>
-                  <Input className="bg-white text-jira-text" placeholder="e.g. MA-100" maxLength={PRODUCT_ID_MAX_LENGTH} {...field} />
+                  <Input className="bg-white text-jira-text" placeholder={t('e.g. MA-100')} maxLength={PRODUCT_ID_MAX_LENGTH} {...field} />
                 </FormControl>
                 <FormMessage className={FIELD_ERROR_CLASS} />
               </FormItem>
@@ -235,9 +238,9 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
             name="rating"
             render={({ field }) => (
               <FormItem className={FORM_ITEM_CLASS}>
-                <FormLabel className={LABEL_CLASS}>Time tracking {required}</FormLabel>
+                <FormLabel className={LABEL_CLASS}>{t('Time tracking')} {required}</FormLabel>
                 <FormControl>
-                  <div className="flex gap-2" role="group" aria-label="Time tracking">
+                  <div className="flex gap-2" role="group" aria-label={t('Time tracking')}>
                     {PRIORITIES.map((p) => (
                       <Button
                         key={p}
@@ -266,7 +269,7 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
           {/* Set by the server when the card is created and never changed, so it is only shown */}
           {isEdit && card?.submittedAt && (
             <span className="mr-auto text-xs text-jira-secondary">
-              Created <time dateTime={card.submittedAt}>{formatDate(card.submittedAt)}</time>
+              {t('Created')} <time dateTime={card.submittedAt}>{formatDate(card.submittedAt)}</time>
             </span>
           )}
           <Button
@@ -276,7 +279,7 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
             className="text-jira-secondary"
             onClick={() => (onCancel ? onCancel() : router.back())}
           >
-            Cancel
+            {t('Cancel')}
           </Button>
           {/* The same blue as the header's gradient */}
           <Button
@@ -285,7 +288,7 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
             className="bg-board-via px-4 hover:bg-board-from"
             disabled={form.formState.isSubmitting}
           >
-            {isEdit ? 'Save' : 'Create'}
+            {isEdit ? t('Save') : t('Create')}
           </Button>
         </footer>
       </form>

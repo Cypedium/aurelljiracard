@@ -8,6 +8,7 @@ import {
   type BoardColumns,
   type BoardHeader,
 } from "../../utils/boardLayout";
+import { useLanguage } from "../../hooks/useLanguage";
 
 type Props = {
   headers: BoardHeader[];
@@ -17,13 +18,14 @@ type Props = {
 
 // Skeleton cards while cards, layout and lists are fetched
 export default function BoardSkeleton({ headers, columns, gridStyle }: Props) {
+  const { t } = useLanguage();
   return (
     <div
       className="pointer-events-none absolute inset-0 grid items-start"
       // The same page margin as the board (gridStyle); the cards start below the header and the button
       style={{ ...gridStyle, paddingTop: CARDS_TOP }}
       aria-busy="true"
-      aria-label="Loading cards"
+      aria-label={t("Loading cards")}
     >
       {headers.map((h, i) =>
         columns.spans[i].collapsed ? (

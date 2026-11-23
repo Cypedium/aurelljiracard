@@ -13,8 +13,11 @@ import { Button } from "./ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "./ui/form";
 import { Input } from "./ui/input";
 import { ROUTES } from "../utils/routes";
+import { useLanguage } from '../hooks/useLanguage';
+import { msg } from '../utils/i18n';
 
 export default function RegisterForm() {
+  const { t } = useLanguage();
   const router = useRouter();
   const form = useForm<RegisterValues>({
     resolver: zodResolver(registerSchema),
@@ -30,7 +33,7 @@ export default function RegisterForm() {
       const res = await registerUser({ username, password, pictureUrl });
 
       // The toaster is in the layout, so it stays visible on /login
-      toast.success(res.data.message);
+      toast.success(t(res.data.message));
       router.push(ROUTES.login);
     } catch (err) {
       // A taken name (409, also with different case: "mike" when "Mike" exists) is shown under the field, like the issue key
@@ -38,21 +41,21 @@ export default function RegisterForm() {
         form.setError("username", { message: apiErrorMessage(err, USERNAME_TAKEN_MESSAGE) }, { shouldFocus: true });
         return;
       }
-      toast.error(apiErrorMessage(err, "Registration failed. Please try again."));
+      toast.error(apiErrorMessage(err, msg("Registration failed. Please try again.")));
     }
   };
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleRegister)} className={AUTH_FORM_CLASS} noValidate>
-        <h2 className="text-xl font-semibold">Register</h2>
+        <h2 className="text-xl font-semibold">{t("Register")}</h2>
 
         <FormField
           control={form.control}
           name="picture"
           render={({ field: { name, onBlur, onChange, ref } }) => (
             <FormItem className={FORM_ITEM_CLASS}>
-              <FormLabel className={LABEL_CLASS}>Profile picture</FormLabel>
+              <FormLabel className={LABEL_CLASS}>{t("Profile picture")}</FormLabel>
               <FormControl>
                 {/* File inputs can't be controlled with value, only read in onChange */}
                 <Input
@@ -75,7 +78,7 @@ export default function RegisterForm() {
           name="username"
           render={({ field }) => (
             <FormItem className={FORM_ITEM_CLASS}>
-              <FormLabel className={LABEL_CLASS}>Username</FormLabel>
+              <FormLabel className={LABEL_CLASS}>{t("Username")}</FormLabel>
               <FormControl>
                 <Input type="text" autoComplete="username" className="bg-white" {...field} />
               </FormControl>
@@ -89,7 +92,7 @@ export default function RegisterForm() {
           name="password"
           render={({ field }) => (
             <FormItem className={FORM_ITEM_CLASS}>
-              <FormLabel className={LABEL_CLASS}>Password</FormLabel>
+              <FormLabel className={LABEL_CLASS}>{t("Password")}</FormLabel>
               <FormControl>
                 <Input type="password" autoComplete="new-password" className="bg-white" {...field} />
               </FormControl>
@@ -100,12 +103,12 @@ export default function RegisterForm() {
 
         {password && (
           <p className={`mt-2 text-xs font-semibold ${PASSWORD_STRENGTH_CLASS[strength]}`}>
-            Password strength: {strength}
+            {t("Password strength: {strength}", { strength: t(strength) })}
           </p>
         )}
 
         <Button type="submit" className="mt-6 w-full" disabled={form.formState.isSubmitting}>
-          Register
+          {t("Register")}
         </Button>
       </form>
     </Form>

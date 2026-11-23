@@ -7,6 +7,9 @@ import { CURRENT_BOARD_KEY, PENDING_INVITE_KEY, isBoardAdmin, pickBoard } from "
 import { readText, removeStored, writeText } from "../utils/storage";
 import { getUsername, hasSession } from "../utils/session";
 import { createStore } from "../utils/store";
+import { boardName } from "../utils/currentBoard";
+import { msg } from "../utils/i18n";
+import { t } from "../utils/languageStore";
 
 // The user's boards (their own + the ones they collaborate on) and the one shown, shared by the navbar and the pages.
 // Fetched once per login; if another user logs in in the same tab they are fetched again
@@ -37,10 +40,10 @@ const acceptPendingInvite = async (): Promise<Board | null> => {
   removeStored(PENDING_INVITE_KEY, "session");
   try {
     const board = (await joinBoard(token)).data;
-    toast.success(`You joined ${board.name}.`);
+    toast.success(t("You joined {board}.", { board: boardName(board, t) }));
     return board;
   } catch (err) {
-    reportError("Join board error", err, "Could not join the board.");
+    reportError("Join board error", err, msg("Could not join the board."));
     return null;
   }
 };
@@ -58,7 +61,7 @@ const load = async (force = false) => {
     loadedFor = user;
     setState(res.data || [], joined?._id ?? store.get().current?._id ?? readText(CURRENT_BOARD_KEY));
   } catch (err) {
-    reportError("Error fetching boards", err, "Could not load your boards.", "boards");
+    reportError("Error fetching boards", err, msg("Could not load your boards."), "boards");
   } finally {
     loading = false;
   }

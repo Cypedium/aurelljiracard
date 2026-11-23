@@ -7,10 +7,12 @@ import java.util.UUID;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import se.aurell.jiraboard.dto.LanguageRequest;
 import se.aurell.jiraboard.dto.LayoutRequest;
 import se.aurell.jiraboard.dto.UserResponse;
 import se.aurell.jiraboard.dto.UserUpdateRequest;
 import se.aurell.jiraboard.entity.CardStatus;
+import se.aurell.jiraboard.entity.Language;
 import se.aurell.jiraboard.entity.Layout;
 import se.aurell.jiraboard.entity.Role;
 import se.aurell.jiraboard.entity.User;
@@ -57,6 +59,19 @@ public class UserService {
     @Transactional(readOnly = true)
     public Layout getLayout(AuthUser authUser) {
         return findUser(authUser).getLayout();
+    }
+
+    /** The UI language the user picked; null when they haven't. */
+    @Transactional(readOnly = true)
+    public Language getLanguage(AuthUser authUser) {
+        return findUser(authUser).getLanguage();
+    }
+
+    @Transactional
+    public Language updateLanguage(AuthUser authUser, String value) {
+        Language language = Language.parse(value).orElseThrow(() -> ApiException.badRequest(LanguageRequest.MESSAGE));
+        findUser(authUser).setLanguage(language);
+        return language;
     }
 
     /** Fields left out of the request keep their saved value. */

@@ -1,10 +1,12 @@
 import { TABLE_THEAD_CLASS, TABLE_WRAPPER_CLASS } from '../utils/styles';
 import { Skeleton } from './ui/skeleton';
+import { useLanguage } from '../hooks/useLanguage';
 
 // Shown while a table (backlog, users, issue types) is fetched
 export default function TableSkeleton({ rows = 5 }: { rows?: number }) {
+  const { t } = useLanguage();
   return (
-    <div className={TABLE_WRAPPER_CLASS} aria-busy="true" aria-label="Loading">
+    <div className={TABLE_WRAPPER_CLASS} aria-busy="true" aria-label={t('Loading')}>
       <div className={`${TABLE_THEAD_CLASS} px-4 py-2.5`}>
         <Skeleton className="h-3 w-24 bg-white/30" />
       </div>
