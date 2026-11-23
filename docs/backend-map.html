@@ -234,6 +234,7 @@ th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; colo
     <div><b>V10</b><span>Google sign-in: <code>google_sub</code>, <code>email</code>, nullable <code>password_hash</code></span></div>
     <div><b>V11</b><span><code>boards</code>, <code>board_members</code>; earlier data moved to the oldest admin's board</span></div>
     <div><b>V12</b><span><code>feature_switches</code>: feature switches and read-only mode</span></div>
+    <div><b>V13</b><span><code>users.language</code>: the UI language picked in the account menu</span></div>
   </div>
 </section>
 
@@ -456,6 +457,12 @@ const G = [
     { m: "PUT", p: "/user/layout", acc: "user", sum: "Saves the caller's card positions. Fields left out keep their value.", edges: [["c-user","s-user"],["s-user","r-user"],["r-user","t-users"]],
       steps: [["c-user","LayoutRequest","cols, headers (legacy), cards"],["s-user","isValidCardPosition","each position may name its list as status"],["t-users","JSONB UPDATE","dirty check at commit"]],
       ok: ["200","{ message }"], bad: [["400","card position message"]] },
+    { m: "GET", p: "/user/language", acc: "user", sum: "The UI language the caller picked; null until they pick one (the frontend then follows the browser).", edges: [["c-user","s-user"],["s-user","r-user"],["r-user","t-users"]],
+      steps: [["s-user","findUser(AuthUser)","id from the token"],["t-users","language","'en' | 'sv' | NULL (V13)"]],
+      ok: ["200","{ language }"], bad: [] },
+    { m: "PUT", p: "/user/language", acc: "user", sum: "Saves the caller's UI language (the account menu's flag switch).", edges: [["c-user","s-user"],["s-user","r-user"],["r-user","t-users"]],
+      steps: [["c-user","LanguageRequest","@NotBlank language"],["s-user","Language.parse","only en or sv"],["t-users","UPDATE language","CHECK in V13"]],
+      ok: ["200","{ language }"], bad: [["400","Language must be one of: en, sv."],["503","read-only mode"]] },
     { m: "POST", p: "/user/google", acc: "user", sum: "Connects a Google account to the caller, so Sign in with Google logs in as them. Connecting the same one again does nothing.", edges: [["c-user","s-user"],["s-user","r-user"],["r-user","t-users"]],
       steps: [["c-user","@Valid GoogleCredentialRequest","{ credential } from Google's button"],["s-user","GoogleTokenVerifier","same checks as /auth/google"],["r-user","findByGoogleSub","must not belong to another user"],["t-users","google_sub, email","UNIQUE google_sub; a race also becomes 409"]],
       ok: ["200","{ message }"], bad: [["401","Invalid Google credential."],["409","already connected to another user / another Google account"],["503","Google sign-in is not configured."]] },

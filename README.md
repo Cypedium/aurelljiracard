@@ -85,6 +85,8 @@ All routes except `/auth/*` and `/health` require `Authorization: Bearer <access
 | `GET` | `/user/usernames` | Usernames only |
 | `GET` | `/user/layout` | Current user's board layout (the frontend only reads `cards`: the order of cards within each list) |
 | `PUT` | `/user/layout` | `{ cols?, headers?, cards? }` — merge and save layout. `headers` is legacy (list names and colours live on the board's `/column` now); each header is `{ key, title, color? }`. Each card position is `{ id, x, y, w, h, status? }`; `status` is the list key, so card order survives lists being moved. One layout covers all your boards (positions are keyed by card id) |
+| `GET` | `/user/language` | `{ language }`: the UI language the user picked (`"en"` or `"sv"`), `null` until they pick one (the frontend then follows the browser) |
+| `PUT` | `/user/language` | `{ language }` (`"en"` or `"sv"`) → `{ language }`; `400 "Language must be one of: en, sv."` |
 | `PATCH` | `/user/:id` | **Admin.** `{ username?, role? }` → updated user. Either change revokes the user's refresh tokens; their cards follow a rename. `409` if the name is taken in any casing (changing only the casing of their own name is allowed), `400` for rude words or if you remove your own admin role |
 | `DELETE` | `/user/:id` | **Admin.** Delete a user; `409` while they still author cards or their own board has cards, `400` for yourself. Cards assigned to them become unassigned; their board and memberships are removed |
 | `POST` | `/user/:id/logout` | **Admin.** Revoke all the user's refresh tokens (logged out within 15 min) |
