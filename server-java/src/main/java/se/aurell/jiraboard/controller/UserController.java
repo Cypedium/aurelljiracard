@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import se.aurell.jiraboard.dto.GoogleCredentialRequest;
+import se.aurell.jiraboard.dto.LanguageRequest;
+import se.aurell.jiraboard.dto.LanguageResponse;
 import se.aurell.jiraboard.dto.LayoutRequest;
 import se.aurell.jiraboard.dto.MessageResponse;
 import se.aurell.jiraboard.dto.UserResponse;
@@ -55,6 +57,18 @@ public class UserController {
             @Valid @RequestBody LayoutRequest request) {
         userService.updateLayout(user, request);
         return new MessageResponse("Layout updated successfully.");
+    }
+
+    // The UI language picked in the account menu (null until the user picks one)
+    @GetMapping("/language")
+    public LanguageResponse getLanguage(@AuthenticationPrincipal AuthUser user) {
+        return new LanguageResponse(userService.getLanguage(user));
+    }
+
+    @PutMapping("/language")
+    public LanguageResponse updateLanguage(@AuthenticationPrincipal AuthUser user,
+            @Valid @RequestBody LanguageRequest request) {
+        return new LanguageResponse(userService.updateLanguage(user, request.language()));
     }
 
     // The logged-in user connects their Google account, so they can sign in with Google
