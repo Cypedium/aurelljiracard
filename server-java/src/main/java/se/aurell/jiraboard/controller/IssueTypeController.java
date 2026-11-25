@@ -32,11 +32,16 @@ public class IssueTypeController {
         this.issueTypeService = issueTypeService;
     }
 
+    /** Every member: the board's issue types, in dropdown order. */
     @GetMapping
     public List<IssueTypeResponse> getAll(@PathVariable UUID boardId, @AuthenticationPrincipal AuthUser user) {
         return issueTypeService.getAll(boardId, user);
     }
 
+    /**
+     * Board admin: adds an issue type at the end; its key is made from the label. 400 for an icon outside
+     * CardType.ICONS or when the board already has 12.
+     */
     @RequiresFeature(Feature.MANAGE_ISSUE_TYPES)
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -45,6 +50,7 @@ public class IssueTypeController {
         return issueTypeService.create(boardId, request, user);
     }
 
+    /** Board admin: deletes an issue type no card uses (409 otherwise); never the default type (task, 400). */
     @RequiresFeature(Feature.MANAGE_ISSUE_TYPES)
     @DeleteMapping("/{key}")
     public MessageResponse delete(@PathVariable UUID boardId, @PathVariable String key,

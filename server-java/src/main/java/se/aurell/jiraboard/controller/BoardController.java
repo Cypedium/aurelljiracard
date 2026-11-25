@@ -29,6 +29,7 @@ public class BoardController {
         this.boardService = boardService;
     }
 
+    /** The caller's boards with their role on each: their own first, then the ones they joined. */
     @GetMapping("/board")
     public List<BoardResponse> getMine(@AuthenticationPrincipal AuthUser user) {
         return boardService.getMine(user);
@@ -42,6 +43,7 @@ public class BoardController {
         return boardService.createInvite(boardId, user);
     }
 
+    /** Board admin: turns the invite link off. Members who already joined stay. */
     @RequiresFeature(Feature.SHARE_BOARD)
     @DeleteMapping("/board/{boardId}/invite")
     public MessageResponse deleteInvite(@PathVariable UUID boardId, @AuthenticationPrincipal AuthUser user) {
@@ -49,12 +51,16 @@ public class BoardController {
         return new MessageResponse("Invite link turned off.");
     }
 
+    /** Every member: everyone on the board, the admin first. */
     @GetMapping("/board/{boardId}/member")
     public List<BoardMemberResponse> getMembers(@PathVariable UUID boardId, @AuthenticationPrincipal AuthUser user) {
         return boardService.getMembers(boardId, user);
     }
 
-    /** The board admin removes a collaborator, or a collaborator removes themselves (leaves). */
+    /**
+     * The board admin removes a collaborator, or a collaborator removes themselves (leaves).
+     * The owner cannot leave their own board (400); a collaborator removing someone else gets 403.
+     */
     @RequiresFeature(Feature.SHARE_BOARD)
     @DeleteMapping("/board/{boardId}/member/{userId}")
     public MessageResponse removeMember(@PathVariable UUID boardId, @PathVariable UUID userId,
@@ -63,7 +69,10 @@ public class BoardController {
         return new MessageResponse("Member removed.");
     }
 
-    /** Any logged-in user: joins the board behind the link as a collaborator. */
+    /**
+     * Any logged-in user: joins the board behind the link as a collaborator. Only the token's hash is stored,
+     * so it is looked up by hash; 404 for an unknown or turned-off link. Joining again changes nothing.
+     */
     @RequiresFeature(Feature.JOIN_BOARD)
     @PostMapping("/invite/{token}")
     public BoardResponse join(@PathVariable String token, @AuthenticationPrincipal AuthUser user) {

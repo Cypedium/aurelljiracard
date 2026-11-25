@@ -34,11 +34,13 @@ public class ColumnController {
         this.columnService = columnService;
     }
 
+    /** Every member: the board's lists, left to right. */
     @GetMapping
     public List<ColumnResponse> getAll(@PathVariable UUID boardId, @AuthenticationPrincipal AuthUser user) {
         return columnService.getAll(boardId, user);
     }
 
+    /** Board admin: adds a list at the end; its key is made from the title. 400 when the board already has 12. */
     @RequiresFeature(Feature.CREATE_COLUMN)
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -55,6 +57,7 @@ public class ColumnController {
         return columnService.reorder(boardId, request, user);
     }
 
+    /** Board admin: replaces the title and colour. The key stays, so cards keep their list. 404 for an unknown key. */
     @RequiresFeature(Feature.EDIT_COLUMNS)
     @PutMapping("/{key}")
     public ColumnResponse update(@PathVariable UUID boardId, @PathVariable String key,
@@ -62,7 +65,7 @@ public class ColumnController {
         return columnService.update(boardId, key, request, user);
     }
 
-    /** Board admin: deletes an empty list; never the default list (todo). */
+    /** Board admin: deletes an empty list (409 while any card is in it); never the default list (todo, 400). */
     @RequiresFeature(Feature.DELETE_COLUMN)
     @DeleteMapping("/{key}")
     public MessageResponse delete(@PathVariable UUID boardId, @PathVariable String key,

@@ -34,6 +34,7 @@ public class FeatureController {
 
     @AdminOnly
     @PutMapping("/{key}")
+    // key is checked against the Feature enum in FeatureService.set (404 "Unknown feature.")
     public FeatureSwitchResponse set(@PathVariable String key, @Valid @RequestBody FeatureUpdateRequest request,
             @AuthenticationPrincipal AuthUser user) {
         return featureService.set(key, request.enabled(), user);

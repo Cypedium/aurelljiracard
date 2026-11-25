@@ -35,11 +35,17 @@ public class CardController {
         this.cardService = cardService;
     }
 
+    /** Every member: all cards on the board, newest first. Non-members get 404 "Board not found.". */
     @GetMapping
     public List<CardResponse> getAll(@PathVariable UUID boardId, @AuthenticationPrincipal AuthUser user) {
         return cardService.getAll(boardId, user);
     }
 
+    /**
+     * Every member. Field rules in CardRequest (400); type and status are checked against the board's issue
+     * types and lists (400); the issue key must be unique on the board (409). Author and date come from the
+     * token and the server clock, never from the body.
+     */
     @RequiresFeature(Feature.CREATE_CARD)
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -49,6 +55,10 @@ public class CardController {
         return new MessageResponse("Card saved successfully!");
     }
 
+    /**
+     * Every member may edit any card: priority, summary, issue key and type. Status changes go through
+     * PATCH …/status; author and date never change. A card on another board is 404 "Card not found.".
+     */
     @RequiresFeature(Feature.EDIT_CARD)
     @PutMapping("/{id}")
     public CardResponse update(@PathVariable UUID boardId, @PathVariable UUID id,
@@ -56,6 +66,10 @@ public class CardController {
         return cardService.update(boardId, id, request, user);
     }
 
+    /**
+     * Every member moves a card to a list or the backlog (400 for an unknown status). Taking a card out of the
+     * backlog assigns it to the caller; moving it into the backlog unassigns it.
+     */
     @RequiresFeature(Feature.EDIT_CARD)
     @PatchMapping("/{id}/status")
     public CardResponse updateStatus(@PathVariable UUID boardId, @PathVariable UUID id,
@@ -63,6 +77,7 @@ public class CardController {
         return cardService.updateStatus(boardId, id, request.status(), user);
     }
 
+    /** The card's author or the board admin; other members get 403 "You can only delete your own card.". */
     @RequiresFeature(Feature.DELETE_CARD)
     @DeleteMapping("/{id}")
     public MessageResponse delete(@PathVariable UUID boardId, @PathVariable UUID id,
