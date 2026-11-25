@@ -27,6 +27,7 @@ import se.aurell.jiraboard.security.AuthUser;
 import se.aurell.jiraboard.security.RequiresFeature;
 import se.aurell.jiraboard.service.UserService;
 
+/** The logged-in user's own settings, plus user management for site admins (@AdminOnly, 403 for others). */
 @RestController
 @RequestMapping("/user")
 public class UserController {
@@ -37,6 +38,7 @@ public class UserController {
         this.userService = userService;
     }
 
+    /** Every user (id, name, picture, role); site admins also get lastActiveAt and online. */
     @GetMapping
     public List<?> getAll(@AuthenticationPrincipal AuthUser user) {
         return userService.getAll(user);
@@ -47,11 +49,13 @@ public class UserController {
         return userService.getUsernames();
     }
 
+    /** The caller's saved card order; one layout for all their boards. */
     @GetMapping("/layout")
     public Layout getLayout(@AuthenticationPrincipal AuthUser user) {
         return userService.getLayout(user);
     }
 
+    /** Fields left out keep their saved value. 400 for a card position whose status isn't a valid list key. */
     @PutMapping("/layout")
     public MessageResponse updateLayout(@AuthenticationPrincipal AuthUser user,
             @Valid @RequestBody LayoutRequest request) {
@@ -65,13 +69,15 @@ public class UserController {
         return new LanguageResponse(userService.getLanguage(user));
     }
 
+    // The value is checked against the Language enum in UserService (400 otherwise)
     @PutMapping("/language")
     public LanguageResponse updateLanguage(@AuthenticationPrincipal AuthUser user,
             @Valid @RequestBody LanguageRequest request) {
         return new LanguageResponse(userService.updateLanguage(user, request.language()));
     }
 
-    // The logged-in user connects their Google account, so they can sign in with Google
+    // The logged-in user connects their Google account, so they can sign in with Google.
+    // 409 when that Google account belongs to another user, or this user already has a different one
     @RequiresFeature(Feature.GOOGLE_CONNECT)
     @PostMapping("/google")
     public MessageResponse connectGoogle(@AuthenticationPrincipal AuthUser user,
@@ -80,7 +86,10 @@ public class UserController {
         return new MessageResponse("Google account connected.");
     }
 
-    // Admin: rename, change role, delete, or log a user out everywhere
+    /**
+     * Site admin: renames and/or changes the role; either change logs the user out (tokenVersion) and cards
+     * follow a rename. An admin cannot drop their own admin role (400); a taken name is 409.
+     */
     @AdminOnly
     @PatchMapping("/{id}")
     public UserResponse update(@PathVariable UUID id, @Valid @RequestBody UserUpdateRequest request,
@@ -88,6 +97,7 @@ public class UserController {
         return userService.update(id, request, user);
     }
 
+    /** Site admin: deletes a user with no cards whose own board has none (409 otherwise); never themselves (400). */
     @AdminOnly
     @DeleteMapping("/{id}")
     public MessageResponse delete(@PathVariable UUID id, @AuthenticationPrincipal AuthUser user) {
@@ -95,6 +105,7 @@ public class UserController {
         return new MessageResponse("User deleted successfully.");
     }
 
+    /** Site admin: logs the user out everywhere. Their current access token still works for up to 15 minutes. */
     @AdminOnly
     @PostMapping("/{id}/logout")
     public MessageResponse revokeSessions(@PathVariable UUID id) {
