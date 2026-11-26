@@ -5,9 +5,17 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.task.SimpleAsyncTaskExecutor;
+import org.springframework.core.task.SyncTaskExecutor;
+import org.springframework.core.task.TaskExecutor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import se.aurell.jiraboard.entity.Language;
 import se.aurell.jiraboard.entity.PasswordReset;
 import se.aurell.jiraboard.entity.User;
@@ -22,6 +30,8 @@ import se.aurell.jiraboard.repository.UserRepository;
 @Service
 public class PasswordResetService {
 
+    private static final Logger log = LoggerFactory.getLogger(PasswordResetService.class);
+
     static final Duration LINK_TTL = Duration.ofHours(1);
     // At most one email per account per minute, so the endpoint can't be used to flood an inbox
     static final Duration RESEND_INTERVAL = Duration.ofMinutes(1);
@@ -34,13 +44,22 @@ public class PasswordResetService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailSender emailSender;
+    private final TaskExecutor sendExecutor;
 
+    /** async: app.mail.async; the API tests send at once, so they can check the email right after the request. */
     public PasswordResetService(PasswordResetRepository resetRepository, UserRepository userRepository,
-            PasswordEncoder passwordEncoder, EmailSender emailSender) {
+            PasswordEncoder passwordEncoder, EmailSender emailSender, @Value("${app.mail.async:true}") boolean async) {
         this.resetRepository = resetRepository;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.emailSender = emailSender;
+        if (async) {
+            SimpleAsyncTaskExecutor executor = new SimpleAsyncTaskExecutor("password-reset-email-");
+            executor.setVirtualThreads(true);
+            this.sendExecutor = executor;
+        } else {
+            this.sendExecutor = new SyncTaskExecutor();
+        }
     }
 
     /**
@@ -70,15 +89,29 @@ public class PasswordResetService {
         String token = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
         Language language = user.getLanguage() != null ? user.getLanguage()
                 : Optional.ofNullable(uiLanguage).flatMap(Language::parse).orElse(Language.EN);
-        try {
-            emailSender.sendPasswordReset(user.getEmail(), user.getUsername(), emailSender.passwordResetLink(token),
-                    language);
-        } catch (ApiException e) {
-            // EmailSender has logged why; the user simply asks again. Earlier links keep working then
-            return;
-        }
         resetRepository.deleteByUser(user.getId());
         resetRepository.save(new PasswordReset(BoardService.hash(token), user.getId(), now, now.plus(LINK_TTL)));
+        String to = user.getEmail();
+        String username = user.getUsername();
+        String link = emailSender.passwordResetLink(token);
+        // After the commit (the link must work when it arrives) and in the background, so the answer doesn't take
+        // longer for an address that has an account
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                sendExecutor.execute(() -> send(to, username, link, language));
+            }
+        });
+    }
+
+    private void send(String to, String username, String link, Language language) {
+        try {
+            emailSender.sendPasswordReset(to, username, link, language);
+        } catch (ApiException e) {
+            // EmailSender has logged why; the user asks again after a minute
+        } catch (RuntimeException e) {
+            log.warn("Could not send the password reset email: {}", e.getClass().getSimpleName());
+        }
     }
 
     /**
