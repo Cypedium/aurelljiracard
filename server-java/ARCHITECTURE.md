@@ -151,7 +151,7 @@ Two things worth noticing:
 | `GET` | `/issue-type` | token | `IssueTypeService.getAll` | `200 [{ key, label, color, icon, position }…]` |
 | `POST` | `/issue-type` | token, **admin** | `IssueTypeService.create` | `201 issue type` |
 | `DELETE` | `/issue-type/{key}` | token, **admin** | `IssueTypeService.delete` | `200 { message }`; `409` while cards use it, `400` for `task` |
-| `GET` | `/user` | token | `UserService.getAll` | `200 [{ _id, username, pictureUrl }]` |
+| `GET` | `/user` | token | `UserService.getAll` | `200 [{ _id, username, role }]` |
 | `GET` | `/user/usernames` | token | `UserService.getUsernames` | `200 ["alice", …]` |
 | `GET` | `/user/layout` | token | `UserService.getLayout` | `200 layout` |
 | `PUT` | `/user/layout` | token | `UserService.updateLayout` | `200 { message }` |
@@ -260,7 +260,7 @@ sequenceDiagram
 
 ### AuthService
 
-- `register`: checks the password byte length and the picture (empty → default picture; otherwise a `data:image/…;base64,` or `http(s)://` URL, at most 1.5 MB). Rejects rude usernames (`CredentialRules.isRudeUsername`, same list as `frontend/app/utils/username.ts`) and repetitive passwords. Checks that the username is free in any casing (`existsByUsernameIgnoreCase`, `409`); names are still stored as typed. `login` tries the exact name first, then `findFirstByUsernameIgnoreCase`. Saves with a BCrypt hash. A unique-constraint violation from a concurrent registration is also turned into `409`.
+- `register`: checks the password byte length. Rejects rude usernames (`CredentialRules.isRudeUsername`, same list as `frontend/app/utils/username.ts`) and repetitive passwords. Checks that the username is free in any casing (`existsByUsernameIgnoreCase`, `409`); names are still stored as typed. `login` tries the exact name first, then `findFirstByUsernameIgnoreCase`. Saves with a BCrypt hash. A unique-constraint violation from a concurrent registration is also turned into `409`.
 - `login`, `refresh`, `logout`: see 5.2. `logout` never fails; an invalid or missing refresh token simply means there's nothing to revoke.
 
 ### CardService
@@ -297,7 +297,7 @@ flowchart LR
 Validation happens in two places:
 
 1. **Bean Validation on DTO records** (`@NotBlank`, `@Size`, `@Min`/`@Max`, `@Pattern`), triggered by `@Valid` in the controller.
-2. **The service**, for rules annotations can't express: password byte length, picture URL, uniqueness, ownership.
+2. **The service**, for rules annotations can't express: password byte length, uniqueness, ownership.
 
 A card's `type` is an issue type key, so `IssueTypeService.requireCardType` checks it against the `issue_types` table; its message lists the valid keys. A card's `status` is a list key, so `ColumnService.requireCardStatus` checks it against the `board_columns` table (plus `backlog`); its message lists the valid keys.
 
@@ -335,7 +335,6 @@ erDiagram
         uuid id PK
         varchar32 username UK
         varchar100 password_hash
-        text picture_url
         int token_version
         jsonb layout
         timestamptz created_at

@@ -384,7 +384,7 @@ for (const id in N) {
 const G = [
   { id: "cat-auth", name: "Auth", ctrl: "c-auth", files: ["AuthController", "AuthService", "JwtService", "UserRepository", "users"], about: "Public. Register, log in (password or Google), refresh and log out. Returns tokens in the body.", eps: [
     { m: "POST", p: "/auth/register", acc: "public", sum: "Creates an account. The username keeps the casing it was typed with.", edges: [["c-auth","s-auth"],["s-auth","r-user"],["r-user","t-users"]],
-      steps: [["authz","permitAll","/auth/** needs no token"],["c-auth","@Valid RegisterRequest","username, password, optional pictureUrl"],["s-auth","Credential rules","password 8–72 bytes, no char 3× in a row, ≥4 distinct, no rude username, picture ≤ 1.5 MB data: or http(s)"],["r-user","existsByUsernameIgnoreCase","“mike” is taken if “Mike” exists"],["s-auth","BCrypt strength 10","same hash format as the retired Express API"],["t-users","saveAndFlush","INSERT; a race on the unique name also becomes 409"]],
+      steps: [["authz","permitAll","/auth/** needs no token"],["c-auth","@Valid RegisterRequest","username, password"],["s-auth","Credential rules","password 8–72 bytes, no char 3× in a row, ≥4 distinct, no rude username"],["r-user","existsByUsernameIgnoreCase","“mike” is taken if “Mike” exists"],["s-auth","BCrypt strength 10","same hash format as the retired Express API"],["t-users","saveAndFlush","INSERT; a race on the unique name also becomes 409"]],
       ok: ["201","{ message }"], bad: [["400","validation message"],["409","Username is already taken"]] },
     { m: "POST", p: "/auth/login", acc: "public", sum: "Checks the password and issues an access + refresh token pair. Each login starts a new token family.", edges: [["c-auth","s-auth"],["s-auth","r-user"],["r-user","t-users"],["s-auth","s-jwt"],["s-auth","r-refresh"],["r-refresh","t-refresh"]],
       steps: [["authz","permitAll","no token needed"],["c-auth","@Valid LoginRequest","username + password"],["r-user","findByUsername","exact name first, then findFirstByUsernameIgnoreCase"],["s-auth","passwordEncoder.matches","wrong name or password give the same 401"],["r-user","markActive","sets last_active_at for the admin user list"],["s-jwt","issue tokens","access 15 min { id, username, role }, refresh 7 d { id, tokenVersion, jti }"],["t-refresh","save the jti","new family; the row lives as long as the token"]],
@@ -446,7 +446,7 @@ const G = [
   ]},
   { id: "cat-user", name: "Users", ctrl: "c-user", files: ["UserController", "UserService", "UserRepository", "CardRepository", "users"], about: "Profiles, each user's board layout, and the admin user list.", eps: [
     { m: "GET", p: "/user", acc: "user", sum: "All users. Admins also get lastActiveAt and online.", edges: [["c-user","s-user"],["s-user","r-user"],["r-user","t-users"]],
-      steps: [["c-user","AuthUser.isAdmin","picks the query"],["r-user","findAllWithPresence","admins: online = active in last 20 min and not logged out since"],["r-user","findAllPublic","others: id, username, pictureUrl, role"]],
+      steps: [["c-user","AuthUser.isAdmin","picks the query"],["r-user","findAllWithPresence","admins: online = active in last 20 min and not logged out since"],["r-user","findAllPublic","others: id, username, role"]],
       ok: ["200","[ user ]"], bad: [] },
     { m: "GET", p: "/user/usernames", acc: "user", sum: "Just the names, for pickers.", edges: [["c-user","s-user"],["s-user","r-user"],["r-user","t-users"]],
       steps: [["r-user","findAllUsernames","select u.username"]],
@@ -491,7 +491,7 @@ const G = [
       ok: ["200","{ _id, name, owner, role }"], bad: [["404","This invite link is invalid or has been turned off."]] },
     { m: "GET", p: "/board/{boardId}/member", acc: "member", sum: "Everyone on the board, the owner first.", edges: [["c-board","s-board"],["s-board","r-board"],["r-board","t-boards"]],
       steps: [["s-board","requireMember","not on the board → 404 Board not found."],["r-board","findMembers","board_members joined with users"]],
-      ok: ["200","[ { _id, username, pictureUrl, role } ]"], bad: [["404","Board not found."]] },
+      ok: ["200","[ { _id, username, role } ]"], bad: [["404","Board not found."]] },
     { m: "DELETE", p: "/board/{boardId}/member/{userId}", acc: "member", sum: "The board admin removes a collaborator, or a collaborator leaves. The owner can't leave.", edges: [["c-board","s-board"],["s-board","r-board"],["r-board","t-boards"]],
       steps: [["s-board","requireMember","not on the board → 404 Board not found."],["s-board","yourself?","collaborator: leaves; owner: 400"],["s-board","someone else","board admin only, else 403"],["t-boards","board_members DELETE","they get 404 on the board right away"]],
       ok: ["200","{ message }"], bad: [["400","You cannot leave your own board."],["403","Board admins only."],["404","Member not found."]] },
@@ -603,7 +603,7 @@ const er = $("er");
 const ed = el("defs", {}, er);
 const em = el("marker", { id: "ef", viewBox: "0 0 10 10", refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: "auto" }, ed); el("path", { d: "M0,0 L10,5 L0,10 z", class: "mk-n" }, em);
 const T = {
-  users: [40, 30, ["id UUID PK", "username VARCHAR(32) UNIQUE", "password_hash, nullable", "google_sub UNIQUE, email", "picture_url TEXT", "role user | admin", "token_version INT", "layout JSONB", "last_active_at, logged_out_at", "created_at, updated_at"]],
+  users: [40, 30, ["id UUID PK", "username VARCHAR(32) UNIQUE", "password_hash, nullable", "google_sub UNIQUE, email", "role user | admin", "token_version INT", "layout JSONB", "last_active_at, logged_out_at", "created_at, updated_at"]],
   cards: [430, 30, ["id UUID PK", "rating 1–5 CHECK", "comment", "UNIQUE (board_id, product_id)", "username FK → users", "assignee FK → users, nullable", "submitted_at", "type VARCHAR(32)", "status VARCHAR(32)", "board_id FK → boards"]],
   board_columns: [820, 30, ["PK (board_id, column_key)", "title ≤ 50", "color #rrggbb | null", "position"]],
   issue_types: [820, 210, ["PK (board_id, type_key)", "label ≤ 30", "color #rrggbb", "icon", "position"]],

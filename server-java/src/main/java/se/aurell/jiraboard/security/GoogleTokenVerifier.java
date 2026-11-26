@@ -63,7 +63,7 @@ public class GoogleTokenVerifier {
         } catch (JwtException e) {
             throw ApiException.unauthorized(INVALID_MESSAGE);
         }
-        return new GoogleIdentity(jwt.getSubject(), jwt.getClaimAsString("email"), jwt.getClaimAsString("picture"));
+        return new GoogleIdentity(jwt.getSubject(), jwt.getClaimAsString("email"));
     }
 
     private static OAuth2TokenValidator<Jwt> validator(String clientId) {
@@ -82,7 +82,6 @@ public class GoogleTokenVerifier {
         return new DelegatingOAuth2TokenValidator<>(JwtValidators.createDefault(), googleClaims);
     }
 
-    /** pictureUrl may be null. */
-    public record GoogleIdentity(String subject, String email, String pictureUrl) {
+    public record GoogleIdentity(String subject, String email) {
     }
 }

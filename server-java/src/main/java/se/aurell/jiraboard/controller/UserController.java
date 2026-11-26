@@ -38,7 +38,7 @@ public class UserController {
         this.userService = userService;
     }
 
-    /** Every user (id, name, picture, role); site admins also get lastActiveAt and online. */
+    /** Every user (id, name, role); site admins also get lastActiveAt and online. */
     @GetMapping
     public List<?> getAll(@AuthenticationPrincipal AuthUser user) {
         return userService.getAll(user);

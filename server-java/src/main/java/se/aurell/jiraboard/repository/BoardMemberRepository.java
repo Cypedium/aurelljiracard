@@ -19,7 +19,7 @@ public interface BoardMemberRepository extends JpaRepository<BoardMember, BoardM
             + "where m.userId = :userId order by o.username")
     List<BoardResponse> findBoardsOf(UUID userId);
 
-    @Query("select new se.aurell.jiraboard.dto.BoardMemberResponse(u.id, u.username, u.pictureUrl, m.role) "
+    @Query("select new se.aurell.jiraboard.dto.BoardMemberResponse(u.id, u.username, m.role) "
             + "from BoardMember m join User u on u.id = m.userId "
             + "where m.boardId = :boardId order by u.username")
     List<BoardMemberResponse> findMembers(UUID boardId);

@@ -13,7 +13,6 @@ import se.aurell.jiraboard.entity.Role;
 public record AdminUserResponse(
         @JsonProperty("_id") UUID id,
         String username,
-        String pictureUrl,
         Role role,
         Instant lastActiveAt,
         boolean online) {
@@ -24,8 +23,8 @@ public record AdminUserResponse(
     static final Duration ONLINE_WINDOW = Duration.ofMinutes(20);
 
     public AdminUserResponse(
-            UUID id, String username, String pictureUrl, Role role, Instant lastActiveAt, Instant loggedOutAt) {
-        this(id, username, pictureUrl, role, lastActiveAt, isOnline(lastActiveAt, loggedOutAt, Instant.now()));
+            UUID id, String username, Role role, Instant lastActiveAt, Instant loggedOutAt) {
+        this(id, username, role, lastActiveAt, isOnline(lastActiveAt, loggedOutAt, Instant.now()));
     }
 
     /** Active within the window and not logged out since. */

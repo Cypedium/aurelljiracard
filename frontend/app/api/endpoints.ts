@@ -31,7 +31,6 @@ export type NewCard = Omit<Card, "_id" | "username" | "assignee" | "submittedAt"
 export type User = {
   username: string;
   password: string;
-  pictureUrl?: string;
 };
 
 export type Credentials = {
@@ -47,7 +46,6 @@ export type Tokens = {
 export type PublicUser = {
   _id: string;
   username: string;
-  pictureUrl?: string;
   role: Role;
   // Admins only: last login/token refresh (ISO) and whether the user is logged in now
   lastActiveAt?: string | null;
@@ -69,7 +67,7 @@ export type UserChanges = { username?: string; role?: Role };
 export type Board = { _id: string; name: string; owner: string; role: Role };
 
 // A member of a board; _id is the user's id
-export type BoardMember = { _id: string; username: string; pictureUrl?: string; role: Role };
+export type BoardMember = { _id: string; username: string; role: Role };
 
 const onBoard = (boardId: string, path: string) => `/board/${encodeURIComponent(boardId)}${path}`;
 

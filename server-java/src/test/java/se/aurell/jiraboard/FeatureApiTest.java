@@ -94,8 +94,8 @@ class FeatureApiTest extends ApiIntegrationTest {
 
     @Test
     void registrationOffStopsAFirstGoogleSignInButNotAnExistingGoogleUser() throws Exception {
-        when(googleTokenVerifier.verify("known")).thenReturn(new GoogleIdentity("google-1", "known@example.com", null));
-        when(googleTokenVerifier.verify("new")).thenReturn(new GoogleIdentity("google-2", "new@example.com", null));
+        when(googleTokenVerifier.verify("known")).thenReturn(new GoogleIdentity("google-1", "known@example.com"));
+        when(googleTokenVerifier.verify("new")).thenReturn(new GoogleIdentity("google-2", "new@example.com"));
         mvc.perform(json(post("/auth/google"), """
                 {"credential": "known"}""")).andExpect(status().isOk());
         setSwitch(adminAccessToken("root"), "register", false);

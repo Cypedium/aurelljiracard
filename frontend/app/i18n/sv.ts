@@ -274,7 +274,6 @@ export const SV: Record<string, string> = {
   "Username": "Användarnamn",
   "Password": "Lösenord",
   "Register": "Registrera",
-  "Profile picture": "Profilbild",
   "Password strength: {strength}": "Lösenordets styrka: {strength}",
   "Weak": "Svag",
   "Medium": "Medel",
@@ -413,7 +412,6 @@ export const SV: Record<string, string> = {
   "Issue type already exists.": "Ärendetypen finns redan.",
   "Please pick a color.": "Välj en färg.",
   "Please pick an icon.": "Välj en ikon.",
-  "Profile picture must be smaller than 1 MB.": "Profilbilden måste vara mindre än 1 MB.",
   "Username is required.": "Användarnamn krävs.",
   "Password is required.": "Lösenord krävs.",
   "Username already taken.": "Användarnamnet är upptaget.",
@@ -448,7 +446,6 @@ export const SV: Record<string, string> = {
   "Invalid issue type.": "Ogiltig ärendetyp.",
   "Invalid list key.": "Ogiltig listnyckel.",
   "Invalid or expired token": "Ogiltig eller utgången token",
-  "Invalid profile picture.": "Ogiltig profilbild.",
   "Invalid refresh token": "Ogiltig förnyelsetoken",
   "Invalid request body.": "Ogiltig förfrågan.",
   "Issue key must look like MA-100: letters, a hyphen and digits (max 6 characters).":

@@ -4,13 +4,11 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.regex.Pattern;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 import se.aurell.jiraboard.dto.LoginRequest;
 import se.aurell.jiraboard.dto.RegisterRequest;
 import se.aurell.jiraboard.dto.TokenResponse;
@@ -28,9 +26,6 @@ public class AuthService {
 
     // bcrypt ignores bytes beyond 72, so multi-byte passwords are checked by byte length too
     private static final int PASSWORD_MAX_BYTES = 72;
-    private static final int PICTURE_MAX_LENGTH = 1536 * 1024; // base64 data URL, ~1 MB image
-    private static final Pattern PICTURE_URL_PREFIX =
-            Pattern.compile("^(data:image/[a-z+.-]+;base64,|https?://)", Pattern.CASE_INSENSITIVE);
 
     private static final String INVALID_REFRESH_MESSAGE = "Invalid refresh token";
 
@@ -70,10 +65,6 @@ public class AuthService {
         if (CredentialRules.isRepetitivePassword(request.password())) {
             throw ApiException.badRequest(CredentialRules.PASSWORD_REPEAT_MESSAGE);
         }
-        String pictureUrl = StringUtils.hasText(request.pictureUrl()) ? request.pictureUrl() : null;
-        if (pictureUrl != null && !isValidPicture(pictureUrl)) {
-            throw ApiException.badRequest("Invalid profile picture.");
-        }
         // "mike" is taken if "Mike" exists
         if (userRepository.existsByUsernameIgnoreCase(request.username())) {
             throw ApiException.conflict(CredentialRules.USERNAME_TAKEN_MESSAGE);
@@ -82,7 +73,7 @@ public class AuthService {
         User user;
         try {
             user = userRepository.saveAndFlush(
-                    new User(request.username(), passwordEncoder.encode(request.password()), pictureUrl));
+                    new User(request.username(), passwordEncoder.encode(request.password())));
         } catch (DataIntegrityViolationException e) {
             // Another request registered the same username in between
             throw ApiException.conflict(CredentialRules.USERNAME_TAKEN_MESSAGE);
@@ -125,10 +116,9 @@ public class AuthService {
             String suffix = Integer.toString(n);
             username = base.substring(0, Math.min(base.length(), USERNAME_MAX_LENGTH - suffix.length())) + suffix;
         }
-        String pictureUrl = google.pictureUrl() != null && isValidPicture(google.pictureUrl()) ? google.pictureUrl() : null;
         User user;
         try {
-            user = userRepository.saveAndFlush(User.fromGoogle(username, google.subject(), google.email(), pictureUrl));
+            user = userRepository.saveAndFlush(User.fromGoogle(username, google.subject(), google.email()));
         } catch (DataIntegrityViolationException e) {
             // Another request took the name, or signed in with the same Google account, in between
             throw ApiException.conflict(GOOGLE_RETRY_MESSAGE);
@@ -223,9 +213,5 @@ public class AuthService {
         JwtService.IssuedRefreshToken refresh = jwtService.issueRefreshToken(user, tokenId);
         refreshTokenRepository.save(new RefreshToken(tokenId, familyId, user.getId(), refresh.expiresAt()));
         return new TokenResponse(jwtService.issueAccessToken(user), refresh.value());
-    }
-
-    private static boolean isValidPicture(String pictureUrl) {
-        return pictureUrl.length() <= PICTURE_MAX_LENGTH && PICTURE_URL_PREFIX.matcher(pictureUrl).lookingAt();
     }
 }

@@ -1,7 +1,6 @@
 import { describe, expect, it } from "@jest/globals";
 import {
   MAX_PASSWORD_LENGTH,
-  MAX_PICTURE_BYTES,
   PASSWORD_REPEAT_MESSAGE,
   USERNAME_MAX_LENGTH,
   isRepetitivePassword,
@@ -10,7 +9,7 @@ import {
 } from "../../app/utils/register";
 import { RUDE_USERNAME_MESSAGE, isRudeUsername } from "../../app/utils/username";
 
-const valid = { username: "alice", password: "secret123", picture: null };
+const valid = { username: "alice", password: "secret123" };
 
 const firstError = (schema: typeof registerSchema | typeof loginSchema, form: object) => {
   const result = schema.safeParse(form);
@@ -18,9 +17,8 @@ const firstError = (schema: typeof registerSchema | typeof loginSchema, form: ob
 };
 
 describe("registerSchema", () => {
-  it("accepts a valid form with or without a picture", () => {
+  it("accepts a valid form", () => {
     expect(firstError(registerSchema, valid)).toBeNull();
-    expect(firstError(registerSchema, { ...valid, picture: new Blob(["x"]) })).toBeNull();
   });
 
   it.each(["", "   ", "a".repeat(USERNAME_MAX_LENGTH + 1)])("rejects username %j", (username) => {
@@ -37,11 +35,6 @@ describe("registerSchema", () => {
 
   it.each(["abc11112", "12121212"])("rejects repetitive password %s", (password) => {
     expect(firstError(registerSchema, { ...valid, password })).toBe(PASSWORD_REPEAT_MESSAGE);
-  });
-
-  it("rejects pictures over the size limit", () => {
-    const picture = new Blob([new Uint8Array(MAX_PICTURE_BYTES + 1)]);
-    expect(firstError(registerSchema, { ...valid, picture })).toMatch(/smaller than 1 MB/);
   });
 });
 

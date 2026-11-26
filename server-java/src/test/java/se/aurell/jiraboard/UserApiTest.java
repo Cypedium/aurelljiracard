@@ -232,7 +232,6 @@ class UserApiTest extends ApiIntegrationTest {
                 .andExpect(jsonPath("$", hasSize(2)))
                 .andExpect(jsonPath("$[*].username", containsInAnyOrder("alice", "bob")))
                 .andExpect(jsonPath("$[0]._id").isString())
-                .andExpect(jsonPath("$[0].pictureUrl").value("https://example.com/default-profile.png"))
                 .andExpect(jsonPath("$[0].role").value("user"))
                 .andExpect(jsonPath("$[0].passwordHash").doesNotExist())
                 // Presence is for admins only
