@@ -48,8 +48,7 @@ class GoogleTokenVerifierTest {
                 .issuedAt(now)
                 .expiresAt(now.plusSeconds(3600))
                 .claim("email", "mikael.aurell@gmail.com")
-                .claim("email_verified", true)
-                .claim("picture", "https://lh3.googleusercontent.com/a/photo");
+                .claim("email_verified", true);
         customizer.accept(claims);
         JwsHeader header = JwsHeader.with(SignatureAlgorithm.RS256).keyId("test").build();
         return encoder.encode(JwtEncoderParameters.from(header, claims.build())).getTokenValue();
@@ -61,7 +60,6 @@ class GoogleTokenVerifierTest {
 
         assertThat(identity.subject()).isEqualTo("1234567890");
         assertThat(identity.email()).isEqualTo("mikael.aurell@gmail.com");
-        assertThat(identity.pictureUrl()).isEqualTo("https://lh3.googleusercontent.com/a/photo");
     }
 
     @Test

@@ -25,7 +25,7 @@ class JwtServiceTest {
     private final UUID userId = UUID.randomUUID();
 
     private User user() {
-        User user = new User("alice", "hash", null);
+        User user = new User("alice", "hash");
         ReflectionTestUtils.setField(user, "id", userId);
         ReflectionTestUtils.setField(user, "tokenVersion", 3);
         return user;

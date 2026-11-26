@@ -18,7 +18,7 @@ import se.aurell.jiraboard.security.GoogleTokenVerifier.GoogleIdentity;
 class GoogleAuthApiTest extends ApiIntegrationTest {
 
     private static final GoogleIdentity MIKAEL =
-            new GoogleIdentity("google-1", "mikael.aurell@gmail.com", "https://lh3.googleusercontent.com/a/photo");
+            new GoogleIdentity("google-1", "mikael.aurell@gmail.com");
 
     private String googleLogin(String credential) throws Exception {
         return mvc.perform(json(post("/auth/google"), """
@@ -44,7 +44,6 @@ class GoogleAuthApiTest extends ApiIntegrationTest {
         User user = userRepository.findByGoogleSub("google-1").orElseThrow();
         assertThat(user.getUsername()).isEqualTo("mikael.aurell");
         assertThat(user.getEmail()).isEqualTo("mikael.aurell@gmail.com");
-        assertThat(user.getPictureUrl()).isEqualTo("https://lh3.googleusercontent.com/a/photo");
         assertThat(user.getPasswordHash()).isNull();
     }
 
@@ -130,7 +129,7 @@ class GoogleAuthApiTest extends ApiIntegrationTest {
         String token = accessToken("alice");
         when(googleTokenVerifier.verify("cred")).thenReturn(MIKAEL);
         when(googleTokenVerifier.verify("other"))
-                .thenReturn(new GoogleIdentity("google-2", "other@gmail.com", null));
+                .thenReturn(new GoogleIdentity("google-2", "other@gmail.com"));
         mvc.perform(json(bearer(post("/user/google"), token), """
                 {"credential": "cred"}"""))
                 .andExpect(status().isOk());

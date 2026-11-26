@@ -34,7 +34,7 @@ public class AuthController {
 
     /**
      * Creates the user and their own board. Field rules in RegisterRequest (400); password byte length, rude
-     * names, repeated characters and the picture are checked in AuthService (400). 409 when the name is
+     * names and repeated characters are checked in AuthService (400). 409 when the name is
      * taken in any casing.
      */
     @RequiresFeature(Feature.REGISTER)

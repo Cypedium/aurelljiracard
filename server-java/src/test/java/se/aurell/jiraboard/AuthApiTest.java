@@ -24,9 +24,9 @@ class AuthApiTest extends ApiIntegrationTest {
     }
 
     @Test
-    void registerAcceptsEmptyPictureUrlFromTheForm() throws Exception {
+    void registerIgnoresThePictureUrlOlderFormsSend() throws Exception {
         mvc.perform(json(post("/auth/register"), """
-                {"username": "alice", "password": "secret123", "pictureUrl": ""}"""))
+                {"username": "alice", "password": "secret123", "pictureUrl": "javascript:alert(1)"}"""))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.message").value("User registered successfully."));
     }
@@ -52,11 +52,6 @@ class AuthApiTest extends ApiIntegrationTest {
                 {"username": "   ", "password": "secret123"}"""))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Username is required (max 32 characters)."));
-
-        mvc.perform(json(post("/auth/register"), """
-                {"username": "alice", "password": "secret123", "pictureUrl": "javascript:alert(1)"}"""))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Invalid profile picture."));
     }
 
     @Test

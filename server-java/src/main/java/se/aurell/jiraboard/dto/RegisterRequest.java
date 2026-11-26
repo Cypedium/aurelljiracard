@@ -12,8 +12,5 @@ public record RegisterRequest(
         // bcrypt ignores bytes beyond 72; the byte length is also checked in AuthService
         @NotNull(message = "Password must be 8-72 characters.")
         @Size(min = 8, max = 72, message = "Password must be 8-72 characters.")
-        String password,
-
-        // Optional; an empty string means "no picture" (the register form sends "")
-        String pictureUrl) {
+        String password) {
 }

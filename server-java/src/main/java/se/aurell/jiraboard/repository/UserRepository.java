@@ -22,11 +22,11 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     Optional<User> findByGoogleSub(String googleSub);
 
-    @Query("select new se.aurell.jiraboard.dto.UserResponse(u.id, u.username, u.pictureUrl, u.role) from User u")
+    @Query("select new se.aurell.jiraboard.dto.UserResponse(u.id, u.username, u.role) from User u")
     List<UserResponse> findAllPublic();
 
     @Query("select new se.aurell.jiraboard.dto.AdminUserResponse("
-            + "u.id, u.username, u.pictureUrl, u.role, u.lastActiveAt, u.loggedOutAt) from User u")
+            + "u.id, u.username, u.role, u.lastActiveAt, u.loggedOutAt) from User u")
     List<AdminUserResponse> findAllWithPresence();
 
     @Query("select u.username from User u")

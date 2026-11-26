@@ -18,8 +18,6 @@ import org.hibernate.type.SqlTypes;
 @Table(name = "users")
 public class User {
 
-    public static final String DEFAULT_PICTURE_URL = "https://example.com/default-profile.png";
-
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
@@ -37,9 +35,6 @@ public class User {
 
     @Column(length = 320)
     private String email;
-
-    @Column(name = "picture_url", nullable = false)
-    private String pictureUrl = DEFAULT_PICTURE_URL;
 
     // "admin" may edit and delete any card and manage users
     @Convert(converter = EnumConverters.RoleConverter.class)
@@ -77,17 +72,14 @@ public class User {
     protected User() {
     }
 
-    public User(String username, String passwordHash, String pictureUrl) {
+    public User(String username, String passwordHash) {
         this.username = username;
         this.passwordHash = passwordHash;
-        if (pictureUrl != null) {
-            this.pictureUrl = pictureUrl;
-        }
     }
 
     /** A user created by Google sign-in: no password. */
-    public static User fromGoogle(String username, String googleSub, String email, String pictureUrl) {
-        User user = new User(username, null, pictureUrl);
+    public static User fromGoogle(String username, String googleSub, String email) {
+        User user = new User(username, null);
         user.connectGoogle(googleSub, email);
         return user;
     }
@@ -115,10 +107,6 @@ public class User {
 
     public String getPasswordHash() {
         return passwordHash;
-    }
-
-    public String getPictureUrl() {
-        return pictureUrl;
     }
 
     public void setUsername(String username) {
