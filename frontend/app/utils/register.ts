@@ -19,18 +19,32 @@ export const isRepetitivePassword = (password: string): boolean =>
 // Blank check without trimming: the backend stores and looks up usernames as typed
 const notBlank = (value: string) => value.trim().length > 0;
 
-export const registerSchema = z.object({
-  username: z
-    .string()
-    .refine(notBlank, USERNAME_MESSAGE)
-    .max(USERNAME_MAX_LENGTH, USERNAME_MESSAGE)
-    .refine((u) => !isRudeUsername(u), RUDE_USERNAME_MESSAGE),
-  password: z
-    .string()
-    .min(MIN_PASSWORD_LENGTH, PASSWORD_MESSAGE)
-    .max(MAX_PASSWORD_LENGTH, PASSWORD_MESSAGE)
-    .refine((p) => !isRepetitivePassword(p), PASSWORD_REPEAT_MESSAGE),
-});
+export const PASSWORD_MISMATCH_MESSAGE = msg("Passwords do not match.");
+
+export const registerSchema = z
+  .object({
+    username: z
+      .string()
+      .refine(notBlank, USERNAME_MESSAGE)
+      .max(USERNAME_MAX_LENGTH, USERNAME_MESSAGE)
+      .refine((u) => !isRudeUsername(u), RUDE_USERNAME_MESSAGE),
+    password: z
+      .string()
+      .min(MIN_PASSWORD_LENGTH, PASSWORD_MESSAGE)
+      .max(MAX_PASSWORD_LENGTH, PASSWORD_MESSAGE)
+      .refine((p) => !isRepetitivePassword(p), PASSWORD_REPEAT_MESSAGE),
+    // Frontend only: never sent to the backend
+    confirmPassword: z.string(),
+  })
+  .refine((v) => v.password === v.confirmPassword, {
+    message: PASSWORD_MISMATCH_MESSAGE,
+    path: ["confirmPassword"],
+    // Also check while other fields have errors, so every error shows on the first submit
+    when: ({ value }) => {
+      const v = value as { password?: unknown; confirmPassword?: unknown };
+      return typeof v?.password === "string" && typeof v?.confirmPassword === "string";
+    },
+  });
 
 export type RegisterValues = z.infer<typeof registerSchema>;
 

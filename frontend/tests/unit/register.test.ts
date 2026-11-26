@@ -1,6 +1,7 @@
 import { describe, expect, it } from "@jest/globals";
 import {
   MAX_PASSWORD_LENGTH,
+  PASSWORD_MISMATCH_MESSAGE,
   PASSWORD_REPEAT_MESSAGE,
   USERNAME_MAX_LENGTH,
   isRepetitivePassword,
@@ -9,7 +10,7 @@ import {
 } from "../../app/utils/register";
 import { RUDE_USERNAME_MESSAGE, isRudeUsername } from "../../app/utils/username";
 
-const valid = { username: "alice", password: "secret123" };
+const valid = { username: "alice", password: "secret123", confirmPassword: "secret123" };
 
 const firstError = (schema: typeof registerSchema | typeof loginSchema, form: object) => {
   const result = schema.safeParse(form);
@@ -34,7 +35,20 @@ describe("registerSchema", () => {
   });
 
   it.each(["abc11112", "12121212"])("rejects repetitive password %s", (password) => {
-    expect(firstError(registerSchema, { ...valid, password })).toBe(PASSWORD_REPEAT_MESSAGE);
+    expect(firstError(registerSchema, { ...valid, password, confirmPassword: password })).toBe(PASSWORD_REPEAT_MESSAGE);
+  });
+
+  it.each(["", "secret12", "Secret123"])("rejects confirmation %j that differs from the password", (confirmPassword) => {
+    const result = registerSchema.safeParse({ ...valid, confirmPassword });
+    expect(result.success).toBe(false);
+    expect(result.error?.issues).toEqual([
+      expect.objectContaining({ path: ["confirmPassword"], message: PASSWORD_MISMATCH_MESSAGE }),
+    ]);
+  });
+
+  it("reports a mismatch together with other field errors", () => {
+    const result = registerSchema.safeParse({ ...valid, username: "", confirmPassword: "other" });
+    expect(result.error?.issues.map((i) => i.path[0])).toEqual(["username", "confirmPassword"]);
   });
 });
 
