@@ -64,6 +64,8 @@ const refreshAccessToken = (refreshToken: string): Promise<string> => {
     .catch((refreshError: unknown) => {
       // Only the message: the axios error contains the request, with the refresh token
       logError("Refresh token failed", refreshError);
+      // 429 (rate limit): the token wasn't looked at and still works, so stay logged in; the request fails
+      if (axios.isAxiosError(refreshError) && refreshError.response?.status === 429) throw refreshError;
       // Invalid tokens → log out (the username too)
       clearSession();
       window.location.href = ROUTES.login;
