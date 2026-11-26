@@ -1,12 +1,14 @@
 'use client';
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { googleLogin, loginUser } from "../api/endpoints";
-import { apiErrorMessage } from "../utils/apiError";
+import { googleLogin, loginUser, type Credentials } from "../api/endpoints";
+import { apiErrorMessage, apiMessage } from "../utils/apiError";
 import { GOOGLE_CLIENT_ID } from "../utils/google";
 import { saveSession, tokenUsername } from "../utils/session";
-import { loginSchema, type LoginValues } from "../utils/register";
+import { EMAIL_MISSING_MESSAGE, EMAIL_NOT_VERIFIED_MESSAGE, loginSchema, type LoginValues } from "../utils/register";
+import EmailVerificationPrompt from "./EmailVerificationPrompt";
 import { AUTH_FORM_CLASS, FIELD_ERROR_CLASS, FORM_ITEM_CLASS, LABEL_CLASS } from "../utils/styles";
 import GoogleButton from "./GoogleButton";
 import { Button } from "./ui/button";
@@ -23,17 +25,29 @@ export default function LoginForm() {
     defaultValues: { username: "", password: "" },
   });
 
+  // Set while the account's email isn't verified: the prompt replaces the form
+  const [unverified, setUnverified] = useState<{ credentials: Credentials; needsEmail: boolean } | null>(null);
+
   const handleLogin = async ({ username, password }: LoginValues) => {
     try {
       const { data } = await loginUser({ username, password });
-      // Login ignores case; save the name as the backend has it, otherwise the cards don't match
+      // Login ignores case and accepts the email; save the name as the backend has it, otherwise the cards don't match
       saveSession(tokenUsername(data.accessToken) ?? username, data.accessToken, data.refreshToken);
       window.location.href = ROUTES.board;
     } catch (error) {
+      const message = apiMessage(error);
+      if (message === EMAIL_MISSING_MESSAGE || message === EMAIL_NOT_VERIFIED_MESSAGE) {
+        setUnverified({ credentials: { username, password }, needsEmail: message === EMAIL_MISSING_MESSAGE });
+        return;
+      }
       // The backend's message (e.g. 401 "Invalid credentials."), otherwise we didn't reach the server
       toast.error(apiErrorMessage(error, msg("Could not reach the server. Please try again.")));
     }
   };
+
+  if (unverified) {
+    return <EmailVerificationPrompt {...unverified} onBack={() => setUnverified(null)} />;
+  }
 
   // The first Google sign-in creates the user; the name is in the access token
   const handleGoogleLogin = async (credential: string) => {
@@ -56,7 +70,7 @@ export default function LoginForm() {
           name="username"
           render={({ field }) => (
             <FormItem className={FORM_ITEM_CLASS}>
-              <FormLabel className={LABEL_CLASS}>{t("Username")}</FormLabel>
+              <FormLabel className={LABEL_CLASS}>{t("Username or email")}</FormLabel>
               <FormControl>
                 <Input type="text" autoComplete="username" className="bg-white" {...field} />
               </FormControl>

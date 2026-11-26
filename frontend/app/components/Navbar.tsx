@@ -168,7 +168,7 @@ const Navbar = () => {
         {/* Logged out (Login/Register) the logo leads to the start page, which redirects */}
         <Link href={logoHref} className={`${NAV_LINK_CLASS} absolute left-1/2 -translate-x-1/2 text-xl text-nav-text md:hidden`}>
           <Image src={logo} alt="" className="size-7 shrink-0" priority />
-          AURELLO
+          AurellTodo
         </Link>
         {isLoggedIn && userName && (
           <div className="ml-auto md:hidden">
@@ -191,7 +191,7 @@ const Navbar = () => {
             <Link href={logoHref} className={NAV_LINK_CLASS}>
               {/* Same image as the favicon (app/icon.png) */}
               <Image src={logo} alt="" className="size-7 shrink-0" priority />
-              AURELLO
+              AurellTodo
             </Link>
           </li>
           {isLoggedIn && (
@@ -290,7 +290,7 @@ const Navbar = () => {
         >
           {siteAdmin
             ? t('Read-only mode is on for everyone else. You can still make changes.')
-            : t('Aurello is in read-only mode. You can look around, but changes are paused for now.')}
+            : t('AurellTodo is in read-only mode. You can look around, but changes are paused for now.')}
         </div>
       )}
 

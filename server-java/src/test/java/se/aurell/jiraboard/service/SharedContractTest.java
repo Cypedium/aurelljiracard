@@ -20,6 +20,7 @@ import se.aurell.jiraboard.dto.IssueTypeRequest;
 import se.aurell.jiraboard.dto.LanguageRequest;
 import se.aurell.jiraboard.dto.LayoutRequest;
 import se.aurell.jiraboard.dto.RegisterRequest;
+import se.aurell.jiraboard.dto.VerificationEmailRequest;
 import se.aurell.jiraboard.entity.CardStatus;
 import se.aurell.jiraboard.entity.CardType;
 import se.aurell.jiraboard.entity.Feature;
@@ -107,6 +108,8 @@ class SharedContractTest {
     @Test
     void lengthAndCountLimits() {
         assertThat(annotation(RegisterRequest.class, "username", Size.class).max()).isEqualTo(limit("usernameMax"));
+        assertThat(annotation(RegisterRequest.class, "email", Size.class).max()).isEqualTo(limit("emailMax"));
+        assertThat(annotation(VerificationEmailRequest.class, "email", Size.class).max()).isEqualTo(limit("emailMax"));
         Size password = annotation(RegisterRequest.class, "password", Size.class);
         assertThat(password.min()).isEqualTo(limit("passwordMin"));
         assertThat(password.max()).isEqualTo(limit("passwordMax"));
@@ -144,6 +147,18 @@ class SharedContractTest {
         int max = annotation(CardRequest.class, "productId", Size.class).max();
         strings(samples.get("valid")).forEach(k -> assertThat(k.length() <= max && k.matches(regexp)).as(k).isTrue());
         strings(samples.get("invalid")).forEach(k -> assertThat(k.length() <= max && k.matches(regexp)).as(k).isFalse());
+    }
+
+    @Test
+    void emailSamplesOnEveryEmailField() {
+        JsonNode samples = contract.get("samples").get("email");
+        List<String> patterns = List.of(
+                annotation(RegisterRequest.class, "email", Pattern.class).regexp(),
+                annotation(VerificationEmailRequest.class, "email", Pattern.class).regexp());
+        for (String regexp : patterns) {
+            strings(samples.get("valid")).forEach(e -> assertThat(e.matches(regexp)).as(e).isTrue());
+            strings(samples.get("invalid")).forEach(e -> assertThat(e.matches(regexp)).as(e).isFalse());
+        }
     }
 
     @Test

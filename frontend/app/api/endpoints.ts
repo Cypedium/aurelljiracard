@@ -30,8 +30,14 @@ export type NewCard = Omit<Card, "_id" | "username" | "assignee" | "submittedAt"
 
 export type User = {
   username: string;
+  email: string;
   password: string;
+  // The UI language while registering, for the verification email
+  language?: Language;
 };
+
+// A new verification link for a user who can't log in yet; email replaces the address (required if there is none)
+export type VerificationEmailRequest = Credentials & { email?: string };
 
 export type Credentials = {
   username: string;
@@ -74,8 +80,15 @@ const onBoard = (boardId: string, path: string) => `/board/${encodeURIComponent(
 // Auth
 export const registerUser = (user: User) => api.post("/auth/register", user);
 
+// username = the username or the email address; 403 until the email is verified
 export const loginUser = (credentials: Credentials) =>
   api.post<Tokens>("/auth/login", credentials);
+
+export const requestVerificationEmail = (request: VerificationEmailRequest) =>
+  api.post<{ message: string }>("/auth/verification-email", request);
+
+// The token from the emailed link (/verify-email/[token])
+export const verifyEmail = (token: string) => api.post<{ message: string }>("/auth/verify-email", { token });
 
 // Sign in with Google: credential = the ID token from Google's button; the first sign-in creates the user
 export const googleLogin = (credential: string) =>

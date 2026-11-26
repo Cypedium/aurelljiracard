@@ -44,6 +44,7 @@ class FeatureCoverageTest extends ApiIntegrationTest {
     // Writes that work in read-only mode: @ReadOnlyExempt, and @AdminOnly (admins are exempt anyway)
     private static final Set<String> READ_ONLY_EXEMPT = Set.of(
             "POST /auth/login", "POST /auth/refresh", "POST /auth/logout", "POST /auth/google",
+            "POST /auth/verification-email", "POST /auth/verify-email",
             "PATCH /user/{id}", "DELETE /user/{id}", "POST /user/{id}/logout", "PUT /feature/{key}");
 
     @Autowired

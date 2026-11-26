@@ -20,7 +20,14 @@ describe("API endpoints", () => {
   });
 
   it.each([
-    ["registerUser", () => endpoints.registerUser({ username: "a", password: "secret1" }), "post", "/auth/register"],
+    ["registerUser", () => endpoints.registerUser({ username: "a", email: "a@b.se", password: "secret1" }), "post", "/auth/register"],
+    [
+      "requestVerificationEmail",
+      () => endpoints.requestVerificationEmail({ username: "a", password: "secret1" }),
+      "post",
+      "/auth/verification-email",
+    ],
+    ["verifyEmail", () => endpoints.verifyEmail("tok"), "post", "/auth/verify-email"],
     ["loginUser", () => endpoints.loginUser({ username: "a", password: "secret1" }), "post", "/auth/login"],
     ["googleLogin", () => endpoints.googleLogin("cred"), "post", "/auth/google"],
     ["logoutUser", () => endpoints.logoutUser("rt"), "post", "/auth/logout"],

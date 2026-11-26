@@ -22,6 +22,17 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     Optional<User> findByGoogleSub(String googleSub);
 
+    // Login with the email address: every account with it (at most one verified, V15's unique index)
+    List<User> findByEmailIgnoreCase(String email);
+
+    // A verified address belongs to one account, in any casing
+    @Query("select count(u) > 0 from User u where lower(u.email) = lower(:email) and u.emailVerifiedAt is not null")
+    boolean existsVerifiedEmail(String email);
+
+    @Query("select count(u) > 0 from User u where lower(u.email) = lower(:email) and u.emailVerifiedAt is not null "
+            + "and u.id <> :userId")
+    boolean existsVerifiedEmailOfOther(String email, UUID userId);
+
     @Query("select new se.aurell.jiraboard.dto.UserResponse(u.id, u.username, u.role) from User u")
     List<UserResponse> findAllPublic();
 

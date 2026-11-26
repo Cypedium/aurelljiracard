@@ -29,7 +29,7 @@ import se.aurell.jiraboard.security.GoogleTokenVerifier.GoogleIdentity;
 class FeatureApiTest extends ApiIntegrationTest {
 
     private static final String DISABLED = "This feature is temporarily disabled.";
-    private static final String READ_ONLY = "Aurello is in read-only mode.";
+    private static final String READ_ONLY = "AurellTodo is in read-only mode.";
     private static final String CARD = "/card/" + UUID.randomUUID();
 
     private void setSwitch(String adminToken, String key, boolean enabled) throws Exception {
@@ -86,7 +86,7 @@ class FeatureApiTest extends ApiIntegrationTest {
         setSwitch(adminAccessToken("root"), "register", false);
 
         mvc.perform(json(post("/auth/register"), """
-                {"username": "bob", "password": "%s"}""".formatted(PASSWORD)))
+                {"username": "bob", "email": "new@example.com", "password": "%s"}""".formatted(PASSWORD)))
                 .andExpect(status().isServiceUnavailable())
                 .andExpect(jsonPath("$.message").value(DISABLED));
         assertThat(userRepository.findByUsername("bob")).isEmpty();
@@ -142,7 +142,7 @@ class FeatureApiTest extends ApiIntegrationTest {
                 .andExpect(status().isServiceUnavailable())
                 .andExpect(jsonPath("$.message").value(READ_ONLY));
         mvc.perform(json(post("/auth/register"), """
-                {"username": "bob", "password": "%s"}""".formatted(PASSWORD)))
+                {"username": "bob", "email": "new@example.com", "password": "%s"}""".formatted(PASSWORD)))
                 .andExpect(status().isServiceUnavailable());
 
         // Reads, login, refresh and logout keep working

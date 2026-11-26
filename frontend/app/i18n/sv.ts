@@ -27,8 +27,8 @@ export const SV: Record<string, string> = {
   "{owner}'s board": "{ownerGenitive} tavla",
   "Read-only mode is on for everyone else. You can still make changes.":
     "Skrivskyddat läge är på för alla andra. Du kan fortfarande göra ändringar.",
-  "Aurello is in read-only mode. You can look around, but changes are paused for now.":
-    "Aurello är i skrivskyddat läge. Du kan titta runt, men ändringar är pausade just nu.",
+  "AurellTodo is in read-only mode. You can look around, but changes are paused for now.":
+    "AurellTodo är i skrivskyddat läge. Du kan titta runt, men ändringar är pausade just nu.",
   "Account": "Konto",
   "Account menu": "Kontomeny",
   "Account (logged in as {username})": "Konto (inloggad som {username})",
@@ -260,7 +260,7 @@ export const SV: Record<string, string> = {
   "Go to your board": "Gå till din tavla",
 
   // Start page, login and registration
-  "Welcome to AURELLO": "Välkommen till AURELLO",
+  "Welcome to AurellTodo": "Välkommen till AurellTodo",
   "A free board for your to-dos and projects. As simple as a to-do list, with the tools you know from Jira.":
     "En gratis tavla för dina att göra-saker och projekt. Lika enkel som en att göra-lista, med verktygen du känner igen från Jira.",
   "Boards with your own lists: add, rename, colour, reorder and hide them":
@@ -276,6 +276,31 @@ export const SV: Record<string, string> = {
   "Confirm password": "Bekräfta lösenord",
   "Show password": "Visa lösenord",
   "Hide password": "Dölj lösenord",
+  "Email": "E-post",
+  "Username or email": "Användarnamn eller e-post",
+  "Check your email": "Kolla din e-post",
+  "We sent a link to {email}. Open it to verify your address, then log in.":
+    "Vi har skickat en länk till {email}. Öppna den för att verifiera adressen och logga sedan in.",
+  "No email? Check your spam folder, or log in to get a new link.":
+    "Inget mejl? Kolla skräpposten, eller logga in för att få en ny länk.",
+  "Go to login": "Till inloggningen",
+  "Add your email address": "Lägg till din e-postadress",
+  "Verify your email": "Verifiera din e-post",
+  "We sent a new link. Open it to verify your address, then log in.":
+    "Vi har skickat en ny länk. Öppna den för att verifiera adressen och logga sedan in.",
+  "Every account now needs a verified email address. Enter yours and we'll send you a link.":
+    "Alla konton behöver nu en verifierad e-postadress. Skriv in din så skickar vi en länk.",
+  "Open the link we sent to your email address, then log in again.":
+    "Öppna länken vi skickade till din e-postadress och logga sedan in igen.",
+  "Send link": "Skicka länk",
+  "Send a new link": "Skicka en ny länk",
+  "Use another email address": "Använd en annan e-postadress",
+  "Back to login": "Tillbaka till inloggningen",
+  "Verifying your email…": "Verifierar din e-post…",
+  "Your email is verified": "Din e-post är verifierad",
+  "You can log in now.": "Nu kan du logga in.",
+  "Log in to get a new link.": "Logga in för att få en ny länk.",
+  "Could not verify your email. Please try again.": "Kunde inte verifiera din e-post. Försök igen.",
   "Register": "Registrera",
   "Password strength: {strength}": "Lösenordets styrka: {strength}",
   "Weak": "Svag",
@@ -419,6 +444,21 @@ export const SV: Record<string, string> = {
   "Password is required.": "Lösenord krävs.",
   "Passwords do not match.": "Lösenorden matchar inte.",
   "Username already taken.": "Användarnamnet är upptaget.",
+  "Enter a valid email address (max 254 characters).": "Ange en giltig e-postadress (högst 254 tecken).",
+  "Email already registered.": "E-postadressen är redan registrerad.",
+  "Email is not configured.": "E-post är inte konfigurerat.",
+  "Could not send the email. Please try again later.": "Kunde inte skicka mejlet. Försök igen senare.",
+  "This verification link is invalid or has expired.": "Verifieringslänken är ogiltig eller har gått ut.",
+  "An email was just sent. Please wait a minute before asking for another.":
+    "Ett mejl skickades nyss. Vänta en minut innan du ber om ett nytt.",
+  "An account with this email already exists. Log in with your password and connect Google from the account menu.":
+    "Det finns redan ett konto med den här e-postadressen. Logga in med ditt lösenord och koppla Google i kontomenyn.",
+  "Please add your email address.": "Lägg till din e-postadress.",
+  "Please verify your email address.": "Verifiera din e-postadress.",
+  "Your email is already verified.": "Din e-post är redan verifierad.",
+  "Account created. Check your email to verify your address.": "Kontot har skapats. Kolla din e-post för att verifiera adressen.",
+  "Verification email sent.": "Verifieringsmejlet har skickats.",
+  "Email verified. You can log in now.": "E-posten är verifierad. Nu kan du logga in.",
   "Username contains inappropriate words.": "Användarnamnet innehåller olämpliga ord.",
   "Password must not repeat characters (e.g. aaa or 1212).": "Lösenordet får inte upprepa tecken (t.ex. aaa eller 1212).",
   "Issue key already exists.": "Ärendenyckeln finns redan.",
@@ -427,7 +467,7 @@ export const SV: Record<string, string> = {
   "A list with this name was just added. Try again.": "En lista med det här namnet lades nyss till. Försök igen.",
   "Admins only.": "Endast för admins.",
   "An issue type with this name was just added. Try again.": "En ärendetyp med det här namnet lades nyss till. Försök igen.",
-  "Aurello is in read-only mode.": "Aurello är i skrivskyddat läge.",
+  "AurellTodo is in read-only mode.": "AurellTodo är i skrivskyddat läge.",
   "Board admins only.": "Endast för tavlans admins.",
   "Board not found.": "Tavlan hittades inte.",
   "Card deleted successfully.": "Kortet togs bort.",
@@ -487,7 +527,6 @@ export const SV: Record<string, string> = {
   "User deleted successfully.": "Användaren togs bort.",
   "User logged out from all sessions.": "Användaren loggades ut från alla sessioner.",
   "User not found.": "Användaren hittades inte.",
-  "User registered successfully.": "Användaren registrerades.",
   "Username and password are required.": "Användarnamn och lösenord krävs.",
   "Username is required (max 32 characters).": "Användarnamn krävs (högst 32 tecken).",
   "You can only delete your own card.": "Du kan bara ta bort dina egna kort.",

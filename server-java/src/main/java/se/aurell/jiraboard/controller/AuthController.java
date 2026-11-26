@@ -13,10 +13,13 @@ import se.aurell.jiraboard.dto.MessageResponse;
 import se.aurell.jiraboard.dto.RefreshTokenRequest;
 import se.aurell.jiraboard.dto.RegisterRequest;
 import se.aurell.jiraboard.dto.TokenResponse;
+import se.aurell.jiraboard.dto.VerificationEmailRequest;
+import se.aurell.jiraboard.dto.VerifyEmailRequest;
 import se.aurell.jiraboard.entity.Feature;
 import se.aurell.jiraboard.security.ReadOnlyExempt;
 import se.aurell.jiraboard.security.RequiresFeature;
 import se.aurell.jiraboard.service.AuthService;
+import se.aurell.jiraboard.service.EmailVerificationService;
 
 /**
  * Public routes; every other controller requires a valid access token.
@@ -27,32 +30,57 @@ import se.aurell.jiraboard.service.AuthService;
 public class AuthController {
 
     private final AuthService authService;
+    private final EmailVerificationService emailVerificationService;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, EmailVerificationService emailVerificationService) {
         this.authService = authService;
+        this.emailVerificationService = emailVerificationService;
     }
 
     /**
-     * Creates the user and their own board. Field rules in RegisterRequest (400); password byte length, rude
-     * names and repeated characters are checked in AuthService (400). 409 when the name is
-     * taken in any casing.
+     * Creates the user and their own board, and emails a verification link. Field rules in RegisterRequest
+     * (400); password byte length, rude names, repeated characters and the language are checked in AuthService
+     * (400). 409 when the name is taken in any casing or the email is another account's verified address.
+     * 503 when the email can't be sent (nothing is saved then).
      */
     @RequiresFeature(Feature.REGISTER)
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
     public MessageResponse register(@Valid @RequestBody RegisterRequest request) {
         authService.register(request);
-        return new MessageResponse("User registered successfully.");
+        return new MessageResponse("Account created. Check your email to verify your address.");
     }
 
     /**
-     * Username in any casing. 401 "Invalid credentials." for a wrong name or password, and for users created
-     * by Google sign-in (no password). Starts a new refresh token family.
+     * Username in any casing, or the email address. 401 "Invalid credentials." for a wrong name or password,
+     * and for users created by Google sign-in (no password). 403 "Please add your email address." /
+     * "Please verify your email address." until the email is verified. Starts a new refresh token family.
      */
     @ReadOnlyExempt
     @PostMapping("/login")
     public TokenResponse login(@Valid @RequestBody LoginRequest request) {
         return authService.login(request);
+    }
+
+    /**
+     * For a user whose email isn't verified: checks the password and emails a new link, optionally to a new
+     * address (required for older accounts without one). 401 wrong credentials, 409 already verified or the
+     * address is another account's, 429 a link was sent less than a minute ago, 503 the email can't be sent.
+     * Works in read-only mode, so older accounts can still get in.
+     */
+    @ReadOnlyExempt
+    @PostMapping("/verification-email")
+    public MessageResponse verificationEmail(@Valid @RequestBody VerificationEmailRequest request) {
+        authService.sendVerificationEmail(request);
+        return new MessageResponse("Verification email sent.");
+    }
+
+    /** The token from the emailed link. 400 unknown, used or expired link; 409 another account verified the address. */
+    @ReadOnlyExempt
+    @PostMapping("/verify-email")
+    public MessageResponse verifyEmail(@Valid @RequestBody VerifyEmailRequest request) {
+        emailVerificationService.verify(request.token());
+        return new MessageResponse("Email verified. You can log in now.");
     }
 
     // Sign in with Google; creates the user on first sign-in (AuthService checks registration and read-only mode then)

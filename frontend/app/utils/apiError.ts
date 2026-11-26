@@ -12,7 +12,13 @@ export const apiErrorMessage = (error: unknown, fallback: string): string => {
   return t(fallback);
 };
 
-// 503 = the feature is switched off or Aurello is in read-only mode (server-java)
+// The backend's { message } as sent (English), to tell errors with the same status apart; undefined without one
+export const apiMessage = (error: unknown): string | undefined => {
+  const message = isAxiosError(error) ? error.response?.data?.message : undefined;
+  return typeof message === "string" ? message : undefined;
+};
+
+// 503 = the feature is switched off or AurellTodo is in read-only mode (server-java)
 export const isServiceUnavailable = (error: unknown): boolean =>
   isAxiosError(error) && error.response?.status === 503;
 

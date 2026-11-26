@@ -13,7 +13,14 @@ import {
 } from "../../app/utils/cardType";
 import { HEX_COLOR } from "../../app/utils/color";
 import { ENFORCED_FEATURE_KEYS, NAVBAR_FEATURE_KEYS, READ_ONLY_KEY } from "../../app/utils/features";
-import { MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH, USERNAME_MAX_LENGTH, isRepetitivePassword } from "../../app/utils/register";
+import {
+  EMAIL_MAX_LENGTH,
+  EMAIL_PATTERN,
+  MAX_PASSWORD_LENGTH,
+  MIN_PASSWORD_LENGTH,
+  USERNAME_MAX_LENGTH,
+  isRepetitivePassword,
+} from "../../app/utils/register";
 import { ROLES } from "../../app/utils/session";
 import { RUDE_WORDS, isRudeUsername } from "../../app/utils/username";
 
@@ -42,6 +49,7 @@ describe("shared contract (shared/contract.json)", () => {
   it("length and count limits", () => {
     const { limits } = contract;
     expect(USERNAME_MAX_LENGTH).toBe(limits.usernameMax);
+    expect(EMAIL_MAX_LENGTH).toBe(limits.emailMax);
     expect(MIN_PASSWORD_LENGTH).toBe(limits.passwordMin);
     expect(MAX_PASSWORD_LENGTH).toBe(limits.passwordMax);
     expect([PRIORITIES[0], PRIORITIES[PRIORITIES.length - 1]]).toEqual([limits.ratingMin, limits.ratingMax]);
@@ -73,6 +81,9 @@ describe("shared contract (shared/contract.json)", () => {
 
     it.each(samples.username.rude as string[])("username %p is rude", (u) => expect(isRudeUsername(u)).toBe(true));
     it.each(samples.username.clean as string[])("username %p is clean", (u) => expect(isRudeUsername(u)).toBe(false));
+
+    it.each(samples.email.valid as string[])("email %p is valid", (e) => expect(EMAIL_PATTERN.test(e)).toBe(true));
+    it.each(samples.email.invalid as string[])("email %p is invalid", (e) => expect(EMAIL_PATTERN.test(e)).toBe(false));
 
     it.each(samples.password.repetitive as string[])("password %p is repetitive", (p) =>
       expect(isRepetitivePassword(p)).toBe(true),

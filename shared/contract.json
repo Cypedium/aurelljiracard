@@ -35,6 +35,7 @@
   },
   "limits": {
     "usernameMax": 32,
+    "emailMax": 254,
     "passwordMin": 8,
     "passwordMax": 72,
     "ratingMin": 1,
@@ -62,6 +63,10 @@
     "username": {
       "rude": ["F_u.c-k", "sh1t", "Jävla", "xXhitlerXx", "p0rnstar"],
       "clean": ["Mike", "Mikael", "Dickens", "Assange", "Åsa"]
+    },
+    "email": {
+      "valid": ["mikael@example.com", "a.b+c@sub.example.se", "Åsa@exempel.se"],
+      "invalid": ["", "mikael", "mikael@example", "@example.com", "mi kael@example.com", "a@b@example.com"]
     },
     "password": {
       "repetitive": ["aaab-cdef", "12121212", "Passsword1"],
