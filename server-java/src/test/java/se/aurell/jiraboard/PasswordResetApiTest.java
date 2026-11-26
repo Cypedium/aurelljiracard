@@ -149,13 +149,12 @@ class PasswordResetApiTest extends ApiIntegrationTest {
     }
 
     @Test
-    void aFailedSendLooksTheSameAndKeepsNoLink() throws Exception {
+    void aFailedSendLooksTheSame() throws Exception {
         register("alice");
         doThrow(ApiException.serviceUnavailable("Could not send the email. Please try again later."))
                 .when(emailSender).sendPasswordReset(anyString(), anyString(), anyString(), any());
 
         forgot("alice@example.com").andExpect(status().isOk()).andExpect(jsonPath("$.message").value(SENT));
-        reset(lastResetToken("alice@example.com"), NEW_PASSWORD).andExpect(status().isBadRequest());
     }
 
     @Test

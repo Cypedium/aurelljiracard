@@ -476,6 +476,8 @@ export const SV: Record<string, string> = {
   "If an account has this email address, we have sent it a link to reset the password.":
     "Om ett konto har den här e-postadressen har vi skickat en länk dit för att återställa lösenordet.",
   "Your password has been changed. You can log in now.": "Ditt lösenord är bytt. Nu kan du logga in.",
+  "Too many attempts. Please try again in a few minutes.": "För många försök. Försök igen om några minuter.",
+  "Too many failed logins. Please try again in 15 minutes.": "För många misslyckade inloggningar. Försök igen om 15 minuter.",
   "Username contains inappropriate words.": "Användarnamnet innehåller olämpliga ord.",
   "Password must not repeat characters (e.g. aaa or 1212).": "Lösenordet får inte upprepa tecken (t.ex. aaa eller 1212).",
   "Issue key already exists.": "Ärendenyckeln finns redan.",

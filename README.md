@@ -55,6 +55,8 @@ npm run dev
 
 All routes except `/auth/*` and `/health` require `Authorization: Bearer <accessToken>`. An expired or invalid access token returns `401`; the frontend then calls `/auth/refresh` automatically.
 
+The public `/auth` endpoints are rate limited per client IP (`Fly-Client-IP` in production): login 10/min, register 5/hour, forgot-password + verification-email together 5 per 15 min, verify-email + reset-password 20 per 15 min, Google sign-in and refresh 30/min. Five wrong passwords for one username or email within 15 minutes pause that name for the rest of the 15 minutes, from every IP. Over a limit: `429 { message }` with `Retry-After` (seconds). Counted in memory per machine (`RATE_LIMIT_ENABLED=false` turns it off).
+
 | Method | Path | Description |
 |---|---|---|
 | `POST` | `/auth/register` | `{ username, email, password, language? }` → `201` and a verification link by email (Resend; `503` when it can't be sent, nothing is saved then). `409 "Email already registered."` when another account has verified the address. Password 8–72 characters, no character three times in a row and at least 4 different characters; usernames with rude words → `400`. `409 "Username already taken."` also when the name differs only in case (`mike` vs `Mike`) |

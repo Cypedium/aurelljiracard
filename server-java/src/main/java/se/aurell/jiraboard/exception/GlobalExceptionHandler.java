@@ -3,6 +3,7 @@ package se.aurell.jiraboard.exception;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.NestedExceptionUtils;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -27,6 +28,14 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ApiException.class)
     ResponseEntity<MessageResponse> handleApi(ApiException e) {
         return respond(e.getStatus(), e.getMessage());
+    }
+
+    // Rate limits: the client may try again after Retry-After seconds
+    @ExceptionHandler(TooManyRequestsException.class)
+    ResponseEntity<MessageResponse> handleTooManyRequests(TooManyRequestsException e) {
+        return ResponseEntity.status(e.getStatus())
+                .header(HttpHeaders.RETRY_AFTER, Long.toString(e.getRetryAfterSeconds()))
+                .body(new MessageResponse(e.getMessage()));
     }
 
     // Bean Validation on request bodies: return the first violation

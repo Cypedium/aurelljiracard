@@ -18,6 +18,8 @@ import se.aurell.jiraboard.dto.TokenResponse;
 import se.aurell.jiraboard.dto.VerificationEmailRequest;
 import se.aurell.jiraboard.dto.VerifyEmailRequest;
 import se.aurell.jiraboard.entity.Feature;
+import se.aurell.jiraboard.security.RateLimit;
+import se.aurell.jiraboard.security.RateLimited;
 import se.aurell.jiraboard.security.ReadOnlyExempt;
 import se.aurell.jiraboard.security.RequiresFeature;
 import se.aurell.jiraboard.service.AuthService;
@@ -27,6 +29,8 @@ import se.aurell.jiraboard.service.PasswordResetService;
 /**
  * Public routes; every other controller requires a valid access token.
  * {@code @ReadOnlyExempt}: still works in read-only mode, so users can log in and out.
+ * {@code @RateLimited}: per client IP (429 with Retry-After); login and verification-email also count failed
+ * passwords per account (LoginAttempts).
  */
 @RestController
 @RequestMapping("/auth")
@@ -50,6 +54,7 @@ public class AuthController {
      * 503 when the email can't be sent (nothing is saved then).
      */
     @RequiresFeature(Feature.REGISTER)
+    @RateLimited(RateLimit.REGISTER)
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
     public MessageResponse register(@Valid @RequestBody RegisterRequest request) {
@@ -63,6 +68,7 @@ public class AuthController {
      * "Please verify your email address." until the email is verified. Starts a new refresh token family.
      */
     @ReadOnlyExempt
+    @RateLimited(RateLimit.LOGIN)
     @PostMapping("/login")
     public TokenResponse login(@Valid @RequestBody LoginRequest request) {
         return authService.login(request);
@@ -75,6 +81,7 @@ public class AuthController {
      * Works in read-only mode, so older accounts can still get in.
      */
     @ReadOnlyExempt
+    @RateLimited(RateLimit.EMAIL)
     @PostMapping("/verification-email")
     public MessageResponse verificationEmail(@Valid @RequestBody VerificationEmailRequest request) {
         authService.sendVerificationEmail(request);
@@ -83,6 +90,7 @@ public class AuthController {
 
     /** The token from the emailed link. 400 unknown, used or expired link; 409 another account verified the address. */
     @ReadOnlyExempt
+    @RateLimited(RateLimit.LINK)
     @PostMapping("/verify-email")
     public MessageResponse verifyEmail(@Valid @RequestBody VerifyEmailRequest request) {
         emailVerificationService.verify(request.token());
@@ -95,6 +103,7 @@ public class AuthController {
      * Works in read-only mode, like login.
      */
     @ReadOnlyExempt
+    @RateLimited(RateLimit.EMAIL)
     @PostMapping("/forgot-password")
     public MessageResponse forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
         passwordResetService.sendLink(request.email(), request.language());
@@ -106,6 +115,7 @@ public class AuthController {
      * 400 unknown, used or expired link, or a password that breaks the rules (same as register).
      */
     @ReadOnlyExempt
+    @RateLimited(RateLimit.LINK)
     @PostMapping("/reset-password")
     public MessageResponse resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
         passwordResetService.reset(request.token(), request.password());
@@ -114,6 +124,7 @@ public class AuthController {
 
     // Sign in with Google; creates the user on first sign-in (AuthService checks registration and read-only mode then)
     @ReadOnlyExempt
+    @RateLimited(RateLimit.SESSION)
     @PostMapping("/google")
     public TokenResponse google(@Valid @RequestBody GoogleCredentialRequest request) {
         return authService.googleLogin(request.credential());
@@ -132,6 +143,7 @@ public class AuthController {
      * invalid, revoked or reused one (a reused token also revokes that login).
      */
     @ReadOnlyExempt
+    @RateLimited(RateLimit.SESSION)
     @PostMapping("/refresh")
     public TokenResponse refresh(@RequestBody(required = false) RefreshTokenRequest request) {
         return authService.refresh(request == null ? null : request.refreshToken());
