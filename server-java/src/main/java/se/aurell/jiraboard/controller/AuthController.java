@@ -7,11 +7,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import se.aurell.jiraboard.dto.ForgotPasswordRequest;
 import se.aurell.jiraboard.dto.GoogleCredentialRequest;
 import se.aurell.jiraboard.dto.LoginRequest;
 import se.aurell.jiraboard.dto.MessageResponse;
 import se.aurell.jiraboard.dto.RefreshTokenRequest;
 import se.aurell.jiraboard.dto.RegisterRequest;
+import se.aurell.jiraboard.dto.ResetPasswordRequest;
 import se.aurell.jiraboard.dto.TokenResponse;
 import se.aurell.jiraboard.dto.VerificationEmailRequest;
 import se.aurell.jiraboard.dto.VerifyEmailRequest;
@@ -20,6 +22,7 @@ import se.aurell.jiraboard.security.ReadOnlyExempt;
 import se.aurell.jiraboard.security.RequiresFeature;
 import se.aurell.jiraboard.service.AuthService;
 import se.aurell.jiraboard.service.EmailVerificationService;
+import se.aurell.jiraboard.service.PasswordResetService;
 
 /**
  * Public routes; every other controller requires a valid access token.
@@ -31,10 +34,13 @@ public class AuthController {
 
     private final AuthService authService;
     private final EmailVerificationService emailVerificationService;
+    private final PasswordResetService passwordResetService;
 
-    public AuthController(AuthService authService, EmailVerificationService emailVerificationService) {
+    public AuthController(AuthService authService, EmailVerificationService emailVerificationService,
+            PasswordResetService passwordResetService) {
         this.authService = authService;
         this.emailVerificationService = emailVerificationService;
+        this.passwordResetService = passwordResetService;
     }
 
     /**
@@ -81,6 +87,29 @@ public class AuthController {
     public MessageResponse verifyEmail(@Valid @RequestBody VerifyEmailRequest request) {
         emailVerificationService.verify(request.token());
         return new MessageResponse("Email verified. You can log in now.");
+    }
+
+    /**
+     * Emails a password reset link (1 hour, works once) if a password account has verified this address.
+     * Always the same 200, so it doesn't reveal who has an account; 400 invalid address, 503 email not configured.
+     * Works in read-only mode, like login.
+     */
+    @ReadOnlyExempt
+    @PostMapping("/forgot-password")
+    public MessageResponse forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        passwordResetService.sendLink(request.email(), request.language());
+        return new MessageResponse("If an account has this email address, we have sent it a link to reset the password.");
+    }
+
+    /**
+     * The token from the emailed link and the new password. Logs the user out on every device.
+     * 400 unknown, used or expired link, or a password that breaks the rules (same as register).
+     */
+    @ReadOnlyExempt
+    @PostMapping("/reset-password")
+    public MessageResponse resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        passwordResetService.reset(request.token(), request.password());
+        return new MessageResponse("Your password has been changed. You can log in now.");
     }
 
     // Sign in with Google; creates the user on first sign-in (AuthService checks registration and read-only mode then)

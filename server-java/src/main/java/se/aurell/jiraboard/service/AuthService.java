@@ -30,9 +30,6 @@ import se.aurell.jiraboard.security.JwtService;
 @Service
 public class AuthService {
 
-    // bcrypt ignores bytes beyond 72, so multi-byte passwords are checked by byte length too
-    private static final int PASSWORD_MAX_BYTES = 72;
-
     private static final String INVALID_REFRESH_MESSAGE = "Invalid refresh token";
 
     // Same limit as RegisterRequest
@@ -70,15 +67,10 @@ public class AuthService {
 
     @Transactional
     public void register(RegisterRequest request) {
-        if (request.password().getBytes(StandardCharsets.UTF_8).length > PASSWORD_MAX_BYTES) {
-            throw ApiException.badRequest(CredentialRules.PASSWORD_LENGTH_MESSAGE);
-        }
         if (CredentialRules.isRudeUsername(request.username())) {
             throw ApiException.badRequest(CredentialRules.RUDE_USERNAME_MESSAGE);
         }
-        if (CredentialRules.isRepetitivePassword(request.password())) {
-            throw ApiException.badRequest(CredentialRules.PASSWORD_REPEAT_MESSAGE);
-        }
+        CredentialRules.requireValidNewPassword(request.password());
         Language language = request.language() == null ? null : Language.parse(request.language())
                 .orElseThrow(() -> ApiException.badRequest(LanguageRequest.MESSAGE));
         // "mike" is taken if "Mike" exists

@@ -42,6 +42,7 @@ abstract class ApiIntegrationTest {
 
     static final String PASSWORD = "secret123";
     static final String LINK_PREFIX = "http://localhost:3000/verify-email/";
+    static final String RESET_LINK_PREFIX = "http://localhost:3000/reset-password/";
 
     @Autowired
     MockMvc mvc;
@@ -66,6 +67,7 @@ abstract class ApiIntegrationTest {
     @BeforeEach
     void stubEmailLinks() {
         when(emailSender.verificationLink(anyString())).thenAnswer(call -> LINK_PREFIX + call.getArgument(0));
+        when(emailSender.passwordResetLink(anyString())).thenAnswer(call -> RESET_LINK_PREFIX + call.getArgument(0));
     }
 
     @BeforeEach
@@ -130,6 +132,13 @@ abstract class ApiIntegrationTest {
         ArgumentCaptor<String> link = ArgumentCaptor.forClass(String.class);
         verify(emailSender, atLeastOnce()).sendVerification(eq(email), anyString(), link.capture(), any());
         return link.getValue().substring(LINK_PREFIX.length());
+    }
+
+    /** The token in the last password reset link sent to the address. */
+    String lastResetToken(String email) {
+        ArgumentCaptor<String> link = ArgumentCaptor.forClass(String.class);
+        verify(emailSender, atLeastOnce()).sendPasswordReset(eq(email), anyString(), link.capture(), any());
+        return link.getValue().substring(RESET_LINK_PREFIX.length());
     }
 
     /** Registers the user and returns the login response body ({ accessToken, refreshToken }). */

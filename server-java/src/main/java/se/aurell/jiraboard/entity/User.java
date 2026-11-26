@@ -105,6 +105,11 @@ public class User {
         this.emailVerifiedAt = now;
     }
 
+    /** A reset by email link (PasswordResetService); the caller also revokes the user's tokens. */
+    public void changePassword(String passwordHash) {
+        this.passwordHash = passwordHash;
+    }
+
     public boolean isEmailVerified() {
         return emailVerifiedAt != null;
     }

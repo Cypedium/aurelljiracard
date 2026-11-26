@@ -20,6 +20,22 @@ class EmailSenderTest {
     }
 
     @Test
+    void resetLinkPointsToTheFrontendsResetPage() {
+        EmailSender sender = new EmailSender(new MailProperties("key", "AurellTodo <a@example.com>", "https://app.example/"));
+
+        assertThat(sender.passwordResetLink("abc")).isEqualTo("https://app.example/reset-password/abc");
+    }
+
+    @Test
+    void withoutAnApiKeyNoResetEmailIsSent() {
+        EmailSender sender = new EmailSender(new MailProperties("", "AurellTodo <a@example.com>", "https://app.example"));
+
+        assertThatThrownBy(() -> sender.sendPasswordReset("a@example.com", "alice", "https://x", Language.SV))
+                .isInstanceOf(ApiException.class)
+                .hasMessage(EmailSender.NOT_CONFIGURED_MESSAGE);
+    }
+
+    @Test
     void logsOnlyResendsErrorCode() {
         assertThat(EmailSender.errorName(
                 "{\"statusCode\":422,\"name\":\"invalid_from_address\",\"message\":\"Invalid `from` field.\"}"))
