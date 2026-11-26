@@ -7,9 +7,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import checkPasswordStrength from "../utils/checkPasswordStrength";
 import { registerUser } from "../api/endpoints";
-import { apiErrorMessage, isConflictError } from "../utils/apiError";
+import { apiErrorMessage, apiMessage, isConflictError } from "../utils/apiError";
 import { USERNAME_TAKEN_MESSAGE } from "../utils/username";
-import { registerSchema, type RegisterValues } from "../utils/register";
+import { EMAIL_TAKEN_MESSAGE, registerSchema, type RegisterValues } from "../utils/register";
 import { AUTH_FORM_CLASS, FIELD_ERROR_CLASS, FORM_ITEM_CLASS, LABEL_CLASS, PASSWORD_STRENGTH_CLASS, PASSWORD_TOGGLE_CLASS } from "../utils/styles";
 import { Button } from "./ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "./ui/form";
@@ -19,11 +19,11 @@ import { useLanguage } from '../hooks/useLanguage';
 import { msg } from '../utils/i18n';
 
 export default function RegisterForm() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const router = useRouter();
   const form = useForm<RegisterValues>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { username: "", password: "", confirmPassword: "" },
+    defaultValues: { username: "", email: "", password: "", confirmPassword: "" },
   });
   const password = form.watch("password");
   const strength = checkPasswordStrength(password);
@@ -31,22 +31,40 @@ export default function RegisterForm() {
   const passwordType = showPassword ? "text" : "password";
   const toggleLabel = showPassword ? t("Hide password") : t("Show password");
 
-  const handleRegister = async ({ username, password }: RegisterValues) => {
-    try {
-      const res = await registerUser({ username, password });
+  // The address the verification link was sent to; the form is replaced by "check your email"
+  const [sentTo, setSentTo] = useState<string | null>(null);
 
-      // The toaster is in the layout, so it stays visible on /login
-      toast.success(t(res.data.message));
-      router.push(ROUTES.login);
+  const handleRegister = async ({ username, email, password }: RegisterValues) => {
+    try {
+      await registerUser({ username, email, password, language });
+      setSentTo(email);
     } catch (err) {
-      // A taken name (409, also with different case: "mike" when "Mike" exists) is shown under the field, like the issue key
+      // A taken name (409, also with different case: "mike" when "Mike" exists) or a verified address is shown under its field
       if (isConflictError(err)) {
-        form.setError("username", { message: apiErrorMessage(err, USERNAME_TAKEN_MESSAGE) }, { shouldFocus: true });
+        const field = apiMessage(err) === EMAIL_TAKEN_MESSAGE ? "email" : "username";
+        form.setError(field, { message: apiErrorMessage(err, USERNAME_TAKEN_MESSAGE) }, { shouldFocus: true });
         return;
       }
       toast.error(apiErrorMessage(err, msg("Registration failed. Please try again.")));
     }
   };
+
+  if (sentTo) {
+    return (
+      <div role="status" className={AUTH_FORM_CLASS}>
+        <h2 className="text-xl font-semibold">{t("Check your email")}</h2>
+        <p className="mt-3 text-jira-secondary">
+          {t("We sent a link to {email}. Open it to verify your address, then log in.", { email: sentTo })}
+        </p>
+        <p className="mt-2 text-xs text-jira-secondary">
+          {t("No email? Check your spam folder, or log in to get a new link.")}
+        </p>
+        <Button className="mt-6 w-full" onClick={() => router.push(ROUTES.login)}>
+          {t("Go to login")}
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <Form {...form}>
@@ -61,6 +79,20 @@ export default function RegisterForm() {
               <FormLabel className={LABEL_CLASS}>{t("Username")}</FormLabel>
               <FormControl>
                 <Input type="text" autoComplete="username" className="bg-white" {...field} />
+              </FormControl>
+              <FormMessage className={FIELD_ERROR_CLASS} />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem className={FORM_ITEM_CLASS}>
+              <FormLabel className={LABEL_CLASS}>{t("Email")}</FormLabel>
+              <FormControl>
+                <Input type="email" autoComplete="email" className="bg-white" {...field} />
               </FormControl>
               <FormMessage className={FIELD_ERROR_CLASS} />
             </FormItem>

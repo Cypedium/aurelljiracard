@@ -21,6 +21,20 @@ const notBlank = (value: string) => value.trim().length > 0;
 
 export const PASSWORD_MISMATCH_MESSAGE = msg("Passwords do not match.");
 
+// Same pattern, limit and message as server-java RegisterRequest (shared/contract.json has samples)
+export const EMAIL_MAX_LENGTH = 254;
+export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+export const EMAIL_MESSAGE = msg("Enter a valid email address (max 254 characters).");
+
+const email = z.string().trim().max(EMAIL_MAX_LENGTH, EMAIL_MESSAGE).regex(EMAIL_PATTERN, EMAIL_MESSAGE);
+
+// 409 when another account has verified the address (server-java EmailVerificationService)
+export const EMAIL_TAKEN_MESSAGE = "Email already registered.";
+
+// Login answers 403 with one of these until the email is verified (server-java AuthService)
+export const EMAIL_MISSING_MESSAGE = "Please add your email address.";
+export const EMAIL_NOT_VERIFIED_MESSAGE = "Please verify your email address.";
+
 export const registerSchema = z
   .object({
     username: z
@@ -28,6 +42,7 @@ export const registerSchema = z
       .refine(notBlank, USERNAME_MESSAGE)
       .max(USERNAME_MAX_LENGTH, USERNAME_MESSAGE)
       .refine((u) => !isRudeUsername(u), RUDE_USERNAME_MESSAGE),
+    email,
     password: z
       .string()
       .min(MIN_PASSWORD_LENGTH, PASSWORD_MESSAGE)
@@ -49,8 +64,14 @@ export const registerSchema = z
 export type RegisterValues = z.infer<typeof registerSchema>;
 
 export const loginSchema = z.object({
+  // Username or email address
   username: z.string().refine(notBlank, msg("Username is required.")),
   password: z.string().min(1, msg("Password is required.")),
 });
 
 export type LoginValues = z.infer<typeof loginSchema>;
+
+// Login → "add your email" (older accounts) or "use another address" (a typo at registration)
+export const emailSchema = z.object({ email });
+
+export type EmailValues = z.infer<typeof emailSchema>;

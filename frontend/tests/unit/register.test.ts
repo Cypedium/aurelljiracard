@@ -1,16 +1,18 @@
 import { describe, expect, it } from "@jest/globals";
 import {
+  EMAIL_MESSAGE,
   MAX_PASSWORD_LENGTH,
   PASSWORD_MISMATCH_MESSAGE,
   PASSWORD_REPEAT_MESSAGE,
   USERNAME_MAX_LENGTH,
+  emailSchema,
   isRepetitivePassword,
   loginSchema,
   registerSchema,
 } from "../../app/utils/register";
 import { RUDE_USERNAME_MESSAGE, isRudeUsername } from "../../app/utils/username";
 
-const valid = { username: "alice", password: "secret123", confirmPassword: "secret123" };
+const valid = { username: "alice", email: "alice@example.com", password: "secret123", confirmPassword: "secret123" };
 
 const firstError = (schema: typeof registerSchema | typeof loginSchema, form: object) => {
   const result = schema.safeParse(form);
@@ -46,6 +48,18 @@ describe("registerSchema", () => {
     ]);
   });
 
+  it.each(["", "alice", "alice@example", "a b@example.com", `${"x".repeat(243)}@example.com`])(
+    "rejects email %j",
+    (email) => {
+      expect(firstError(registerSchema, { ...valid, email })).toBe(EMAIL_MESSAGE);
+    },
+  );
+
+  it("trims the email", () => {
+    const result = registerSchema.safeParse({ ...valid, email: "  alice@example.com " });
+    expect(result.data?.email).toBe("alice@example.com");
+  });
+
   it("reports a mismatch together with other field errors", () => {
     const result = registerSchema.safeParse({ ...valid, username: "", confirmPassword: "other" });
     expect(result.error?.issues.map((i) => i.path[0])).toEqual(["username", "confirmPassword"]);
@@ -77,5 +91,12 @@ describe("loginSchema", () => {
     expect(firstError(loginSchema, { username: "alice", password: "x" })).toBeNull();
     expect(firstError(loginSchema, { username: " ", password: "x" })).toBe("Username is required.");
     expect(firstError(loginSchema, { username: "alice", password: "" })).toBe("Password is required.");
+  });
+});
+
+describe("emailSchema", () => {
+  it("needs a valid address", () => {
+    expect(emailSchema.safeParse({ email: "alice@example.com" }).success).toBe(true);
+    expect(emailSchema.safeParse({ email: "alice" }).success).toBe(false);
   });
 });
