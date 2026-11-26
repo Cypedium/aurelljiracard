@@ -7,7 +7,7 @@ import checkPasswordStrength from "../utils/checkPasswordStrength";
 import { registerUser } from "../api/endpoints";
 import { apiErrorMessage, isConflictError } from "../utils/apiError";
 import { USERNAME_TAKEN_MESSAGE } from "../utils/username";
-import { readAsDataUrl, registerSchema, type RegisterValues } from "../utils/register";
+import { registerSchema, type RegisterValues } from "../utils/register";
 import { AUTH_FORM_CLASS, FIELD_ERROR_CLASS, FORM_ITEM_CLASS, LABEL_CLASS, PASSWORD_STRENGTH_CLASS } from "../utils/styles";
 import { Button } from "./ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "./ui/form";
@@ -21,16 +21,14 @@ export default function RegisterForm() {
   const router = useRouter();
   const form = useForm<RegisterValues>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { username: "", password: "", picture: null },
+    defaultValues: { username: "", password: "" },
   });
   const password = form.watch("password");
   const strength = checkPasswordStrength(password);
 
-  const handleRegister = async ({ username, password, picture }: RegisterValues) => {
+  const handleRegister = async ({ username, password }: RegisterValues) => {
     try {
-      const pictureUrl = picture ? await readAsDataUrl(picture) : "";
-
-      const res = await registerUser({ username, password, pictureUrl });
+      const res = await registerUser({ username, password });
 
       // The toaster is in the layout, so it stays visible on /login
       toast.success(t(res.data.message));
@@ -49,29 +47,6 @@ export default function RegisterForm() {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleRegister)} className={AUTH_FORM_CLASS} noValidate>
         <h2 className="text-xl font-semibold">{t("Register")}</h2>
-
-        <FormField
-          control={form.control}
-          name="picture"
-          render={({ field: { name, onBlur, onChange, ref } }) => (
-            <FormItem className={FORM_ITEM_CLASS}>
-              <FormLabel className={LABEL_CLASS}>{t("Profile picture")}</FormLabel>
-              <FormControl>
-                {/* File inputs can't be controlled with value, only read in onChange */}
-                <Input
-                  type="file"
-                  accept="image/*"
-                  className="bg-white"
-                  name={name}
-                  ref={ref}
-                  onBlur={onBlur}
-                  onChange={(e) => onChange(e.target.files?.[0] ?? null)}
-                />
-              </FormControl>
-              <FormMessage className={FIELD_ERROR_CLASS} />
-            </FormItem>
-          )}
-        />
 
         <FormField
           control={form.control}
