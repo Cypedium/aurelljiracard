@@ -85,6 +85,9 @@ See [`.env.example`](.env.example). Spring does not read `.env` files; export th
 | `PORT` | Default `8080` |
 | `CLIENT_URL` | Comma-separated CORS origins. Default `http://localhost:3000,https://aurelljiraboard.fly.dev` |
 | `GOOGLE_CLIENT_ID` | Optional. OAuth client id for Sign in with Google (same as the frontend's `NEXT_PUBLIC_GOOGLE_CLIENT_ID`). Empty = `/auth/google` and `/user/google` answer `503` |
+| `RESEND_API_KEY` | Secret. [Resend](https://resend.com) API key for the verification emails. Empty = registration and `/auth/verification-email` answer `503` |
+| `MAIL_FROM` | Sender, e.g. `Aurello <noreply@your-domain>`; the domain must be verified in Resend. Default `Aurello <onboarding@resend.dev>` (only reaches the Resend account's own inbox) |
+| `APP_URL` | The frontend's address for the links in the emails (`<APP_URL>/verify-email/<token>`). Default `http://localhost:3000` |
 
 The app refuses to start if a JWT secret is missing or too short.
 
@@ -102,6 +105,9 @@ fly secrets set -a aurelljiraboardjava DB_URL=... DB_USERNAME=... DB_PASSWORD=..
   JWT_SECRET=... REFRESH_SECRET=... CLIENT_URL=https://aurelljiraboard.fly.dev
 # Optional, for Sign in with Google (not a secret, but set here with the rest)
 fly secrets set -a aurelljiraboardjava GOOGLE_CLIENT_ID=<id>.apps.googleusercontent.com
+# Email verification (required: registration answers 503 without them)
+fly secrets set -a aurelljiraboardjava RESEND_API_KEY=re_... MAIL_FROM="Aurello <noreply@your-domain>" \
+  APP_URL=https://aurelljiraboard.fly.dev
 ```
 
 Deploy (not done by CI yet):

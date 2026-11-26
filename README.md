@@ -57,8 +57,10 @@ All routes except `/auth/*` and `/health` require `Authorization: Bearer <access
 
 | Method | Path | Description |
 |---|---|---|
-| `POST` | `/auth/register` | `{ username, password }` → `201`. Password 8–72 characters, no character three times in a row and at least 4 different characters; usernames with rude words → `400`. `409 "Username already taken."` also when the name differs only in case (`mike` vs `Mike`) |
-| `POST` | `/auth/login` | `{ username, password }` → `{ accessToken, refreshToken }`. The username is matched case-insensitively (exact match first); the token carries the stored name |
+| `POST` | `/auth/register` | `{ username, email, password, language? }` → `201` and a verification link by email (Resend; `503` when it can't be sent, nothing is saved then). `409 "Email already registered."` when another account has verified the address. Password 8–72 characters, no character three times in a row and at least 4 different characters; usernames with rude words → `400`. `409 "Username already taken."` also when the name differs only in case (`mike` vs `Mike`) |
+| `POST` | `/auth/login` | `{ username, password }` → `{ accessToken, refreshToken }`. `username` may also be the email address. The username is matched case-insensitively (exact match first); the token carries the stored name. `403 "Please add your email address."` / `"Please verify your email address."` until the email is verified (refresh answers the same) |
+| `POST` | `/auth/verification-email` | `{ username, password, email? }` → a new verification link; `email` replaces the unverified address (required for older accounts without one). `409` already verified, `429` within a minute of the last link |
+| `POST` | `/auth/verify-email` | `{ token }` from the link (`/verify-email/<token>`, valid 24 h, once) → `200`; `400` invalid or expired |
 | `POST` | `/auth/refresh` | `{ refreshToken }` → new `{ accessToken, refreshToken }`. Each refresh token works once; sending a used one again revokes that login (`403`), other logins keep working |
 | `POST` | `/auth/logout` | `{ refreshToken }` → revokes all of the user's refresh tokens |
 | `POST` | `/auth/google` | `{ credential }` (Google's ID token) → `{ accessToken, refreshToken }`; the first sign-in creates a user named after the email address. `503` without `GOOGLE_CLIENT_ID` |
