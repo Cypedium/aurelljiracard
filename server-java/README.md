@@ -85,7 +85,7 @@ See [`.env.example`](.env.example). Spring does not read `.env` files; export th
 | `PORT` | Default `8080` |
 | `CLIENT_URL` | Comma-separated CORS origins. Default `http://localhost:3000,https://aurelljiraboard.fly.dev` |
 | `GOOGLE_CLIENT_ID` | Optional. OAuth client id for Sign in with Google (same as the frontend's `NEXT_PUBLIC_GOOGLE_CLIENT_ID`). Empty = `/auth/google` and `/user/google` answer `503` |
-| `RESEND_API_KEY` | Secret. [Resend](https://resend.com) API key for the verification emails. Empty = registration and `/auth/verification-email` answer `503` |
+| `RESEND_API_KEY` | Secret. [Resend](https://resend.com) API key for the verification and password reset emails. Empty = registration, `/auth/verification-email` and `/auth/forgot-password` answer `503` |
 | `MAIL_FROM` | Sender, e.g. `AurellTodo <noreply@your-domain>`; the domain must be verified in Resend. Default `AurellTodo <onboarding@resend.dev>` (only reaches the Resend account's own inbox) |
 | `APP_URL` | The frontend's address for the links in the emails (`<APP_URL>/verify-email/<token>`). Default `http://localhost:3000` |
 

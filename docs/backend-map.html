@@ -217,7 +217,7 @@ th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; colo
 <section id="data-model">
   <h2>Data model</h2>
   <figure>
-    <div class="scroll"><svg id="er" viewBox="0 0 1100 620" role="img" aria-label="Nine tables: each user owns one board; board_members links users to boards with a role; cards, board_columns and issue_types belong to a board; cards reference users by username and assignee; refresh_tokens and email_verifications belong to users; feature_switches records the admin who changed a switch"></svg></div>
+    <div class="scroll"><svg id="er" viewBox="0 0 1100 760" role="img" aria-label="Ten tables: each user owns one board; board_members links users to boards with a role; cards, board_columns and issue_types belong to a board; cards reference users by username and assignee; refresh_tokens, email_verifications and password_resets belong to users; feature_switches records the admin who changed a switch"></svg></div>
     <figcaption>Only <code>cards → users</code> and <code>refresh_tokens → users</code> are real foreign keys; deleting a user also deletes their refresh tokens. Renaming a user cascades into <code>cards.username</code> and <code>cards.assignee</code>; deleting a user sets their assigned cards to unassigned. <code>status</code> and <code>type</code> are plain strings, validated by <code>ColumnService.requireCardStatus</code> and <code>IssueTypeService.requireCardType</code>, and a list or type can only be deleted when no card uses it (409).</figcaption>
   </figure>
   <h3>Flyway migrations</h3>
@@ -392,6 +392,12 @@ const G = [
     { m: "POST", p: "/auth/verify-email", acc: "public", sum: "The token from the emailed link (frontend page /verify-email/[token]) marks the address verified.", edges: [["c-auth","s-auth"],["s-auth","r-user"],["r-user","t-users"]],
       steps: [["authz","permitAll","no token needed"],["s-auth","findById(SHA-256)","unknown, used or expired (24 h) → 400"],["s-auth","same address?","a link for an address the user has replaced → 400"],["t-users","email_verified_at = now","409 if another account verified it first (unique index)"],["s-auth","deleteByUser","every link of the user stops working"]],
       ok: ["200","{ message }"], bad: [["400","This verification link is invalid or has expired."],["409","Email already registered."]] },
+    { m: "POST", p: "/auth/forgot-password", acc: "public", sum: "Emails a password reset link (Resend) if a password account has verified the address. Always the same answer, so it doesn't reveal who has an account.", edges: [["c-auth","s-auth"],["s-auth","r-user"],["r-user","t-users"]],
+      steps: [["authz","permitAll","no token needed"],["c-auth","@Valid ForgotPasswordRequest","email, optional language for the email"],["s-auth","requireConfigured","503 only when RESEND_API_KEY / MAIL_FROM are missing, for every address"],["r-user","findByEmailIgnoreCase","verified address with a password; none, unverified or Google-only → nothing sent"],["s-auth","PasswordResetService.sendLink","at most one email a minute; on success the token's SHA-256 replaces the user's earlier links; a failed send is only logged"]],
+      ok: ["200","{ message } (always the same)"], bad: [["400","Enter a valid email address (max 254 characters)."],["503","Email is not configured."]] },
+    { m: "POST", p: "/auth/reset-password", acc: "public", sum: "The token from the emailed link (frontend page /reset-password/[token]) and a new password. Logs the user out on every device.", edges: [["c-auth","s-auth"],["s-auth","r-user"],["r-user","t-users"]],
+      steps: [["authz","permitAll","no token needed"],["c-auth","@Valid ResetPasswordRequest","token, password 8–72"],["s-auth","findById(SHA-256)","unknown, used or expired (1 h) → 400"],["s-auth","CredentialRules","72 bytes, no repeated characters (the link still works after a 400)"],["t-users","password_hash, token_version + 1","every refresh token stops working"],["s-auth","deleteByUser","every reset link of the user stops working"]],
+      ok: ["200","{ message }"], bad: [["400","This password reset link is invalid or has expired. / password rules"]] },
     { m: "POST", p: "/auth/login", acc: "public", sum: "Checks the password and issues an access + refresh token pair. Each login starts a new token family.", edges: [["c-auth","s-auth"],["s-auth","r-user"],["r-user","t-users"],["s-auth","s-jwt"],["s-auth","r-refresh"],["r-refresh","t-refresh"]],
       steps: [["authz","permitAll","no token needed"],["c-auth","@Valid LoginRequest","username (or email) + password"],["r-user","findByUsername","exact name first, then findFirstByUsernameIgnoreCase, then findByEmailIgnoreCase"],["s-auth","passwordEncoder.matches","wrong name or password give the same 401"],["s-auth","requireVerifiedEmail","no email or not verified → 403"],["r-user","markActive","sets last_active_at for the admin user list"],["s-jwt","issue tokens","access 15 min { id, username, role }, refresh 7 d { id, tokenVersion, jti }"],["t-refresh","save the jti","new family; the row lives as long as the token"]],
       ok: ["200","{ accessToken, refreshToken }"], bad: [["401","Invalid credentials."],["403","Please add your email address. / Please verify your email address."]] },
@@ -617,6 +623,7 @@ const T = {
   boards: [820, 400, ["id UUID PK", "owner_id FK → users UNIQUE", "invite_token_hash UNIQUE", "created_at"]],
   feature_switches: [430, 470, ["feature_key PK (writes = read-only)", "disabled BOOLEAN", "updated_at", "updated_by FK → users, SET NULL"]],
   email_verifications: [40, 470, ["token_hash PK (SHA-256 of the link)", "user_id FK → users, cascade", "email (the address it confirms)", "created_at (1 email per minute)", "expires_at (24 h)"]],
+  password_resets: [430, 620, ["token_hash PK (SHA-256 of the link)", "user_id FK → users, cascade", "created_at (1 email per minute)", "expires_at (1 h)"]],
   board_members: [40, 300, ["PK (board_id, user_id)", "board_id FK → boards, cascade", "user_id FK → users, cascade", "role user | admin", "joined_at"]],
 };
 const RH = 20, TW = 240;
@@ -643,6 +650,7 @@ rel("cards", 8, "board_columns", 0, "checked in ColumnService", true, true);
 rel("cards", 7, "issue_types", 0, "checked in IssueTypeService", true, true);
 rel("refresh_tokens", 2, "users", 0, "ON DELETE CASCADE", false, false);
 rel("email_verifications", 1, "users", 0, "ON DELETE CASCADE", false, false);
+rel("password_resets", 1, "users", 0, "ON DELETE CASCADE", false, false);
 rel("cards", 9, "boards", 0, "FK board_id", false, true);
 rel("boards", 1, "users", 0, "owner, cascade", false, false);
 rel("feature_switches", 3, "users", 0, "updated_by, SET NULL", false, false);
