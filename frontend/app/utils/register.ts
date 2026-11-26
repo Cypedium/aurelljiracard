@@ -35,6 +35,29 @@ export const EMAIL_TAKEN_MESSAGE = "Email already registered.";
 export const EMAIL_MISSING_MESSAGE = "Please add your email address.";
 export const EMAIL_NOT_VERIFIED_MESSAGE = "Please verify your email address.";
 
+// A new password and its confirmation (register, reset password)
+const newPassword = {
+  password: z
+    .string()
+    .min(MIN_PASSWORD_LENGTH, PASSWORD_MESSAGE)
+    .max(MAX_PASSWORD_LENGTH, PASSWORD_MESSAGE)
+    .refine((p) => !isRepetitivePassword(p), PASSWORD_REPEAT_MESSAGE),
+  // Frontend only: never sent to the backend
+  confirmPassword: z.string(),
+};
+
+const passwordsMatch = (v: { password: string; confirmPassword: string }) => v.password === v.confirmPassword;
+
+const passwordsMatchError = {
+  message: PASSWORD_MISMATCH_MESSAGE,
+  path: ["confirmPassword"],
+  // Also check while other fields have errors, so every error shows on the first submit
+  when: ({ value }: { value: unknown }) => {
+    const v = value as { password?: unknown; confirmPassword?: unknown };
+    return typeof v?.password === "string" && typeof v?.confirmPassword === "string";
+  },
+};
+
 export const registerSchema = z
   .object({
     username: z
@@ -43,25 +66,19 @@ export const registerSchema = z
       .max(USERNAME_MAX_LENGTH, USERNAME_MESSAGE)
       .refine((u) => !isRudeUsername(u), RUDE_USERNAME_MESSAGE),
     email,
-    password: z
-      .string()
-      .min(MIN_PASSWORD_LENGTH, PASSWORD_MESSAGE)
-      .max(MAX_PASSWORD_LENGTH, PASSWORD_MESSAGE)
-      .refine((p) => !isRepetitivePassword(p), PASSWORD_REPEAT_MESSAGE),
-    // Frontend only: never sent to the backend
-    confirmPassword: z.string(),
+    ...newPassword,
   })
-  .refine((v) => v.password === v.confirmPassword, {
-    message: PASSWORD_MISMATCH_MESSAGE,
-    path: ["confirmPassword"],
-    // Also check while other fields have errors, so every error shows on the first submit
-    when: ({ value }) => {
-      const v = value as { password?: unknown; confirmPassword?: unknown };
-      return typeof v?.password === "string" && typeof v?.confirmPassword === "string";
-    },
-  });
+  .refine(passwordsMatch, passwordsMatchError);
 
 export type RegisterValues = z.infer<typeof registerSchema>;
+
+// The page the password reset link opens
+export const resetPasswordSchema = z.object(newPassword).refine(passwordsMatch, passwordsMatchError);
+
+export type ResetPasswordValues = z.infer<typeof resetPasswordSchema>;
+
+// 400 from POST /auth/reset-password for an unknown, used or expired link (server-java PasswordResetService)
+export const RESET_LINK_INVALID_MESSAGE = "This password reset link is invalid or has expired.";
 
 export const loginSchema = z.object({
   // Username or email address

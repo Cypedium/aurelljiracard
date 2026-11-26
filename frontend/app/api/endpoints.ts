@@ -90,6 +90,14 @@ export const requestVerificationEmail = (request: VerificationEmailRequest) =>
 // The token from the emailed link (/verify-email/[token])
 export const verifyEmail = (token: string) => api.post<{ message: string }>("/auth/verify-email", { token });
 
+// Forgot password: always the same 200 (it doesn't reveal who has an account); language = for the email
+export const forgotPassword = (email: string, language: Language) =>
+  api.post<{ message: string }>("/auth/forgot-password", { email, language });
+
+// The token from the emailed link (/reset-password/[token]) and the new password; logs out every device
+export const resetPassword = (token: string, password: string) =>
+  api.post<{ message: string }>("/auth/reset-password", { token, password });
+
 // Sign in with Google: credential = the ID token from Google's button; the first sign-in creates the user
 export const googleLogin = (credential: string) =>
   api.post<Tokens>("/auth/google", { credential });

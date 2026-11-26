@@ -20,7 +20,7 @@ import se.aurell.jiraboard.config.MailProperties;
 import se.aurell.jiraboard.entity.Language;
 import se.aurell.jiraboard.exception.ApiException;
 
-/** Sends the verification email through Resend's HTTP API (no SDK). Tests replace this bean with a mock. */
+/** Sends the verification and password reset emails through Resend's HTTP API (no SDK). Tests mock this bean. */
 @Component
 public class EmailSender {
 
@@ -48,15 +48,33 @@ public class EmailSender {
         return StringUtils.trimTrailingCharacter(properties.appUrl(), '/') + "/verify-email/" + token;
     }
 
+    /** The link in the reset email; the frontend's /reset-password/[token] page asks for the new password. */
+    public String passwordResetLink(String token) {
+        return StringUtils.trimTrailingCharacter(properties.appUrl(), '/') + "/reset-password/" + token;
+    }
+
+    /** 503 if RESEND_API_KEY or MAIL_FROM is not set. */
+    public void requireConfigured() {
+        if (!StringUtils.hasText(properties.resendApiKey()) || !StringUtils.hasText(properties.from())) {
+            throw ApiException.serviceUnavailable(NOT_CONFIGURED_MESSAGE);
+        }
+    }
+
     /**
      * @throws ApiException 503 if RESEND_API_KEY or MAIL_FROM is not set, or Resend refuses or can't be reached
      *         (the caller's transaction rolls back, so the user can simply try again)
      */
     public void sendVerification(String to, String username, String link, Language language) {
-        if (!StringUtils.hasText(properties.resendApiKey()) || !StringUtils.hasText(properties.from())) {
-            throw ApiException.serviceUnavailable(NOT_CONFIGURED_MESSAGE);
-        }
-        Text text = language == Language.SV ? Text.SV : Text.EN;
+        send(to, username, link, language == Language.SV ? Text.VERIFY_SV : Text.VERIFY_EN);
+    }
+
+    /** Same errors as sendVerification. */
+    public void sendPasswordReset(String to, String username, String link, Language language) {
+        send(to, username, link, language == Language.SV ? Text.RESET_SV : Text.RESET_EN);
+    }
+
+    private void send(String to, String username, String link, Text text) {
+        requireConfigured();
         String name = HtmlUtils.htmlEscape(username);
         String href = HtmlUtils.htmlEscape(link);
         String html = "<p>" + text.greeting + " " + name + ",</p>"
@@ -75,7 +93,7 @@ public class EmailSender {
                     .toBodilessEntity();
         } catch (RestClientResponseException e) {
             // Status and Resend's error code only: the error message may echo the address
-            log.warn("Resend refused the verification email: HTTP {} ({})", e.getStatusCode().value(),
+            log.warn("Resend refused the {} email: HTTP {} ({})", text.kind, e.getStatusCode().value(),
                     errorName(e.getResponseBodyAsString()));
             throw ApiException.serviceUnavailable(SEND_FAILED_MESSAGE);
         } catch (RestClientException e) {
@@ -90,24 +108,37 @@ public class EmailSender {
         return m.find() ? m.group(1) : "unknown";
     }
 
-    // The email in the user's language (English until they pick one)
+    // The emails in the user's language (English until they pick one)
     private enum Text {
-        EN("Verify your email for AurellTodo", "Hi",
+        VERIFY_EN("verification", "Verify your email for AurellTodo", "Hi",
                 "Confirm your email address to start using AurellTodo. The link works for 24 hours.",
                 "Verify email",
                 "If you didn't create an account, you can ignore this email."),
-        SV("Verifiera din e-post för AurellTodo", "Hej",
+        VERIFY_SV("verification", "Verifiera din e-post för AurellTodo", "Hej",
                 "Bekräfta din e-postadress för att börja använda AurellTodo. Länken fungerar i 24 timmar.",
                 "Verifiera e-post",
-                "Om du inte har skapat något konto kan du strunta i det här mejlet.");
+                "Om du inte har skapat något konto kan du strunta i det här mejlet."),
+        RESET_EN("password reset", "Reset your AurellTodo password", "Hi",
+                "Someone asked to reset the password of your AurellTodo account. Choose a new password with the link"
+                        + " below. It works once, for 1 hour.",
+                "Choose a new password",
+                "If you didn't ask for this, you can ignore this email. Your password stays the same."),
+        RESET_SV("password reset", "Återställ ditt lösenord för AurellTodo", "Hej",
+                "Någon har bett om att återställa lösenordet för ditt AurellTodo-konto. Välj ett nytt lösenord med"
+                        + " länken nedan. Den fungerar en gång, i 1 timme.",
+                "Välj ett nytt lösenord",
+                "Om det inte var du kan du strunta i det här mejlet. Ditt lösenord är oförändrat.");
 
+        // For the log only
+        final String kind;
         final String subject;
         final String greeting;
         final String body;
         final String button;
         final String footer;
 
-        Text(String subject, String greeting, String body, String button, String footer) {
+        Text(String kind, String subject, String greeting, String body, String button, String footer) {
+            this.kind = kind;
             this.subject = subject;
             this.greeting = greeting;
             this.body = body;

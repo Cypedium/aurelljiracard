@@ -45,6 +45,7 @@ class FeatureCoverageTest extends ApiIntegrationTest {
     private static final Set<String> READ_ONLY_EXEMPT = Set.of(
             "POST /auth/login", "POST /auth/refresh", "POST /auth/logout", "POST /auth/google",
             "POST /auth/verification-email", "POST /auth/verify-email",
+            "POST /auth/forgot-password", "POST /auth/reset-password",
             "PATCH /user/{id}", "DELETE /user/{id}", "POST /user/{id}/logout", "PUT /feature/{key}");
 
     @Autowired

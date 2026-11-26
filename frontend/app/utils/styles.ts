@@ -54,6 +54,10 @@ export const FORM_ITEM_CLASS = "gap-0";
 export const FIELD_ERROR_CLASS = "mt-1 text-xs text-jira-danger";
 export const SECTION_PADDING = "px-6 max-[480px]:px-4";
 // Login and register: a white card in the same style as the card form
+// "Back to login" under the auth forms, and a link that looks like the primary button
+export const AUTH_LINK_CLASS = "mt-4 self-center text-sm text-jira-secondary hover:underline";
+export const AUTH_BUTTON_LINK_CLASS =
+  "mt-6 inline-block rounded-[3px] bg-jira-primary px-3 py-1.5 text-center text-sm font-medium text-white hover:bg-jira-primary-hover";
 export const AUTH_FORM_CLASS =
   "mx-4 flex w-full max-w-md flex-col rounded-xl bg-white p-6 font-jira text-sm text-jira-text shadow-[0_8px_12px_rgba(9,30,66,0.15),0_0_1px_rgba(9,30,66,0.31)]";
 

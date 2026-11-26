@@ -9,6 +9,7 @@ import {
   isRepetitivePassword,
   loginSchema,
   registerSchema,
+  resetPasswordSchema,
 } from "../../app/utils/register";
 import { RUDE_USERNAME_MESSAGE, isRudeUsername } from "../../app/utils/username";
 
@@ -98,5 +99,22 @@ describe("emailSchema", () => {
   it("needs a valid address", () => {
     expect(emailSchema.safeParse({ email: "alice@example.com" }).success).toBe(true);
     expect(emailSchema.safeParse({ email: "alice" }).success).toBe(false);
+  });
+});
+
+describe("resetPasswordSchema", () => {
+  const issues = (form: object) => {
+    const result = resetPasswordSchema.safeParse(form);
+    return result.success ? [] : result.error.issues.map((i) => i.message);
+  };
+
+  it("has the register rules for the new password", () => {
+    expect(issues({ password: "secret123", confirmPassword: "secret123" })).toEqual([]);
+    expect(issues({ password: "short", confirmPassword: "short" })).toEqual(["Password must be 8-72 characters."]);
+    expect(issues({ password: "aaab1234", confirmPassword: "aaab1234" })).toEqual([PASSWORD_REPEAT_MESSAGE]);
+  });
+
+  it("needs the same password twice", () => {
+    expect(issues({ password: "secret123", confirmPassword: "secret124" })).toEqual([PASSWORD_MISMATCH_MESSAGE]);
   });
 });
