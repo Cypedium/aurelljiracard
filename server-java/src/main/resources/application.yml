@@ -39,4 +39,4 @@ app:
     client-ip-header: Fly-Client-IP
   cors:
     # Comma-separated
-    allowed-origins: ${CLIENT_URL:http://localhost:3000,https://aurelljiraboard.fly.dev}
+    allowed-origins: ${CLIENT_URL:http://localhost:3000,https://aurelltodo.com,https://www.aurelltodo.com,https://aurelljiraboard.fly.dev}
