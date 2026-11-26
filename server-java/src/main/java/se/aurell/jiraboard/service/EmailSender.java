@@ -4,6 +4,8 @@ import java.net.http.HttpClient;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
@@ -24,6 +26,8 @@ public class EmailSender {
 
     private static final Logger log = LoggerFactory.getLogger(EmailSender.class);
     private static final String RESEND_URL = "https://api.resend.com/emails";
+    // Only lowercase letters and underscores, so nothing personal can end up in the log
+    private static final Pattern ERROR_NAME = Pattern.compile("\"name\"\\s*:\\s*\"([a-z_]{1,64})\"");
 
     static final String NOT_CONFIGURED_MESSAGE = "Email is not configured.";
     static final String SEND_FAILED_MESSAGE = "Could not send the email. Please try again later.";
@@ -70,13 +74,20 @@ public class EmailSender {
                     .retrieve()
                     .toBodilessEntity();
         } catch (RestClientResponseException e) {
-            // Only the status: the response may echo the address
-            log.warn("Resend refused the verification email: HTTP {}", e.getStatusCode().value());
+            // Status and Resend's error code only: the error message may echo the address
+            log.warn("Resend refused the verification email: HTTP {} ({})", e.getStatusCode().value(),
+                    errorName(e.getResponseBodyAsString()));
             throw ApiException.serviceUnavailable(SEND_FAILED_MESSAGE);
         } catch (RestClientException e) {
             log.warn("Resend could not be reached: {}", e.getClass().getSimpleName());
             throw ApiException.serviceUnavailable(SEND_FAILED_MESSAGE);
         }
+    }
+
+    /** Resend's error code from its JSON body (e.g. {@code invalid_from_address}), or "unknown". */
+    static String errorName(String body) {
+        Matcher m = ERROR_NAME.matcher(body == null ? "" : body);
+        return m.find() ? m.group(1) : "unknown";
     }
 
     // The email in the user's language (English until they pick one)

@@ -20,6 +20,16 @@ class EmailSenderTest {
     }
 
     @Test
+    void logsOnlyResendsErrorCode() {
+        assertThat(EmailSender.errorName(
+                "{\"statusCode\":422,\"name\":\"invalid_from_address\",\"message\":\"Invalid `from` field.\"}"))
+                .isEqualTo("invalid_from_address");
+        assertThat(EmailSender.errorName("{\"name\":\"bob@example.com\"}")).isEqualTo("unknown");
+        assertThat(EmailSender.errorName("")).isEqualTo("unknown");
+        assertThat(EmailSender.errorName(null)).isEqualTo("unknown");
+    }
+
+    @Test
     void withoutAnApiKeyNothingIsSent() {
         EmailSender sender = new EmailSender(new MailProperties("", "Aurello <a@example.com>", "https://app.example"));
 
