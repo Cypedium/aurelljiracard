@@ -27,7 +27,7 @@ app:
     # Resend (https://resend.com) API key; empty = registration and verification emails answer 503
     resend-api-key: ${RESEND_API_KEY:}
     # The sender; its domain must be verified in Resend (onboarding@resend.dev only reaches your own inbox)
-    from: ${MAIL_FROM:Aurello <onboarding@resend.dev>}
+    from: ${MAIL_FROM:AurellTodo <onboarding@resend.dev>}
     # The frontend: verification links point to <app-url>/verify-email/<token>
     app-url: ${APP_URL:http://localhost:3000}
   cors:

@@ -20,7 +20,7 @@ A second, smaller group of **navbar switches** only hides navbar links and accou
 |---|---|
 | Role or setting? | A setting. No new role: a user has one role, and a role can't express "these buttons". |
 | Which backend? | **`server-java` only** (like Google sign-in). `server/` (Express) doesn't get it; it is listed as a known difference. |
-| Status code when blocked | **`503`**: `"This feature is temporarily disabled."` / `"Aurello is in read-only mode."` (503 doesn't trigger the frontend's 401 refresh) |
+| Status code when blocked | **`503`**: `"This feature is temporarily disabled."` / `"AurellTodo is in read-only mode."` (503 doesn't trigger the frontend's 401 refresh) |
 | Who is exempt | The **site admin** (`User.role = admin`) is never blocked and always sees every button |
 | Scope | Whole site for now. The table is built so a per-board switch can be added later (nullable `board_id`) |
 | Rule | **Allowed = board role allows it AND the feature is on** (site admins skip the second part). A switch only takes rights away, never grants them |
@@ -59,7 +59,7 @@ Each button in the navbar's second row has its own switch: `createCard`, `create
 | `navbarColour` | "Navbar colour" in the account menu | The navbar colour already saved keeps applying |
 | `theme` | "Theme" in the account menu (after the dark-mode branch is merged) | The theme already saved keeps applying |
 
-- The account menu opens from the account button: desktop at the right end of the navbar (icon + initials), mobile at the right of the top bar (icon only; the bar is hamburger left, AURELLO centred, account right). The hamburger menu uses the navbar's colours. Hidden account-menu items are hidden in both.
+- The account menu opens from the account button: desktop at the right end of the navbar (icon + initials), mobile at the right of the top bar (icon only; the bar is hamburger left, AurellTodo centred, account right). The hamburger menu uses the navbar's colours. Hidden account-menu items are hidden in both.
 - Read-only mode does **not** touch these (they are not writes); site admins always see everything, as with the other switches.
 - Saved browser choices are left alone on purpose: switching a picker off must not change how anyone's board looks. If a uniform look is wanted later, add "reset to default while off" as a separate decision.
 - Anyone can still call the API or set `localStorage` by hand. That is accepted: these switches tidy the UI, they don't protect anything.
@@ -84,7 +84,7 @@ flowchart TD
     A -->|yes| C["Controller → service<br/>(board role checks as today)"]
     A -->|no| W{"POST / PUT / PATCH / DELETE<br/>and handler not @ReadOnlyExempt?"}
     W -->|yes| RO{"switch 'writes' disabled?<br/>(read-only mode)"}
-    RO -->|yes| E1["503 'Aurello is in read-only mode.'"]
+    RO -->|yes| E1["503 'AurellTodo is in read-only mode.'"]
     RO -->|no| F
     W -->|no| F{"Handler has @Feature(key)?"}
     F -->|no| C
@@ -182,7 +182,7 @@ flowchart LR
 ```
 
 - `app/utils/features.ts`: `FEATURE_KEYS` (must match the Java `Feature` enum), `NAVBAR_FEATURE_KEYS` (the UI-only ones), the `BOARD_ACTIONS` → feature map (`createCard`, `createColumn`, `deleteColumn`, `shareBoard`, `createIssueType` → `manageIssueTypes`), and pure helpers (unit-tested).
-- Navbar: `Navbar.tsx` hides Backlog, the board switcher and Issue types (the Board link is always shown, so the board stays reachable); `AccountMenu.tsx` hides its items (and the whole "Aurello" section when all three appearance switches are off). `/backlog` and `/issue-types` show "This page is turned off" instead of their content.
+- Navbar: `Navbar.tsx` hides Backlog, the board switcher and Issue types (the Board link is always shown, so the board stays reachable); `AccountMenu.tsx` hides its items (and the whole "AurellTodo" section when all three appearance switches are off). `/backlog` and `/issue-types` show "This page is turned off" instead of their content.
 - `useFeatures()`: site admins get everything on (`isOn` is always true), but the admin page still shows the real state.
 - `api.ts`: a `503` shows `toast.error(apiErrorMessage(...))` with a fixed `id` and triggers a refetch of `/feature`.
 - `endpoints.ts` + `tests/unit/endpoints.test.ts`: `getFeatures`, `setFeature`.

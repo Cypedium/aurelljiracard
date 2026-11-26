@@ -92,12 +92,12 @@ public class EmailSender {
 
     // The email in the user's language (English until they pick one)
     private enum Text {
-        EN("Verify your email for Aurello", "Hi",
-                "Confirm your email address to start using Aurello. The link works for 24 hours.",
+        EN("Verify your email for AurellTodo", "Hi",
+                "Confirm your email address to start using AurellTodo. The link works for 24 hours.",
                 "Verify email",
                 "If you didn't create an account, you can ignore this email."),
-        SV("Verifiera din e-post för Aurello", "Hej",
-                "Bekräfta din e-postadress för att börja använda Aurello. Länken fungerar i 24 timmar.",
+        SV("Verifiera din e-post för AurellTodo", "Hej",
+                "Bekräfta din e-postadress för att börja använda AurellTodo. Länken fungerar i 24 timmar.",
                 "Verifiera e-post",
                 "Om du inte har skapat något konto kan du strunta i det här mejlet.");
 

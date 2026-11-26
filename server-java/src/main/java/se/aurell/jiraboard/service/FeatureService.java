@@ -32,7 +32,7 @@ import se.aurell.jiraboard.security.AuthUser;
 public class FeatureService {
 
     public static final String DISABLED_MESSAGE = "This feature is temporarily disabled.";
-    public static final String READ_ONLY_MESSAGE = "Aurello is in read-only mode.";
+    public static final String READ_ONLY_MESSAGE = "AurellTodo is in read-only mode.";
 
     private final FeatureSwitchRepository featureSwitchRepository;
     private final UserRepository userRepository;

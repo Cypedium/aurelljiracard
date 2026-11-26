@@ -290,7 +290,7 @@ function navbar() {
   const site = state.viewer === "siteAdmin";
   const loggedOut = state.page === "register";
   if (loggedOut) {
-    return `<nav class="top"><span class="nav-link logo"><i></i>AURELLO</span>
+    return `<nav class="top"><span class="nav-link logo"><i></i>AurellTodo</span>
       <span style="margin-left:auto"></span>
       ${isOnPublic("register") ? '<span class="nav-link">Register User</span>' : ""}
       <span class="nav-link">Login</span></nav>`;
@@ -303,7 +303,7 @@ function navbar() {
     if (isOn("shareBoard")) subs.push(`<button type="button">${icon.share}${boardAdmin() ? "Share" : "Members"}</button>`);
   }
   return `<nav class="top">
-      <span class="nav-link logo"><i></i>AURELLO</span>
+      <span class="nav-link logo"><i></i>AurellTodo</span>
       <span class="nav-link" ${state.page === "board" ? 'aria-current="page"' : ""}>${icon.board}Board</span>
       ${navOn("backlogPage") ? `<span class="nav-link" ${state.page === "backlog" ? 'aria-current="page"' : ""}>${icon.list}Backlog</span>` : ""}
       ${site ? `<span class="nav-link">${icon.users}Users</span>` : ""}
@@ -322,7 +322,7 @@ function banner() {
   if (!state.sw.readOnly || state.page === "register") return "";
   return state.viewer === "siteAdmin"
     ? `<div class="banner admin">${icon.info}<span><b>Read-only mode is on</b> for everyone else. You can still make changes as site admin.</span></div>`
-    : `<div class="banner ro">${icon.pause}<span><b>Aurello is in read-only mode.</b> You can look around, but changes are paused for now.</span></div>`;
+    : `<div class="banner ro">${icon.pause}<span><b>AurellTodo is in read-only mode.</b> You can look around, but changes are paused for now.</span></div>`;
 }
 
 function boardView() {
@@ -408,7 +408,7 @@ function issueTypesView() {
     ${["task", "bug", "doc"].map((t) => `<div><span style="width:120px;display:flex;gap:8px;align-items:center"><span class="type" style="background:${TYPE_COLORS[t]}"></span>${t[0].toUpperCase() + t.slice(1)}</span><code>${t}</code></div>`).join("")}</div>`;
 }
 
-// Kontomenyn: varje rad bakom sin brytare; Aurello-rubriken försvinner när alla tre utseendeval är av
+// Kontomenyn: varje rad bakom sin brytare; AurellTodo-rubriken försvinner när alla tre utseendeval är av
 function accountMenu() {
   if (!state.menu || state.page === "register") return "";
   const v = viewer();
@@ -417,7 +417,7 @@ function accountMenu() {
     <h4>Account</h4>
     <div class="user"><span>${v.initials}</span><span>${v.user}</span></div>
     ${isOn("googleConnect") ? '<button class="item" type="button">Google sign-in<span class="end">›</span></button>' : ""}
-    ${look.length ? `<hr><h4>Aurello</h4>${look.map(([, n, val]) => `<button class="item" type="button">${n}<span class="end">${val} ›</span></button>`).join("")}` : ""}
+    ${look.length ? `<hr><h4>AurellTodo</h4>${look.map(([, n, val]) => `<button class="item" type="button">${n}<span class="end">${val} ›</span></button>`).join("")}` : ""}
     <hr class="gap"><button class="item" type="button">Log out</button></div>`;
 }
 
@@ -460,7 +460,7 @@ function render() {
   const page = PAGES.find((p) => p.key === state.page);
   const body = { board: boardView, backlog: backlogView, issueTypes: issueTypesView, features: featuresView, register: registerView, invite: inviteView }[state.page]();
   const app = document.getElementById("app");
-  app.innerHTML = `<div class="url">●●● <span>aurello.app${page.path}</span></div>${navbar()}${accountMenu()}${banner()}<main class="view">${body}</main>${dialog()}${toast()}`;
+  app.innerHTML = `<div class="url">●●● <span>AurellTodo.app${page.path}</span></div>${navbar()}${accountMenu()}${banner()}<main class="view">${body}</main>${dialog()}${toast()}`;
   renderNotes();
 }
 
@@ -480,7 +480,7 @@ document.getElementById("app").addEventListener("click", (e) => {
 
 // En flik som öppnades innan brytaren slogs av: knappen syns, servern svarar 503, toasten visas och /feature hämtas igen
 document.getElementById("stale").onclick = () => {
-  state.toast = state.sw.readOnly ? "Aurello is in read-only mode." : "This feature is temporarily disabled.";
+  state.toast = state.sw.readOnly ? "AurellTodo is in read-only mode." : "This feature is temporarily disabled.";
   render();
 };
 document.getElementById("reset").onclick = () => { state.sw = fresh(); state.toast = null; render(); };

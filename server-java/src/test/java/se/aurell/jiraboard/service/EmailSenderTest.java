@@ -14,7 +14,7 @@ class EmailSenderTest {
 
     @Test
     void linkPointsToTheFrontendsVerifyPage() {
-        EmailSender sender = new EmailSender(new MailProperties("key", "Aurello <a@example.com>", "https://app.example/"));
+        EmailSender sender = new EmailSender(new MailProperties("key", "AurellTodo <a@example.com>", "https://app.example/"));
 
         assertThat(sender.verificationLink("abc")).isEqualTo("https://app.example/verify-email/abc");
     }
@@ -31,7 +31,7 @@ class EmailSenderTest {
 
     @Test
     void withoutAnApiKeyNothingIsSent() {
-        EmailSender sender = new EmailSender(new MailProperties("", "Aurello <a@example.com>", "https://app.example"));
+        EmailSender sender = new EmailSender(new MailProperties("", "AurellTodo <a@example.com>", "https://app.example"));
 
         assertThatThrownBy(() -> sender.sendVerification("a@example.com", "alice", "https://x", Language.EN))
                 .isInstanceOf(ApiException.class)

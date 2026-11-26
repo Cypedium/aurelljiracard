@@ -29,7 +29,7 @@ import se.aurell.jiraboard.security.GoogleTokenVerifier.GoogleIdentity;
 class FeatureApiTest extends ApiIntegrationTest {
 
     private static final String DISABLED = "This feature is temporarily disabled.";
-    private static final String READ_ONLY = "Aurello is in read-only mode.";
+    private static final String READ_ONLY = "AurellTodo is in read-only mode.";
     private static final String CARD = "/card/" + UUID.randomUUID();
 
     private void setSwitch(String adminToken, String key, boolean enabled) throws Exception {

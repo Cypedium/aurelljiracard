@@ -86,7 +86,7 @@ See [`.env.example`](.env.example). Spring does not read `.env` files; export th
 | `CLIENT_URL` | Comma-separated CORS origins. Default `http://localhost:3000,https://aurelljiraboard.fly.dev` |
 | `GOOGLE_CLIENT_ID` | Optional. OAuth client id for Sign in with Google (same as the frontend's `NEXT_PUBLIC_GOOGLE_CLIENT_ID`). Empty = `/auth/google` and `/user/google` answer `503` |
 | `RESEND_API_KEY` | Secret. [Resend](https://resend.com) API key for the verification emails. Empty = registration and `/auth/verification-email` answer `503` |
-| `MAIL_FROM` | Sender, e.g. `Aurello <noreply@your-domain>`; the domain must be verified in Resend. Default `Aurello <onboarding@resend.dev>` (only reaches the Resend account's own inbox) |
+| `MAIL_FROM` | Sender, e.g. `AurellTodo <noreply@your-domain>`; the domain must be verified in Resend. Default `AurellTodo <onboarding@resend.dev>` (only reaches the Resend account's own inbox) |
 | `APP_URL` | The frontend's address for the links in the emails (`<APP_URL>/verify-email/<token>`). Default `http://localhost:3000` |
 
 The app refuses to start if a JWT secret is missing or too short.
@@ -106,7 +106,7 @@ fly secrets set -a aurelljiraboardjava DB_URL=... DB_USERNAME=... DB_PASSWORD=..
 # Optional, for Sign in with Google (not a secret, but set here with the rest)
 fly secrets set -a aurelljiraboardjava GOOGLE_CLIENT_ID=<id>.apps.googleusercontent.com
 # Email verification (required: registration answers 503 without them)
-fly secrets set -a aurelljiraboardjava RESEND_API_KEY=re_... MAIL_FROM="Aurello <noreply@your-domain>" \
+fly secrets set -a aurelljiraboardjava RESEND_API_KEY=re_... MAIL_FROM="AurellTodo <noreply@your-domain>" \
   APP_URL=https://aurelljiraboard.fly.dev
 ```
 
@@ -139,4 +139,4 @@ All endpoints are listed in the [root README](../README.md#api). Details:
 - Feature switches and read-only mode ([docs/feature-switches.md](../docs/feature-switches.md)):
   - `GET /feature` (public) → `{ readOnly, disabled: [keys] }`; site admins also get `switches: [{ key, enabled, uiOnly, updatedAt, updatedBy }]`.
   - `PUT /feature/{key} { enabled }` (site admins) turns one on or off; for `readOnly`, `enabled: true` turns read-only mode on. Unknown key → `404`.
-  - While a feature is off, its endpoints answer `503 "This feature is temporarily disabled."`; in read-only mode every write answers `503 "Aurello is in read-only mode."` except login, refresh, logout and Google sign-in for existing users. Site admins are never blocked.
+  - While a feature is off, its endpoints answer `503 "This feature is temporarily disabled."`; in read-only mode every write answers `503 "AurellTodo is in read-only mode."` except login, refresh, logout and Google sign-in for existing users. Site admins are never blocked.
