@@ -51,10 +51,13 @@ public class AuthService {
     private final BoardService boardService;
     private final FeatureService featureService;
     private final EmailVerificationService emailVerificationService;
+    private final LoginAttempts loginAttempts;
 
     public AuthService(UserRepository userRepository, RefreshTokenRepository refreshTokenRepository,
             PasswordEncoder passwordEncoder, JwtService jwtService, GoogleTokenVerifier googleTokenVerifier,
-            BoardService boardService, FeatureService featureService, EmailVerificationService emailVerificationService) {
+            BoardService boardService, FeatureService featureService, EmailVerificationService emailVerificationService,
+            LoginAttempts loginAttempts) {
+        this.loginAttempts = loginAttempts;
         this.userRepository = userRepository;
         this.refreshTokenRepository = refreshTokenRepository;
         this.passwordEncoder = passwordEncoder;
@@ -130,22 +133,33 @@ public class AuthService {
 
     /**
      * Username in any casing ("mike" logs in as "Mike"), or the email address. 401 for a wrong name or
-     * password, and for users created by Google sign-in (no password).
+     * password, and for users created by Google sign-in (no password). 429 after too many failures for the
+     * name (LoginAttempts), checked before the password so guessing stops even from many IPs.
      */
     private User findByCredentials(String usernameOrEmail, String password) {
+        loginAttempts.requireAllowed(usernameOrEmail);
+        Optional<User> user = matchCredentials(usernameOrEmail, password);
+        if (user.isEmpty()) {
+            loginAttempts.recordFailure(usernameOrEmail);
+            throw invalidCredentials();
+        }
+        loginAttempts.recordSuccess(usernameOrEmail);
+        return user.get();
+    }
+
+    private Optional<User> matchCredentials(String usernameOrEmail, String password) {
         Predicate<User> passwordMatches = u -> u.getPasswordHash() != null
                 && passwordEncoder.matches(password, u.getPasswordHash());
         Optional<User> byName = userRepository.findByUsername(usernameOrEmail)
                 .or(() -> userRepository.findFirstByUsernameIgnoreCase(usernameOrEmail));
         if (byName.isPresent() || usernameOrEmail.indexOf('@') < 0) {
-            return byName.filter(passwordMatches).orElseThrow(AuthService::invalidCredentials);
+            return byName.filter(passwordMatches);
         }
         // An unverified address may be on several accounts: the verified one first, then the one with this password
         return userRepository.findByEmailIgnoreCase(usernameOrEmail).stream()
                 .sorted(Comparator.comparing(User::isEmailVerified).reversed())
                 .filter(passwordMatches)
-                .findFirst()
-                .orElseThrow(AuthService::invalidCredentials);
+                .findFirst();
     }
 
     private static ApiException invalidCredentials() {

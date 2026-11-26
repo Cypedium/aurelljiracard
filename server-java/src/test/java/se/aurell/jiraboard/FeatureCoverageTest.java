@@ -15,6 +15,8 @@ import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 import se.aurell.jiraboard.entity.Feature;
 import se.aurell.jiraboard.security.FeatureInterceptor;
+import se.aurell.jiraboard.security.RateLimit;
+import se.aurell.jiraboard.security.RateLimited;
 import se.aurell.jiraboard.security.RequiresFeature;
 
 /**
@@ -73,6 +75,29 @@ class FeatureCoverageTest extends ApiIntegrationTest {
             }
         });
         assertThat(found).isEqualTo(new TreeSet<>(READ_ONLY_EXEMPT));
+    }
+
+    // Every public /auth endpoint except logout (it only revokes the caller's own tokens)
+    private static final Map<String, RateLimit> RATE_LIMITS = Map.ofEntries(
+            entry("POST /auth/register", RateLimit.REGISTER),
+            entry("POST /auth/login", RateLimit.LOGIN),
+            entry("POST /auth/verification-email", RateLimit.EMAIL),
+            entry("POST /auth/forgot-password", RateLimit.EMAIL),
+            entry("POST /auth/verify-email", RateLimit.LINK),
+            entry("POST /auth/reset-password", RateLimit.LINK),
+            entry("POST /auth/google", RateLimit.SESSION),
+            entry("POST /auth/refresh", RateLimit.SESSION));
+
+    @Test
+    void rateLimitsAreExactlyTheListedOnes() {
+        Map<String, RateLimit> found = new TreeMap<>();
+        handlers().forEach((name, method) -> {
+            RateLimited limited = method.getMethodAnnotation(RateLimited.class);
+            if (limited != null) {
+                found.put(name, limited.value());
+            }
+        });
+        assertThat(found).isEqualTo(new TreeMap<>(RATE_LIMITS));
     }
 
     @Test

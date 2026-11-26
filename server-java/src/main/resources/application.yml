@@ -30,6 +30,13 @@ app:
     from: ${MAIL_FROM:AurellTodo <onboarding@resend.dev>}
     # The frontend: verification links point to <app-url>/verify-email/<token>
     app-url: ${APP_URL:http://localhost:3000}
+    # Password reset emails are sent in the background, so the answer takes as long for every address
+    async: true
+  rate-limit:
+    # Per client IP on the public /auth endpoints, and failed logins per account (in memory, per machine)
+    enabled: ${RATE_LIMIT_ENABLED:true}
+    # Fly's proxy puts the caller's address here; without the header the connection's address is used
+    client-ip-header: Fly-Client-IP
   cors:
     # Comma-separated
     allowed-origins: ${CLIENT_URL:http://localhost:3000,https://aurelljiraboard.fly.dev}

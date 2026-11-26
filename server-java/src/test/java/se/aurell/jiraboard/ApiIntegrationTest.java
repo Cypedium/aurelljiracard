@@ -34,7 +34,9 @@ import se.aurell.jiraboard.service.EmailSender;
  * Full-stack API tests: real Postgres in a Testcontainer, Flyway migrations, security filter chain.
  * The Spring context (and container) is shared by every subclass; data is wiped before each test.
  */
-@SpringBootTest
+// Tests register and log in far more often than the rate limits allow (RateLimitApiTest turns them on);
+// emails are "sent" at once, so a test can read the link right after the request
+@SpringBootTest(properties = {"app.rate-limit.enabled=false", "app.mail.async=false"})
 @AutoConfigureMockMvc
 @Import(TestcontainersConfiguration.class)
 @ActiveProfiles("dev")
