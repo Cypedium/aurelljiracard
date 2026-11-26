@@ -17,7 +17,7 @@ export default function Welcome() {
   const { t } = useLanguage();
   return (
     <section className="mx-4 w-full max-w-md font-jira text-white">
-      <h1 className="text-2xl font-semibold sm:text-3xl lg:text-4xl">{t('Welcome to AURELLO')}</h1>
+      <h1 className="text-2xl font-semibold sm:text-3xl lg:text-4xl">{t('Welcome to AurellTodo')}</h1>
       <p className="mt-2 text-sm text-white/85 sm:mt-3 sm:text-base">
         {t('A free board for your to-dos and projects. As simple as a to-do list, with the tools you know from Jira.')}
       </p>

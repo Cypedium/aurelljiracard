@@ -27,8 +27,8 @@ export const SV: Record<string, string> = {
   "{owner}'s board": "{ownerGenitive} tavla",
   "Read-only mode is on for everyone else. You can still make changes.":
     "Skrivskyddat läge är på för alla andra. Du kan fortfarande göra ändringar.",
-  "Aurello is in read-only mode. You can look around, but changes are paused for now.":
-    "Aurello är i skrivskyddat läge. Du kan titta runt, men ändringar är pausade just nu.",
+  "AurellTodo is in read-only mode. You can look around, but changes are paused for now.":
+    "AurellTodo är i skrivskyddat läge. Du kan titta runt, men ändringar är pausade just nu.",
   "Account": "Konto",
   "Account menu": "Kontomeny",
   "Account (logged in as {username})": "Konto (inloggad som {username})",
@@ -260,7 +260,7 @@ export const SV: Record<string, string> = {
   "Go to your board": "Gå till din tavla",
 
   // Start page, login and registration
-  "Welcome to AURELLO": "Välkommen till AURELLO",
+  "Welcome to AurellTodo": "Välkommen till AurellTodo",
   "A free board for your to-dos and projects. As simple as a to-do list, with the tools you know from Jira.":
     "En gratis tavla för dina att göra-saker och projekt. Lika enkel som en att göra-lista, med verktygen du känner igen från Jira.",
   "Boards with your own lists: add, rename, colour, reorder and hide them":
@@ -467,7 +467,7 @@ export const SV: Record<string, string> = {
   "A list with this name was just added. Try again.": "En lista med det här namnet lades nyss till. Försök igen.",
   "Admins only.": "Endast för admins.",
   "An issue type with this name was just added. Try again.": "En ärendetyp med det här namnet lades nyss till. Försök igen.",
-  "Aurello is in read-only mode.": "Aurello är i skrivskyddat läge.",
+  "AurellTodo is in read-only mode.": "AurellTodo är i skrivskyddat läge.",
   "Board admins only.": "Endast för tavlans admins.",
   "Board not found.": "Tavlan hittades inte.",
   "Card deleted successfully.": "Kortet togs bort.",

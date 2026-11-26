@@ -122,7 +122,7 @@ export default function AccountMenu({ username }: { username: string }) {
               <hr className="my-2 border-jira-neutral" />
               <h2 className={`${ACCOUNT_MENU_HEADING_CLASS} flex items-center gap-1.5`}>
                 <Image src={logo} alt="" className="size-4" />
-                Aurello
+                AurellTodo
               </h2>
             </>
           )}

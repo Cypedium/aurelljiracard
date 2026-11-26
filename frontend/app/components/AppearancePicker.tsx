@@ -33,7 +33,7 @@ export const NavbarPreview = ({ appearance, themeKey }: { appearance: Appearance
   return (
     <span className="flex w-16 shrink-0 flex-col overflow-hidden rounded" aria-hidden>
       <span className="px-1.5 py-0.5 font-brand text-[10px] font-semibold" style={{ background: theme.top, color }}>
-        AURELLO
+        AurellTodo
       </span>
       <span className="h-2" style={{ background: theme.sub }} />
     </span>
