@@ -26,9 +26,9 @@ class AuthApiTest extends ApiIntegrationTest {
     @Test
     void registerIgnoresThePictureUrlOlderFormsSend() throws Exception {
         mvc.perform(json(post("/auth/register"), """
-                {"username": "alice", "password": "secret123", "pictureUrl": "javascript:alert(1)"}"""))
+                {"username": "alice", "email": "new@example.com", "password": "secret123", "pictureUrl": "javascript:alert(1)"}"""))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.message").value("User registered successfully."));
+                .andExpect(jsonPath("$.message").value("Account created. Check your email to verify your address."));
     }
 
     @Test
@@ -36,7 +36,7 @@ class AuthApiTest extends ApiIntegrationTest {
         register("alice");
 
         mvc.perform(json(post("/auth/register"), """
-                {"username": "alice", "password": "secret123"}"""))
+                {"username": "alice", "email": "new@example.com", "password": "secret123"}"""))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message").value("Username already taken."));
     }
@@ -44,14 +44,21 @@ class AuthApiTest extends ApiIntegrationTest {
     @Test
     void registerValidatesFields() throws Exception {
         mvc.perform(json(post("/auth/register"), """
-                {"username": "alice", "password": "secret1"}"""))
+                {"username": "alice", "email": "new@example.com", "password": "secret1"}"""))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Password must be 8-72 characters."));
 
         mvc.perform(json(post("/auth/register"), """
-                {"username": "   ", "password": "secret123"}"""))
+                {"username": "   ", "email": "new@example.com", "password": "secret123"}"""))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Username is required (max 32 characters)."));
+
+        for (String email : new String[] {"", "alice", "alice@example", "a b@example.com", "x".repeat(243) + "@example.com"}) {
+            mvc.perform(json(post("/auth/register"), """
+                    {"username": "alice", "email": "%s", "password": "secret123"}""".formatted(email)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.message").value("Enter a valid email address (max 254 characters)."));
+        }
     }
 
     @Test
@@ -59,7 +66,7 @@ class AuthApiTest extends ApiIntegrationTest {
         register("Mike");
 
         mvc.perform(json(post("/auth/register"), """
-                {"username": "mike", "password": "secret123"}"""))
+                {"username": "mike", "email": "new@example.com", "password": "secret123"}"""))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message").value("Username already taken."));
     }
@@ -67,13 +74,13 @@ class AuthApiTest extends ApiIntegrationTest {
     @Test
     void registerRejectsRudeUsernamesAndRepetitivePasswords() throws Exception {
         mvc.perform(json(post("/auth/register"), """
-                {"username": "Sh1t_head", "password": "secret123"}"""))
+                {"username": "Sh1t_head", "email": "new@example.com", "password": "secret123"}"""))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Username contains inappropriate words."));
 
         for (String password : new String[] {"abc11112", "12121212"}) {
             mvc.perform(json(post("/auth/register"), """
-                    {"username": "alice", "password": "%s"}""".formatted(password)))
+                    {"username": "alice", "email": "new@example.com", "password": "%s"}""".formatted(password)))
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.message").value("Password must not repeat characters (e.g. aaa or 1212)."));
         }

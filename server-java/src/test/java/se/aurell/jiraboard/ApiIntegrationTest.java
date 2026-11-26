@@ -4,8 +4,17 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.jayway.jsonpath.JsonPath;
+import java.util.Locale;
 import org.junit.jupiter.api.BeforeEach;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -19,6 +28,7 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import se.aurell.jiraboard.repository.CardRepository;
 import se.aurell.jiraboard.repository.UserRepository;
 import se.aurell.jiraboard.security.GoogleTokenVerifier;
+import se.aurell.jiraboard.service.EmailSender;
 
 /**
  * Full-stack API tests: real Postgres in a Testcontainer, Flyway migrations, security filter chain.
@@ -31,6 +41,7 @@ import se.aurell.jiraboard.security.GoogleTokenVerifier;
 abstract class ApiIntegrationTest {
 
     static final String PASSWORD = "secret123";
+    static final String LINK_PREFIX = "http://localhost:3000/verify-email/";
 
     @Autowired
     MockMvc mvc;
@@ -47,6 +58,15 @@ abstract class ApiIntegrationTest {
     // Declared here so every subclass shares one Spring context; GoogleTokenVerifierTest tests the real one
     @MockitoBean
     GoogleTokenVerifier googleTokenVerifier;
+
+    // No real emails; lastVerificationToken() reads the token from the last "sent" link
+    @MockitoBean
+    EmailSender emailSender;
+
+    @BeforeEach
+    void stubEmailLinks() {
+        when(emailSender.verificationLink(anyString())).thenAnswer(call -> LINK_PREFIX + call.getArgument(0));
+    }
 
     @BeforeEach
     void cleanDatabase() {
@@ -88,10 +108,28 @@ abstract class ApiIntegrationTest {
                 .andReturn().getResponse().getContentAsString(), "$.accessToken");
     }
 
+    /** Registers the user with a verified email (<username>@example.com), so they can log in. */
     void register(String username) throws Exception {
+        registerUnverified(username);
+        jdbc.update("UPDATE users SET email_verified_at = now() WHERE username = ?", username);
+    }
+
+    /** Registers the user; login is refused until the emailed link is opened. */
+    void registerUnverified(String username) throws Exception {
         mvc.perform(json(post("/auth/register"), """
-                {"username": "%s", "password": "%s"}""".formatted(username, PASSWORD)))
+                {"username": "%s", "email": "%s", "password": "%s"}""".formatted(username, emailOf(username), PASSWORD)))
                 .andExpect(status().isCreated());
+    }
+
+    static String emailOf(String username) {
+        return username.toLowerCase(Locale.ROOT) + "@example.com";
+    }
+
+    /** The token in the last verification link sent to the address. */
+    String lastVerificationToken(String email) {
+        ArgumentCaptor<String> link = ArgumentCaptor.forClass(String.class);
+        verify(emailSender, atLeastOnce()).sendVerification(eq(email), anyString(), link.capture(), any());
+        return link.getValue().substring(LINK_PREFIX.length());
     }
 
     /** Registers the user and returns the login response body ({ accessToken, refreshToken }). */

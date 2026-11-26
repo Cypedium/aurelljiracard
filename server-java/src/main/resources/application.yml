@@ -23,6 +23,13 @@ app:
   google:
     # OAuth client id from Google Cloud Console; empty = "Sign in with Google" answers 503
     client-id: ${GOOGLE_CLIENT_ID:}
+  mail:
+    # Resend (https://resend.com) API key; empty = registration and verification emails answer 503
+    resend-api-key: ${RESEND_API_KEY:}
+    # The sender; its domain must be verified in Resend (onboarding@resend.dev only reaches your own inbox)
+    from: ${MAIL_FROM:Aurello <onboarding@resend.dev>}
+    # The frontend: verification links point to <app-url>/verify-email/<token>
+    app-url: ${APP_URL:http://localhost:3000}
   cors:
     # Comma-separated
     allowed-origins: ${CLIENT_URL:http://localhost:3000,https://aurelljiraboard.fly.dev}

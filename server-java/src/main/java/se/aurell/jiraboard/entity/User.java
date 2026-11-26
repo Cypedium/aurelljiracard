@@ -33,8 +33,13 @@ public class User {
     @Column(name = "google_sub", unique = true)
     private String googleSub;
 
+    // Given at registration (or later, for older accounts) or taken from Google
     @Column(length = 320)
     private String email;
+
+    // null = not verified yet: login and token refresh are refused (V15__email_verification.sql)
+    @Column(name = "email_verified_at")
+    private Instant emailVerifiedAt;
 
     // "admin" may edit and delete any card and manage users
     @Convert(converter = EnumConverters.RoleConverter.class)
@@ -77,16 +82,31 @@ public class User {
         this.passwordHash = passwordHash;
     }
 
-    /** A user created by Google sign-in: no password. */
-    public static User fromGoogle(String username, String googleSub, String email) {
+    /** A user created by Google sign-in: no password, and the email is verified (Google checked it). */
+    public static User fromGoogle(String username, String googleSub, String email, Instant now) {
         User user = new User(username, null);
-        user.connectGoogle(googleSub, email);
+        user.connectGoogle(googleSub);
+        user.verifyEmail(email, now);
         return user;
     }
 
-    public void connectGoogle(String googleSub, String email) {
+    public void connectGoogle(String googleSub) {
         this.googleSub = googleSub;
+    }
+
+    /** A new address to verify; any earlier verification no longer counts. */
+    public void setUnverifiedEmail(String email) {
         this.email = email;
+        this.emailVerifiedAt = null;
+    }
+
+    public void verifyEmail(String email, Instant now) {
+        this.email = email;
+        this.emailVerifiedAt = now;
+    }
+
+    public boolean isEmailVerified() {
+        return emailVerifiedAt != null;
     }
 
     public String getGoogleSub() {

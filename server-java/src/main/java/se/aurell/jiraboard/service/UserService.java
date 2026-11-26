@@ -184,7 +184,11 @@ public class UserService {
         if (user.getGoogleSub() != null && !user.getGoogleSub().equals(google.subject())) {
             throw ApiException.conflict(OTHER_GOOGLE_MESSAGE);
         }
-        user.connectGoogle(google.subject(), google.email());
+        user.connectGoogle(google.subject());
+        // Google checked its address: it becomes the verified email if the user has none and no one else has it
+        if (!user.isEmailVerified() && !userRepository.existsVerifiedEmailOfOther(google.email(), user.getId())) {
+            user.verifyEmail(google.email(), Instant.now());
+        }
         try {
             userRepository.saveAndFlush(user);
         } catch (DataIntegrityViolationException e) {
