@@ -85,6 +85,10 @@ export const PASSWORD_STRENGTH_CLASS: Record<PasswordStrength, string> = {
   Strong: "text-green-600",
 };
 
+// Show/hide password button inside the password field (the input gets pr-9 to make room)
+export const PASSWORD_TOGGLE_CLASS =
+  "absolute inset-y-0 right-0 flex w-9 items-center justify-center rounded-r-md text-jira-secondary hover:text-jira-text focus-visible:outline-2 focus-visible:outline-jira-primary";
+
 // Tables (Users, Backlog): white box, header row in small grey capitals
 export const TABLE_WRAPPER_CLASS =
   "overflow-hidden rounded-lg bg-white shadow-[0_1px_1px_rgba(9,30,66,0.25),0_0_1px_rgba(9,30,66,0.31)]";
