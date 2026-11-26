@@ -100,7 +100,7 @@ CI (`.github/workflows/ci.yml`) runs all of the commands above except `spring-bo
 
 ## Deployment
 
-All Fly apps are deployed by hand (region `arn`); the CI deploy job is commented out in `ci.yml`, so CI only tests. Frontend: `fly deploy -c fly.app.toml` in `frontend/`; `server-java`: Fly app `aurelljiraboardjava` (`fly deploy -c fly.java.toml` in `server-java/`, `Dockerfile.java`, external PostgreSQL via `DB_URL`). Changing Dockerfiles, Fly configs or workflows affects production — call it out in the PR. The production frontend (`fly.app.toml` `NEXT_PUBLIC_API_URL`) points at `aurelljiraboardjava`, so deploy `server-java` before a change that needs it reaches `main`.
+Custom domain (DNS at One.com): `aurelltodo.com` → frontend app `aurelljiraboard` (`www.` redirects there in `next.config.ts`), `api.aurelltodo.com` → `aurelljiraboardjava` (Fly certificates, `fly certs add`); `mail.aurelltodo.com` is Resend's, leave its DNS records alone. The `*.fly.dev` addresses keep working. All Fly apps are deployed by hand (region `arn`); the CI deploy job is commented out in `ci.yml`, so CI only tests. Frontend: `fly deploy -c fly.app.toml` in `frontend/`; `server-java`: Fly app `aurelljiraboardjava` (`fly deploy -c fly.java.toml` in `server-java/`, `Dockerfile.java`, external PostgreSQL via `DB_URL`). Changing Dockerfiles, Fly configs or workflows affects production — call it out in the PR. The production frontend (`fly.app.toml` `NEXT_PUBLIC_API_URL`) points at `aurelljiraboardjava`, so deploy `server-java` before a change that needs it reaches `main`.
 
 ## Data model
 

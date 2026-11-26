@@ -399,7 +399,7 @@ flowchart LR
 | `JWT_SECRET` | *(required)* | ≥ 32 bytes |
 | `REFRESH_SECRET` | *(required)* | ≥ 32 bytes, different from `JWT_SECRET` |
 | `PORT` | `8080` | |
-| `CLIENT_URL` | `http://localhost:3000,https://aurelljiraboard.fly.dev` | comma-separated CORS origins |
+| `CLIENT_URL` | `http://localhost:3000,https://aurelltodo.com,https://www.aurelltodo.com,https://aurelljiraboard.fly.dev` | comma-separated CORS origins |
 
 Spring doesn't read `.env` files. Use a run configuration (IntelliJ's `.env` support), the shell, or `docker-compose.yml` for the database.
 
