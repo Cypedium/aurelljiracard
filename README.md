@@ -57,7 +57,7 @@ All routes except `/auth/*` and `/health` require `Authorization: Bearer <access
 
 | Method | Path | Description |
 |---|---|---|
-| `POST` | `/auth/register` | `{ username, password, pictureUrl? }` → `201`. Password 8–72 characters, no character three times in a row and at least 4 different characters; usernames with rude words → `400`. `409 "Username already taken."` also when the name differs only in case (`mike` vs `Mike`) |
+| `POST` | `/auth/register` | `{ username, password }` → `201`. Password 8–72 characters, no character three times in a row and at least 4 different characters; usernames with rude words → `400`. `409 "Username already taken."` also when the name differs only in case (`mike` vs `Mike`) |
 | `POST` | `/auth/login` | `{ username, password }` → `{ accessToken, refreshToken }`. The username is matched case-insensitively (exact match first); the token carries the stored name |
 | `POST` | `/auth/refresh` | `{ refreshToken }` → new `{ accessToken, refreshToken }`. Each refresh token works once; sending a used one again revokes that login (`403`), other logins keep working |
 | `POST` | `/auth/logout` | `{ refreshToken }` → revokes all of the user's refresh tokens |
@@ -66,7 +66,7 @@ All routes except `/auth/*` and `/health` require `Authorization: Bearer <access
 | `POST` | `/board/:boardId/invite` | **Board admin.** A new invite link token → `201 { token }`; the link is `<frontend>/invite/<token>`. Only a hash is stored, so the token is shown only here; a new one turns off the old one |
 | `DELETE` | `/board/:boardId/invite` | **Board admin.** Turns the invite link off; collaborators who joined stay |
 | `POST` | `/invite/:token` | Joins the board behind the link as a collaborator → the board. Joining again, or your own board, changes nothing; `404` for an unknown or turned-off link |
-| `GET` | `/board/:boardId/member` | The board's members `[{ _id (user id), username, pictureUrl, role }]`, the owner first |
+| `GET` | `/board/:boardId/member` | The board's members `[{ _id (user id), username, role }]`, the owner first |
 | `DELETE` | `/board/:boardId/member/:userId` | **Board admin** removes a collaborator; with your own id a collaborator leaves. `400` if the owner tries to leave |
 | `GET` | `/board/:boardId/card` | The board's cards, newest first |
 | `POST` | `/board/:boardId/card` | `{ rating (1–5), comment, productId, type?, status? }` → `201`; `type` is one of the board's issue types (default `task`); `status: "backlog"` creates an unassigned backlog card, otherwise the author is the assignee; `productId` (issue key) must look like `MA-100` (letters, hyphen, digits; max 6 characters), `409` if it already exists on the board. Author is taken from the token |
@@ -81,7 +81,7 @@ All routes except `/auth/*` and `/health` require `Authorization: Bearer <access
 | `GET` | `/board/:boardId/issue-type` | The board's issue types in dropdown order: `[{ key, label, color, icon, position }]`. A new board starts with `task`, `bug`, `doc` |
 | `POST` | `/board/:boardId/issue-type` | **Board admin.** `{ label (≤ 30), color (#rrggbb), icon }` → `201` new issue type at the end; `icon` is one of `check`, `bug`, `doc`, `bolt`, `star`, `flag`, `wrench`, `light-bulb`; its `key` is made from the label (`"User story"` → `user-story`, unique on the board). At most 12 types |
 | `DELETE` | `/board/:boardId/issue-type/:key` | **Board admin.** Deletes an issue type → `200 { message }`; `409` while cards on the board use it, `400` for the default type `task`, `404` if unknown |
-| `GET` | `/user` | Users (`_id`, `username`, `pictureUrl`, `role`) |
+| `GET` | `/user` | Users (`_id`, `username`, `role`) |
 | `GET` | `/user/usernames` | Usernames only |
 | `GET` | `/user/layout` | Current user's board layout (the frontend only reads `cards`: the order of cards within each list) |
 | `PUT` | `/user/layout` | `{ cols?, headers?, cards? }` — merge and save layout. `headers` is legacy (list names and colours live on the board's `/column` now); each header is `{ key, title, color? }`. Each card position is `{ id, x, y, w, h, status? }`; `status` is the list key, so card order survives lists being moved. One layout covers all your boards (positions are keyed by card id) |
