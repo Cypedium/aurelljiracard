@@ -28,6 +28,8 @@ describe("API endpoints", () => {
       "/auth/verification-email",
     ],
     ["verifyEmail", () => endpoints.verifyEmail("tok"), "post", "/auth/verify-email"],
+    ["forgotPassword", () => endpoints.forgotPassword("a@b.se", "en"), "post", "/auth/forgot-password"],
+    ["resetPassword", () => endpoints.resetPassword("tok", "secret123"), "post", "/auth/reset-password"],
     ["loginUser", () => endpoints.loginUser({ username: "a", password: "secret1" }), "post", "/auth/login"],
     ["googleLogin", () => endpoints.googleLogin("cred"), "post", "/auth/google"],
     ["logoutUser", () => endpoints.logoutUser("rt"), "post", "/auth/logout"],

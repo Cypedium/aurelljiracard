@@ -8,4 +8,5 @@ export const ROUTES = {
   features: "/features",
   login: "/login",
   register: "/register",
+  forgotPassword: "/forgot-password",
 } as const;

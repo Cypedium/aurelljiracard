@@ -1,16 +1,15 @@
 'use client';
 import { useState } from "react";
-import { EyeIcon, EyeSlashIcon } from "@heroicons/react/16/solid";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import checkPasswordStrength from "../utils/checkPasswordStrength";
 import { registerUser } from "../api/endpoints";
 import { apiErrorMessage, apiMessage, isConflictError } from "../utils/apiError";
 import { USERNAME_TAKEN_MESSAGE } from "../utils/username";
 import { EMAIL_TAKEN_MESSAGE, registerSchema, type RegisterValues } from "../utils/register";
-import { AUTH_FORM_CLASS, FIELD_ERROR_CLASS, FORM_ITEM_CLASS, LABEL_CLASS, PASSWORD_STRENGTH_CLASS, PASSWORD_TOGGLE_CLASS } from "../utils/styles";
+import { AUTH_FORM_CLASS, FIELD_ERROR_CLASS, FORM_ITEM_CLASS, LABEL_CLASS } from "../utils/styles";
+import NewPasswordFields from "./NewPasswordFields";
 import { Button } from "./ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "./ui/form";
 import { Input } from "./ui/input";
@@ -25,12 +24,6 @@ export default function RegisterForm() {
     resolver: zodResolver(registerSchema),
     defaultValues: { username: "", email: "", password: "", confirmPassword: "" },
   });
-  const password = form.watch("password");
-  const strength = checkPasswordStrength(password);
-  const [showPassword, setShowPassword] = useState(false);
-  const passwordType = showPassword ? "text" : "password";
-  const toggleLabel = showPassword ? t("Hide password") : t("Show password");
-
   // The address the verification link was sent to; the form is replaced by "check your email"
   const [sentTo, setSentTo] = useState<string | null>(null);
 
@@ -99,52 +92,7 @@ export default function RegisterForm() {
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="password"
-          render={({ field }) => (
-            <FormItem className={FORM_ITEM_CLASS}>
-              <FormLabel className={LABEL_CLASS}>{t("Password")}</FormLabel>
-              <div className="relative">
-                <FormControl>
-                  <Input type={passwordType} autoComplete="new-password" className="bg-white pr-9" {...field} />
-                </FormControl>
-                {/* Shows or hides both password fields */}
-                <button
-                  type="button"
-                  className={PASSWORD_TOGGLE_CLASS}
-                  onClick={() => setShowPassword((show) => !show)}
-                  aria-label={toggleLabel}
-                  aria-pressed={showPassword}
-                  title={toggleLabel}
-                >
-                  {showPassword ? <EyeSlashIcon className="size-4" aria-hidden /> : <EyeIcon className="size-4" aria-hidden />}
-                </button>
-              </div>
-              <FormMessage className={FIELD_ERROR_CLASS} />
-            </FormItem>
-          )}
-        />
-
-        {password && (
-          <p className={`mt-2 text-xs font-semibold ${PASSWORD_STRENGTH_CLASS[strength]}`}>
-            {t("Password strength: {strength}", { strength: t(strength) })}
-          </p>
-        )}
-
-        <FormField
-          control={form.control}
-          name="confirmPassword"
-          render={({ field }) => (
-            <FormItem className={FORM_ITEM_CLASS}>
-              <FormLabel className={LABEL_CLASS}>{t("Confirm password")}</FormLabel>
-              <FormControl>
-                <Input type={passwordType} autoComplete="new-password" className="bg-white" {...field} />
-              </FormControl>
-              <FormMessage className={FIELD_ERROR_CLASS} />
-            </FormItem>
-          )}
-        />
+        <NewPasswordFields control={form.control} />
 
         <Button type="submit" className="mt-6 w-full" disabled={form.formState.isSubmitting}>
           {t("Register")}

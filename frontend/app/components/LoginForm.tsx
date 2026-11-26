@@ -1,5 +1,6 @@
 'use client';
 import { useState } from "react";
+import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -93,7 +94,11 @@ export default function LoginForm() {
           )}
         />
 
-        <Button type="submit" className="mt-6 w-full" disabled={form.formState.isSubmitting}>
+        <Link href={ROUTES.forgotPassword} className="mt-2 self-end text-xs font-medium text-jira-primary hover:underline">
+          {t("Forgot password?")}
+        </Link>
+
+        <Button type="submit" className="mt-4 w-full" disabled={form.formState.isSubmitting}>
           {t("Login")}
         </Button>
 
