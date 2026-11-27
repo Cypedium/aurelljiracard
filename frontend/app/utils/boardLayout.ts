@@ -360,3 +360,20 @@ export const nearestListIndexAtX = (lists: readonly { left: number; right: numbe
 // The order while a list is dragged: the lifted list in the slot the pointer is over
 export const previewHeaders = (headers: BoardHeader[], from: CardStatus, toIndex: number | null): BoardHeader[] =>
   toIndex === null || !headers[toIndex] ? headers : moveHeader(headers, from, headers[toIndex].key);
+
+// The list being dragged by its header: its index in the (preview) order, and its visible cards in order from the
+// top. The grid hides those cards and the drag preview shows them instead. No list dragged = index -1, nothing
+export const draggedList = <C>(
+  headers: readonly BoardHeader[],
+  key: CardStatus | null,
+  layout: readonly CardPosition[],
+  cardById: ReadonlyMap<string, C>,
+): { index: number; cardIds: Set<string>; cards: C[] } => {
+  const index = key === null ? -1 : headers.findIndex((h) => h.key === key);
+  const positions = index < 0 ? [] : layout.filter((l) => l.x === index).sort((a, b) => a.y - b.y);
+  return {
+    index,
+    cardIds: new Set(positions.map((l) => l.i)),
+    cards: positions.flatMap((l) => cardById.get(l.i) ?? []),
+  };
+};

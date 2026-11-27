@@ -13,6 +13,7 @@ import {
   columnAtGridX,
   nearestListIndexAtX,
   previewHeaders,
+  draggedList,
   fromGridLayout,
   mobileBoardWidth,
   MOBILE_GUTTER,
@@ -508,5 +509,36 @@ describe("listDeleteBlocker", () => {
     expect(listDeleteBlocker("test", cards)).toBe("2 cards");
     expect(listDeleteBlocker("done", cards)).toBe("1 card");
     expect(listDeleteBlocker("todo", [])).toBe("Default list");
+  });
+});
+
+describe("draggedList", () => {
+  const headers = [
+    { key: "todo", title: "To Do" },
+    { key: "doing", title: "In Progress" },
+  ];
+  const pos = (i: string, x: number, y: number) => ({ i, x, y, w: 1, h: 1 });
+  const layout = [pos("a", 0, 1), pos("b", 1, 0), pos("c", 0, 0), pos("gone", 0, 2)];
+  const cardById = new Map([
+    ["a", "card a"],
+    ["b", "card b"],
+    ["c", "card c"],
+  ]);
+
+  it("returns the list's index and its cards from the top", () => {
+    const list = draggedList(headers, "todo", layout, cardById);
+    expect(list.index).toBe(0);
+    expect([...list.cardIds]).toEqual(["c", "a", "gone"]);
+    // A position without a card (deleted meanwhile) is skipped
+    expect(list.cards).toEqual(["card c", "card a"]);
+  });
+
+  it("returns nothing when no list, or an unknown list, is dragged", () => {
+    for (const key of [null, "missing"]) {
+      const list = draggedList(headers, key, layout, cardById);
+      expect(list.index).toBe(-1);
+      expect(list.cardIds.size).toBe(0);
+      expect(list.cards).toEqual([]);
+    }
   });
 });
