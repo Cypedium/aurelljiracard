@@ -5,7 +5,7 @@ import { PencilIcon, TrashIcon } from '@heroicons/react/16/solid';
 import { ArrowRightStartOnRectangleIcon } from '@heroicons/react/24/outline';
 import { deleteUser, getUsers, revokeUserSessions, type PublicUser } from '../api/endpoints';
 import { reportError } from '../utils/apiError';
-import { avatarColor, avatarInitials } from '../utils/avatar';
+import Avatar from '../components/Avatar';
 import { handleLogout } from '../utils/logout';
 import { getUsername } from '../utils/session';
 import { lastSeenLabel } from '../utils/presence';
@@ -97,13 +97,7 @@ export default function Users() {
                 <tr key={user._id} className={TABLE_ROW_CLASS}>
                   <td className={TD_CLASS}>
                     <div className="flex min-w-0 items-center gap-3">
-                      <span
-                        className="inline-flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white"
-                        style={{ background: avatarColor(user.username) }}
-                        aria-hidden
-                      >
-                        {avatarInitials(user.username)}
-                      </span>
+                      <Avatar username={user.username} size="md" />
                       {/* Green dot = logged in now */}
                       <span
                         role="img"

@@ -5,7 +5,7 @@ import { TrashIcon } from '@heroicons/react/16/solid';
 import { createInvite, deleteInvite, getMembers, removeMember, type Board, type BoardMember } from '../api/endpoints';
 import { reloadBoards } from '../hooks/useBoards';
 import { reportError } from '../utils/apiError';
-import { avatarColor, avatarInitials } from '../utils/avatar';
+import Avatar from './Avatar';
 import { inviteUrl, isBoardAdmin } from '../utils/currentBoard';
 import { getUsername } from '../utils/session';
 import { Button } from './ui/button';
@@ -143,13 +143,7 @@ export default function ShareBoardDialog({ board, open, onClose }: Props) {
             <ul className="flex max-h-[40dvh] flex-col gap-1 overflow-y-auto">
               {members.map((member) => (
                 <li key={member._id} className="flex items-center gap-3 rounded-[3px] px-1 py-1 hover:bg-jira-neutral">
-                  <span
-                    className="inline-flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white"
-                    style={{ background: avatarColor(member.username) }}
-                    aria-hidden
-                  >
-                    {avatarInitials(member.username)}
-                  </span>
+                  <Avatar username={member.username} size="sm" />
                   <span className="min-w-0 flex-1 truncate text-sm">{member.username}</span>
                   <span className="rounded-[3px] bg-jira-neutral px-1.5 text-xs/5 font-bold text-jira-secondary uppercase">
                     {member.role === 'admin' ? t('Owner') : t('Collaborator')}

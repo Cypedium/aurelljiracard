@@ -5,7 +5,7 @@ import { PencilIcon, TrashIcon } from '@heroicons/react/16/solid';
 import { deleteCard, getCards, updateCardStatus, type Card } from '../api/endpoints';
 import { CardFormDialog, DeleteCardDialog } from '../cards/board/CardDialogs';
 import { reportError } from '../utils/apiError';
-import { avatarColor, avatarInitials } from '../utils/avatar';
+import Avatar from './Avatar';
 import { backlogCards } from '../utils/backlog';
 import { DEFAULT_HEADERS } from '../utils/boardLayout';
 import { formatShortDate } from '../utils/date';
@@ -139,13 +139,7 @@ export default function BacklogList({ refreshKey = 0, onMoved }: BacklogListProp
                   <time dateTime={card.submittedAt}>{formatShortDate(card.submittedAt)}</time>
                 </td>
                 <td className={`${TD_CLASS} text-center max-[480px]:hidden`}>
-                  <span
-                    className="inline-flex size-6 items-center justify-center rounded-full text-[10px] font-semibold text-white"
-                    style={{ background: avatarColor(card.username) }}
-                    title={t('Created by {username}', { username: card.username })}
-                  >
-                    {avatarInitials(card.username)}
-                  </span>
+                  <Avatar username={card.username} title={t('Created by {username}', { username: card.username })} />
                 </td>
                 <td className={`${TD_CLASS} text-right`}>
                   <div className="flex items-center justify-end gap-1">
