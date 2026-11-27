@@ -207,7 +207,7 @@ export default function Users() {
       <AlertDialog open={Boolean(deletingUser)} onOpenChange={(open) => !open && setDeletingUser(null)}>
         <AlertDialogContent className="font-jira text-jira-text">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete {deletingUser?.username}?</AlertDialogTitle>
+            <AlertDialogTitle>{t('Delete {title}?', { title: deletingUser?.username ?? '' })}</AlertDialogTitle>
             <AlertDialogDescription>
               {t('The account is removed permanently. Cards assigned to this user become unassigned.')}
             </AlertDialogDescription>
