@@ -1,38 +1,34 @@
 'use client';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { getCards, getColumns, submitCard, updateCard, updateCardStatus, type Card as CardData } from '../../api/endpoints';
-import { toast } from 'sonner';
+import type { Card as CardData } from '../../api/endpoints';
 import { useBoards } from '../../hooks/useBoards';
 import { useDuplicateCheck } from '../../hooks/useDuplicateCheck';
 import {
   DUPLICATE_PRODUCT_ID_MESSAGE,
   EMPTY_CARD_FORM,
-  PRIORITIES,
   PRODUCT_ID_MAX_LENGTH,
   cardFormSchema,
   cardToFormValues,
   formListKey,
-  takenIssueKeys,
   type CardFormValues,
 } from '../../utils/cardForm';
-import { apiErrorMessage, isConflictError, logError, reportError } from '../../utils/apiError';
 import { formatDate } from '../../utils/date';
 import { FIELD_ERROR_CLASS, FORM_ITEM_CLASS, LABEL_CLASS } from '../../utils/styles';
 import JiraFormCard, { FormActions } from '../../components/JiraFormCard';
 import { BACKLOG_STATUS, type AnyCardStatus } from '../../utils/backlog';
-import { normalizeColumns, type BoardHeader, type CardStatus } from '../../utils/boardLayout';
+import type { CardStatus } from '../../utils/boardLayout';
 import IssueTypeSelect from '../../components/IssueTypeSelect';
 import ListSelect from '../../components/ListSelect';
-import { Button } from '../../components/ui/button';
+import PrioritySelect from '../../components/PrioritySelect';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../../components/ui/form';
 import { Input } from '../../components/ui/input';
 import SummaryEditor from '../../components/SummaryEditor';
-import { ROUTES } from '../../utils/routes';
 import { useLanguage } from '../../hooks/useLanguage';
-import { msg } from '../../utils/i18n';
+import { useCardFormData } from './useCardFormData';
+import { useCardSubmit } from './useCardSubmit';
 
 type CardProps = {
   // Set when editing an existing card; omitted on the create page
@@ -58,25 +54,7 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
     defaultValues: card ? cardToFormValues(card) : EMPTY_CARD_FORM,
   });
 
-  // Issue keys already in use, so a duplicate shows under the field while typing.
-  // If they can't be loaded, the server's 409 still catches duplicates
-  const [takenKeys, setTakenKeys] = useState<Set<string>>(() => new Set());
-  useEffect(() => {
-    if (!boardId) return;
-    getCards(boardId)
-      .then((res) => setTakenKeys(takenIssueKeys(res.data || [], card?._id)))
-      .catch((err) => logError('Fetch issue keys error', err));
-  }, [boardId, card?._id]);
-
-  // The board's lists for the dropdown next to Issue type. The card moves when you save
-  // and then lands at the top of the new list (see buildCardLayout)
-  const [lists, setLists] = useState<BoardHeader[]>([]);
-  useEffect(() => {
-    if (!boardId) return;
-    getColumns(boardId)
-      .then((res) => setLists(normalizeColumns(res.data)))
-      .catch((err) => logError('Fetch lists error', err));
-  }, [boardId]);
+  const { takenKeys, addTakenKey, lists } = useCardFormData(boardId, card?._id);
   // null = not changed: the card stays where it is (new card: the list it is created in)
   const [movedTo, setMovedTo] = useState<CardStatus | null>(null);
   const currentStatus = card ? card.status : status;
@@ -85,66 +63,18 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
   const isTakenKey = useCallback((key: string) => takenKeys.has(key.trim()), [takenKeys]);
   const showDuplicateKey = useDuplicateCheck(form, 'productId', isTakenKey, DUPLICATE_PRODUCT_ID_MESSAGE);
 
-  // Duplicate issue key (409) is shown under the field instead of as a toast
-  const showError = (error: unknown, fallback: string, key: string) => {
-    if (isConflictError(error)) {
-      // Added by someone else after the form opened
-      setTakenKeys((prev) => new Set(prev).add(key));
-      showDuplicateKey(apiErrorMessage(error, DUPLICATE_PRODUCT_ID_MESSAGE), true);
-      return;
-    }
-    toast.error(apiErrorMessage(error, fallback));
-  };
-
-  // The backend sets the date (today) when the card is created
-  const onSubmit = async (fields: CardFormValues) => {
-    if (!boardId) return;
-    if (takenKeys.has(fields.productId)) {
-      showDuplicateKey(DUPLICATE_PRODUCT_ID_MESSAGE, true);
-      return;
-    }
-    if (isEdit && card?._id) {
-      try {
-        const res = await updateCard(boardId, card._id, fields);
-        let saved = res.data;
-        if (movedTo && movedTo !== card.status) {
-          try {
-            saved = (await updateCardStatus(boardId, card._id, movedTo)).data;
-          } catch (error) {
-            // The changes are saved, only the move failed
-            reportError('Move error', error, msg('Card saved, but it could not be moved.'));
-            onSaved?.(saved);
-            return;
-          }
-        }
-        onSaved?.(saved);
-        toast.success(t('Card updated.'));
-      } catch (error) {
-        logError('Update error', error);
-        showError(error, msg('Failed to save card.'), fields.productId);
-      }
-      return;
-    }
-
-    try {
-      // Author is taken from the access token by the backend
-      const res = await submitCard(boardId, { ...fields, status: movedTo ?? status });
-
-      if (onCreated) {
-        onCreated();
-        return;
-      }
-
-      // The toaster is in the layout, so it stays visible after the navigation
-      toast.success(res.data.message ? t(res.data.message) : t('Card submitted!'));
-      form.reset(EMPTY_CARD_FORM);
-      router.push(ROUTES.home);
-
-    } catch (error) {
-      logError('Submission error', error);
-      showError(error, msg('Failed to submit card.'), fields.productId);
-    }
-  };
+  const onSubmit = useCardSubmit({
+    boardId,
+    form,
+    card,
+    status,
+    movedTo,
+    isTakenKey,
+    addTakenKey,
+    showDuplicateKey,
+    onSaved,
+    onCreated,
+  });
 
   return (
     <Form {...form}>
@@ -238,24 +168,7 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
             <FormItem className={FORM_ITEM_CLASS}>
               <FormLabel className={LABEL_CLASS}>{t('Time tracking')} {required}</FormLabel>
               <FormControl>
-                <div className="flex gap-2" role="group" aria-label={t('Time tracking')}>
-                  {PRIORITIES.map((p) => (
-                    <Button
-                      key={p}
-                      type="button"
-                      size="sm"
-                      className={`min-w-9 rounded-full font-semibold ${
-                        p === field.value
-                          ? 'bg-board-via text-white hover:bg-board-via'
-                          : 'bg-jira-neutral text-jira-text hover:bg-jira-neutral-hover'
-                      }`}
-                      aria-pressed={p === field.value}
-                      onClick={() => field.onChange(p)}
-                    >
-                      {p}
-                    </Button>
-                  ))}
-                </div>
+                <PrioritySelect value={field.value} onChange={field.onChange} label={t('Time tracking')} />
               </FormControl>
               <FormMessage className={FIELD_ERROR_CLASS} />
             </FormItem>
