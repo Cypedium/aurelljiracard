@@ -1,5 +1,5 @@
 'use client';
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
@@ -7,7 +7,7 @@ import { createIssueType } from '../api/endpoints';
 import { useBoards } from '../hooks/useBoards';
 import { addIssueType, useIssueTypes } from '../hooks/useIssueTypes';
 import { apiErrorMessage, isConflictError, logError } from '../utils/apiError';
-import { DUPLICATE_ERROR_TYPE, ISSUE_KEY_CHECK_DELAY_MS } from '../utils/cardForm';
+import { useDuplicateCheck } from '../hooks/useDuplicateCheck';
 import {
   DUPLICATE_ISSUE_TYPE_MESSAGE,
   EMPTY_ISSUE_TYPE_FORM,
@@ -57,20 +57,8 @@ export default function NewIssueTypeDialog({ open, onClose, onCreated }: Props) 
   // The same check as for Issue key in the card form: a name that already exists is shown under the field while typing
   const types = useIssueTypes();
   const boardId = useBoards().current?._id ?? null;
-  const showDuplicate = (message = DUPLICATE_ISSUE_TYPE_MESSAGE, focus = false) =>
-    form.setError('label', { type: DUPLICATE_ERROR_TYPE, message }, { shouldFocus: focus });
-
-  const label = preview.label;
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (isTakenIssueTypeLabel(types, label)) {
-        showDuplicate();
-      } else if (form.getFieldState('label').error?.type === DUPLICATE_ERROR_TYPE) {
-        form.clearErrors('label');
-      }
-    }, ISSUE_KEY_CHECK_DELAY_MS);
-    return () => clearTimeout(timer);
-  }, [label, types]);
+  const isTakenLabel = useCallback((label: string) => isTakenIssueTypeLabel(types, label), [types]);
+  const showDuplicate = useDuplicateCheck(form, 'label', isTakenLabel, DUPLICATE_ISSUE_TYPE_MESSAGE);
 
   const onSubmit = async (values: IssueTypeFormValues) => {
     if (!boardId) return;
