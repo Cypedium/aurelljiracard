@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useEffect, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { PencilIcon, TrashIcon } from '@heroicons/react/16/solid';
 import { deleteCard, getCards, updateCardStatus, type Card } from '../api/endpoints';
@@ -19,6 +19,7 @@ import TableSkeleton from './TableSkeleton';
 import { Button } from './ui/button';
 import { toPlainLine, toPlainText } from '../utils/summaryFormat';
 import { useLanguage } from '../hooks/useLanguage';
+import { useLoad } from '../hooks/useLoad';
 import { msg } from '../utils/i18n';
 
 type BacklogListProps = {
@@ -32,7 +33,6 @@ type BacklogListProps = {
 const TARGET_STATUS = DEFAULT_HEADERS[0].key;
 
 export default function BacklogList({ refreshKey = 0, onMoved }: BacklogListProps) {
-  const [cards, setCards] = useState<Card[] | null>(null);
   const { t } = useLanguage();
   const [movingId, setMovingId] = useState<string | null>(null);
   // The same edit and delete dialogs as on the board
@@ -45,20 +45,16 @@ export default function BacklogList({ refreshKey = 0, onMoved }: BacklogListProp
   const { isOn } = useFeatures();
   const boardId = current?._id ?? null;
 
-  const fetchBacklog = useCallback(async () => {
-    if (!boardId) return;
-    try {
-      const res = await getCards(boardId);
-      setCards(backlogCards(res.data || []));
-    } catch (err) {
-      reportError('Error fetching backlog', err, msg('Could not load the backlog.'));
-      setCards([]);
-    }
-  }, [boardId]);
-
-  useEffect(() => {
-    fetchBacklog();
-  }, [fetchBacklog, refreshKey]);
+  const loadBacklog = useMemo(
+    () => (boardId ? async () => backlogCards((await getCards(boardId)).data || []) : null),
+    // refreshKey isn't read: a new value from the parent loads the list again
+    [boardId, refreshKey],
+  );
+  const { data: cards, setData: setCards } = useLoad(loadBacklog, {
+    log: 'Error fetching backlog',
+    message: msg('Could not load the backlog.'),
+    fallback: [],
+  });
 
   const moveToBoard = async (card: Card) => {
     if (!card._id || !boardId) return;

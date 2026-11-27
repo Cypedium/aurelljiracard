@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 import { PencilIcon, TrashIcon } from '@heroicons/react/16/solid';
 import { ArrowRightStartOnRectangleIcon } from '@heroicons/react/24/outline';
@@ -15,30 +15,26 @@ import TableSkeleton from '../components/TableSkeleton';
 import FormDialog from '../components/FormDialog';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { useLanguage } from '../hooks/useLanguage';
+import { useLoad } from '../hooks/useLoad';
 import { msg } from '../utils/i18n';
 import { ROLE_LABELS } from '../utils/session';
 
+// Cards are per board now, so the admin can't count them; deleting a user with cards answers 409
+async function loadUsers(): Promise<PublicUser[]> {
+  const res = await getUsers();
+  return [...res.data].sort((a, b) => a.username.localeCompare(b.username));
+}
+
 export default function Users() {
-  const [users, setUsers] = useState<PublicUser[] | null>(null);
+  const { data: users, setData: setUsers, reload: fetchUsers } = useLoad(loadUsers, {
+    log: 'Error fetching users',
+    message: msg('Could not load users.'),
+    fallback: [],
+  });
   const { t } = useLanguage();
   const [editingUser, setEditingUser] = useState<PublicUser | null>(null);
   const [deletingUser, setDeletingUser] = useState<PublicUser | null>(null);
   const me = getUsername();
-
-  const fetchUsers = useCallback(async () => {
-    try {
-      // Cards are per board now, so the admin can't count them; deleting a user with cards answers 409
-      const usersRes = await getUsers();
-      setUsers([...usersRes.data].sort((a, b) => a.username.localeCompare(b.username)));
-    } catch (err) {
-      reportError('Error fetching users', err, msg('Could not load users.'));
-      setUsers([]);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
 
   const handleSaved = (updated: PublicUser) => {
     const renamedSelf = editingUser?.username === me && updated.username !== me;
