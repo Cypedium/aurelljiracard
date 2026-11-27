@@ -13,16 +13,7 @@ import { TABLE_CELL_CLASS as TD_CLASS, TABLE_HEAD_CLASS as TH_CLASS, TABLE_THEAD
 import EditUserForm from './EditUserForm';
 import TableSkeleton from '../components/TableSkeleton';
 import { Dialog, DialogContent, DialogTitle } from '../components/ui/dialog';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '../components/ui/alert-dialog';
+import ConfirmDialog from '../components/ConfirmDialog';
 import { useLanguage } from '../hooks/useLanguage';
 import { msg } from '../utils/i18n';
 import { ROLE_LABELS } from '../utils/session';
@@ -204,22 +195,13 @@ export default function Users() {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={Boolean(deletingUser)} onOpenChange={(open) => !open && setDeletingUser(null)}>
-        <AlertDialogContent className="font-jira text-jira-text">
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t('Delete {title}?', { title: deletingUser?.username ?? '' })}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t('The account is removed permanently. Cards assigned to this user become unassigned.')}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t('Cancel')}</AlertDialogCancel>
-            <AlertDialogAction variant="destructive" onClick={() => deletingUser && removeUser(deletingUser)}>
-              {t('Delete')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={Boolean(deletingUser)}
+        onClose={() => setDeletingUser(null)}
+        title={t('Delete {title}?', { title: deletingUser?.username ?? '' })}
+        description={t('The account is removed permanently. Cards assigned to this user become unassigned.')}
+        onConfirm={() => deletingUser && removeUser(deletingUser)}
+      />
     </>
   );
 }
