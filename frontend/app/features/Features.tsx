@@ -62,7 +62,7 @@ export default function Features() {
       {/* Read-only mode at the top, as a dangerous switch; turning it on asks first */}
       <section className={TABLE_WRAPPER_CLASS}>
         {/* The same heading row as the groups below, but red: it applies to the whole site */}
-        <div className="bg-[#c9372c] px-4 py-2 text-white">
+        <div className="bg-jira-danger px-4 py-2 text-white">
           <h2 className="text-xs font-semibold uppercase tracking-wide">{t('Read-only mode')}</h2>
         </div>
         <div className={ROW_CLASS}>

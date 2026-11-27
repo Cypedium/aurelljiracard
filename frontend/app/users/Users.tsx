@@ -103,7 +103,7 @@ export default function Users() {
                         role="img"
                         aria-label={user.online ? t('Online') : t('Offline')}
                         title={user.online ? t('Online') : t('Offline')}
-                        className={`-mr-1.5 size-2 shrink-0 rounded-full ${user.online ? 'bg-[#22a06b]' : 'bg-jira-border'}`}
+                        className={`-mr-1.5 size-2 shrink-0 rounded-full ${user.online ? 'bg-jira-success' : 'bg-jira-border'}`}
                       />
                       <span className="min-w-0 truncate font-medium" title={user.username}>
                         {user.username}
