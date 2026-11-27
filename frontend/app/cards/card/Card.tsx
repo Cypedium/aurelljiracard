@@ -1,16 +1,15 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { getCards, getColumns, submitCard, updateCard, updateCardStatus, type Card as CardData } from '../../api/endpoints';
 import { toast } from 'sonner';
 import { useBoards } from '../../hooks/useBoards';
+import { useDuplicateCheck } from '../../hooks/useDuplicateCheck';
 import {
-  DUPLICATE_ERROR_TYPE,
   DUPLICATE_PRODUCT_ID_MESSAGE,
   EMPTY_CARD_FORM,
-  ISSUE_KEY_CHECK_DELAY_MS,
   PRIORITIES,
   PRODUCT_ID_MAX_LENGTH,
   cardFormSchema,
@@ -83,20 +82,8 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
   const currentStatus = card ? card.status : status;
   const selectedList = movedTo ?? formListKey(lists, currentStatus);
 
-  const showDuplicateKey = (message = DUPLICATE_PRODUCT_ID_MESSAGE, focus = false) =>
-    form.setError('productId', { type: DUPLICATE_ERROR_TYPE, message }, { shouldFocus: focus });
-
-  const productId = form.watch('productId');
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (takenKeys.has(productId.trim())) {
-        showDuplicateKey();
-      } else if (form.getFieldState('productId').error?.type === DUPLICATE_ERROR_TYPE) {
-        form.clearErrors('productId');
-      }
-    }, ISSUE_KEY_CHECK_DELAY_MS);
-    return () => clearTimeout(timer);
-  }, [productId, takenKeys]);
+  const isTakenKey = useCallback((key: string) => takenKeys.has(key.trim()), [takenKeys]);
+  const showDuplicateKey = useDuplicateCheck(form, 'productId', isTakenKey, DUPLICATE_PRODUCT_ID_MESSAGE);
 
   // Duplicate issue key (409) is shown under the field instead of as a toast
   const showError = (error: unknown, fallback: string, key: string) => {

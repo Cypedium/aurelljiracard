@@ -48,9 +48,6 @@ export const cardToFormValues = (card: Card): CardFormValues => ({
 
 // The same message as the backend (409); checked while typing, the server checks again on save
 export const DUPLICATE_PRODUCT_ID_MESSAGE = msg("Issue key already exists.");
-export const ISSUE_KEY_CHECK_DELAY_MS = 300;
-// The error's type in the form, so only that error is cleared when you type another key
-export const DUPLICATE_ERROR_TYPE = "duplicate";
 
 // Issue keys used by other cards (exact match, as in the backend); the card being edited may keep its own
 export const takenIssueKeys = (cards: Pick<Card, "_id" | "productId">[], ownId?: string): Set<string> =>
