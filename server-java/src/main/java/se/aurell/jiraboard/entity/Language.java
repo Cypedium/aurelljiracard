@@ -26,6 +26,19 @@ public enum Language {
         return value;
     }
 
+    /** For emails to users who never picked a language. */
+    public static final Language DEFAULT = EN;
+
+    /** The language if set, else {@link #DEFAULT}. */
+    public static Language orDefault(Language language) {
+        return language != null ? language : DEFAULT;
+    }
+
+    /** The language if set, else the fallback if set, else {@link #DEFAULT}. */
+    public static Language orDefault(Language language, Language fallback) {
+        return language != null ? language : orDefault(fallback);
+    }
+
     /** Strict lookup for request bodies; empty for unknown values. */
     public static Optional<Language> parse(String value) {
         return Arrays.stream(values()).filter(l -> l.value.equals(value)).findFirst();

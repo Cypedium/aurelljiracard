@@ -54,7 +54,7 @@ public class EmailVerificationService {
         String token = SecureTokens.generate();
         verificationRepository.save(
                 new EmailVerification(SecureTokens.sha256Hex(token), user.getId(), user.getEmail(), now, now.plus(LINK_TTL)));
-        Language language = user.getLanguage() == null ? Language.EN : user.getLanguage();
+        Language language = Language.orDefault(user.getLanguage());
         emailSender.sendVerification(user.getEmail(), user.getUsername(), emailSender.verificationLink(token), language);
     }
 

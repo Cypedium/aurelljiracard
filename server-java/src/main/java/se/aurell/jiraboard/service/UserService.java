@@ -27,6 +27,7 @@ import se.aurell.jiraboard.security.GoogleTokenVerifier.GoogleIdentity;
 @Service
 public class UserService {
 
+    static final String USER_NOT_FOUND_MESSAGE = "User not found.";
     private static final String CARD_POSITION_MESSAGE = "Each saved card position needs a valid list key as status.";
 
     static final String GOOGLE_USED_MESSAGE = "This Google account is already connected to another user.";
@@ -107,7 +108,7 @@ public class UserService {
             throw ApiException.badRequest("You cannot remove your own admin role.");
         }
 
-        User user = userRepository.findById(id).orElseThrow(() -> ApiException.notFound("User not found."));
+        User user = findUser(id);
         boolean renamed = request.username() != null && !request.username().equals(user.getUsername());
         boolean roleChanged = role != null && role != user.getRole();
 
@@ -146,7 +147,7 @@ public class UserService {
         if (id.equals(admin.id())) {
             throw ApiException.badRequest("You cannot delete yourself.");
         }
-        User user = userRepository.findById(id).orElseThrow(() -> ApiException.notFound("User not found."));
+        User user = findUser(id);
         if (cardRepository.existsByUsername(user.getUsername())) {
             throw ApiException.conflict("This user still has cards. Delete them first.");
         }
@@ -163,7 +164,7 @@ public class UserService {
     @Transactional
     public void revokeSessions(UUID id) {
         if (userRepository.revokeTokens(id, Instant.now()) == 0) {
-            throw ApiException.notFound("User not found.");
+            throw ApiException.notFound(USER_NOT_FOUND_MESSAGE);
         }
     }
 
@@ -207,6 +208,10 @@ public class UserService {
     }
 
     private User findUser(AuthUser authUser) {
-        return userRepository.findById(authUser.id()).orElseThrow(() -> ApiException.notFound("User not found."));
+        return findUser(authUser.id());
+    }
+
+    private User findUser(UUID id) {
+        return userRepository.findById(id).orElseThrow(() -> ApiException.notFound(USER_NOT_FOUND_MESSAGE));
     }
 }

@@ -82,8 +82,8 @@ public class PasswordResetService {
             return;
         }
         String token = SecureTokens.generate();
-        Language language = user.getLanguage() != null ? user.getLanguage()
-                : Optional.ofNullable(uiLanguage).flatMap(Language::parse).orElse(Language.EN);
+        // The account's language, else the one the form was sent in
+        Language language = Language.orDefault(user.getLanguage(), Language.parse(uiLanguage).orElse(null));
         resetRepository.deleteByUser(user.getId());
         resetRepository.save(new PasswordReset(SecureTokens.sha256Hex(token), user.getId(), now, now.plus(LINK_TTL)));
         String to = user.getEmail();
