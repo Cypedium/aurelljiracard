@@ -1,9 +1,7 @@
 package se.aurell.jiraboard.service;
 
-import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Base64;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -14,6 +12,7 @@ import se.aurell.jiraboard.entity.User;
 import se.aurell.jiraboard.exception.ApiException;
 import se.aurell.jiraboard.repository.EmailVerificationRepository;
 import se.aurell.jiraboard.repository.UserRepository;
+import se.aurell.jiraboard.security.SecureTokens;
 
 /**
  * Verification links: a random token is emailed, only its SHA-256 is stored (V15). Opening the link
@@ -25,8 +24,6 @@ public class EmailVerificationService {
     static final Duration LINK_TTL = Duration.ofHours(24);
     // At most one email per user per minute, so the endpoints can't be used to flood an inbox
     static final Duration RESEND_INTERVAL = Duration.ofMinutes(1);
-    private static final int TOKEN_BYTES = 32;
-    private static final SecureRandom RANDOM = new SecureRandom();
 
     static final String INVALID_LINK_MESSAGE = "This verification link is invalid or has expired.";
     static final String EMAIL_TAKEN_MESSAGE = "Email already registered.";
@@ -54,12 +51,10 @@ public class EmailVerificationService {
             throw new ApiException(HttpStatus.TOO_MANY_REQUESTS, WAIT_MESSAGE);
         }
         verificationRepository.deleteByUser(user.getId());
-        byte[] bytes = new byte[TOKEN_BYTES];
-        RANDOM.nextBytes(bytes);
-        String token = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+        String token = SecureTokens.generate();
         verificationRepository.save(
-                new EmailVerification(BoardService.hash(token), user.getId(), user.getEmail(), now, now.plus(LINK_TTL)));
-        Language language = user.getLanguage() == null ? Language.EN : user.getLanguage();
+                new EmailVerification(SecureTokens.sha256Hex(token), user.getId(), user.getEmail(), now, now.plus(LINK_TTL)));
+        Language language = Language.orDefault(user.getLanguage());
         emailSender.sendVerification(user.getEmail(), user.getUsername(), emailSender.verificationLink(token), language);
     }
 
@@ -71,7 +66,7 @@ public class EmailVerificationService {
     public void verify(String token) {
         Instant now = Instant.now();
         // Expired rows stay until the user's next link replaces them (sendLink) or the user is deleted
-        EmailVerification link = verificationRepository.findById(BoardService.hash(token))
+        EmailVerification link = verificationRepository.findById(SecureTokens.sha256Hex(token))
                 .filter(l -> !l.isExpired(now))
                 .orElseThrow(() -> ApiException.badRequest(INVALID_LINK_MESSAGE));
         User user = userRepository.findById(link.getUserId())

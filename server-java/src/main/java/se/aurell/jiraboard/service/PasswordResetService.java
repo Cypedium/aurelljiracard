@@ -1,9 +1,7 @@
 package se.aurell.jiraboard.service;
 
-import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Base64;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,6 +20,7 @@ import se.aurell.jiraboard.entity.User;
 import se.aurell.jiraboard.exception.ApiException;
 import se.aurell.jiraboard.repository.PasswordResetRepository;
 import se.aurell.jiraboard.repository.UserRepository;
+import se.aurell.jiraboard.security.SecureTokens;
 
 /**
  * Forgot password: a random token is emailed, only its SHA-256 is stored (V16). Opening the link and choosing
@@ -35,8 +34,6 @@ public class PasswordResetService {
     static final Duration LINK_TTL = Duration.ofHours(1);
     // At most one email per account per minute, so the endpoint can't be used to flood an inbox
     static final Duration RESEND_INTERVAL = Duration.ofMinutes(1);
-    private static final int TOKEN_BYTES = 32;
-    private static final SecureRandom RANDOM = new SecureRandom();
 
     static final String INVALID_LINK_MESSAGE = "This password reset link is invalid or has expired.";
 
@@ -84,13 +81,11 @@ public class PasswordResetService {
         if (resetRepository.existsByUserIdAndCreatedAtAfter(user.getId(), now.minus(RESEND_INTERVAL))) {
             return;
         }
-        byte[] bytes = new byte[TOKEN_BYTES];
-        RANDOM.nextBytes(bytes);
-        String token = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
-        Language language = user.getLanguage() != null ? user.getLanguage()
-                : Optional.ofNullable(uiLanguage).flatMap(Language::parse).orElse(Language.EN);
+        String token = SecureTokens.generate();
+        // The account's language, else the one the form was sent in
+        Language language = Language.orDefault(user.getLanguage(), Language.parse(uiLanguage).orElse(null));
         resetRepository.deleteByUser(user.getId());
-        resetRepository.save(new PasswordReset(BoardService.hash(token), user.getId(), now, now.plus(LINK_TTL)));
+        resetRepository.save(new PasswordReset(SecureTokens.sha256Hex(token), user.getId(), now, now.plus(LINK_TTL)));
         String to = user.getEmail();
         String username = user.getUsername();
         String link = emailSender.passwordResetLink(token);
@@ -121,7 +116,7 @@ public class PasswordResetService {
     @Transactional
     public void reset(String token, String password) {
         Instant now = Instant.now();
-        PasswordReset link = resetRepository.findById(BoardService.hash(token))
+        PasswordReset link = resetRepository.findById(SecureTokens.sha256Hex(token))
                 .filter(l -> !l.isExpired(now))
                 .orElseThrow(() -> ApiException.badRequest(INVALID_LINK_MESSAGE));
         User user = userRepository.findById(link.getUserId())
