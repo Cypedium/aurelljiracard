@@ -6,7 +6,7 @@ import BacklogList from "../components/BacklogList";
 import FeatureOff from "../components/FeatureOff";
 import { useFeatures } from "../hooks/useFeatures";
 import CardForm from "../cards/card/Card";
-import { Dialog, DialogContent, DialogTitle } from "../components/ui/dialog";
+import FormDialog from "../components/FormDialog";
 import { BACKLOG_STATUS } from "../utils/backlog";
 import { BOARD_ACTIONS, onBoardAction } from "../utils/boardActions";
 import { useLanguage } from "../hooks/useLanguage";
@@ -44,17 +44,9 @@ export default function BacklogPage() {
           )}
         </div>
 
-        <Dialog open={creating} onOpenChange={setCreating}>
-          <DialogContent
-            showCloseButton={false}
-            aria-describedby={undefined}
-            // The form has its own background and shadow
-            className="max-h-[calc(100dvh-2rem)] gap-0 overflow-y-auto border-0 bg-transparent p-0 font-jira shadow-none sm:max-w-[640px]"
-          >
-            <DialogTitle className="sr-only">{t("Add to backlog")}</DialogTitle>
-            <CardForm status={BACKLOG_STATUS} onCreated={handleCreated} onCancel={() => setCreating(false)} />
-          </DialogContent>
-        </Dialog>
+        <FormDialog open={creating} onClose={() => setCreating(false)} title={t("Add to backlog")}>
+          <CardForm status={BACKLOG_STATUS} onCreated={handleCreated} onCancel={() => setCreating(false)} />
+        </FormDialog>
       </div>
     </Layout>
   );

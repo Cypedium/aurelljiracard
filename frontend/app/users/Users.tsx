@@ -12,7 +12,7 @@ import { lastSeenLabel } from '../utils/presence';
 import { TABLE_CELL_CLASS as TD_CLASS, TABLE_HEAD_CLASS as TH_CLASS, TABLE_THEAD_CLASS, TABLE_ROW_CLASS, TABLE_WRAPPER_CLASS, TABLE_ACTION_CLASS as ACTION_CLASS } from '../utils/styles';
 import EditUserForm from './EditUserForm';
 import TableSkeleton from '../components/TableSkeleton';
-import { Dialog, DialogContent, DialogTitle } from '../components/ui/dialog';
+import FormDialog from '../components/FormDialog';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { useLanguage } from '../hooks/useLanguage';
 import { msg } from '../utils/i18n';
@@ -175,25 +175,16 @@ export default function Users() {
         </table>
       </div>
 
-      {/* Radix handles focus, Escape, clicks outside and scroll lock */}
-      <Dialog open={Boolean(editingUser)} onOpenChange={(open) => !open && setEditingUser(null)}>
-        <DialogContent
-          showCloseButton={false}
-          aria-describedby={undefined}
-          // The form has its own background and shadow
-          className="gap-0 border-0 bg-transparent p-0 font-jira shadow-none sm:max-w-[480px]"
-        >
-          <DialogTitle className="sr-only">{t('Edit user')}</DialogTitle>
-          {editingUser && (
-            <EditUserForm
-              user={editingUser}
-              isSelf={editingUser.username === me}
-              onSaved={handleSaved}
-              onCancel={() => setEditingUser(null)}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+      <FormDialog open={Boolean(editingUser)} onClose={() => setEditingUser(null)} title={t('Edit user')} width="md">
+        {editingUser && (
+          <EditUserForm
+            user={editingUser}
+            isSelf={editingUser.username === me}
+            onSaved={handleSaved}
+            onCancel={() => setEditingUser(null)}
+          />
+        )}
+      </FormDialog>
 
       <ConfirmDialog
         open={Boolean(deletingUser)}
