@@ -53,6 +53,15 @@ export const LABEL_CLASS = "mt-4 mb-1 block text-xs font-semibold text-jira-seco
 export const FORM_ITEM_CLASS = "gap-0";
 export const FIELD_ERROR_CLASS = "mt-1 text-xs text-jira-danger";
 export const SECTION_PADDING = "px-6 max-[480px]:px-4";
+
+// Page wrappers: at least the screen's height under the fixed navbar. The background (the board's gradient) is on <main>
+// in client-layout.tsx, so pages don't paint it again
+const PAGE_HEIGHT = "min-h-[calc(100dvh-60px)] font-jira";
+// pt clears the fixed navbar: one row, or two on pages with buttons in row two (backlog, issue types)
+export const PAGE_CLASS = `${PAGE_HEIGHT} px-4 pt-20 pb-6`;
+export const PAGE_SUB_ROW_CLASS = `${PAGE_HEIGHT} px-4 pt-30 pb-6`;
+// A single box in the middle of the screen (invite, email links, password reset)
+export const CENTERED_PAGE_CLASS = `${PAGE_HEIGHT} flex items-center justify-center px-4 pt-20 pb-10`;
 // The raised white card behind every form (card, issue type, user, login)
 const FORM_SHADOW = "shadow-[0_8px_12px_rgba(9,30,66,0.15),0_0_1px_rgba(9,30,66,0.31)]";
 // JiraFormCard: the card, its gradient header (the board's colours) and the body

@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { TrashIcon } from '@heroicons/react/16/solid';
 import { deleteIssueType, getCards, getIssueTypes } from '../api/endpoints';
@@ -15,6 +15,7 @@ import NewIssueTypeDialog from '../components/NewIssueTypeDialog';
 import TableSkeleton from '../components/TableSkeleton';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { useLanguage } from '../hooks/useLanguage';
+import { useLoad } from '../hooks/useLoad';
 import { msg } from '../utils/i18n';
 import { issueTypeLabel } from '../utils/cardType';
 
@@ -24,32 +25,35 @@ export default function IssueTypes() {
   const { t } = useLanguage();
   // manageIssueTypes switched off: no deleting (and no "Create Issue type" in the navbar)
   const canManage = useFeatures().isOn('manageIssueTypes');
-  const [types, setTypes] = useState<IssueType[] | null>(null);
-  const [cardCounts, setCardCounts] = useState<Record<string, number>>({});
   const [creating, setCreating] = useState(false);
   const [deletingType, setDeletingType] = useState<IssueType | null>(null);
 
-  const fetchTypes = useCallback(async () => {
-    if (!boardId) return;
-    try {
-      const [typesRes, cardsRes] = await Promise.all([getIssueTypes(boardId), getCards(boardId)]);
-      setTypes(normalizeIssueTypes(typesRes.data));
-      setCardCounts(countCardsByType(cardsRes.data || []));
-    } catch (err) {
-      reportError('Error fetching issue types', err, msg('Could not load issue types.'));
-      setTypes([]);
-    }
-  }, [boardId]);
-
-  useEffect(() => {
-    fetchTypes();
-  }, [fetchTypes]);
+  // The types and how many cards use each (a type in use can't be deleted)
+  const loadTypes = useMemo(
+    () =>
+      boardId
+        ? async () => {
+            const [typesRes, cardsRes] = await Promise.all([getIssueTypes(boardId), getCards(boardId)]);
+            return { types: normalizeIssueTypes(typesRes.data), counts: countCardsByType(cardsRes.data || []) };
+          }
+        : null,
+    [boardId],
+  );
+  const { data, setData } = useLoad(loadTypes, {
+    log: 'Error fetching issue types',
+    message: msg('Could not load issue types.'),
+    fallback: { types: [], counts: {} },
+  });
+  const types = data?.types ?? null;
+  const cardCounts = data?.counts ?? {};
+  const updateTypes = (update: (types: IssueType[]) => IssueType[]) =>
+    setData((prev) => prev && { ...prev, types: update(prev.types) });
 
   const removeType = async (type: IssueType) => {
     if (!boardId) return;
     try {
       await deleteIssueType(boardId, type.key);
-      setTypes((prev) => prev?.filter((t) => t.key !== type.key) ?? null);
+      updateTypes((prev) => prev.filter((t) => t.key !== type.key));
       removeIssueType(type.key);
       toast.success(t('Issue type {name} deleted.', { name: issueTypeLabel(type, t) }));
     } catch (err) {
@@ -141,7 +145,7 @@ export default function IssueTypes() {
         onClose={() => setCreating(false)}
         onCreated={(type) => {
           setCreating(false);
-          setTypes((prev) => [...(prev ?? []).filter((t) => t.key !== type.key), type]);
+          updateTypes((prev) => [...prev.filter((t) => t.key !== type.key), type]);
         }}
       />
 

@@ -40,9 +40,10 @@ import {
   toGridLayout,
   toSavedPositions,
   previewHeaders,
+  draggedList,
 } from "../utils/boardLayout";
 import { canDeleteCard, canEditCard } from "../utils/session";
-import { BOARD_ACTIONS, onBoardAction } from "../utils/boardActions";
+import { useBoardActionHandlers } from "./useBoardActionHandlers";
 import { useFeatures } from "../hooks/useFeatures";
 import { useSession } from "../hooks/useSession";
 import { useLanguage } from "../hooks/useLanguage";
@@ -100,17 +101,7 @@ function BoardView({ boardId, admin }: { boardId: string; admin: boolean }) {
   const { isOn, canWrite } = useFeatures();
   const canDragCards = isOn("editCard") && canWrite;
 
-  // The navbar's "Create card" (new card in the first list) and "Create column" (admin: the form at the end of the board)
-  useEffect(() => onBoardAction(BOARD_ACTIONS.createCard, () => setCreatingIn(headers[0]?.key ?? null)), [headers, setCreatingIn]);
-  useEffect(() => {
-    if (!admin) return;
-    return onBoardAction(BOARD_ACTIONS.createColumn, () => setAddingList(true));
-  }, [admin, setAddingList]);
-  // The navbar's "Delete column" (admin): the dialog where an empty list is picked
-  useEffect(() => {
-    if (!admin) return;
-    return onBoardAction(BOARD_ACTIONS.deleteColumn, () => setDeletingList(true));
-  }, [admin, setDeletingList]);
+  useBoardActionHandlers({ admin, firstListKey: headers[0]?.key ?? null, setCreatingIn, setAddingList, setDeletingList });
   // The form sits at the end of the board: scroll there once it has rendered
   useEffect(() => {
     const board = boardScrollRef.current;
@@ -172,10 +163,12 @@ function BoardView({ boardId, admin }: { boardId: string; admin: boolean }) {
   });
 
   // The list being dragged: its cards are hidden in the grid and shown in the preview instead, in the same order
-  const dragIndex = draggingList ? boardHeaders.findIndex((h) => h.key === draggingList) : -1;
-  const dragLayout = dragIndex < 0 ? [] : visibleLayout.filter((l) => l.x === dragIndex).sort((a, b) => a.y - b.y);
-  const draggedCardIds = new Set(dragLayout.map((l) => l.i));
-  const dragCards = dragLayout.flatMap((l) => cardById.get(l.i) ?? []);
+  const { index: dragIndex, cardIds: draggedCardIds, cards: dragCards } = draggedList(
+    boardHeaders,
+    draggingList,
+    visibleLayout,
+    cardById,
+  );
 
   // Number of cards per column: shown in the header and sets the list's height
   const columnCounts = countCardsPerColumn(boardHeaders, gridLayout);

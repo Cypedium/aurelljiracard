@@ -3,30 +3,27 @@ import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useLayoutEffect, useRef, useState, type ComponentType, type ReactNode, type SVGProps } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import logo from '../icon.png';
 import { handleLogout } from '../utils/logout';
-import { BOARD_ACTIONS, onBoardAction, requestBoardAction, type BoardAction } from '../utils/boardActions';
+import { BOARD_ACTIONS, onBoardAction, requestBoardAction } from '../utils/boardActions';
 import { useBoards } from '../hooks/useBoards';
 import { useFeatures } from '../hooks/useFeatures';
 import { useSession } from '../hooks/useSession';
-import { BOARD_ACTION_FEATURES } from '../utils/features';
+import { useSubRowStart } from '../hooks/useSubRowStart';
 import {
   AdjustmentsHorizontalIcon,
   ArrowRightStartOnRectangleIcon,
   Bars3Icon,
-  PencilSquareIcon,
-  PlusIcon,
   QueueListIcon,
-  ShareIcon,
   TagIcon,
-  TrashIcon,
-  UserGroupIcon,
   UsersIcon,
   ViewColumnsIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
+import { navSubActions, type NavIcon, type SubAction } from '../utils/navbar';
 import { ROUTES } from '../utils/routes';
+import ReadOnlyBanner from './ReadOnlyBanner';
 import {
   NAV_ICON_CLASS,
   NAV_ICON_SUB_CLASS,
@@ -42,8 +39,13 @@ const AccountMenu = dynamic(() => import('./AccountMenu'));
 const BoardSwitcher = dynamic(() => import('./BoardSwitcher'));
 const ShareBoardDialog = dynamic(() => import('./ShareBoardDialog'));
 
-type NavIcon = ComponentType<SVGProps<SVGSVGElement>>;
-type SubAction = { label: string; action: BoardAction; Icon: NavIcon };
+// The logo and name (same image as the favicon, app/icon.png). Logged out it leads to the start page, which redirects
+const NavLogo = ({ href, className }: { href: string; className: string }) => (
+  <Link href={href} className={className}>
+    <Image src={logo} alt="" className="size-7 shrink-0" priority />
+    AurellTodo
+  </Link>
+);
 
 type NavItemProps = {
   href: string;
@@ -100,48 +102,22 @@ const Navbar = () => {
   const onBacklog = isLoggedIn && pathname === ROUTES.backlog;
   const onIssueTypes = isLoggedIn && boardAdmin && pathname === ROUTES.issueTypes;
 
-  // Row two's buttons for the current page. Only the board's admin adds / deletes columns (the backend refuses others)
-  const subActions: SubAction[] = [
-    ...(onBoard || onBacklog ? [{ label: t('Create card'), action: BOARD_ACTIONS.createCard, Icon: PencilSquareIcon }] : []),
-    ...(onBoard && boardAdmin
-      ? [
-          { label: t('Create column'), action: BOARD_ACTIONS.createColumn, Icon: PlusIcon },
-          { label: t('Delete column'), action: BOARD_ACTIONS.deleteColumn, Icon: TrashIcon },
-        ]
-      : []),
-    // The owner invites; collaborators see who is on the board and can leave
-    ...(onBoard && board ? [{ label: boardAdmin ? t('Share') : t('Members'), action: BOARD_ACTIONS.shareBoard, Icon: boardAdmin ? ShareIcon : UserGroupIcon }] : []),
-    ...(onIssueTypes ? [{ label: t('Create Issue type'), action: BOARD_ACTIONS.createIssueType, Icon: PlusIcon }] : []),
-  ].filter(({ action }) => isOn(BOARD_ACTION_FEATURES[action]));
+  // Row two's buttons for the current page (rules in utils/navbar.ts)
+  const subActions: SubAction[] = navSubActions({
+    pathname,
+    loggedIn: isLoggedIn,
+    boardAdmin,
+    hasBoard: Boolean(board),
+    isOn,
+  }).map((a) => ({ ...a, label: t(a.label) }));
 
   // The Board link always comes first after the logo. The board switcher shows on every page when you are logged in and have more than
   // one board, left of the account button (desktop) / last in the hamburger menu (mobile); switching stays on the page
   const showSwitcher = isLoggedIn && Boolean(board) && boards.length > 1 && isOn('boardSwitcher');
 
-  // Row two starts under the current page's link (Board / Backlog / Issue types). null = left-aligned
-  // (mobile, where the link is hidden)
+  // Row two starts under the current page's link; null = left-aligned (mobile, where the link is hidden)
   const headerRef = useRef<HTMLElement>(null);
-  const [subRowStart, setSubRowStart] = useState<number | null>(null);
-  const hasSubRow = subActions.length > 0;
-
-  useLayoutEffect(() => {
-    const header = headerRef.current;
-    const link = hasSubRow ? header?.querySelector<HTMLElement>('a[aria-current="page"]') : null;
-    if (!link || !header) {
-      setSubRowStart(null);
-      return;
-    }
-    const measure = () => {
-      const rect = link.getBoundingClientRect();
-      setSubRowStart(rect.width ? rect.left - header.getBoundingClientRect().left : null);
-    };
-    measure();
-    // The width changes with the window, font loading and when the menu changes mode
-    const observer = new ResizeObserver(measure);
-    observer.observe(link);
-    observer.observe(header);
-    return () => observer.disconnect();
-  }, [pathname, hasSubRow, admin, boardAdmin, board, userName]);
+  const subRowStart = useSubRowStart(headerRef, subActions.length > 0, [pathname, admin, boardAdmin, board, userName]);
 
   return (
     <header ref={headerRef} className="fixed z-1000 w-full font-brand">
@@ -165,11 +141,7 @@ const Navbar = () => {
         >
           <Bars3Icon className="size-8" aria-hidden />
         </button>
-        {/* Logged out (Login/Register) the logo leads to the start page, which redirects */}
-        <Link href={logoHref} className={`${NAV_LINK_CLASS} absolute left-1/2 -translate-x-1/2 text-xl text-nav-text md:hidden`}>
-          <Image src={logo} alt="" className="size-7 shrink-0" priority />
-          AurellTodo
-        </Link>
+        <NavLogo href={logoHref} className={`${NAV_LINK_CLASS} absolute left-1/2 -translate-x-1/2 text-xl text-nav-text md:hidden`} />
         {isLoggedIn && userName && (
           <div className="ml-auto md:hidden">
             <AccountMenu username={userName} />
@@ -188,11 +160,7 @@ const Navbar = () => {
             </button>
           </li>
           <li className="hidden md:block">
-            <Link href={logoHref} className={NAV_LINK_CLASS}>
-              {/* Same image as the favicon (app/icon.png) */}
-              <Image src={logo} alt="" className="size-7 shrink-0" priority />
-              AurellTodo
-            </Link>
+            <NavLogo href={logoHref} className={NAV_LINK_CLASS} />
           </li>
           {isLoggedIn && (
             <>
@@ -282,17 +250,7 @@ const Navbar = () => {
         </div>
       )}
 
-      {/* Read-only mode: everyone sees it; the site admin can still make changes */}
-      {readOnly && (
-        <div
-          role="status"
-          className={`px-[3%] py-1 text-center font-jira text-sm ${siteAdmin ? 'bg-[#e9f2ff] text-[#0055cc]' : 'bg-[#fff7d6] text-[#7f5f01]'}`}
-        >
-          {siteAdmin
-            ? t('Read-only mode is on for everyone else. You can still make changes.')
-            : t('AurellTodo is in read-only mode. You can look around, but changes are paused for now.')}
-        </div>
-      )}
+      {readOnly && <ReadOnlyBanner siteAdmin={siteAdmin} />}
 
       {isLoggedIn && board && <ShareBoardDialog board={board} open={shareOpen} onClose={() => setShareOpen(false)} />}
     </header>

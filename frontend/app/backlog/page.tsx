@@ -10,6 +10,7 @@ import FormDialog from "../components/FormDialog";
 import { BACKLOG_STATUS } from "../utils/backlog";
 import { BOARD_ACTIONS, onBoardAction } from "../utils/boardActions";
 import { useLanguage } from "../hooks/useLanguage";
+import { PAGE_SUB_ROW_CLASS } from "../utils/styles";
 
 export default function BacklogPage() {
   const { t } = useLanguage();
@@ -31,7 +32,7 @@ export default function BacklogPage() {
   return (
     <Layout>
       {/* The same background as the board; pt because the navbar (two rows) is fixed */}
-      <div className="min-h-[calc(100dvh-60px)] bg-linear-135 from-board-from via-board-via to-board-to px-4 pt-30 pb-6 font-jira">
+      <div className={PAGE_SUB_ROW_CLASS}>
         <div className="mx-auto flex max-w-[960px] flex-col gap-4">
           {/* No visible heading (the navbar shows the page); kept for screen readers */}
           {isOn("backlogPage") ? (

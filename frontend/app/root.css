@@ -28,6 +28,10 @@
   --color-jira-task: #4bade8;
   --color-jira-danger: #c9372c;
   --color-jira-info: #e9f2ff;
+  /* Online, switch on (green); notices such as read-only mode (yellow) */
+  --color-jira-success: #22a06b;
+  --color-jira-warning: #fff7d6;
+  --color-jira-warning-text: #7f5f01;
 
   /* Trello-like board: list colours and background, e.g. bg-list-todo */
   --color-list-todo: #eed7fc;

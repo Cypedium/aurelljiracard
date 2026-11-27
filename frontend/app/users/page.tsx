@@ -6,6 +6,7 @@ import Users from "./Users";
 import { isAdmin } from "../utils/session";
 import { ROUTES } from "../utils/routes";
 import { useLanguage } from "../hooks/useLanguage";
+import { PAGE_CLASS } from "../utils/styles";
 
 export default function UsersPage() {
   const { t } = useLanguage();
@@ -21,7 +22,7 @@ export default function UsersPage() {
   return (
     <Layout>
       {/* The same background as the board; pt because the navbar is fixed */}
-      <div className="min-h-[calc(100dvh-60px)] bg-linear-135 from-board-from via-board-via to-board-to px-4 pt-20 pb-6 font-jira">
+      <div className={PAGE_CLASS}>
         {allowed && (
           <div className="mx-auto flex max-w-[960px] flex-col gap-4">
             {/* No visible heading (the navbar shows the page); kept for screen readers */}

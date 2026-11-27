@@ -7,6 +7,7 @@ import { hasSession } from "../../utils/session";
 import { ROUTES } from "../../utils/routes";
 import { useLanguage } from "../../hooks/useLanguage";
 import { msg } from "../../utils/i18n";
+import { PAGE_CLASS } from "../../utils/styles";
 
 type Tab = "new" | "backlog";
 const TABS: { key: Tab; label: string }[] = [
@@ -32,7 +33,7 @@ export default function CardPage() {
 
   // The same background as the board; pt because the navbar is fixed
   return (
-    <div className="min-h-[calc(100dvh-60px)] bg-linear-135 from-board-from via-board-via to-board-to px-4 pt-20 pb-6">
+    <div className={PAGE_CLASS}>
       <div className="mx-auto flex w-full max-w-[640px] gap-1 font-jira" role="tablist">
         {TABS.map(({ key, label }) => (
           <button

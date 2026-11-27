@@ -1,7 +1,7 @@
 import { PencilIcon, TrashIcon } from "@heroicons/react/16/solid";
 import type { MouseEvent } from "react";
 import type { Card } from "../../api/endpoints";
-import { avatarColor, avatarInitials } from "../../utils/avatar";
+import Avatar from "../../components/Avatar";
 import { assigneeOf } from "../../utils/backlog";
 import { CARD_ACTION_CLASS } from "../../utils/styles";
 import CardFace from "./CardFace";
@@ -59,13 +59,7 @@ export default function BoardCard({ card, canEdit, canDelete, onEdit, onDelete }
       >
         {card.rating}
       </span>
-      <span
-        className="inline-flex size-6 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white"
-        style={{ background: avatarColor(assignee) }}
-        title={t("Assignee: {assignee}", { assignee })}
-      >
-        {avatarInitials(assignee)}
-      </span>
+      <Avatar username={assignee} title={t("Assignee: {assignee}", { assignee })} />
     </CardFace>
   );
 }
