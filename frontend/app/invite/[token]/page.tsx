@@ -13,6 +13,7 @@ import { ROUTES } from "../../utils/routes";
 import { useLanguage } from "../../hooks/useLanguage";
 import { boardName } from "../../utils/currentBoard";
 import { msg } from "../../utils/i18n";
+import { CENTERED_PAGE_CLASS } from "../../utils/styles";
 
 type Status = "joining" | "login" | "failed" | "disabled";
 
@@ -55,7 +56,7 @@ export default function InvitePage() {
   }, [token, router]);
 
   return (
-    <div className="flex min-h-[calc(100dvh-60px)] items-center justify-center bg-linear-135 from-board-from via-board-via to-board-to px-4 pt-20 font-jira">
+    <div className={CENTERED_PAGE_CLASS}>
       <div className="w-full max-w-[400px] rounded-lg bg-white p-6 text-center text-jira-text shadow-lg">
         {status === "joining" && <p className="text-sm text-jira-secondary">{t("Joining the board…")}</p>}
         {status === "login" && (

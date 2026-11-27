@@ -7,6 +7,7 @@ import { apiErrorMessage, logError } from "../../utils/apiError";
 import { ROUTES } from "../../utils/routes";
 import { useLanguage } from "../../hooks/useLanguage";
 import { msg } from "../../utils/i18n";
+import { CENTERED_PAGE_CLASS } from "../../utils/styles";
 
 type Status = { state: "verifying" } | { state: "done" } | { state: "failed"; message: string };
 
@@ -30,7 +31,7 @@ export default function VerifyEmailPage() {
   }, [token]);
 
   return (
-    <div className="flex min-h-[calc(100dvh-60px)] items-center justify-center bg-linear-135 from-board-from via-board-via to-board-to px-4 pt-20 font-jira">
+    <div className={CENTERED_PAGE_CLASS}>
       <div role="status" className="w-full max-w-[400px] rounded-lg bg-white p-6 text-center text-jira-text shadow-lg">
         {status.state === "verifying" && <p className="text-sm text-jira-secondary">{t("Verifying your email…")}</p>}
         {status.state === "done" && (
