@@ -21,7 +21,8 @@ import {
 } from '../../utils/cardForm';
 import { apiErrorMessage, isConflictError, logError, reportError } from '../../utils/apiError';
 import { formatDate } from '../../utils/date';
-import { FIELD_ERROR_CLASS, FORM_ITEM_CLASS, LABEL_CLASS, SECTION_PADDING } from '../../utils/styles';
+import { FIELD_ERROR_CLASS, FORM_ITEM_CLASS, LABEL_CLASS } from '../../utils/styles';
+import JiraFormCard, { FormActions } from '../../components/JiraFormCard';
 import { BACKLOG_STATUS, type AnyCardStatus } from '../../utils/backlog';
 import { normalizeColumns, type BoardHeader, type CardStatus } from '../../utils/boardLayout';
 import IssueTypeSelect from '../../components/IssueTypeSelect';
@@ -160,138 +161,120 @@ export default function Card({ card, onSaved, onCancel, status, onCreated }: Car
 
   return (
     <Form {...form}>
-      <form
-        className="mx-auto my-6 w-full max-w-[640px] overflow-hidden rounded-xl bg-white font-jira text-sm text-jira-text shadow-[0_8px_12px_rgba(9,30,66,0.15),0_0_1px_rgba(9,30,66,0.31)] max-[480px]:my-3"
+      <JiraFormCard
+        title={isEdit ? t('Edit card') : t('Create card')}
         onSubmit={form.handleSubmit(onSubmit)}
-        noValidate
+        className="mx-auto my-6 max-w-[640px] max-[480px]:my-3"
+        bodyClassName="pt-4"
+        footer={
+          <FormActions
+            className="pt-4"
+            submitLabel={isEdit ? t('Save') : t('Create')}
+            submitting={form.formState.isSubmitting}
+            onCancel={() => (onCancel ? onCancel() : router.back())}
+            start={
+              // Set by the server when the card is created and never changed, so it is only shown
+              isEdit &&
+              card?.submittedAt && (
+                <span className="mr-auto text-xs text-jira-secondary">
+                  {t('Created')} <time dateTime={card.submittedAt}>{formatDate(card.submittedAt)}</time>
+                </span>
+              )
+            }
+          />
+        }
       >
-        {/* The same gradient as the board */}
-        <header className={`${SECTION_PADDING} bg-linear-135 from-board-from via-board-via to-board-to py-5`}>
-          <h2 className="text-xl font-semibold text-white" id="card-form-title">
-            {isEdit ? t('Edit card') : t('Create card')}
-          </h2>
-        </header>
+        <p className="text-xs text-jira-secondary">
+          {t('Required fields are marked with an asterisk')} {required}
+        </p>
 
-        <div className={`${SECTION_PADDING} flex flex-col pt-4 pb-4`}>
-          <p className="text-xs text-jira-secondary">
-            {t('Required fields are marked with an asterisk')} {required}
-          </p>
+        {/* Issue type and the list side by side; stacked on narrow screens */}
+        <div className="flex flex-wrap gap-x-4">
+          <FormField
+            control={form.control}
+            name="type"
+            render={({ field }) => (
+              <FormItem className={`${FORM_ITEM_CLASS} min-w-[180px] flex-1`}>
+                <FormLabel className={LABEL_CLASS}>{t('Issue type')} {required}</FormLabel>
+                <FormControl>
+                  <IssueTypeSelect value={field.value} onChange={field.onChange} />
+                </FormControl>
+                <FormMessage className={FIELD_ERROR_CLASS} />
+              </FormItem>
+            )}
+          />
 
-          {/* Issue type and the list side by side; stacked on narrow screens */}
-          <div className="flex flex-wrap gap-x-4">
-            <FormField
-              control={form.control}
-              name="type"
-              render={({ field }) => (
-                <FormItem className={`${FORM_ITEM_CLASS} min-w-[180px] flex-1`}>
-                  <FormLabel className={LABEL_CLASS}>{t('Issue type')} {required}</FormLabel>
-                  <FormControl>
-                    <IssueTypeSelect value={field.value} onChange={field.onChange} />
-                  </FormControl>
-                  <FormMessage className={FIELD_ERROR_CLASS} />
-                </FormItem>
-              )}
+          <div className={`${FORM_ITEM_CLASS} min-w-[180px] flex-1`}>
+            <label htmlFor="card-list" className={LABEL_CLASS}>
+              {t('List')}
+            </label>
+            <ListSelect
+              id="card-list"
+              lists={lists}
+              value={selectedList}
+              onChange={setMovedTo}
+              placeholder={currentStatus === BACKLOG_STATUS ? t('Backlog') : t('Loading lists…')}
             />
-
-            <div className={`${FORM_ITEM_CLASS} min-w-[180px] flex-1`}>
-              <label htmlFor="card-list" className={LABEL_CLASS}>
-                {t('List')}
-              </label>
-              <ListSelect
-                id="card-list"
-                lists={lists}
-                value={selectedList}
-                onChange={setMovedTo}
-                placeholder={currentStatus === BACKLOG_STATUS ? t('Backlog') : t('Loading lists…')}
-              />
-            </div>
           </div>
-
-          <FormField
-            control={form.control}
-            name="comment"
-            render={({ field }) => (
-              <FormItem className={FORM_ITEM_CLASS}>
-                <FormLabel className={LABEL_CLASS}>{t('Summary')} {required}</FormLabel>
-                <SummaryEditor field={field} placeholder={t('What needs to be done?')} />
-                <FormMessage className={FIELD_ERROR_CLASS} />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="productId"
-            render={({ field }) => (
-              <FormItem className={FORM_ITEM_CLASS}>
-                <FormLabel className={LABEL_CLASS}>{t('Issue key')} {required}</FormLabel>
-                <FormControl>
-                  <Input className="bg-white text-jira-text" placeholder={t('e.g. MA-100')} maxLength={PRODUCT_ID_MAX_LENGTH} {...field} />
-                </FormControl>
-                <FormMessage className={FIELD_ERROR_CLASS} />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="rating"
-            render={({ field }) => (
-              <FormItem className={FORM_ITEM_CLASS}>
-                <FormLabel className={LABEL_CLASS}>{t('Time tracking')} {required}</FormLabel>
-                <FormControl>
-                  <div className="flex gap-2" role="group" aria-label={t('Time tracking')}>
-                    {PRIORITIES.map((p) => (
-                      <Button
-                        key={p}
-                        type="button"
-                        size="sm"
-                        className={`min-w-9 rounded-full font-semibold ${
-                          p === field.value
-                            ? 'bg-board-via text-white hover:bg-board-via'
-                            : 'bg-jira-neutral text-jira-text hover:bg-jira-neutral-hover'
-                        }`}
-                        aria-pressed={p === field.value}
-                        onClick={() => field.onChange(p)}
-                      >
-                        {p}
-                      </Button>
-                    ))}
-                  </div>
-                </FormControl>
-                <FormMessage className={FIELD_ERROR_CLASS} />
-              </FormItem>
-            )}
-          />
         </div>
 
-        <footer className={`${SECTION_PADDING} flex items-center justify-end gap-2 pt-4 pb-6`}>
-          {/* Set by the server when the card is created and never changed, so it is only shown */}
-          {isEdit && card?.submittedAt && (
-            <span className="mr-auto text-xs text-jira-secondary">
-              {t('Created')} <time dateTime={card.submittedAt}>{formatDate(card.submittedAt)}</time>
-            </span>
+        <FormField
+          control={form.control}
+          name="comment"
+          render={({ field }) => (
+            <FormItem className={FORM_ITEM_CLASS}>
+              <FormLabel className={LABEL_CLASS}>{t('Summary')} {required}</FormLabel>
+              <SummaryEditor field={field} placeholder={t('What needs to be done?')} />
+              <FormMessage className={FIELD_ERROR_CLASS} />
+            </FormItem>
           )}
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="text-jira-secondary"
-            onClick={() => (onCancel ? onCancel() : router.back())}
-          >
-            {t('Cancel')}
-          </Button>
-          {/* The same blue as the header's gradient */}
-          <Button
-            type="submit"
-            size="sm"
-            className="bg-board-via px-4 hover:bg-board-from"
-            disabled={form.formState.isSubmitting}
-          >
-            {isEdit ? t('Save') : t('Create')}
-          </Button>
-        </footer>
-      </form>
+        />
+
+        <FormField
+          control={form.control}
+          name="productId"
+          render={({ field }) => (
+            <FormItem className={FORM_ITEM_CLASS}>
+              <FormLabel className={LABEL_CLASS}>{t('Issue key')} {required}</FormLabel>
+              <FormControl>
+                <Input className="bg-white text-jira-text" placeholder={t('e.g. MA-100')} maxLength={PRODUCT_ID_MAX_LENGTH} {...field} />
+              </FormControl>
+              <FormMessage className={FIELD_ERROR_CLASS} />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="rating"
+          render={({ field }) => (
+            <FormItem className={FORM_ITEM_CLASS}>
+              <FormLabel className={LABEL_CLASS}>{t('Time tracking')} {required}</FormLabel>
+              <FormControl>
+                <div className="flex gap-2" role="group" aria-label={t('Time tracking')}>
+                  {PRIORITIES.map((p) => (
+                    <Button
+                      key={p}
+                      type="button"
+                      size="sm"
+                      className={`min-w-9 rounded-full font-semibold ${
+                        p === field.value
+                          ? 'bg-board-via text-white hover:bg-board-via'
+                          : 'bg-jira-neutral text-jira-text hover:bg-jira-neutral-hover'
+                      }`}
+                      aria-pressed={p === field.value}
+                      onClick={() => field.onChange(p)}
+                    >
+                      {p}
+                    </Button>
+                  ))}
+                </div>
+              </FormControl>
+              <FormMessage className={FIELD_ERROR_CLASS} />
+            </FormItem>
+          )}
+        />
+      </JiraFormCard>
     </Form>
   );
 }

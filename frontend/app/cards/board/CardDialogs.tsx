@@ -1,5 +1,5 @@
 import type { Card } from "../../api/endpoints";
-import { Dialog, DialogContent, DialogTitle } from "../../components/ui/dialog";
+import FormDialog from "../../components/FormDialog";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import type { CardStatus } from "../../utils/boardLayout";
 import CardForm from "../card/Card";
@@ -15,28 +15,23 @@ type CardFormDialogProps = {
   onClose: () => void;
 };
 
-// Create or edit a card. Radix handles focus, Escape, clicks outside and scroll lock
+// Create or edit a card
 export function CardFormDialog({ editingCard, creatingIn, onSaved, onCreated, onClose }: CardFormDialogProps) {
   const { t } = useLanguage();
   return (
-    <Dialog open={Boolean(editingCard || creatingIn)} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent
-        showCloseButton={false}
-        aria-describedby={undefined}
-        // The form has its own background and shadow
-        className="max-h-[calc(100dvh-2rem)] gap-0 overflow-y-auto border-0 bg-transparent p-0 font-jira shadow-none sm:max-w-[640px]"
-      >
-        {/* The form's visible heading is a plain h2, so the dialog gets a hidden title */}
-        <DialogTitle className="sr-only">{editingCard ? t("Edit card") : t("Create card")}</DialogTitle>
-        <CardForm
-          card={editingCard ?? undefined}
-          status={creatingIn ?? undefined}
-          onSaved={onSaved}
-          onCreated={onCreated}
-          onCancel={onClose}
-        />
-      </DialogContent>
-    </Dialog>
+    <FormDialog
+      open={Boolean(editingCard || creatingIn)}
+      onClose={onClose}
+      title={editingCard ? t("Edit card") : t("Create card")}
+    >
+      <CardForm
+        card={editingCard ?? undefined}
+        status={creatingIn ?? undefined}
+        onSaved={onSaved}
+        onCreated={onCreated}
+        onCancel={onClose}
+      />
+    </FormDialog>
   );
 }
 

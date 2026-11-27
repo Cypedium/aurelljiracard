@@ -10,6 +10,7 @@ import { msg } from '../utils/i18n';
 import { changedUserFields, editUserSchema, type EditUserValues } from '../utils/userForm';
 import { FIELD_ERROR_CLASS, FORM_ITEM_CLASS, LABEL_CLASS, SECTION_PADDING } from '../utils/styles';
 import { Button } from '../components/ui/button';
+import JiraFormCard from '../components/JiraFormCard';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../components/ui/form';
 import { Input } from '../components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
@@ -21,8 +22,6 @@ type EditUserFormProps = {
   onSaved: (user: PublicUser) => void;
   onCancel: () => void;
 };
-
-
 
 export default function EditUserForm({ user, isSelf, onSaved, onCancel }: EditUserFormProps) {
   const { t } = useLanguage();
@@ -54,71 +53,65 @@ export default function EditUserForm({ user, isSelf, onSaved, onCancel }: EditUs
 
   return (
     <Form {...form}>
-      <form
-        className="w-full overflow-hidden rounded-xl bg-white font-jira text-sm text-jira-text shadow-[0_8px_12px_rgba(9,30,66,0.15),0_0_1px_rgba(9,30,66,0.31)]"
+      <JiraFormCard
+        title={t('Edit user')}
         onSubmit={form.handleSubmit(onSubmit)}
-        noValidate
+        footer={
+          <footer className={`${SECTION_PADDING} flex justify-end gap-2 border-t border-jira-neutral py-3`}>
+            <Button type="button" variant="ghost" onClick={onCancel}>
+              {t('Cancel')}
+            </Button>
+            <Button type="submit" disabled={form.formState.isSubmitting}>
+              {t('Save')}
+            </Button>
+          </footer>
+        }
       >
-        <header className={`${SECTION_PADDING} bg-linear-135 from-board-from via-board-via to-board-to py-5`}>
-          <h2 className="text-xl font-semibold text-white">{t('Edit user')}</h2>
-        </header>
+        <FormField
+          control={form.control}
+          name="username"
+          render={({ field }) => (
+            <FormItem className={FORM_ITEM_CLASS}>
+              <FormLabel className={LABEL_CLASS}>{t('Username')}</FormLabel>
+              <FormControl>
+                <Input className="bg-white text-jira-text" autoComplete="off" {...field} />
+              </FormControl>
+              <FormMessage className={FIELD_ERROR_CLASS} />
+            </FormItem>
+          )}
+        />
 
-        <div className={`${SECTION_PADDING} flex flex-col pt-2 pb-4`}>
-          <FormField
-            control={form.control}
-            name="username"
-            render={({ field }) => (
-              <FormItem className={FORM_ITEM_CLASS}>
-                <FormLabel className={LABEL_CLASS}>{t('Username')}</FormLabel>
+        <FormField
+          control={form.control}
+          name="role"
+          render={({ field }) => (
+            <FormItem className={FORM_ITEM_CLASS}>
+              <FormLabel className={LABEL_CLASS}>{t('Role')}</FormLabel>
+              <Select value={field.value} onValueChange={field.onChange} disabled={isSelf}>
                 <FormControl>
-                  <Input className="bg-white text-jira-text" autoComplete="off" {...field} />
+                  <SelectTrigger className="w-full max-w-[240px] font-medium text-jira-text">
+                    <SelectValue />
+                  </SelectTrigger>
                 </FormControl>
-                <FormMessage className={FIELD_ERROR_CLASS} />
-              </FormItem>
-            )}
-          />
+                <SelectContent position="popper" className="font-jira text-jira-text">
+                  {ROLES.map((role) => (
+                    <SelectItem key={role} value={role}>
+                      {t(ROLE_LABELS[role])}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage className={FIELD_ERROR_CLASS} />
+            </FormItem>
+          )}
+        />
 
-          <FormField
-            control={form.control}
-            name="role"
-            render={({ field }) => (
-              <FormItem className={FORM_ITEM_CLASS}>
-                <FormLabel className={LABEL_CLASS}>{t('Role')}</FormLabel>
-                <Select value={field.value} onValueChange={field.onChange} disabled={isSelf}>
-                  <FormControl>
-                    <SelectTrigger className="w-full max-w-[240px] font-medium text-jira-text">
-                      <SelectValue />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent position="popper" className="font-jira text-jira-text">
-                    {ROLES.map((role) => (
-                      <SelectItem key={role} value={role}>
-                        {t(ROLE_LABELS[role])}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage className={FIELD_ERROR_CLASS} />
-              </FormItem>
-            )}
-          />
-
-          <p className="mt-4 text-xs text-jira-secondary">
-            {isSelf
-              ? t('You cannot change your own role. Renaming yourself logs you out.')
-              : t('Changing the name or role logs the user out; their cards follow the new name.')}
-          </p>
-        </div>
-
-        <footer className={`${SECTION_PADDING} flex justify-end gap-2 border-t border-jira-neutral py-3`}>
-          <Button type="button" variant="ghost" onClick={onCancel}>
-            {t('Cancel')}
-          </Button>
-          <Button type="submit" disabled={form.formState.isSubmitting}>
-            {t('Save')}
-          </Button>
-        </footer>
-      </form>
+        <p className="mt-4 text-xs text-jira-secondary">
+          {isSelf
+            ? t('You cannot change your own role. Renaming yourself logs you out.')
+            : t('Changing the name or role logs the user out; their cards follow the new name.')}
+        </p>
+      </JiraFormCard>
     </Form>
   );
 }

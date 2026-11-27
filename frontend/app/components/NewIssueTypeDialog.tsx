@@ -19,10 +19,10 @@ import {
   type IssueType,
   type IssueTypeFormValues,
 } from '../utils/cardType';
-import { FIELD_ERROR_CLASS, FORM_ITEM_CLASS, ISSUE_TYPE_ICON, LABEL_CLASS, SECTION_PADDING } from '../utils/styles';
+import { FIELD_ERROR_CLASS, FORM_ITEM_CLASS, ISSUE_TYPE_ICON, LABEL_CLASS } from '../utils/styles';
 import IssueTypeIcon from './IssueTypeIcon';
-import { Button } from './ui/button';
-import { Dialog, DialogContent, DialogTitle } from './ui/dialog';
+import FormDialog from './FormDialog';
+import JiraFormCard, { FormActions } from './JiraFormCard';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
 import { Input } from './ui/input';
 import { useLanguage } from '../hooks/useLanguage';
@@ -94,133 +94,105 @@ export default function NewIssueTypeDialog({ open, onClose, onCreated }: Props) 
   };
 
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <DialogContent
-        showCloseButton={false}
-        aria-describedby={undefined}
-        // The form has its own background and shadow
-        className="gap-0 border-0 bg-transparent p-0 font-jira shadow-none sm:max-w-[420px]"
-      >
-        <DialogTitle className="sr-only">{t('New issue type')}</DialogTitle>
-        <Form {...form}>
-          <form
-            className="w-full overflow-hidden rounded-xl bg-white text-sm text-jira-text shadow-[0_8px_12px_rgba(9,30,66,0.15),0_0_1px_rgba(9,30,66,0.31)]"
-            // The dialog sits inside the card form in the React tree: submit must not bubble up there
-            onSubmit={(e) => {
-              e.stopPropagation();
-              form.handleSubmit(onSubmit)(e);
-            }}
-            noValidate
-          >
-            <header className={`${SECTION_PADDING} bg-linear-135 from-board-from via-board-via to-board-to py-5`}>
-              <h2 className="text-xl font-semibold text-white">{t('New issue type')}</h2>
-            </header>
+    <FormDialog open={open} onClose={onClose} title={t('New issue type')} width="sm">
+      <Form {...form}>
+        <JiraFormCard
+          title={t('New issue type')}
+          // The dialog sits inside the card form in the React tree: submit must not bubble up there
+          onSubmit={(e) => {
+            e.stopPropagation();
+            form.handleSubmit(onSubmit)(e);
+          }}
+          footer={<FormActions submitLabel={t('Create')} submitting={form.formState.isSubmitting} onCancel={onClose} />}
+        >
+          <FormField
+            control={form.control}
+            name="label"
+            render={({ field }) => (
+              <FormItem className={FORM_ITEM_CLASS}>
+                <FormLabel className={LABEL_CLASS}>{t('Name')}</FormLabel>
+                <FormControl>
+                  <Input
+                    className="bg-white text-jira-text"
+                    placeholder={t('e.g. Story')}
+                    autoComplete="off"
+                    maxLength={ISSUE_TYPE_LABEL_MAX_LENGTH}
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage className={FIELD_ERROR_CLASS} />
+              </FormItem>
+            )}
+          />
 
-            <div className={`${SECTION_PADDING} flex flex-col pt-2 pb-4`}>
-              <FormField
-                control={form.control}
-                name="label"
-                render={({ field }) => (
-                  <FormItem className={FORM_ITEM_CLASS}>
-                    <FormLabel className={LABEL_CLASS}>{t('Name')}</FormLabel>
-                    <FormControl>
-                      <Input
-                        className="bg-white text-jira-text"
-                        placeholder={t('e.g. Story')}
-                        autoComplete="off"
-                        maxLength={ISSUE_TYPE_LABEL_MAX_LENGTH}
-                        {...field}
+          <FormField
+            control={form.control}
+            name="color"
+            render={({ field }) => (
+              <FormItem className={FORM_ITEM_CLASS}>
+                <FormLabel className={LABEL_CLASS}>{t('Color')}</FormLabel>
+                <FormControl>
+                  <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={t('Color')}>
+                    {ISSUE_TYPE_SWATCHES.map((swatch) => (
+                      <button
+                        key={swatch.color}
+                        type="button"
+                        role="radio"
+                        aria-checked={field.value === swatch.color}
+                        aria-label={t(swatch.name)}
+                        title={t(swatch.name)}
+                        className={`size-7 rounded-md ${field.value === swatch.color ? PICKED_CLASS : ''}`}
+                        style={{ background: swatch.color }}
+                        onClick={() => field.onChange(swatch.color)}
                       />
-                    </FormControl>
-                    <FormMessage className={FIELD_ERROR_CLASS} />
-                  </FormItem>
-                )}
-              />
+                    ))}
+                  </div>
+                </FormControl>
+                <FormMessage className={FIELD_ERROR_CLASS} />
+              </FormItem>
+            )}
+          />
 
-              <FormField
-                control={form.control}
-                name="color"
-                render={({ field }) => (
-                  <FormItem className={FORM_ITEM_CLASS}>
-                    <FormLabel className={LABEL_CLASS}>{t('Color')}</FormLabel>
-                    <FormControl>
-                      <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={t('Color')}>
-                        {ISSUE_TYPE_SWATCHES.map((swatch) => (
-                          <button
-                            key={swatch.color}
-                            type="button"
-                            role="radio"
-                            aria-checked={field.value === swatch.color}
-                            aria-label={t(swatch.name)}
-                            title={t(swatch.name)}
-                            className={`size-7 rounded-md ${field.value === swatch.color ? PICKED_CLASS : ''}`}
-                            style={{ background: swatch.color }}
-                            onClick={() => field.onChange(swatch.color)}
-                          />
-                        ))}
-                      </div>
-                    </FormControl>
-                    <FormMessage className={FIELD_ERROR_CLASS} />
-                  </FormItem>
-                )}
-              />
+          <FormField
+            control={form.control}
+            name="icon"
+            render={({ field }) => (
+              <FormItem className={FORM_ITEM_CLASS}>
+                <FormLabel className={LABEL_CLASS}>{t('Icon')}</FormLabel>
+                <FormControl>
+                  <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={t('Icon')}>
+                    {ISSUE_TYPE_ICONS.map((icon) => {
+                      const Icon = ISSUE_TYPE_ICON[icon];
+                      return (
+                        <button
+                          key={icon}
+                          type="button"
+                          role="radio"
+                          aria-checked={field.value === icon}
+                          aria-label={t(ISSUE_TYPE_ICON_NAMES[icon])}
+                          title={t(ISSUE_TYPE_ICON_NAMES[icon])}
+                          className={`inline-flex size-7 items-center justify-center rounded-md text-white ${field.value === icon ? PICKED_CLASS : ''}`}
+                          style={{ background: preview.color }}
+                          onClick={() => field.onChange(icon)}
+                        >
+                          <Icon className="size-4" aria-hidden />
+                        </button>
+                      );
+                    })}
+                  </div>
+                </FormControl>
+                <FormMessage className={FIELD_ERROR_CLASS} />
+              </FormItem>
+            )}
+          />
 
-              <FormField
-                control={form.control}
-                name="icon"
-                render={({ field }) => (
-                  <FormItem className={FORM_ITEM_CLASS}>
-                    <FormLabel className={LABEL_CLASS}>{t('Icon')}</FormLabel>
-                    <FormControl>
-                      <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={t('Icon')}>
-                        {ISSUE_TYPE_ICONS.map((icon) => {
-                          const Icon = ISSUE_TYPE_ICON[icon];
-                          return (
-                            <button
-                              key={icon}
-                              type="button"
-                              role="radio"
-                              aria-checked={field.value === icon}
-                              aria-label={t(ISSUE_TYPE_ICON_NAMES[icon])}
-                              title={t(ISSUE_TYPE_ICON_NAMES[icon])}
-                              className={`inline-flex size-7 items-center justify-center rounded-md text-white ${field.value === icon ? PICKED_CLASS : ''}`}
-                              style={{ background: preview.color }}
-                              onClick={() => field.onChange(icon)}
-                            >
-                              <Icon className="size-4" aria-hidden />
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </FormControl>
-                    <FormMessage className={FIELD_ERROR_CLASS} />
-                  </FormItem>
-                )}
-              />
-
-              <p className="mt-4 flex items-center gap-2 text-xs text-jira-secondary">
-                {t('Preview:')}
-                <IssueTypeIcon issueType={{ ...preview, label: preview.label || t('New issue type') }} />
-                <span className="font-medium text-jira-text">{preview.label.trim() || t('New issue type')}</span>
-              </p>
-            </div>
-
-            <footer className={`${SECTION_PADDING} flex items-center justify-end gap-2 pt-2 pb-6`}>
-              <Button type="button" variant="ghost" size="sm" className="text-jira-secondary" onClick={onClose}>
-                {t('Cancel')}
-              </Button>
-              <Button
-                type="submit"
-                size="sm"
-                className="bg-board-via px-4 hover:bg-board-from"
-                disabled={form.formState.isSubmitting}
-              >
-                {t('Create')}
-              </Button>
-            </footer>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+          <p className="mt-4 flex items-center gap-2 text-xs text-jira-secondary">
+            {t('Preview:')}
+            <IssueTypeIcon issueType={{ ...preview, label: preview.label || t('New issue type') }} />
+            <span className="font-medium text-jira-text">{preview.label.trim() || t('New issue type')}</span>
+          </p>
+        </JiraFormCard>
+      </Form>
+    </FormDialog>
   );
 }
