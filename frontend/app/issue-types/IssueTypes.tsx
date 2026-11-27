@@ -13,16 +13,7 @@ import { TABLE_CELL_CLASS as TD_CLASS, TABLE_HEAD_CLASS as TH_CLASS, TABLE_THEAD
 import IssueTypeIcon from '../components/IssueTypeIcon';
 import NewIssueTypeDialog from '../components/NewIssueTypeDialog';
 import TableSkeleton from '../components/TableSkeleton';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '../components/ui/alert-dialog';
+import ConfirmDialog from '../components/ConfirmDialog';
 import { useLanguage } from '../hooks/useLanguage';
 import { msg } from '../utils/i18n';
 import { issueTypeLabel } from '../utils/cardType';
@@ -154,20 +145,13 @@ export default function IssueTypes() {
         }}
       />
 
-      <AlertDialog open={Boolean(deletingType)} onOpenChange={(open) => !open && setDeletingType(null)}>
-        <AlertDialogContent className="font-jira text-jira-text">
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t('Delete {title}?', { title: deletingType ? issueTypeLabel(deletingType, t) : '' })}</AlertDialogTitle>
-            <AlertDialogDescription>{t('The issue type is removed for everyone. No cards use it.')}</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t('Cancel')}</AlertDialogCancel>
-            <AlertDialogAction variant="destructive" onClick={() => deletingType && removeType(deletingType)}>
-              {t('Delete')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={Boolean(deletingType)}
+        onClose={() => setDeletingType(null)}
+        title={t('Delete {title}?', { title: deletingType ? issueTypeLabel(deletingType, t) : '' })}
+        description={t('The issue type is removed for everyone. No cards use it.')}
+        onConfirm={() => deletingType && removeType(deletingType)}
+      />
     </>
   );
 }

@@ -1,15 +1,6 @@
 import type { Card } from "../../api/endpoints";
 import { Dialog, DialogContent, DialogTitle } from "../../components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "../../components/ui/alert-dialog";
+import ConfirmDialog from "../../components/ConfirmDialog";
 import type { CardStatus } from "../../utils/boardLayout";
 import CardForm from "../card/Card";
 import { toPlainText } from "../../utils/summaryFormat";
@@ -59,21 +50,13 @@ type DeleteCardDialogProps = {
 export function DeleteCardDialog({ card, onClose, onConfirm }: DeleteCardDialogProps) {
   const { t } = useLanguage();
   return (
-    <AlertDialog open={Boolean(card)} onOpenChange={(open) => !open && onClose()}>
-      <AlertDialogContent className="font-jira text-jira-text">
-        <AlertDialogHeader>
-          <AlertDialogTitle>{t("Delete this card?")}</AlertDialogTitle>
-          <AlertDialogDescription className="line-clamp-3 wrap-anywhere">
-            {card?.productId}: {toPlainText(card?.comment ?? "")}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>{t("Cancel")}</AlertDialogCancel>
-          <AlertDialogAction variant="destructive" onClick={() => card?._id && onConfirm(card._id)}>
-            {t("Delete")}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <ConfirmDialog
+      open={Boolean(card)}
+      onClose={onClose}
+      title={t("Delete this card?")}
+      description={`${card?.productId ?? ""}: ${toPlainText(card?.comment ?? "")}`}
+      descriptionClassName="line-clamp-3 wrap-anywhere"
+      onConfirm={() => card?._id && onConfirm(card._id)}
+    />
   );
 }

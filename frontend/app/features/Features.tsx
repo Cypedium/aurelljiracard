@@ -16,16 +16,7 @@ import {
 import { TABLE_WRAPPER_CLASS } from '../utils/styles';
 import TableSkeleton from '../components/TableSkeleton';
 import { Switch } from '../components/ui/switch';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '../components/ui/alert-dialog';
+import ConfirmDialog from '../components/ConfirmDialog';
 import { useLanguage } from '../hooks/useLanguage';
 import { msg } from '../utils/i18n';
 
@@ -126,23 +117,14 @@ export default function Features() {
         </section>
       ))}
 
-      <AlertDialog open={confirmReadOnly} onOpenChange={setConfirmReadOnly}>
-        <AlertDialogContent className="font-jira text-jira-text">
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t('Turn on read-only mode?')}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t('Everyone except site admins can only look: creating, editing, deleting and moving stop at once. Users stay logged in.')}
-
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t('Cancel')}</AlertDialogCancel>
-            <AlertDialogAction variant="destructive" onClick={() => change(READ_ONLY_INFO, true)}>
-              {t('Turn on')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={confirmReadOnly}
+        onClose={() => setConfirmReadOnly(false)}
+        title={t('Turn on read-only mode?')}
+        description={t('Everyone except site admins can only look: creating, editing, deleting and moving stop at once. Users stay logged in.')}
+        confirmLabel={t('Turn on')}
+        onConfirm={() => change(READ_ONLY_INFO, true)}
+      />
     </>
   );
 }
