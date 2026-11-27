@@ -1,12 +1,6 @@
 package se.aurell.jiraboard.service;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.util.Base64;
 import java.util.Comparator;
-import java.util.HexFormat;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
@@ -27,6 +21,7 @@ import se.aurell.jiraboard.repository.BoardMemberRepository;
 import se.aurell.jiraboard.repository.BoardRepository;
 import se.aurell.jiraboard.repository.IssueTypeRepository;
 import se.aurell.jiraboard.security.AuthUser;
+import se.aurell.jiraboard.security.SecureTokens;
 
 /**
  * Boards and who may use them. Every user owns one board and is its admin; others join it as
@@ -40,9 +35,7 @@ public class BoardService {
     static final String BOARD_ADMINS_ONLY_MESSAGE = "Board admins only.";
     static final String INVITE_INVALID_MESSAGE = "This invite link is invalid or has been turned off.";
 
-    private static final int TOKEN_BYTES = 32;
     private static final int TOKEN_MAX_LENGTH = 100;
-    private static final SecureRandom RANDOM = new SecureRandom();
 
     private final BoardRepository boardRepository;
     private final BoardMemberRepository memberRepository;
@@ -103,10 +96,8 @@ public class BoardService {
     public InviteResponse createInvite(UUID boardId, AuthUser user) {
         requireAdmin(boardId, user);
         Board board = findBoard(boardId);
-        byte[] bytes = new byte[TOKEN_BYTES];
-        RANDOM.nextBytes(bytes);
-        String token = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
-        board.setInviteTokenHash(hash(token));
+        String token = SecureTokens.generate();
+        board.setInviteTokenHash(SecureTokens.sha256Hex(token));
         return new InviteResponse(token);
     }
 
@@ -123,7 +114,7 @@ public class BoardService {
         if (token == null || token.isBlank() || token.length() > TOKEN_MAX_LENGTH) {
             throw ApiException.notFound(INVITE_INVALID_MESSAGE);
         }
-        Board board = boardRepository.findByInviteTokenHash(hash(token))
+        Board board = boardRepository.findByInviteTokenHash(SecureTokens.sha256Hex(token))
                 .orElseThrow(() -> ApiException.notFound(INVITE_INVALID_MESSAGE));
         if (memberRepository.findByBoardIdAndUserId(board.getId(), user.id()).isEmpty()) {
             memberRepository.save(new BoardMember(board.getId(), user.id(), Role.USER));
@@ -164,15 +155,5 @@ public class BoardService {
 
     private Board findBoard(UUID boardId) {
         return boardRepository.findById(boardId).orElseThrow(() -> ApiException.notFound(BOARD_NOT_FOUND_MESSAGE));
-    }
-
-    // Only the hash is stored, so a database leak doesn't leak working links
-    static String hash(String token) {
-        try {
-            byte[] digest = MessageDigest.getInstance("SHA-256").digest(token.getBytes(StandardCharsets.UTF_8));
-            return HexFormat.of().formatHex(digest);
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException(e);
-        }
     }
 }
